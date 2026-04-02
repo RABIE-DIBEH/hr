@@ -1,0 +1,16 @@
+package com.hrms.api.dto;
+
+import java.math.BigDecimal;
+
+public record EmployeeSummaryResponse(
+        Long employeeId,
+        String fullName,
+        String email,
+        Long teamId,
+        String teamName,
+        String cardUid,
+        boolean nfcLinked,
+        String nfcStatus,
+        BigDecimal baseSalary,
+        String employmentStatus
+) {}

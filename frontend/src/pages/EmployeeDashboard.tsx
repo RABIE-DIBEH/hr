@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Clock, 
@@ -11,9 +11,17 @@ import {
   Monitor
 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
+import { getCurrentEmployee, type EmployeeProfile } from '../services/api';
 
 const EmployeeDashboard = () => {
   const [status, setStatus] = useState('Checked In');
+  const [me, setMe] = useState<EmployeeProfile | null>(null);
+
+  useEffect(() => {
+    getCurrentEmployee()
+      .then((res) => setMe(res.data))
+      .catch(() => setMe(null));
+  }, []);
 
   const container = {
     hidden: { opacity: 0 },
@@ -37,8 +45,12 @@ const EmployeeDashboard = () => {
           {/* Header */}
           <header className="flex justify-between items-end mb-10">
             <div>
-              <h1 className="text-3xl font-bold text-slate-900 tracking-tight arabic-text">مرحباً، أحمد خالد 👋</h1>
-              <p className="text-slate-500 mt-1">قسم التسويق | عرض تقرير الدوام المباشر</p>
+              <h1 className="text-3xl font-bold text-slate-900 tracking-tight arabic-text">
+                مرحباً، {me?.fullName ?? '…'} 👋
+              </h1>
+              <p className="text-slate-500 mt-1">
+                {[me?.teamName, me?.roleName].filter(Boolean).join(' | ') || 'عرض تقرير الدوام'}
+              </p>
             </div>
             <div className="flex gap-3">
               <button className="bg-white border p-3 rounded-xl shadow-sm hover:bg-slate-50 transition-all">
