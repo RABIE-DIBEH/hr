@@ -12,7 +12,7 @@ const Expenses = () => {
   ];
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-luxury-bg">
       <Sidebar />
       <main className="mr-64 flex-1 p-8 pb-32">
         <header className="flex justify-between items-center mb-10">

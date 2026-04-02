@@ -37,7 +37,7 @@ const Login = () => {
       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-luxury-accent/5 rounded-full blur-[120px] -ml-48 -mb-48" />
 
       <motion.div 
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 1, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         className="max-w-md w-full card-luxury p-10 relative z-10 bg-white/[0.02] backdrop-blur-2xl"
       >

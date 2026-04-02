@@ -11,7 +11,7 @@ const AttendanceLogs = () => {
   ];
 
   return (
-    <div className="flex min-h-screen bg-slate-50" dir="rtl">
+    <div className="flex min-h-screen bg-luxury-bg" dir="rtl">
       <Sidebar />
       <main className="mr-64 flex-1 p-8">
         <div className="max-w-5xl mx-auto">
@@ -28,10 +28,9 @@ const AttendanceLogs = () => {
           <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
             <div className="divide-y divide-slate-50">
               {logs.map((log, idx) => (
-                <motion.div 
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: idx * 0.05 }}
+                <motion.div
+                  initial={{ opacity: 1, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}                  transition={{ delay: idx * 0.05 }}
                   key={idx} 
                   className="p-6 flex items-center justify-between hover:bg-slate-50/50 transition-all group"
                 >

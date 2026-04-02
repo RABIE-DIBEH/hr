@@ -24,7 +24,7 @@ const EmployeeDashboard = () => {
   }, []);
 
   const container = {
-    hidden: { opacity: 0 },
+    hidden: { opacity: 1 },
     show: {
       opacity: 1,
       transition: { staggerChildren: 0.1 }
@@ -32,12 +32,12 @@ const EmployeeDashboard = () => {
   };
 
   const item = {
-    hidden: { y: 20, opacity: 0 },
+    hidden: { y: 20, opacity: 1 },
     show: { y: 0, opacity: 1 }
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50" dir="rtl">
+    <div className="flex min-h-screen bg-luxury-bg" dir="rtl">
       <Sidebar />
       
       <main className="mr-64 flex-1 p-8">
@@ -153,7 +153,7 @@ const EmployeeDashboard = () => {
 
           {/* Activity Table Mockup */}
           <motion.section 
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 1, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
             className="mt-12 bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100"

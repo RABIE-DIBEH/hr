@@ -62,15 +62,10 @@ const HRDashboard = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans" dir="rtl">
+    <div className="flex min-h-screen bg-luxury-bg font-sans" dir="rtl">
       <Sidebar />
-<<<<<<< HEAD
-      
-      <main className="mr-64 flex-1 p-8">
-=======
 
-      <main className="ml-64 flex-1 p-8">
->>>>>>> 1083b464f3ade98fc9e05d7fba9e03f3abd54a26
+      <main className="mr-64 flex-1 p-8">
         <div className="max-w-7xl mx-auto">
           <header className="mb-10">
             <h1 className="text-3xl font-black text-slate-900 tracking-tight arabic-text">
@@ -85,7 +80,7 @@ const HRDashboard = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
             <motion.div
-              initial={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 1, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 flex flex-col justify-between"
             >
@@ -163,7 +158,7 @@ const HRDashboard = () => {
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, x: 20 }}
+              initial={{ opacity: 1, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 flex flex-col justify-between"
             >

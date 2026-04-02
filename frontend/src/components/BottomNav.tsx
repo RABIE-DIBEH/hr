@@ -5,17 +5,17 @@ import {
   PiggyBank, 
   Target, 
   Plus,
-  LayoutGrid
+  LayoutDashboard
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const BottomNav = () => {
   const navItems = [
-    { path: '/dashboard', icon: Wallet, label: 'المصاريف' },
+    { path: '/finance', icon: Wallet, label: 'المصاريف' },
     { path: '/savings', icon: PiggyBank, label: 'الادخار' },
     { path: '/', icon: null, label: '' }, // Placeholder for FAB
     { path: '/goals', icon: Target, label: 'الأهداف' },
-    { path: '/hrms-dashboard', icon: LayoutGrid, label: 'الموارد' },
+    { path: '/dashboard', icon: LayoutDashboard, label: 'الرئيسية' },
   ];
 
   return (

@@ -18,16 +18,16 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/" element={<Navigate to="/login" replace />} />
         
-        {/* Luxury Fintech View (Default Dashboard) */}
-        <Route path="/dashboard" element={<Expenses />} />
-        <Route path="/savings" element={<Savings />} />
-        <Route path="/goals" element={<Goals />} />
-        
         {/* Core HRMS Dashboards */}
-        <Route path="/hrms-dashboard" element={<EmployeeDashboard />} />
+        <Route path="/dashboard" element={<EmployeeDashboard />} />
         <Route path="/manager" element={<ManagerDashboard />} />
         <Route path="/hr" element={<HRDashboard />} />
         <Route path="/admin" element={<AdminDashboard />} />
+        
+        {/* Luxury Fintech View */}
+        <Route path="/finance" element={<Expenses />} />
+        <Route path="/savings" element={<Savings />} />
+        <Route path="/goals" element={<Goals />} />
         
         {/* Features */}
         <Route path="/attendance" element={<AttendanceLogs />} />

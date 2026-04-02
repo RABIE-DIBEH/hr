@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
+  Wallet,
   Users,
   Clock,
   CreditCard,
@@ -26,6 +27,7 @@ const Sidebar = () => {
 
   const menuItems = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'لوحة التحكم' },
+    { path: '/finance', icon: Wallet, label: 'المصاريف والمالية' },
     { path: '/manager', icon: Users, label: 'إدارة الفريق' },
     { path: '/hr', icon: ShieldCheck, label: 'الموارد البشرية' },
     { path: '/admin', icon: Settings, label: 'مدير النظام' },
