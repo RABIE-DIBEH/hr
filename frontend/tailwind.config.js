@@ -7,6 +7,7 @@ export default {
   theme: {
     extend: {
       colors: {
+        'luxury-surface': 'rgba(255, 255, 255, 0.05)',
         primary: {
           50: '#f0f9ff',
           100: '#e0f2fe',
