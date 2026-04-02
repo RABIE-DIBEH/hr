@@ -1,24 +1,38 @@
 # GEMINI.md - Project Context
 
 ## Directory Overview
-This directory contains the planning and requirements documentation for a **Human Resources Management System (HRMS)** with a focus on smart attendance tracking using NFC technology. The project aims to automate manual HR processes, improve security, and provide real-time reporting for employees, managers, and HR departments.
+This repository contains the implementation of a **Human Resources Management System (HRMS)** with a focus on smart attendance tracking using NFC technology. The system automates manual HR processes, improves security, and provides real-time reporting for employees, managers, and HR departments.
 
-## Key Files
--   **`project structure.md`**: A comprehensive Software Requirements Specification (SRS) document (in Arabic and German terminology). It outlines the entire project scope, including:
-    -   **Project Goals**: Automation, NFC-based security, data accuracy, and improved employee experience.
-    -   **Technical Stack (Proposed)**:
-        -   **Backend**: .NET Core (C#) or Java Spring Boot.
-        -   **Frontend**: Angular or React.js.
-        -   **Mobile**: Flutter or Kotlin (Android prioritized).
-        -   **Database**: MS SQL Server, MySQL, or PostgreSQL.
-        -   **Hardware**: Networked NFC Readers and NFC-enabled mobile devices.
-    -   **Core Modules**: Attendance (Check-in/out), Leave Management, Payroll Calculation, and Managerial Oversight (Daily Check).
-    -   **User Roles**: Employee, Direct Manager, HR Specialist, and System Administrator.
-    -   **UI Prototypes**: Conceptual designs for mobile and web interfaces.
+## Technical Stack
+-   **Backend**: Java 21, Spring Boot 3.2.0 (Spring Data JPA, Spring Security, JWT).
+-   **Frontend**: React (TypeScript) + Vite + Tailwind CSS.
+-   **Mobile**: Flutter (Dart).
+-   **Database**: PostgreSQL.
+-   **Hardware Integration**: NFC Readers and NFC-enabled mobile devices.
 
-## Usage
-The contents of this directory serve as the foundational blueprint for the development of the HRMS. Future interactions should refer to `project structure.md` for functional requirements, business logic (e.g., payroll formulas, permission matrices), and technical constraints.
+## Key Files & Directories
+-   **`project structure.md`**: Comprehensive Software Requirements Specification (SRS).
+-   **`backend/`**: Spring Boot application containing core business logic, API controllers, and security configuration.
+-   **`frontend/`**: React-based web dashboard for Employees, Managers, and HR Specialists.
+-   **`mobile/`**: Flutter application for mobile access and NFC-based clocking.
+-   **`database/schema.sql`**: SQL definitions for the system's data model.
+-   **`API_DOCS.md`**: Documentation for backend RESTful endpoints.
+-   **`AGENTS.md`**: Specific instructions and context for AI agents working on this codebase.
+
+## Core Modules
+-   **Attendance**: Real-time check-in/out via NFC, daily departmental checks, and fraud detection.
+-   **Leave Management**: Self-service requests, multi-level approvals, and automated balance tracking.
+-   **Payroll**: Automated calculations based on verified attendance hours, overtime, and deductions.
+-   **Employee Directory**: Centralized profile management and organizational hierarchy.
 
 ## Development Status
--   **Phase**: Requirements & Planning (SRS completed).
--   **Next Steps**: Architecture design, database schema modeling, and environment setup for the selected tech stack.
+-   **Phase**: Implementation & Prototyping.
+-   **Current State**: 
+    -   Backend core entities and REST APIs are scaffolded.
+    -   Web frontend UI components and dashboard layouts are in place.
+    -   Mobile application (Flutter) is initialized.
+    -   Database schema is defined.
+-   **Next Steps**: 
+    -   Finalize payroll calculation logic.
+    -   Implement NFC communication protocols in the mobile app.
+    -   Full integration testing between frontend and backend.
