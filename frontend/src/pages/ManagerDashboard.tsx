@@ -30,10 +30,9 @@ const ManagerDashboard = () => {
   ];
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen bg-slate-50" dir="rtl">
       <Sidebar />
-      
-      <main className="ml-64 flex-1 p-8">
+      <main className="mr-64 flex-1 p-8">
         <div className="max-w-7xl mx-auto">
           <header className="flex justify-between items-center mb-10">
             <div>

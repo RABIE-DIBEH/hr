@@ -11,9 +11,9 @@ const AttendanceLogs = () => {
   ];
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans">
+    <div className="flex min-h-screen bg-slate-50" dir="rtl">
       <Sidebar />
-      <main className="ml-64 flex-1 p-8">
+      <main className="mr-64 flex-1 p-8">
         <div className="max-w-5xl mx-auto">
           <header className="flex justify-between items-center mb-10">
             <div>
