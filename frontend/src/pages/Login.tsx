@@ -2,19 +2,32 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ShieldCheck, Mail, Lock, ArrowLeft, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { login } from '../services/api';
+import axios from 'axios';
 
 const Login = () => {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
+    setError(null);
+    try {
+      await login(email, password);
       navigate('/dashboard');
-    }, 1500);
+    } catch (err) {
+      const msg =
+        axios.isAxiosError(err) && err.response?.data && typeof err.response.data === 'object' && 'message' in err.response.data
+          ? String((err.response.data as { message: string }).message)
+          : 'تعذر تسجيل الدخول. تحقق من البيانات أو اتصال الخادم.';
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -37,6 +50,11 @@ const Login = () => {
         </div>
 
         <form onSubmit={handleLogin} className="space-y-8">
+          {error && (
+            <p className="text-red-400 text-sm text-center font-medium" role="alert">
+              {error}
+            </p>
+          )}
           <div className="space-y-2">
             <label className="text-xs font-black text-luxury-accent uppercase tracking-[0.2em] mr-1">البريد الإلكتروني</label>
             <div className="relative">
@@ -44,6 +62,8 @@ const Login = () => {
               <input 
                 type="email" 
                 placeholder="name@company.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-white/[0.03] border border-white/5 rounded-[20px] py-5 pr-12 pl-4 text-white placeholder:text-white/10 focus:outline-none focus:border-luxury-primary/50 focus:bg-white/[0.05] transition-all text-sm font-medium"
                 required
               />
@@ -57,6 +77,8 @@ const Login = () => {
               <input 
                 type="password" 
                 placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="w-full bg-white/[0.03] border border-white/5 rounded-[20px] py-5 pr-12 pl-4 text-white placeholder:text-white/10 focus:outline-none focus:border-luxury-primary/50 focus:bg-white/[0.05] transition-all text-sm font-medium"
                 required
               />
