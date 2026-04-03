@@ -163,7 +163,10 @@ const AdminDashboard = () => {
                         </span>
                       </td>
                       <td className="p-6">
-                        <button className="p-2 hover:bg-white/10 rounded-lg transition-all text-slate-500 hover:text-slate-300">
+                        <button 
+                          onClick={() => alert(`تفاصيل السجل #${log.logId}:\nالحدث: ${log.action}\nالمستخدم: ${log.originUser}\nالتوقيت: ${new Date(log.timestamp).toLocaleString('ar-EG')}\nالحالة: ${log.status}`)}
+                          className="p-2 hover:bg-white/10 rounded-lg transition-all text-slate-500 hover:text-slate-300"
+                        >
                           <Settings size={16} />
                         </button>
                       </td>

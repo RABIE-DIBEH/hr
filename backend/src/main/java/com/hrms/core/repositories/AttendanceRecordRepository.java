@@ -27,4 +27,8 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
            "AND EXTRACT(MONTH FROM a.checkIn) = :month " +
            "AND EXTRACT(YEAR FROM a.checkIn) = :year")
     List<AttendanceRecord> findMonthlyRecords(Long employeeId, int month, int year);
+
+    @Query("SELECT a FROM AttendanceRecord a WHERE EXTRACT(MONTH FROM a.checkIn) = :month " +
+           "AND EXTRACT(YEAR FROM a.checkIn) = :year")
+    List<AttendanceRecord> findAllMonthlyRecords(int month, int year);
 }

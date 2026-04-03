@@ -185,6 +185,8 @@ export const clockByNfc = (cardUid: string) =>
 export const getAdminMetrics = () => api.get<SystemMetrics>('/admin/metrics');
 export const getSystemLogs = () => api.get<SystemLog[]>('/admin/logs');
 export const getNfcDevices = () => api.get<NfcDevice[]>('/admin/devices');
+export const getHrMonthlyAttendance = (month: number, year: number) => 
+  api.get<AttendanceRecord[]>(`/attendance/hr/monthly?month=${month}&year=${year}`);
 
 export const calculatePayroll = (month: number, year: number, employeeId?: number) => {
   const params = new URLSearchParams({

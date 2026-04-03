@@ -68,4 +68,13 @@ public class AttendanceController {
                 .map(record -> ResponseEntity.ok(Map.of("message", "Attendance record verified successfully.")))
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    @GetMapping("/hr/monthly")
+    public ResponseEntity<List<AttendanceRecord>> getCompanyMonthlyAttendance(
+            @RequestParam int month,
+            @RequestParam int year,
+            @AuthenticationPrincipal EmployeeUserDetails principal) {
+        
+        return ResponseEntity.ok(attendanceService.getCompanyMonthlyAttendance(month, year, principal));
+    }
 }

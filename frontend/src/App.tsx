@@ -4,6 +4,7 @@ import Home from './pages/Home';
 import EmployeeDashboard from './pages/EmployeeDashboard';
 import ManagerDashboard from './pages/ManagerDashboard';
 import HRDashboard from './pages/HRDashboard';
+import HRAttendanceGrid from './pages/HRAttendanceGrid';
 import PayrollDashboard from './pages/PayrollDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import AttendanceLogs from './pages/AttendanceLogs';
@@ -34,6 +35,11 @@ function App() {
         <Route path="/hr" element={
           <ProtectedRoute allowedRoles={['HR']}>
             <HRDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/hr/grid" element={
+          <ProtectedRoute allowedRoles={['HR']}>
+            <HRAttendanceGrid />
           </ProtectedRoute>
         } />
         <Route path="/payroll" element={

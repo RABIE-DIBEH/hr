@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   IdCard,
   CreditCard,
   RefreshCcw,
   CheckCircle2,
-  Link,
+  Link as LinkIcon,
   Search,
   UserPlus,
 } from 'lucide-react';
@@ -87,13 +88,22 @@ const HRDashboard = () => {
                 </h1>
                 <p className="text-slate-400 mt-1">إدارة البطاقات الذكية ومعالجة الرواتب الشهرية</p>
               </div>
-              <button
-                onClick={() => setShowRecruitmentForm(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-blue-600/20"
-              >
-                <UserPlus size={20} />
-                <span>طلب توظيف جديد</span>
-              </button>
+              <div className="flex gap-4">
+                <Link
+                  to="/hr/grid"
+                  className="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all border border-white/10"
+                >
+                  <Search size={20} />
+                  <span>الشبكة المركزية للحضور</span>
+                </Link>
+                <button
+                  onClick={() => setShowRecruitmentForm(true)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-blue-600/20"
+                >
+                  <UserPlus size={20} />
+                  <span>طلب توظيف جديد</span>
+                </button>
+              </div>
             </div>
           </header>
 
@@ -175,7 +185,7 @@ const HRDashboard = () => {
                 disabled={bindingStatus !== 'Idle'}
                 className="w-full bg-white text-black py-4 rounded-2xl font-bold hover:bg-slate-200 transition-all flex items-center justify-center gap-2"
               >
-                <Link size={18} />
+                <LinkIcon size={18} />
                 <span>تأكيد عملية الربط (واجهة تجريبية)</span>
               </button>
             </motion.div>
