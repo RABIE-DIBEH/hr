@@ -3,30 +3,22 @@ import { motion } from 'framer-motion';
 import {
   IdCard,
   CreditCard,
-  DollarSign,
   RefreshCcw,
   CheckCircle2,
-  AlertCircle,
   Link,
   Search,
-  Download,
   UserPlus,
 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import RecruitmentRequestForm from '../components/RecruitmentRequestForm';
-import { calculatePayroll, listEmployees, type EmployeeSummary } from '../services/api';
+import { listEmployees, type EmployeeSummary } from '../services/api';
 
 const HRDashboard = () => {
   const [bindingStatus, setBindingStatus] = useState<'Idle' | 'Reading' | 'Success'>('Idle');
-  const [payrollLoading, setPayrollLoading] = useState(false);
-  const [payrollMessage, setPayrollMessage] = useState<string | null>(null);
   const [employees, setEmployees] = useState<EmployeeSummary[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | ''>('');
   const [showRecruitmentForm, setShowRecruitmentForm] = useState(false);
-  const now = new Date();
-  const [payrollMonth, setPayrollMonth] = useState(now.getMonth() + 1);
-  const [payrollYear, setPayrollYear] = useState(now.getFullYear());
 
   useEffect(() => {
     listEmployees()
@@ -45,24 +37,7 @@ const HRDashboard = () => {
     }, 2000);
   };
 
-  const handlePayroll = async () => {
-    if (selectedEmployeeId === '') {
-      setPayrollMessage('اختر موظفاً أولاً');
-      return;
-    }
-    setPayrollLoading(true);
-    setPayrollMessage(null);
-    try {
-      const { data } = await calculatePayroll(payrollMonth, payrollYear, selectedEmployeeId);
-      setPayrollMessage(
-        `تم احتساب الراتب: ${data.netSalary} (ساعات: ${data.totalWorkHours ?? '—'}) للموظف ${selectedEmployeeId}`
-      );
-    } catch {
-      setPayrollMessage('فشل احتساب الراتب. تحقق من البيانات أو الصلاحيات.');
-    } finally {
-      setPayrollLoading(false);
-    }
-  };
+
 
   const handleRecruitmentSuccess = () => {
     setShowRecruitmentForm(false);
@@ -96,7 +71,7 @@ const HRDashboard = () => {
             <div className="mb-6 p-4 rounded-xl bg-red-500/10 text-red-200 text-sm font-medium">{loadError}</div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+          <div className="grid grid-cols-1 gap-8 mb-10">
             <motion.div
               initial={{ opacity: 1, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -175,83 +150,7 @@ const HRDashboard = () => {
               </button>
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 1, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="bg-luxury-surface rounded-[2.5rem] p-8 shadow-sm border border-white/5 flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex justify-between items-start mb-6">
-                  <div className="bg-emerald-600 w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-900/20">
-                    <DollarSign size={24} />
-                  </div>
-                  <span className="bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-widest">
-                    Payroll
-                  </span>
-                </div>
-                <h2 className="text-xl font-bold mb-2 text-white">احتساب راتب موظف</h2>
-                <p className="text-slate-400 text-sm mb-8 leading-relaxed">
-                  يُحتسب الراتب من سجل الحضور ومرتب الأساس المخزّن في قاعدة البيانات لنفس الموظف.
-                </p>
 
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div className="bg-white/5 p-4 rounded-2xl">
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">الشهر</p>
-                    <input
-                      type="number"
-                      min={1}
-                      max={12}
-                      className="w-full bg-transparent font-bold border-none focus:ring-0 text-white"
-                      value={payrollMonth}
-                      onChange={(e) => setPayrollMonth(Number(e.target.value))}
-                    />
-                  </div>
-                  <div className="bg-white/5 p-4 rounded-2xl">
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">السنة</p>
-                    <input
-                      type="number"
-                      min={2000}
-                      max={2100}
-                      className="w-full bg-transparent font-bold border-none focus:ring-0 text-white"
-                      value={payrollYear}
-                      onChange={(e) => setPayrollYear(Number(e.target.value))}
-                    />
-                  </div>
-                </div>
-
-                {payrollMessage && (
-                  <div className="p-4 rounded-2xl bg-white/5 border border-white/5 text-sm text-slate-300 mb-4">
-                    {payrollMessage}
-                  </div>
-                )}
-
-                <div className="p-5 bg-orange-500/10 border border-orange-500/10 rounded-2xl flex gap-4 items-start mb-8">
-                  <AlertCircle className="text-orange-400 shrink-0" size={20} />
-                  <p className="text-orange-200 text-xs leading-relaxed font-medium">
-                    اختر موظفاً من القائمة أعلاه ثم نفّذ الاحتسال. البيانات مأخوذة من الجداول الفعلية للنظام.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-3">
-                <button
-                  type="button"
-                  onClick={handlePayroll}
-                  disabled={payrollLoading || selectedEmployeeId === ''}
-                  className="w-full bg-emerald-600 text-white py-4 rounded-2xl font-black shadow-xl shadow-emerald-900/20 hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  {payrollLoading ? <RefreshCcw className="animate-spin" size={20} /> : <RefreshCcw size={20} />}
-                  <span>احتساب الراتب للموظف المحدد</span>
-                </button>
-                <button
-                  type="button"
-                  className="w-full bg-luxury-surface border border-white/5 text-slate-300 py-3 rounded-2xl font-bold hover:bg-white/5 transition-all flex items-center justify-center gap-2"
-                >
-                  <Download size={18} />
-                  <span>تصدير (قريباً)</span>
-                </button>
-              </div>
-            </motion.div>
           </div>
 
           <section className="bg-luxury-surface rounded-[2.5rem] shadow-sm border border-white/5 overflow-hidden">
