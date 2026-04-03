@@ -8,19 +8,10 @@ import {
   Link,
   Search,
   UserPlus,
-  HandCoins,
-  Check,
-  X,
 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import RecruitmentRequestForm from '../components/RecruitmentRequestForm';
-import {
-  listEmployees,
-  getPendingAdvanceRequests,
-  processAdvanceRequest,
-  type EmployeeSummary,
-  type AdvanceRequest,
-} from '../services/api';
+import { listEmployees, type EmployeeSummary } from '../services/api';
 
 const HRDashboard = () => {
   const [bindingStatus, setBindingStatus] = useState<'Idle' | 'Reading' | 'Success'>('Idle');
@@ -28,10 +19,6 @@ const HRDashboard = () => {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | ''>('');
   const [showRecruitmentForm, setShowRecruitmentForm] = useState(false);
-  const [pendingAdvances, setPendingAdvances] = useState<AdvanceRequest[]>([]);
-  const [processingAdvance, setProcessingAdvance] = useState<number | null>(null);
-  const [advanceNote, setAdvanceNote] = useState<string>('');
-  const [selectedAdvanceId, setSelectedAdvanceId] = useState<number | null>(null);
 
   useEffect(() => {
     listEmployees()
@@ -40,12 +27,6 @@ const HRDashboard = () => {
         setLoadError(null);
       })
       .catch(() => setLoadError('تعذر تحميل قائمة الموظفين. تأكد من صلاحيات HR والاتصال بالخادم.'));
-  }, []);
-
-  useEffect(() => {
-    getPendingAdvanceRequests()
-      .then((res) => setPendingAdvances(res.data))
-      .catch(() => setLoadError('تعذر تحميل طلبات السلفة المعلقة'));
   }, []);
 
   const handleBind = () => {
@@ -60,20 +41,6 @@ const HRDashboard = () => {
 
   const handleRecruitmentSuccess = () => {
     setShowRecruitmentForm(false);
-  };
-
-  const handleProcessAdvance = async (advanceId: number, status: 'Approved' | 'Rejected') => {
-    setProcessingAdvance(advanceId);
-    try {
-      await processAdvanceRequest(advanceId, status, advanceNote || undefined);
-      setPendingAdvances((prev) => prev.filter((a) => a.advanceId !== advanceId));
-      setAdvanceNote('');
-      setSelectedAdvanceId(null);
-    } catch {
-      setLoadError('فشل معالجة طلب السلفة');
-    } finally {
-      setProcessingAdvance(null);
-    }
   };
 
   return (
@@ -231,105 +198,6 @@ const HRDashboard = () => {
                 </tbody>
               </table>
             </div>
-          </section>
-
-          {/* Pending Advance Requests Section */}
-          <section className="mt-10 bg-luxury-surface rounded-[2.5rem] shadow-sm border border-white/5 overflow-hidden">
-            <div className="p-8 border-b border-white/5 flex items-center gap-3">
-              <div className="bg-purple-500/10 w-12 h-12 rounded-2xl flex items-center justify-center text-purple-400">
-                <HandCoins size={24} />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-white">طلبات السلفة المعلقة</h3>
-                <p className="text-slate-400 text-sm">
-                  {pendingAdvances.length} طلب في انتظار المراجعة
-                </p>
-              </div>
-            </div>
-
-            {pendingAdvances.length === 0 ? (
-              <div className="p-12 text-center text-slate-500">
-                <HandCoins size={48} className="mx-auto mb-4 opacity-50" />
-                <p>لا توجد طلبات سلفة معلقة</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-white/5">
-                {pendingAdvances.map((advance) => (
-                  <div key={advance.advanceId} className="p-6 hover:bg-white/5 transition-all">
-                    <div className="flex justify-between items-start gap-6">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-3">
-                          <h4 className="text-lg font-bold text-white">{advance.employeeName}</h4>
-                          <span className="bg-purple-500/10 text-purple-400 px-3 py-1 rounded-lg text-xs font-bold">
-                            قيد المراجعة
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                          <div>
-                            <p className="text-slate-500 text-xs mb-1">المبلغ المطلوب</p>
-                            <p className="text-purple-300 font-bold text-lg">{advance.amount} ر.س</p>
-                          </div>
-                          <div>
-                            <p className="text-slate-500 text-xs mb-1">السبب</p>
-                            <p className="text-slate-200">{advance.reason || '—'}</p>
-                          </div>
-                          <div>
-                            <p className="text-slate-500 text-xs mb-1">تاريخ الطلب</p>
-                            <p className="text-slate-200">
-                              {advance.requestedAt
-                                ? new Date(advance.requestedAt).toLocaleDateString('ar-SA')
-                                : '—'}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col gap-2 min-w-[200px]">
-                        {selectedAdvanceId === advance.advanceId ? (
-                          <div className="space-y-2">
-                            <input
-                              type="text"
-                              placeholder="ملاحظة (اختياري)"
-                              value={advanceNote}
-                              onChange={(e) => setAdvanceNote(e.target.value)}
-                              className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-slate-500 focus:ring-2 focus:ring-purple-500/20"
-                            />
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => handleProcessAdvance(advance.advanceId!, 'Approved')}
-                                disabled={processingAdvance === advance.advanceId}
-                                className="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-1 disabled:opacity-50"
-                              >
-                                <Check size={14} />
-                                موافقة
-                              </button>
-                              <button
-                                onClick={() => handleProcessAdvance(advance.advanceId!, 'Rejected')}
-                                disabled={processingAdvance === advance.advanceId}
-                                className="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-1 disabled:opacity-50"
-                              >
-                                <X size={14} />
-                                رفض
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => {
-                              setSelectedAdvanceId(advance.advanceId!);
-                              setAdvanceNote('');
-                            }}
-                            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all"
-                          >
-                            مراجعة الطلب
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </section>
         </div>
       </main>

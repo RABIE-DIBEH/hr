@@ -56,6 +56,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/leaves/manager/pending").hasAnyRole("MANAGER", "HR", "ADMIN", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/leaves/process/**").hasAnyRole("MANAGER", "HR", "ADMIN", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/attendance/report-fraud/**").hasAnyRole("MANAGER", "HR", "ADMIN", "SUPER_ADMIN")
+                        // Advance request endpoints
+                        .requestMatchers(HttpMethod.POST, "/api/advances/request").authenticated() // Any employee can request
+                        .requestMatchers(HttpMethod.GET, "/api/advances/pending").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/advances/all").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/advances/process/**").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
                         .requestMatchers("/api/**").authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

@@ -4,6 +4,7 @@ import Home from './pages/Home';
 import EmployeeDashboard from './pages/EmployeeDashboard';
 import ManagerDashboard from './pages/ManagerDashboard';
 import HRDashboard from './pages/HRDashboard';
+import PayrollDashboard from './pages/PayrollDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import AttendanceLogs from './pages/AttendanceLogs';
 import NFCClock from './pages/NFCClock';
@@ -33,6 +34,11 @@ function App() {
         <Route path="/hr" element={
           <ProtectedRoute allowedRoles={['HR']}>
             <HRDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/payroll" element={
+          <ProtectedRoute allowedRoles={['HR', 'ADMIN']}>
+            <PayrollDashboard />
           </ProtectedRoute>
         } />
         <Route path="/admin" element={
