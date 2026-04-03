@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ShieldCheck, Mail, Lock, ArrowLeft, Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { login } from '../services/api';
+import { getRole, dashboardForRole } from '../services/auth';
 import axios from 'axios';
 
 const Login = () => {
@@ -11,6 +12,9 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+  // If the user was redirected here from a protected page, go back there after login
+  const from = (location.state as { from?: { pathname: string } })?.from?.pathname;
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,7 +22,9 @@ const Login = () => {
     setError(null);
     try {
       await login(email, password);
-      navigate('/dashboard');
+      const role = getRole();
+      const destination = from ?? (role ? dashboardForRole(role) : '/dashboard');
+      navigate(destination, { replace: true });
     } catch (err) {
       const msg =
         axios.isAxiosError(err) && err.response?.data && typeof err.response.data === 'object' && 'message' in err.response.data

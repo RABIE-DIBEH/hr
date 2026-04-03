@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
 import EmployeeDashboard from './pages/EmployeeDashboard';
 import ManagerDashboard from './pages/ManagerDashboard';
@@ -14,22 +15,53 @@ function App() {
   return (
     <Router>
       <Routes>
+        {/* Public */}
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
-        
-        {/* Core HRMS Dashboards */}
-        <Route path="/dashboard" element={<EmployeeDashboard />} />
-        <Route path="/manager" element={<ManagerDashboard />} />
-        <Route path="/hr" element={<HRDashboard />} />
-        <Route path="/admin" element={<AdminDashboard />} />
-        
-        {/* Luxury Fintech View */}
-        <Route path="/finance" element={<Expenses />} />
-        <Route path="/goals" element={<Goals />} />
-        
-        {/* Features */}
-        <Route path="/attendance" element={<AttendanceLogs />} />
-        <Route path="/clock" element={<NFCClock />} />
+
+        {/* Role-specific dashboards */}
+        <Route path="/dashboard" element={
+          <ProtectedRoute allowedRoles={['EMPLOYEE']}>
+            <EmployeeDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/manager" element={
+          <ProtectedRoute allowedRoles={['MANAGER']}>
+            <ManagerDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/hr" element={
+          <ProtectedRoute allowedRoles={['HR']}>
+            <HRDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin" element={
+          <ProtectedRoute allowedRoles={['ADMIN']}>
+            <AdminDashboard />
+          </ProtectedRoute>
+        } />
+
+        {/* Shared protected pages (any authenticated user) */}
+        <Route path="/attendance" element={
+          <ProtectedRoute>
+            <AttendanceLogs />
+          </ProtectedRoute>
+        } />
+        <Route path="/clock" element={
+          <ProtectedRoute>
+            <NFCClock />
+          </ProtectedRoute>
+        } />
+        <Route path="/finance" element={
+          <ProtectedRoute>
+            <Expenses />
+          </ProtectedRoute>
+        } />
+        <Route path="/goals" element={
+          <ProtectedRoute>
+            <Goals />
+          </ProtectedRoute>
+        } />
       </Routes>
     </Router>
   );
