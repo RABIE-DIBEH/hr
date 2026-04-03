@@ -18,9 +18,12 @@ import {
   listMyTeam,
   getPendingRecruitmentRequests,
   processRecruitmentRequest,
+  getPendingLeavesForManager,
+  processLeaveRequest,
   type EmployeeProfile,
   type EmployeeSummary,
   type RecruitmentRequest,
+  type LeaveRequest,
 } from '../services/api';
 
 const ManagerDashboard = () => {
@@ -31,6 +34,12 @@ const ManagerDashboard = () => {
   const [processingRequest, setProcessingRequest] = useState<number | null>(null);
   const [processNote, setProcessNote] = useState<string>('');
   const [selectedRequestId, setSelectedRequestId] = useState<number | null>(null);
+
+  // Leave Requests state
+  const [pendingLeaves, setPendingLeaves] = useState<LeaveRequest[]>([]);
+  const [processingLeave, setProcessingLeave] = useState<number | null>(null);
+  const [leaveNote, setLeaveNote] = useState<string>('');
+  const [selectedLeaveId, setSelectedLeaveId] = useState<number | null>(null);
 
   useEffect(() => {
     getCurrentEmployee()
@@ -57,7 +66,14 @@ const ManagerDashboard = () => {
         setError(null);
       })
       .catch(() => setError('تعذر تحميل فريقك. تحقق من أن حسابك بصلاحية مدير.'));
-  }, [me?.roleName]);
+
+    // Fetch leaves
+    if (me?.employeeId) {
+      getPendingLeavesForManager(me.employeeId)
+        .then((res) => setPendingLeaves(res.data))
+        .catch(() => console.error('Failed to load leaves'));
+    }
+  }, [me?.roleName, me?.employeeId]);
 
   const stats = [
     {
@@ -96,6 +112,20 @@ const ManagerDashboard = () => {
       setError('فشل معالجة الطلب');
     } finally {
       setProcessingRequest(null);
+    }
+  };
+
+  const handleProcessLeave = async (requestId: number, status: 'APPROVED' | 'REJECTED') => {
+    setProcessingLeave(requestId);
+    try {
+      await processLeaveRequest(requestId, status, leaveNote || undefined);
+      setPendingLeaves((prev) => prev.filter((r) => r.requestId !== requestId));
+      setLeaveNote('');
+      setSelectedLeaveId(null);
+    } catch {
+      setError('فشل معالجة طلب الإجازة');
+    } finally {
+      setProcessingLeave(null);
     }
   };
 
@@ -247,6 +277,103 @@ const ManagerDashboard = () => {
                               onClick={() => {
                                 setSelectedRequestId(request.requestId!);
                                 setProcessNote('');
+                              }}
+                              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                            >
+                              مراجعة الطلب
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Pending Leave Requests Section */}
+          {(me?.roleName === 'MANAGER' || me?.roleName === 'SUPER_ADMIN') && (
+            <div className="bg-luxury-surface rounded-[2.5rem] shadow-sm border border-white/5 overflow-hidden mb-10">
+              <div className="p-8 border-b border-white/5 flex items-center gap-3">
+                <div className="bg-blue-500/10 w-12 h-12 rounded-2xl flex items-center justify-center text-blue-400">
+                  <FileText size={24} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">طلبات الإجازة للفريق</h2>
+                  <p className="text-slate-400 text-sm">
+                    {pendingLeaves.length} طلب بانتظار موافقتك
+                  </p>
+                </div>
+              </div>
+
+              {pendingLeaves.length === 0 ? (
+                <div className="p-12 text-center text-slate-500">
+                  <FileText size={48} className="mx-auto mb-4 opacity-50" />
+                  <p>لا توجد طلبات إجازة معلقة للفريق</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-white/5">
+                  {pendingLeaves.map((leave) => (
+                    <div key={leave.requestId} className="p-6 hover:bg-white/5 transition-all">
+                      <div className="flex justify-between items-start gap-6">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-3">
+                            <h3 className="text-lg font-bold text-white">{leave.employeeName ?? `الموظف #${leave.employeeId}`}</h3>
+                            <span className="bg-blue-500/10 text-blue-400 px-3 py-1 rounded-lg text-xs font-bold">
+                              {leave.leaveType === 'Hourly' ? 'إجازة ساعية' : 'إجازة مسبقة'}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div>
+                              <p className="text-slate-500 text-xs mb-1">المدة</p>
+                              <p className="text-slate-200 font-medium">{leave.duration} {leave.leaveType === 'Hourly' ? 'ساعة' : 'يوم'}</p>
+                            </div>
+                            <div>
+                              <p className="text-slate-500 text-xs mb-1">تاريخ الإجازة</p>
+                              <p className="text-slate-200 font-medium">{leave.startDate}</p>
+                            </div>
+                            {leave.reason && (
+                              <div className="col-span-2">
+                                <p className="text-slate-500 text-xs mb-1">السبب</p>
+                                <p className="text-slate-200 text-xs">{leave.reason}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col gap-2 min-w-[200px]">
+                          {selectedLeaveId === leave.requestId ? (
+                            <div className="space-y-2">
+                              <input
+                                type="text"
+                                placeholder="ملاحظة للموظف/لـHR (اختياري)"
+                                value={leaveNote}
+                                onChange={(e) => setLeaveNote(e.target.value)}
+                                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/20"
+                              />
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handleProcessLeave(leave.requestId!, 'APPROVED')}
+                                  disabled={processingLeave === leave.requestId}
+                                  className="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-1 disabled:opacity-50"
+                                >
+                                  <Check size={14} /> موافقة
+                                </button>
+                                <button
+                                  onClick={() => handleProcessLeave(leave.requestId!, 'REJECTED')}
+                                  disabled={processingLeave === leave.requestId}
+                                  className="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-1 disabled:opacity-50"
+                                >
+                                  <X size={14} /> رفض
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                setSelectedLeaveId(leave.requestId!);
+                                setLeaveNote('');
                               }}
                               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all"
                             >

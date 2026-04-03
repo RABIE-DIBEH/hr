@@ -12,12 +12,14 @@ import {
 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import AdvanceRequestForm from '../components/AdvanceRequestForm';
+import LeaveRequestForm from '../components/LeaveRequestForm';
 import { getCurrentEmployee, type EmployeeProfile } from '../services/api';
 
 const EmployeeDashboard = () => {
   const [status] = useState('Checked In');
   const [me, setMe] = useState<EmployeeProfile | null>(null);
   const [showAdvanceForm, setShowAdvanceForm] = useState(false);
+  const [showLeaveForm, setShowLeaveForm] = useState(false);
 
   useEffect(() => {
     getCurrentEmployee()
@@ -160,7 +162,7 @@ const EmployeeDashboard = () => {
                   <ArrowUpRight size={24} />
                 </div>
                 <button 
-                  onClick={() => alert("نموذج طلب الإجازة قيد التطوير...")}
+                  onClick={() => setShowLeaveForm(true)}
                   className="bg-white/20 backdrop-blur-md hover:bg-white/30 transition-all py-3 rounded-xl font-bold text-sm"
                 >
                   إنشاء طلب جديد
@@ -233,6 +235,14 @@ const EmployeeDashboard = () => {
         <AdvanceRequestForm
           onClose={() => setShowAdvanceForm(false)}
           onSuccess={handleAdvanceSuccess}
+        />
+      )}
+
+      {/* Leave Request Modal */}
+      {showLeaveForm && (
+        <LeaveRequestForm
+          onClose={() => setShowLeaveForm(false)}
+          onSuccess={() => setShowLeaveForm(false)}
         />
       )}
     </div>

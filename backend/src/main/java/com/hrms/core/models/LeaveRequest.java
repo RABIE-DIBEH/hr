@@ -24,7 +24,13 @@ public class LeaveRequest {
     @Column(nullable = false)
     private LocalDate endDate;
 
-    private String status = "Pending";
+    @Column(nullable = false)
+    private Double duration;
+
+    @Column(length = 500)
+    private String reason;
+
+    private String status = "PENDING_MANAGER";
 
     private String managerNote;
     
@@ -49,6 +55,10 @@ public class LeaveRequest {
     public void setStartDate(LocalDate date) { this.startDate = date; }
     public LocalDate getEndDate() { return endDate; }
     public void setEndDate(LocalDate date) { this.endDate = date; }
+    public Double getDuration() { return duration; }
+    public void setDuration(Double duration) { this.duration = duration; }
+    public String getReason() { return reason; }
+    public void setReason(String reason) { this.reason = reason; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
     public String getManagerNote() { return managerNote; }

@@ -13,6 +13,9 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequest, Long
     @Query("SELECT l FROM LeaveRequest l WHERE l.employee.employeeId = :employeeId ORDER BY l.requestedAt DESC")
     List<LeaveRequest> findAllByEmployeeId(Long employeeId);
 
-    @Query("SELECT l FROM LeaveRequest l WHERE l.employee.managerId = :managerId AND l.status = 'Pending'")
+    @Query("SELECT l FROM LeaveRequest l WHERE l.employee.managerId = :managerId AND l.status = 'PENDING_MANAGER'")
     List<LeaveRequest> findPendingRequestsForManager(Long managerId);
+
+    @Query("SELECT l FROM LeaveRequest l WHERE l.status = 'PENDING_HR'")
+    List<LeaveRequest> findPendingRequestsForHr();
 }

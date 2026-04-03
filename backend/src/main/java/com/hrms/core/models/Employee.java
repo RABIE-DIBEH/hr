@@ -30,6 +30,12 @@ public class Employee {
     private String status = "Active";
 
     private LocalDateTime createdAt;
+    
+    @Column(name = "leave_balance_days")
+    private Double leaveBalanceDays = 21.0;
+
+    @Column(name = "overtime_balance_hours")
+    private Double overtimeBalanceHours = 0.0;
 
     public Employee() {}
 
@@ -63,6 +69,10 @@ public class Employee {
     public void setEmail(String email) { this.email = email; }
     public String getPasswordHash() { return passwordHash; }
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
+    public Double getLeaveBalanceDays() { return leaveBalanceDays; }
+    public void setLeaveBalanceDays(Double leaveBalanceDays) { this.leaveBalanceDays = leaveBalanceDays; }
+    public Double getOvertimeBalanceHours() { return overtimeBalanceHours; }
+    public void setOvertimeBalanceHours(Double overtimeBalanceHours) { this.overtimeBalanceHours = overtimeBalanceHours; }
     public Long getTeamId() { return teamId; }
     public void setTeamId(Long teamId) { this.teamId = teamId; }
     public Long getRoleId() { return roleId; }

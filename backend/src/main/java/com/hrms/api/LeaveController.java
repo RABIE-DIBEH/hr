@@ -36,11 +36,13 @@ public class LeaveController {
         Employee employee = employeeRepository.findById(principal.getEmployeeId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
 
-        // Map DTO → entity (only the 3 allowed fields)
+        // Map DTO → entity
         LeaveRequest request = new LeaveRequest();
         request.setLeaveType(dto.leaveType());
         request.setStartDate(dto.startDate());
         request.setEndDate(dto.endDate());
+        request.setDuration(dto.duration());
+        request.setReason(dto.reason());
 
         return ResponseEntity.ok(leaveService.submitRequest(employee, request));
     }
@@ -69,6 +71,16 @@ public class LeaveController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot view pending requests for another manager");
         }
         return ResponseEntity.ok(leaveService.getPendingRequestsForManager(managerId));
+    }
+
+    @GetMapping("/hr/pending")
+    public ResponseEntity<List<LeaveRequest>> getPendingForHr(
+            @AuthenticationPrincipal EmployeeUserDetails principal) {
+
+        if (!hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+        }
+        return ResponseEntity.ok(leaveService.getPendingRequestsForHr());
     }
 
     @PutMapping("/process/{requestId}")

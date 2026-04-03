@@ -13,5 +13,10 @@ public record LeaveRequestDto(
         LocalDate startDate,
 
         @NotNull(message = "End date is required")
-        LocalDate endDate
+        LocalDate endDate,
+
+        @NotNull(message = "Duration is required")
+        Double duration,
+
+        String reason
 ) {}

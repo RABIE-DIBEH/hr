@@ -25,37 +25,37 @@ INSERT INTO teams (name) VALUES ('Sales')       ON CONFLICT (name) DO NOTHING;
 --  MANAGER     → manager@hrms.com   / Manager@1234
 --  EMPLOYEE    → employee@hrms.com  / Employee@1234
 --
-INSERT INTO employees (full_name, email, password_hash, role_id, team_id, manager_id, base_salary, status)
+INSERT INTO employees (full_name, email, password_hash, role_id, team_id, manager_id, base_salary, status, leave_balance_days, overtime_balance_hours)
 SELECT 'Dev Super Admin', 'dev@hrms.com', 'Dev@1234',
        (SELECT role_id FROM users_roles WHERE role_name = 'SUPER_ADMIN'),
-       NULL, NULL, 20000.00, 'Active'
+       NULL, NULL, 20000.00, 'Active', 30.0, 0.0
 WHERE NOT EXISTS (SELECT 1 FROM employees WHERE email = 'dev@hrms.com');
 
-INSERT INTO employees (full_name, email, password_hash, role_id, team_id, manager_id, base_salary, status)
+INSERT INTO employees (full_name, email, password_hash, role_id, team_id, manager_id, base_salary, status, leave_balance_days, overtime_balance_hours)
 SELECT 'System Admin', 'admin@hrms.com', 'Admin@1234',
        (SELECT role_id FROM users_roles WHERE role_name = 'ADMIN'),
-       NULL, NULL, 15000.00, 'Active'
+       NULL, NULL, 15000.00, 'Active', 21.0, 0.0
 WHERE NOT EXISTS (SELECT 1 FROM employees WHERE email = 'admin@hrms.com');
 
-INSERT INTO employees (full_name, email, password_hash, role_id, team_id, manager_id, base_salary, status)
+INSERT INTO employees (full_name, email, password_hash, role_id, team_id, manager_id, base_salary, status, leave_balance_days, overtime_balance_hours)
 SELECT 'Sara HR', 'hr@hrms.com', 'HR@1234',
        (SELECT role_id FROM users_roles WHERE role_name = 'HR'),
-       NULL, NULL, 9000.00, 'Active'
+       NULL, NULL, 9000.00, 'Active', 21.0, 10.0
 WHERE NOT EXISTS (SELECT 1 FROM employees WHERE email = 'hr@hrms.com');
 
-INSERT INTO employees (full_name, email, password_hash, role_id, team_id, manager_id, base_salary, status)
+INSERT INTO employees (full_name, email, password_hash, role_id, team_id, manager_id, base_salary, status, leave_balance_days, overtime_balance_hours)
 SELECT 'Khalid Manager', 'manager@hrms.com', 'Manager@1234',
        (SELECT role_id FROM users_roles WHERE role_name = 'MANAGER'),
        (SELECT team_id FROM teams WHERE name = 'Engineering'),
-       NULL, 12000.00, 'Active'
+       NULL, 12000.00, 'Active', 21.0, 10.0
 WHERE NOT EXISTS (SELECT 1 FROM employees WHERE email = 'manager@hrms.com');
 
-INSERT INTO employees (full_name, email, password_hash, role_id, team_id, manager_id, base_salary, status)
+INSERT INTO employees (full_name, email, password_hash, role_id, team_id, manager_id, base_salary, status, leave_balance_days, overtime_balance_hours)
 SELECT 'Lina Employee', 'employee@hrms.com', 'Employee@1234',
        (SELECT role_id FROM users_roles WHERE role_name = 'EMPLOYEE'),
        (SELECT team_id FROM teams WHERE name = 'Engineering'),
        (SELECT employee_id FROM employees WHERE email = 'manager@hrms.com'),
-       5000.00, 'Active'
+       5000.00, 'Active', 21.0, 10.0
 WHERE NOT EXISTS (SELECT 1 FROM employees WHERE email = 'employee@hrms.com');
 
 -- ── Sample NFC Card ──────────────────────────────────────────

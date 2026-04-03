@@ -94,6 +94,20 @@ export interface AdvanceRequest {
   hrNote?: string;
 }
 
+export interface LeaveRequest {
+  requestId?: number;
+  employeeId?: number;
+  employeeName?: string;
+  leaveType: string;
+  startDate: string;
+  endDate: string;
+  duration: number;
+  reason?: string;
+  status?: string;
+  managerNote?: string;
+  requestedAt?: string;
+}
+
 export const login = async (email: string, password: string) => {
   const { data } = await axios.post<{ token: string; message?: string }>(
     `${API_BASE_URL}/auth/login`,
@@ -119,13 +133,7 @@ export const listMyTeam = () => api.get<EmployeeSummary[]>('/employees/team');
 export const clockByNfc = (cardUid: string) =>
   api.post('/attendance/nfc-clock', { cardUid });
 
-export const submitLeaveRequest = (data: { leaveType: string; startDate: string; endDate: string }) =>
-  api.post('/leaves/request', data);
 
-export const getMyLeaveRequests = (employeeId?: number) =>
-  employeeId != null
-    ? api.get(`/leaves/my-requests?employeeId=${employeeId}`)
-    : api.get('/leaves/my-requests');
 
 export const calculatePayroll = (month: number, year: number, employeeId?: number) => {
   const params = new URLSearchParams({
@@ -181,5 +189,21 @@ export const processAdvanceRequest = (advanceId: number, status: string, note?: 
 
 export const getAdvanceRequest = (advanceId: number) =>
   api.get<AdvanceRequest>(`/advances/${advanceId}`);
+
+// Leave Request APIs
+export const submitLeaveRequest = (data: { leaveType: string; startDate: string; endDate: string; duration: number; reason?: string }) =>
+  api.post('/leaves/request', data);
+
+export const getMyLeaveRequests = () =>
+  api.get<LeaveRequest[]>('/leaves/my-requests');
+
+export const getPendingLeavesForManager = (managerId: number) =>
+  api.get<LeaveRequest[]>(`/leaves/manager/pending?managerId=${managerId}`);
+
+export const getPendingLeavesForHr = () =>
+  api.get<LeaveRequest[]>('/leaves/hr/pending');
+
+export const processLeaveRequest = (requestId: number, status: string, note?: string) =>
+  api.put(`/leaves/process/${requestId}`, { status, note });
 
 export default api;
