@@ -38,35 +38,56 @@ public class AuthService {
     @Transactional
     public Optional<String> login(String email, String password) {
         if (!StringUtils.hasText(email) || password == null || password.isEmpty()) {
+            System.out.println("[AUTH] Login rejected: blank email or password");
             return Optional.empty();
         }
 
         String trimmedEmail = email.trim();
         Optional<Employee> employeeOpt = employeeRepository.findByEmailIgnoreCase(trimmedEmail);
         if (employeeOpt.isEmpty()) {
+            System.out.println("[AUTH] Login failed: no employee found for email=" + trimmedEmail);
             return Optional.empty();
         }
 
         Employee employee = employeeOpt.get();
+        System.out.println("[AUTH] Found employee: id=" + employee.getEmployeeId()
+                + " roleId=" + employee.getRoleId()
+                + " status=" + employee.getStatus());
+
         if (!isLoginAllowed(employee)) {
+            System.out.println("[AUTH] Login rejected: roleId is null or status is not Active");
             return Optional.empty();
         }
 
         String storedHash = employee.getPasswordHash();
         if (!StringUtils.hasText(storedHash)) {
+            System.out.println("[AUTH] Login rejected: password hash is blank");
             return Optional.empty();
         }
 
-        if (passwordEncoder.matches(password, storedHash)) {
+        // Try BCrypt match first
+        boolean bcryptMatch = false;
+        try {
+            bcryptMatch = passwordEncoder.matches(password, storedHash);
+        } catch (Exception e) {
+            System.out.println("[AUTH] BCrypt match threw exception (stored value is probably plain-text): " + e.getMessage());
+        }
+
+        if (bcryptMatch) {
+            System.out.println("[AUTH] BCrypt match success");
             return buildToken(employee);
         }
 
+        // Plain-text fallback (for dev seed data — migrates to BCrypt on success)
         if (!isBcryptHash(storedHash) && storedHash.equals(password)) {
+            System.out.println("[AUTH] Plain-text match success — upgrading to BCrypt");
             employee.setPasswordHash(passwordEncoder.encode(password));
             employeeRepository.save(employee);
             return buildToken(employee);
         }
 
+        System.out.println("[AUTH] Login failed: password does not match (bcrypt=" + bcryptMatch
+                + ", isHash=" + isBcryptHash(storedHash) + ")");
         return Optional.empty();
     }
 
@@ -85,10 +106,15 @@ public class AuthService {
     private Optional<String> buildToken(Employee employee) {
         return roleRepository.findById(employee.getRoleId())
                 .map(role -> {
+                    System.out.println("[AUTH] Building token for role=" + role.getRoleName());
                     Map<String, Object> claims = new HashMap<>();
                     claims.put("role", role.getRoleName());
                     claims.put("employeeId", employee.getEmployeeId());
                     return jwtService.generateToken(employee.getEmail(), claims);
+                })
+                .or(() -> {
+                    System.out.println("[AUTH] Token build failed: role not found for roleId=" + employee.getRoleId());
+                    return Optional.empty();
                 });
     }
 }
