@@ -1,6 +1,6 @@
 import { AUTH_TOKEN_KEY } from './api';
 
-export type UserRole = 'ADMIN' | 'HR' | 'MANAGER' | 'EMPLOYEE';
+export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'HR' | 'MANAGER' | 'EMPLOYEE';
 
 interface JwtPayload {
   sub: string;        // email
@@ -50,12 +50,18 @@ export function getRole(): UserRole | null {
   return getPayload()?.role ?? null;
 }
 
+/** True if the current user is SUPER_ADMIN (full access to everything). */
+export function isSuperAdmin(): boolean {
+  return getRole() === 'SUPER_ADMIN';
+}
+
 /** Return the dashboard path for a given role. */
 export function dashboardForRole(role: UserRole): string {
   switch (role) {
-    case 'ADMIN':    return '/admin';
-    case 'HR':       return '/hr';
-    case 'MANAGER':  return '/manager';
-    case 'EMPLOYEE': return '/dashboard';
+    case 'SUPER_ADMIN': return '/admin';   // lands on admin, can navigate anywhere
+    case 'ADMIN':       return '/admin';
+    case 'HR':          return '/hr';
+    case 'MANAGER':     return '/manager';
+    case 'EMPLOYEE':    return '/dashboard';
   }
 }

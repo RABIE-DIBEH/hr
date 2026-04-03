@@ -1,10 +1,13 @@
 package com.hrms.api;
 
+import com.hrms.api.dto.LeaveDecisionRequest;
+import com.hrms.api.dto.LeaveRequestDto;
 import com.hrms.core.models.Employee;
 import com.hrms.core.models.LeaveRequest;
 import com.hrms.core.repositories.EmployeeRepository;
 import com.hrms.security.EmployeeUserDetails;
 import com.hrms.services.LeaveService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -12,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/leaves")
@@ -28,17 +30,18 @@ public class LeaveController {
 
     @PostMapping("/request")
     public ResponseEntity<LeaveRequest> requestLeave(
-            @RequestBody LeaveRequest request,
+            @Valid @RequestBody LeaveRequestDto dto,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
-
-        request.setEmployee(null);
-        request.setRequestId(null);
-        request.setStatus(null);
-        request.setManagerNote(null);
-        request.setProcessedAt(null);
 
         Employee employee = employeeRepository.findById(principal.getEmployeeId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
+
+        // Map DTO → entity (only the 3 allowed fields)
+        LeaveRequest request = new LeaveRequest();
+        request.setLeaveType(dto.leaveType());
+        request.setStartDate(dto.startDate());
+        request.setEndDate(dto.endDate());
+
         return ResponseEntity.ok(leaveService.submitRequest(employee, request));
     }
 
@@ -71,13 +74,10 @@ public class LeaveController {
     @PutMapping("/process/{requestId}")
     public ResponseEntity<LeaveRequest> processRequest(
             @PathVariable Long requestId,
-            @RequestBody Map<String, String> decision,
+            @Valid @RequestBody LeaveDecisionRequest decision,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
 
-        String status = decision.get("status");
-        String note = decision.get("note");
-
-        return leaveService.processRequest(requestId, status, note, principal)
+        return leaveService.processRequest(requestId, decision.status(), decision.note(), principal)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

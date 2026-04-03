@@ -1,7 +1,10 @@
 package com.hrms.api;
 
+import com.hrms.api.dto.FraudReportRequest;
+import com.hrms.api.dto.NfcClockRequest;
 import com.hrms.security.EmployeeUserDetails;
 import com.hrms.services.AttendanceService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -20,14 +23,10 @@ public class AttendanceController {
 
     @PostMapping("/nfc-clock")
     public ResponseEntity<Map<String, String>> clockByNfc(
-            @RequestBody Map<String, String> request,
+            @Valid @RequestBody NfcClockRequest request,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
-        String uid = request.get("cardUid");
-        if (uid == null || uid.isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Card UID is required"));
-        }
 
-        String result = attendanceService.clockByNfcUid(uid, principal);
+        String result = attendanceService.clockByNfcUid(request.cardUid(), principal);
         if (result.startsWith("Error")) {
             return ResponseEntity.status(401).body(Map.of("message", result));
         }
@@ -38,11 +37,10 @@ public class AttendanceController {
     @PutMapping("/report-fraud/{recordId}")
     public ResponseEntity<Map<String, String>> reportFraud(
             @PathVariable Long recordId,
-            @RequestBody Map<String, String> request,
+            @RequestBody FraudReportRequest request,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
 
-        String note = request.getOrDefault("note", "Suspicious activity reported by manager");
-        return attendanceService.reportFraud(recordId, note, principal)
+        return attendanceService.reportFraud(recordId, request.noteOrDefault(), principal)
                 .map(record -> ResponseEntity.ok(Map.of("message", "Fraud reported successfully for record: " + recordId)))
                 .orElse(ResponseEntity.notFound().build());
     }

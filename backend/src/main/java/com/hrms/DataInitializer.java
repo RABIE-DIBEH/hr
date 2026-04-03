@@ -34,7 +34,8 @@ public class DataInitializer implements CommandLineRunner {
             roleRepository.save(new UsersRole("HR"));
             roleRepository.save(new UsersRole("MANAGER"));
             roleRepository.save(new UsersRole("EMPLOYEE"));
-            System.out.println(">>> Roles seeded: ADMIN, HR, MANAGER, EMPLOYEE");
+            roleRepository.save(new UsersRole("SUPER_ADMIN"));
+            System.out.println(">>> Roles seeded: ADMIN, HR, MANAGER, EMPLOYEE, SUPER_ADMIN");
         }
 
         // ── Seed teams ────────────────────────────────────────────────────────
