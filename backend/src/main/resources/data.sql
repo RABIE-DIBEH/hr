@@ -65,3 +65,14 @@ SELECT 'TEST-NFC-UID-0001',
        (SELECT employee_id FROM employees WHERE email = 'employee@hrms.com'),
        'Active'
 WHERE NOT EXISTS (SELECT 1 FROM nfc_cards WHERE uid = 'TEST-NFC-UID-0001');
+
+-- ── Sample NFC Devices (Readers) ─────────────────────────────
+INSERT INTO nfc_devices (device_id, name, status, system_load) VALUES ('NFC-T1', 'Main Gate Terminal', 'Online', '12%') ON CONFLICT (device_id) DO NOTHING;
+INSERT INTO nfc_devices (device_id, name, status, system_load) VALUES ('NFC-T2', 'IT Dept Terminal', 'Offline', '0%') ON CONFLICT (device_id) DO NOTHING;
+INSERT INTO nfc_devices (device_id, name, status, system_load) VALUES ('NFC-T3', 'HR Dept Terminal', 'Online', '5%') ON CONFLICT (device_id) DO NOTHING;
+
+-- ── Sample System Logs ───────────────────────────────────────
+INSERT INTO system_logs (action, origin_user, timestamp, status) VALUES ('NFC Card Bind', 'hr@hrms.com', CURRENT_TIMESTAMP - INTERVAL '1 day', 'Success');
+INSERT INTO system_logs (action, origin_user, timestamp, status) VALUES ('Database Backup', 'System', CURRENT_TIMESTAMP - INTERVAL '2 days', 'Success');
+INSERT INTO system_logs (action, origin_user, timestamp, status) VALUES ('Failed Login', 'Unknown (IP: 192.168.1.5)', CURRENT_TIMESTAMP - INTERVAL '3 hours', 'Blocked');
+

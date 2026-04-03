@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Settings, 
@@ -12,18 +13,24 @@ import {
   Cpu
 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
+import { getAdminMetrics, getSystemLogs, getNfcDevices, type SystemMetrics, type SystemLog, type NfcDevice } from '../services/api';
 
 const AdminDashboard = () => {
-  const systemLogs = [
-    { id: 1, action: 'NFC Card Bind', user: 'HR_Manager_1', time: '10:15 AM', status: 'Success' },
-    { id: 2, action: 'Database Backup', user: 'System', time: '03:00 AM', status: 'Success' },
-    { id: 3, action: 'Failed Login', user: 'Unknown (IP: 192.168.1.5)', time: '02:45 AM', status: 'Blocked' },
-  ];
+  const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
+  const [logs, setLogs] = useState<SystemLog[]>([]);
+  const [devices, setDevices] = useState<NfcDevice[]>([]);
 
-  const devices = [
-    { id: 'NFC-T1', name: 'Main Gate Terminal', status: 'Online', load: '12%' },
-    { id: 'NFC-T2', name: 'IT Dept Terminal', status: 'Offline', load: '0%' },
-  ];
+  useEffect(() => {
+    const loadData = () => {
+      getAdminMetrics().then(res => setMetrics(res.data)).catch(console.error);
+      getSystemLogs().then(res => setLogs(res.data)).catch(console.error);
+      getNfcDevices().then(res => setDevices(res.data)).catch(console.error);
+    };
+
+    loadData();
+    const interval = setInterval(loadData, 30000); // refresh every 30s
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="flex min-h-screen bg-black font-sans" dir="rtl">
@@ -61,25 +68,25 @@ const AdminDashboard = () => {
                     <h2 className="text-xl font-bold text-white">حالة النظام المباشرة</h2>
                   </div>
                   <div className="flex items-center gap-2 text-green-400 font-bold text-xs uppercase tracking-widest">
-                    <Activity size={14} /> System Healthy
+                    <Activity size={14} /> {metrics?.status || 'System Healthy'}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
                   <div className="space-y-2">
                     <p className="text-slate-400 text-xs font-bold uppercase tracking-wider flex items-center gap-2"><Cpu size={14}/> CPU Usage</p>
-                    <p className="text-3xl font-black text-white">24%</p>
+                    <p className="text-3xl font-black text-white">{metrics ? metrics.cpu : '24%'}</p>
                     <div className="w-full bg-white/5 h-1.5 rounded-full"><div className="bg-blue-500 h-full w-[24%] rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div></div>
                   </div>
                   <div className="space-y-2">
                     <p className="text-slate-400 text-xs font-bold uppercase tracking-wider flex items-center gap-2"><HardDrive size={14}/> Storage</p>
-                    <p className="text-3xl font-black text-white">1.2<span className="text-slate-500 text-xl font-medium">TB</span></p>
+                    <p className="text-3xl font-black text-white">{metrics ? metrics.storage : '1.2GB'}</p>
                     <div className="w-full bg-white/5 h-1.5 rounded-full"><div className="bg-purple-500 h-full w-[45%] rounded-full shadow-[0_0_10px_rgba(168,85,247,0.5)]"></div></div>
                   </div>
                   <div className="space-y-2 col-span-2 md:col-span-1">
                     <p className="text-slate-400 text-xs font-bold uppercase tracking-wider flex items-center gap-2"><RefreshCw size={14}/> Uptime</p>
-                    <p className="text-3xl font-black text-white">99.9%</p>
-                    <p className="text-[10px] text-green-400 font-bold">Last reset 42 days ago</p>
+                    <p className="text-3xl font-black text-white">{metrics ? metrics.uptime : '99.9%'}</p>
+                    <p className="text-[10px] text-green-400 font-bold">Live since {metrics?.uptimeStr || '...'} ago</p>
                   </div>
                 </div>
 
@@ -105,15 +112,15 @@ const AdminDashboard = () => {
               </h3>
               <div className="space-y-4">
                 {devices.map(device => (
-                  <div key={device.id} className="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between">
+                  <div key={device.deviceId} className="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className={`w-3 h-3 rounded-full ${device.status === 'Online' ? 'bg-green-500' : 'bg-red-500 animate-pulse'}`} />
                       <div>
                         <p className="text-sm font-bold text-slate-100">{device.name}</p>
-                        <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">{device.id}</p>
+                        <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">{device.deviceId}</p>
                       </div>
                     </div>
-                    <p className="text-xs font-bold text-slate-400">{device.load}</p>
+                    <p className="text-xs font-bold text-slate-400">{device.systemLoad}</p>
                   </div>
                 ))}
               </div>
@@ -143,11 +150,11 @@ const AdminDashboard = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                  {systemLogs.map(log => (
-                    <tr key={log.id} className="hover:bg-white/5 transition-all text-sm">
+                  {logs.map(log => (
+                    <tr key={log.logId} className="hover:bg-white/5 transition-all text-sm">
                       <td className="p-6 font-bold text-slate-100 tracking-tight">{log.action}</td>
-                      <td className="p-6 text-slate-400 font-medium">{log.user}</td>
-                      <td className="p-6 text-slate-500 font-mono">{log.time}</td>
+                      <td className="p-6 text-slate-400 font-medium">{log.originUser}</td>
+                      <td className="p-6 text-slate-500 font-mono">{new Date(log.timestamp).toLocaleTimeString('ar-EG', {hour: '2-digit', minute: '2-digit'})}</td>
                       <td className="p-6">
                         <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase ${
                           log.status === 'Success' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'

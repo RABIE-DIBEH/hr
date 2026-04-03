@@ -68,6 +68,29 @@ export interface AttendanceRecord {
   managerNotes?: string;
 }
 
+export interface SystemLog {
+  logId: number;
+  action: string;
+  originUser: string;
+  timestamp: string;
+  status: string;
+}
+
+export interface NfcDevice {
+  deviceId: string;
+  name: string;
+  status: string;
+  systemLoad: string;
+}
+
+export interface SystemMetrics {
+  cpu: string;
+  storage: string;
+  uptime: string;
+  uptimeStr: string;
+  status: string;
+}
+
 export interface RecruitmentRequest {
   requestId?: number;
   fullName: string;
@@ -157,6 +180,11 @@ export const reportFraud = (recordId: number, note?: string) =>
 
 export const clockByNfc = (cardUid: string) =>
   api.post('/attendance/nfc-clock', { cardUid });
+
+// Admin API
+export const getAdminMetrics = () => api.get<SystemMetrics>('/admin/metrics');
+export const getSystemLogs = () => api.get<SystemLog[]>('/admin/logs');
+export const getNfcDevices = () => api.get<NfcDevice[]>('/admin/devices');
 
 export const calculatePayroll = (month: number, year: number, employeeId?: number) => {
   const params = new URLSearchParams({
