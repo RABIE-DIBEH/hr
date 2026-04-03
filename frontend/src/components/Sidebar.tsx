@@ -12,6 +12,27 @@ import {
   Star,
 } from 'lucide-react';
 import { AUTH_TOKEN_KEY, getCurrentEmployee, logout, type EmployeeProfile } from '../services/api';
+import { getRole, isSuperAdmin } from '../services/auth';
+import type { UserRole } from '../services/auth';
+
+interface MenuItem {
+  path: string;
+  icon: React.ComponentType<{ size?: number }>;
+  label: string;
+  /** Which roles can see this link. Empty = everyone who's logged in. */
+  roles?: UserRole[];
+}
+
+const allMenuItems: MenuItem[] = [
+  { path: '/dashboard', icon: LayoutDashboard, label: 'لوحة التحكم',     roles: ['EMPLOYEE', 'SUPER_ADMIN'] },
+  { path: '/finance',   icon: Wallet,          label: 'إدارة المرتبات',   roles: ['HR', 'ADMIN', 'SUPER_ADMIN'] },
+  { path: '/goals',     icon: Star,            label: 'النقاط' },
+  { path: '/manager',   icon: Users,           label: 'إدارة الفريق',    roles: ['MANAGER', 'SUPER_ADMIN'] },
+  { path: '/hr',        icon: ShieldCheck,     label: 'الموارد البشرية',  roles: ['HR', 'SUPER_ADMIN'] },
+  { path: '/admin',     icon: Settings,        label: 'مدير النظام',     roles: ['ADMIN', 'SUPER_ADMIN'] },
+  { path: '/clock',     icon: CreditCard,      label: 'جهاز البصمة' },
+  { path: '/attendance', icon: Clock,           label: 'سجل حضوري' },
+];
 
 const Sidebar = () => {
   const navigate = useNavigate();
@@ -26,16 +47,15 @@ const Sidebar = () => {
       .catch(() => setMe(null));
   }, []);
 
-  const menuItems = [
-    { path: '/dashboard', icon: LayoutDashboard, label: 'لوحة التحكم' },
-    { path: '/finance', icon: Wallet, label: 'إدارة المرتبات' },
-    { path: '/goals', icon: Star, label: 'النقاط' },
-    { path: '/manager', icon: Users, label: 'إدارة الفريق' },
-    { path: '/hr', icon: ShieldCheck, label: 'الموارد البشرية' },
-    { path: '/admin', icon: Settings, label: 'مدير النظام' },
-    { path: '/clock', icon: CreditCard, label: 'جهاز البصمة' },
-    { path: '/attendance', icon: Clock, label: 'سجل حضوري' },
-  ];
+  const role = getRole();
+  const superAdmin = isSuperAdmin();
+
+  // Filter menu items based on the current user's role
+  const visibleItems = allMenuItems.filter((item) => {
+    if (!item.roles || item.roles.length === 0) return true; // visible to everyone
+    if (superAdmin) return true; // SUPER_ADMIN sees everything
+    return role ? item.roles.includes(role) : false;
+  });
 
   const initials = me?.fullName
     ? me.fullName
@@ -61,7 +81,7 @@ const Sidebar = () => {
       </div>
 
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-        {menuItems.map((item) => (
+        {visibleItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
@@ -82,31 +102,25 @@ const Sidebar = () => {
 
       <div className="p-4 border-t border-white/5">
         <div className="bg-white/5 p-4 rounded-2xl mb-4">
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-full bg-luxury-primary flex items-center justify-center font-bold text-sm text-white shrink-0 shadow-lg">
               {initials}
             </div>
             <div className="min-w-0">
               <p className="text-sm font-semibold truncate text-white">{me?.fullName ?? 'جاري التحميل…'}</p>
               <p className="text-xs text-white/40 truncate">
-                {me?.teamName ?? me?.roleName ?? '—'}
+                {superAdmin ? '🔑 Super Admin' : (me?.roleName ?? '—')}
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={handleLogout}
-            className="flex items-center gap-2 text-xs text-red-400/80 hover:text-red-400 transition-colors w-full justify-start"
+            className="flex items-center gap-2 text-xs text-red-400/80 hover:text-red-400 transition-colors w-full justify-start mt-1 py-1.5 px-2 rounded-lg hover:bg-red-500/10"
           >
             <LogOut size={14} /> تسجيل الخروج
           </button>
         </div>
-        <button
-          type="button"
-          className="w-full flex items-center gap-2 text-white/40 hover:text-white text-sm p-2 justify-start"
-        >
-          <Settings size={18} /> الإعدادات
-        </button>
       </div>
     </aside>
   );
