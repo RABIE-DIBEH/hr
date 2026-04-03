@@ -73,5 +73,29 @@ CREATE TABLE Payroll (
     GeneratedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 8. Recruitment Requests Table
+CREATE TABLE Recruitment_Requests (
+    RequestId SERIAL PRIMARY KEY,
+    FullName VARCHAR(200) NOT NULL,
+    NationalId VARCHAR(50) UNIQUE NOT NULL,
+    Address VARCHAR(500) NOT NULL,
+    JobDescription VARCHAR(300) NOT NULL,
+    Department VARCHAR(100) NOT NULL,
+    Age INT NOT NULL,
+    InsuranceNumber VARCHAR(50),
+    HealthNumber VARCHAR(50),
+    MilitaryServiceStatus VARCHAR(50) NOT NULL,
+    MaritalStatus VARCHAR(20) NOT NULL,
+    NumberOfChildren INT,
+    MobileNumber VARCHAR(20) NOT NULL,
+    ExpectedSalary DECIMAL(12, 2) NOT NULL,
+    RequestedBy INT NOT NULL REFERENCES Employees(EmployeeId),
+    Status VARCHAR(20) DEFAULT 'Pending',
+    ManagerNote VARCHAR(500),
+    RequestedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ProcessedAt TIMESTAMP,
+    ApprovedBy INT REFERENCES Employees(EmployeeId)
+);
+
 -- Seed Initial Roles
 INSERT INTO Users_Roles (RoleName) VALUES ('ADMIN'), ('HR'), ('MANAGER'), ('EMPLOYEE');

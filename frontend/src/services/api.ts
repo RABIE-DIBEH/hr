@@ -44,6 +44,30 @@ export interface EmployeeSummary {
   employmentStatus: string;
 }
 
+export interface RecruitmentRequest {
+  requestId?: number;
+  fullName: string;
+  nationalId: string;
+  address: string;
+  jobDescription: string;
+  department: string;
+  age: number;
+  insuranceNumber?: string;
+  healthNumber?: string;
+  militaryServiceStatus: string;
+  maritalStatus: string;
+  numberOfChildren?: number;
+  mobileNumber: string;
+  expectedSalary: number;
+  requestedBy?: number;
+  requestedByName?: string;
+  status?: string;
+  managerNote?: string;
+  requestedAt?: string;
+  processedAt?: string;
+  approvedBy?: number;
+}
+
 export const login = async (email: string, password: string) => {
   const { data } = await axios.post<{ token: string; message?: string }>(
     `${API_BASE_URL}/auth/login`,
@@ -87,5 +111,28 @@ export const calculatePayroll = (month: number, year: number, employeeId?: numbe
   }
   return api.post(`/payroll/calculate?${params.toString()}`);
 };
+
+// Recruitment Request APIs
+export const submitRecruitmentRequest = (data: RecruitmentRequest) =>
+  api.post('/recruitment/request', data);
+
+export const getPendingRecruitmentRequests = (department?: string) =>
+  department
+    ? api.get<RecruitmentRequest[]>(`/recruitment/pending?department=${encodeURIComponent(department)}`)
+    : api.get<RecruitmentRequest[]>('/recruitment/pending');
+
+export const getMyRecruitmentRequests = () =>
+  api.get<RecruitmentRequest[]>('/recruitment/my-requests');
+
+export const getAllRecruitmentRequests = (status?: string) =>
+  status
+    ? api.get<RecruitmentRequest[]>(`/recruitment/all?status=${encodeURIComponent(status)}`)
+    : api.get<RecruitmentRequest[]>('/recruitment/all');
+
+export const processRecruitmentRequest = (requestId: number, status: string, note?: string) =>
+  api.put(`/recruitment/process/${requestId}`, { status, note });
+
+export const getRecruitmentRequest = (requestId: number) =>
+  api.get<RecruitmentRequest>(`/recruitment/${requestId}`);
 
 export default api;

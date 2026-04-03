@@ -10,8 +10,10 @@ import {
   Link,
   Search,
   Download,
+  UserPlus,
 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
+import RecruitmentRequestForm from '../components/RecruitmentRequestForm';
 import { calculatePayroll, listEmployees, type EmployeeSummary } from '../services/api';
 
 const HRDashboard = () => {
@@ -21,6 +23,7 @@ const HRDashboard = () => {
   const [employees, setEmployees] = useState<EmployeeSummary[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | ''>('');
+  const [showRecruitmentForm, setShowRecruitmentForm] = useState(false);
   const now = new Date();
   const [payrollMonth, setPayrollMonth] = useState(now.getMonth() + 1);
   const [payrollYear, setPayrollYear] = useState(now.getFullYear());
@@ -61,6 +64,10 @@ const HRDashboard = () => {
     }
   };
 
+  const handleRecruitmentSuccess = () => {
+    setShowRecruitmentForm(false);
+  };
+
   return (
     <div className="flex min-h-screen bg-black font-sans" dir="rtl">
       <Sidebar />
@@ -68,10 +75,21 @@ const HRDashboard = () => {
       <main className="mr-64 flex-1 p-8">
         <div className="max-w-7xl mx-auto">
           <header className="mb-10">
-            <h1 className="text-3xl font-black text-white tracking-tight arabic-text">
-              إدارة الموارد البشرية (HR)
-            </h1>
-            <p className="text-slate-400 mt-1">إدارة البطاقات الذكية ومعالجة الرواتب الشهرية</p>
+            <div className="flex justify-between items-start">
+              <div>
+                <h1 className="text-3xl font-black text-white tracking-tight arabic-text">
+                  إدارة الموارد البشرية (HR)
+                </h1>
+                <p className="text-slate-400 mt-1">إدارة البطاقات الذكية ومعالجة الرواتب الشهرية</p>
+              </div>
+              <button
+                onClick={() => setShowRecruitmentForm(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-blue-600/20"
+              >
+                <UserPlus size={20} />
+                <span>طلب توظيف جديد</span>
+              </button>
+            </div>
           </header>
 
           {loadError && (
@@ -284,6 +302,14 @@ const HRDashboard = () => {
           </section>
         </div>
       </main>
+
+      {/* Recruitment Request Modal */}
+      {showRecruitmentForm && (
+        <RecruitmentRequestForm
+          onClose={() => setShowRecruitmentForm(false)}
+          onSuccess={handleRecruitmentSuccess}
+        />
+      )}
     </div>
   );
 };
