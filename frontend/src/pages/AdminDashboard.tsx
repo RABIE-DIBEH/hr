@@ -13,12 +13,23 @@ import {
   Cpu
 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
-import { getAdminMetrics, getSystemLogs, getNfcDevices, type SystemMetrics, type SystemLog, type NfcDevice } from '../services/api';
+import { 
+  getAdminMetrics, 
+  getSystemLogs, 
+  getNfcDevices, 
+  clearSystemLogs, 
+  triggerBackup, 
+  addNfcDevice,
+  type SystemMetrics, 
+  type SystemLog, 
+  type NfcDevice 
+} from '../services/api';
 
 const AdminDashboard = () => {
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
   const [logs, setLogs] = useState<SystemLog[]>([]);
   const [devices, setDevices] = useState<NfcDevice[]>([]);
+  const [showRawLogs, setShowRawLogs] = useState(false);
 
   useEffect(() => {
     const loadData = () => {
@@ -32,6 +43,46 @@ const AdminDashboard = () => {
     return () => clearInterval(interval);
   }, []);
 
+  const handleBackup = async () => {
+    try {
+      const res = await triggerBackup();
+      alert(res.data.message || 'Backup executed securely');
+      getSystemLogs().then(r => setLogs(r.data)); // refresh logs
+    } catch {
+      alert('Error triggering backup');
+    }
+  };
+
+  const handleClearLogs = async () => {
+    if (!window.confirm('هل أنت متأكد من رغبتك بمسح السجلات السابقة كلياً؟')) return;
+    try {
+      await clearSystemLogs();
+      setLogs([]);
+      alert('All previous logs cleared.');
+      getSystemLogs().then(r => setLogs(r.data)); // Should bring up the "Clear Logs" record
+    } catch {
+      alert('Failed to clear logs.');
+    }
+  };
+
+  const handleAddDevice = async () => {
+    const name = window.prompt("Enter new NFC device name (e.g. Floor 2 Gate C):", "New NFC Reader");
+    if (!name) return;
+    try {
+      const payload = {
+        name: name,
+        deviceId: `NFC_${Math.floor(1000 + Math.random() * 9000)}-NEW`,
+        status: "Online",
+        systemLoad: "0%"
+      };
+      await addNfcDevice(payload);
+      getNfcDevices().then(r => setDevices(r.data));
+      getSystemLogs().then(r => setLogs(r.data));
+    } catch {
+      alert('Failed to register device.');
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-black font-sans" dir="rtl">
       <Sidebar />
@@ -44,7 +95,7 @@ const AdminDashboard = () => {
               <p className="text-slate-400 mt-1">مراقبة أداء الخوادم والأمان والنسخ الاحتياطي</p>
             </div>
             <div className="flex gap-3">
-              <button className="bg-white text-black px-5 py-3 rounded-xl font-bold flex items-center gap-2 shadow-xl shadow-white/5">
+              <button onClick={handleBackup} className="bg-white text-black px-5 py-3 rounded-xl font-bold flex items-center gap-2 shadow-xl shadow-white/5 transition-transform hover:scale-105 active:scale-95">
                 <Database size={18} />
                 <span>النسخ الاحتياطي الآن</span>
               </button>
@@ -91,10 +142,10 @@ const AdminDashboard = () => {
                 </div>
 
                 <div className="mt-12 flex gap-4">
-                  <button className="bg-white/5 hover:bg-white/10 px-6 py-3 rounded-xl font-bold transition-all border border-white/5 flex items-center gap-2 text-white">
+                  <button onClick={() => setShowRawLogs(true)} className="bg-white/5 hover:bg-white/10 px-6 py-3 rounded-xl font-bold transition-all border border-white/5 flex items-center gap-2 text-white">
                     <Terminal size={18} /> View Raw Logs
                   </button>
-                  <button className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-900/20 text-white">
+                  <button onClick={() => alert('إعدادات النظام قيد التطوير...')} className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-900/20 text-white">
                     System Settings
                   </button>
                 </div>
@@ -124,19 +175,19 @@ const AdminDashboard = () => {
                   </div>
                 ))}
               </div>
-              <button className="w-full mt-6 py-3 rounded-xl border border-white/10 text-slate-400 font-bold text-sm hover:bg-white/5 transition-all">
+              <button onClick={handleAddDevice} className="w-full mt-6 py-3 rounded-xl border border-white/10 text-slate-400 font-bold text-sm hover:bg-white/5 hover:text-white transition-all">
                 Add New Device
               </button>
             </motion.div>
           </div>
 
           {/* Audit Logs Table */}
-          <section className="bg-luxury-surface rounded-[2.5rem] shadow-sm border border-white/5 overflow-hidden">
+          <section id="audit-table" className="bg-luxury-surface rounded-[2.5rem] shadow-sm border border-white/5 overflow-hidden">
             <div className="p-8 border-b border-white/5 flex justify-between items-center">
               <h3 className="font-bold text-xl flex items-center gap-2 text-white">
                 <ShieldAlert className="text-red-500" size={24} /> سجلات الأمان (Audit Logs)
               </h3>
-              <button className="text-xs font-bold text-blue-400 uppercase tracking-widest">Clear Logs</button>
+              <button onClick={handleClearLogs} className="text-xs font-bold text-blue-400 uppercase tracking-widest hover:text-blue-300">Clear Logs</button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-right border-collapse">
@@ -178,6 +229,31 @@ const AdminDashboard = () => {
           </section>
         </div>
       </main>
+
+      {/* Raw Logs Modal */}
+      {showRawLogs && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm rtl:dir-ltr">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-[#0c0c0c] border border-white/10 rounded-2xl w-[90%] max-w-4xl max-h-[80vh] flex flex-col shadow-2xl"
+          >
+            <div className="flex justify-between items-center p-4 border-b border-white/10 bg-white/5">
+              <div className="flex items-center gap-2 text-slate-300 font-mono text-sm">
+                <Terminal size={16} /> /api/admin/logs output
+              </div>
+              <button onClick={() => setShowRawLogs(false)} className="text-white/50 hover:text-white bg-white/5 hover:bg-red-500/80 px-3 py-1 rounded-lg transition-colors">
+                أغلق
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto p-4 custom-scrollbar">
+              <pre className="text-green-500 font-mono text-xs text-left" dir="ltr">
+                {JSON.stringify(logs, null, 2)}
+              </pre>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };

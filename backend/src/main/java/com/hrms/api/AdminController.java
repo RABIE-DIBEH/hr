@@ -33,4 +33,21 @@ public class AdminController {
     public ResponseEntity<List<NfcDevice>> getDevices() {
         return ResponseEntity.ok(adminService.getAllDevices());
     }
+
+    @DeleteMapping("/logs")
+    public ResponseEntity<Map<String, String>> clearLogs() {
+        adminService.clearAllLogs("Admin");
+        return ResponseEntity.ok(Map.of("message", "Logs cleared successfully"));
+    }
+
+    @PostMapping("/devices")
+    public ResponseEntity<NfcDevice> addDevice(@RequestBody NfcDevice device) {
+        return ResponseEntity.ok(adminService.addNfcDevice(device));
+    }
+
+    @PostMapping("/backup")
+    public ResponseEntity<Map<String, String>> triggerBackup() {
+        String status = adminService.triggerBackup("Admin");
+        return ResponseEntity.ok(Map.of("message", status));
+    }
 }

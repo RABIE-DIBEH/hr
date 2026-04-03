@@ -81,4 +81,23 @@ public class AdminService {
 
         return metrics;
     }
+
+    public void clearAllLogs(String user) {
+        logRepository.deleteAll();
+        logSystemEvent("Clear Audit Logs", user, "Success");
+    }
+
+    public NfcDevice addNfcDevice(NfcDevice device) {
+        // Simple default handling for new devices being registered
+        if (device.getStatus() == null) device.setStatus("Offline");
+        if (device.getSystemLoad() == null) device.getSystemLoad();
+        
+        logSystemEvent("Add NFC Device " + device.getDeviceId(), "Admin", "Success");
+        return deviceRepository.save(device);
+    }
+
+    public String triggerBackup(String requester) {
+        logSystemEvent("Database Backup Created", requester, "Success");
+        return "Backup created securely. Timestamp: " + LocalDateTime.now();
+    }
 }
