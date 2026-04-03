@@ -9,7 +9,7 @@ import {
   LogOut,
   ShieldCheck,
   Settings,
-  Target,
+  Star,
 } from 'lucide-react';
 import { AUTH_TOKEN_KEY, getCurrentEmployee, logout, type EmployeeProfile } from '../services/api';
 
@@ -28,8 +28,8 @@ const Sidebar = () => {
 
   const menuItems = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'لوحة التحكم' },
-    { path: '/finance', icon: Wallet, label: 'المصاريف والمالية' },
-    { path: '/goals', icon: Target, label: 'الأهداف' },
+    { path: '/finance', icon: Wallet, label: 'إدارة المرتبات' },
+    { path: '/goals', icon: Star, label: 'النقاط' },
     { path: '/manager', icon: Users, label: 'إدارة الفريق' },
     { path: '/hr', icon: ShieldCheck, label: 'الموارد البشرية' },
     { path: '/admin', icon: Settings, label: 'مدير النظام' },

@@ -1,13 +1,13 @@
 import { motion } from 'framer-motion';
-import { TrendingDown, Coffee, ShoppingBag, Car, ChevronLeft } from 'lucide-react';
+import { TrendingDown, Wallet, ChevronLeft } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import BottomNav from '../components/BottomNav';
 
 const Expenses = () => {
   const transactions = [
-    { id: 1, label: 'ستاربكس كافيه', date: 'اليوم، 10:30 ص', amount: '45.00', icon: Coffee, category: 'طعام' },
-    { id: 2, label: 'أمازون للتسوق', date: 'أمس، 08:15 م', amount: '1,250.00', icon: ShoppingBag, category: 'تسوق' },
-    { id: 3, label: 'تعبئة وقود', date: '20 مايو، 02:45 م', amount: '220.00', icon: Car, category: 'نقل' },
+    { id: 1, label: 'أحمد محمد - راتب مارس', date: 'اليوم، 10:30 ص', amount: '8,500.00', icon: Wallet, category: 'رواتب' },
+    { id: 2, label: 'سارة خالد - راتب مارس', date: 'أمس، 08:15 م', amount: '9,250.00', icon: Wallet, category: 'رواتب' },
+    { id: 3, label: 'خالد عبد الله - مكافأة', date: '20 مايو، 02:45 م', amount: '1,500.00', icon: Wallet, category: 'مكافآت' },
   ];
 
   return (
@@ -15,7 +15,7 @@ const Expenses = () => {
       <Sidebar />
       <main className="mr-64 flex-1 p-8 pb-32">
         <header className="flex justify-between items-center mb-10">
-          <h1 className="text-2xl font-bold tracking-tight text-white">المصاريف</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-white">إدارة المرتبات</h1>
           <div className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center">
             <ChevronLeft size={20} className="text-white/60" />
           </div>
@@ -29,7 +29,7 @@ const Expenses = () => {
           >
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl" />
             <div className="relative z-10">
-              <p className="text-white/60 text-sm font-medium mb-2">إجمالي المصاريف هذا الشهر</p>
+              <p className="text-white/60 text-sm font-medium mb-2">إجمالي الرواتب المصروفة هذا الشهر</p>
               <h2 className="text-4xl font-black tabular-nums tracking-tighter mb-8">14,250.00 <span className="text-xl font-medium opacity-60">ر.س</span></h2>
               
               <div className="flex justify-between items-center">

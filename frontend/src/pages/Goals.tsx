@@ -1,14 +1,14 @@
 import { motion } from 'framer-motion';
-import { Plane, Car, Home, Watch, Plus } from 'lucide-react';
+import { Star, Trophy, Target, Gift, Plus } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import BottomNav from '../components/BottomNav';
 
 const Goals = () => {
   const goals = [
-    { id: 1, title: 'رحلة المالديف', target: '15,000', current: '12,500', icon: Plane, color: 'bg-blue-500' },
-    { id: 2, title: 'سيارة أحلامي', target: '250,000', current: '45,000', icon: Car, color: 'bg-luxury-primary' },
-    { id: 3, title: 'دفعة المنزل', target: '500,000', current: '150,000', icon: Home, color: 'bg-emerald-500' },
-    { id: 4, title: 'ساعة فاخرة', target: '35,000', current: '35,000', icon: Watch, color: 'bg-luxury-accent' },
+    { id: 1, title: 'الموظف المتميز', target: '1000', current: '850', icon: Trophy, color: 'bg-blue-500' },
+    { id: 2, title: 'الالتزام بالحضور', target: '500', current: '500', icon: Star, color: 'bg-luxury-primary' },
+    { id: 3, title: 'إنجاز المهام', target: '2000', current: '1200', icon: Target, color: 'bg-emerald-500' },
+    { id: 4, title: 'مكافأة ربع سنوية', target: '5000', current: '1500', icon: Gift, color: 'bg-luxury-accent' },
   ];
 
   return (
@@ -17,8 +17,8 @@ const Goals = () => {
       <main className="mr-64 flex-1 p-8 pb-32">
         <header className="flex justify-between items-center mb-10">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-white">أهدافك</h1>
-            <p className="text-white/40 text-sm mt-1">تتبع إنجازاتك المالية</p>
+            <h1 className="text-2xl font-bold tracking-tight text-white">نقاطك</h1>
+            <p className="text-white/40 text-sm mt-1">تتبع نقاطك وإنجازاتك</p>
           </div>
           <button className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-luxury-accent">
             <Plus size={24} />
@@ -49,13 +49,13 @@ const Goals = () => {
                   </div>
                   <div>
                     <h4 className="font-bold text-white">{goal.title}</h4>
-                    <p className="text-[10px] text-white/40 font-medium">الهدف: {goal.target} ر.س</p>
+                    <p className="text-[10px] text-white/40 font-medium">المطلوب: {goal.target} نقطة</p>
                   </div>
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex justify-between items-end">
-                    <p className="text-xl font-black tabular-nums text-white">{goal.current} <span className="text-[10px] opacity-40">ر.س</span></p>
+                    <p className="text-xl font-black tabular-nums text-white">{goal.current} <span className="text-[10px] opacity-40">نقطة</span></p>
                     <p className={`text-xs font-bold ${isCompleted ? 'text-luxury-accent' : 'text-white/40'}`}>
                       {Math.round(progress)}%
                     </p>

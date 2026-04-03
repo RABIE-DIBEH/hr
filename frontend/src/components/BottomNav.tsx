@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { 
   Wallet, 
-  Target, 
+  Star, 
   Plus,
   LayoutDashboard
 } from 'lucide-react';
@@ -9,9 +9,9 @@ import { motion } from 'framer-motion';
 
 const BottomNav = () => {
   const navItems = [
-    { path: '/finance', icon: Wallet, label: 'المصاريف' },
+    { path: '/finance', icon: Wallet, label: 'إدارة المرتبات' },
     { path: '/', icon: null, label: '' }, // Placeholder for FAB
-    { path: '/goals', icon: Target, label: 'الأهداف' },
+    { path: '/goals', icon: Star, label: 'النقاط' },
     { path: '/dashboard', icon: LayoutDashboard, label: 'الرئيسية' },
   ];
 
