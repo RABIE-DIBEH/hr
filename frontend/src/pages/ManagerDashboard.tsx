@@ -20,10 +20,14 @@ import {
   processRecruitmentRequest,
   getPendingLeavesForManager,
   processLeaveRequest,
+  getManagerTodayAttendance,
+  verifyAttendance,
+  reportFraud,
   type EmployeeProfile,
   type EmployeeSummary,
   type RecruitmentRequest,
   type LeaveRequest,
+  type AttendanceRecord,
 } from '../services/api';
 
 const ManagerDashboard = () => {
@@ -35,9 +39,12 @@ const ManagerDashboard = () => {
   const [processNote, setProcessNote] = useState<string>('');
   const [selectedRequestId, setSelectedRequestId] = useState<number | null>(null);
 
-  // Leave Requests state
+  // Leaves & Attendance State
   const [pendingLeaves, setPendingLeaves] = useState<LeaveRequest[]>([]);
   const [processingLeave, setProcessingLeave] = useState<number | null>(null);
+  
+  const [todayAttendance, setTodayAttendance] = useState<AttendanceRecord[]>([]);
+  const [verifyingRecord, setVerifyingRecord] = useState<number | null>(null);
   const [leaveNote, setLeaveNote] = useState<string>('');
   const [selectedLeaveId, setSelectedLeaveId] = useState<number | null>(null);
 
@@ -52,6 +59,10 @@ const ManagerDashboard = () => {
       getPendingRecruitmentRequests()
         .then((res) => setPendingRequests(res.data))
         .catch(() => setError('تعذر تحميل طلبات التوظيف المعلقة'));
+
+      getManagerTodayAttendance()
+        .then((res) => setTodayAttendance(res.data))
+        .catch(() => console.error('Failed to load attendance for today'));
     }
   }, [me?.roleName]);
 
@@ -126,6 +137,37 @@ const ManagerDashboard = () => {
       setError('فشل معالجة طلب الإجازة');
     } finally {
       setProcessingLeave(null);
+    }
+  };
+
+  const handleVerifyAttendance = async (recordId: number) => {
+    setVerifyingRecord(recordId);
+    try {
+      await verifyAttendance(recordId);
+      setTodayAttendance(prev => 
+        prev.map(r => r.recordId === recordId ? { ...r, status: 'Verified', isVerifiedByManager: true } : r)
+      );
+    } catch {
+      alert("فشل تأكيد الدوام");
+    } finally {
+      setVerifyingRecord(null);
+    }
+  };
+
+  const handleReportFraud = async (recordId: number) => {
+    const note = prompt('يرجى إدخال تفاصيل التلاعب أو ملاحظتك:');
+    if (!note) return;
+    
+    setVerifyingRecord(recordId);
+    try {
+      await reportFraud(recordId, note);
+      setTodayAttendance(prev => 
+        prev.map(r => r.recordId === recordId ? { ...r, status: 'Fraud', isVerifiedByManager: true, managerNotes: note } : r)
+      );
+    } catch {
+      alert("فشل الإبلاغ عن تلاعب");
+    } finally {
+      setVerifyingRecord(null);
     }
   };
 
@@ -291,6 +333,89 @@ const ManagerDashboard = () => {
               )}
             </div>
           )}
+
+          {/* Daily Attendance Check Section */}
+          <div className="bg-luxury-surface rounded-[2.5rem] shadow-sm border border-white/5 overflow-hidden mb-10">
+            <div className="p-8 border-b border-white/5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="bg-orange-500/10 w-12 h-12 rounded-2xl flex items-center justify-center text-orange-400">
+                  <UserCheck size={24} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">المراجعة اليومية (دوام الفريق اليوم)</h2>
+                  <p className="text-slate-400 text-sm">
+                    تحقق جسدياً من وجود موظفيك الذين سجلوا دخولهم عبر الـ NFC
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {todayAttendance.length === 0 ? (
+              <div className="p-12 text-center text-slate-500">
+                <CheckCircle2 size={48} className="mx-auto mb-4 opacity-50" />
+                <p>لا توجد سجلات دوام ناشطة للفريق اليوم حتى الآن</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-right border-collapse">
+                  <thead className="bg-white/5 text-slate-400 text-[10px] font-black uppercase tracking-[0.15em]">
+                    <tr>
+                      <th className="p-6">الموظف</th>
+                      <th className="p-6">وقت الدخول</th>
+                      <th className="p-6">وقت الخروج</th>
+                      <th className="p-6">حالة التأكيد</th>
+                      <th className="p-6">إجراءات المراجعة</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {todayAttendance.map((record) => (
+                      <tr key={record.recordId} className="hover:bg-white/5 transition-all">
+                        <td className="p-6 font-bold text-slate-100">{record.employee.fullName}</td>
+                        <td className="p-6 font-mono text-slate-400 text-sm">{new Date(record.checkIn).toLocaleTimeString('ar-EG', {hour: '2-digit', minute: '2-digit'})}</td>
+                        <td className="p-6 font-mono text-slate-400 text-sm">{record.checkOut ? new Date(record.checkOut).toLocaleTimeString('ar-EG', {hour: '2-digit', minute: '2-digit'}) : '—'}</td>
+                        <td className="p-6">
+                          {record.isVerifiedByManager ? (
+                            <span className={`px-3 py-1 rounded-lg text-xs font-bold ${
+                              record.status === 'Fraud' ? 'bg-red-500/10 text-red-500' : 'bg-green-500/10 text-green-500'
+                            }`}>
+                              {record.status === 'Fraud' ? 'مبلغ كتلاعب' : 'تم التأكيد'}
+                            </span>
+                          ) : (
+                            <span className="bg-orange-500/10 text-orange-400 px-3 py-1 rounded-lg text-xs font-bold">
+                              بانتظار مراجعتك
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-6">
+                          {!record.isVerifiedByManager && (
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleVerifyAttendance(record.recordId)}
+                                disabled={verifyingRecord === record.recordId}
+                                className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-xs font-bold transition-all disabled:opacity-50"
+                              >
+                                تأكيد التواجد
+                              </button>
+                              <button
+                                onClick={() => handleReportFraud(record.recordId)}
+                                disabled={verifyingRecord === record.recordId}
+                                className="bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white px-3 py-2 rounded-lg text-xs font-bold transition-all disabled:opacity-50"
+                              >
+                                تلاعب (لم يحضر)
+                              </button>
+                            </div>
+                          )}
+                          {record.managerNotes && (
+                            <p className="text-xs text-slate-500 mt-2">ملاحظتك: {record.managerNotes}</p>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
 
           {/* Pending Leave Requests Section */}
           {(me?.roleName === 'MANAGER' || me?.roleName === 'SUPER_ADMIN') && (

@@ -105,4 +105,33 @@ public class AttendanceService {
         attendanceRepository.save(newRecord);
         return "Checked In Successfully at " + newRecord.getCheckIn();
     }
+
+    public java.util.List<AttendanceRecord> getMyRecords(Long employeeId) {
+        return attendanceRepository.findAllByEmployee_EmployeeIdOrderByCheckInDesc(employeeId);
+    }
+
+    public java.util.List<AttendanceRecord> getTodayRecordsForManager(Long managerId) {
+        return attendanceRepository.findTodayRecordsForManager(managerId);
+    }
+
+    @Transactional
+    public Optional<AttendanceRecord> verifyRecord(Long recordId, String note, EmployeeUserDetails principal) {
+        Optional<AttendanceRecord> found = attendanceRepository.findById(recordId);
+        if (found.isEmpty()) {
+            return Optional.empty();
+        }
+        AttendanceRecord record = found.get();
+        Employee target = record.getEmployee();
+        
+        if (!canReportFraudOn(target, principal)) {
+            throw new AccessDeniedException("You cannot verify this attendance record");
+        }
+        
+        record.setStatus("Verified");
+        record.setManagerNotes(note);
+        record.setIsVerifiedByManager(true);
+        record.setVerifiedAt(LocalDateTime.now());
+        
+        return Optional.of(attendanceRepository.save(record));
+    }
 }

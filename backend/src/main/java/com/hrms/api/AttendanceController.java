@@ -10,6 +10,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import com.hrms.core.models.AttendanceRecord;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/attendance")
@@ -42,6 +44,28 @@ public class AttendanceController {
 
         return attendanceService.reportFraud(recordId, request.noteOrDefault(), principal)
                 .map(record -> ResponseEntity.ok(Map.of("message", "Fraud reported successfully for record: " + recordId)))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/my-records")
+    public ResponseEntity<List<AttendanceRecord>> getMyRecords(@AuthenticationPrincipal EmployeeUserDetails principal) {
+        return ResponseEntity.ok(attendanceService.getMyRecords(principal.getEmployeeId()));
+    }
+
+    @GetMapping("/manager/today")
+    public ResponseEntity<List<AttendanceRecord>> getManagerTodayRecords(@AuthenticationPrincipal EmployeeUserDetails principal) {
+        return ResponseEntity.ok(attendanceService.getTodayRecordsForManager(principal.getEmployeeId()));
+    }
+
+    @PutMapping("/verify/{recordId}")
+    public ResponseEntity<Map<String, String>> verifyRecord(
+            @PathVariable Long recordId,
+            @RequestBody(required = false) FraudReportRequest request,
+            @AuthenticationPrincipal EmployeeUserDetails principal) {
+
+        String note = (request != null && request.noteOrDefault() != null) ? request.noteOrDefault() : "Verified via Dashboard";
+        return attendanceService.verifyRecord(recordId, note, principal)
+                .map(record -> ResponseEntity.ok(Map.of("message", "Attendance record verified successfully.")))
                 .orElse(ResponseEntity.notFound().build());
     }
 }

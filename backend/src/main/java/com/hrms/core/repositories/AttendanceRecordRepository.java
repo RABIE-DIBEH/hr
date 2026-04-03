@@ -15,6 +15,14 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
     @Query("SELECT a FROM AttendanceRecord a WHERE a.employee.employeeId = :employeeId AND a.checkOut IS NULL")
     Optional<AttendanceRecord> findActiveSessionByEmployeeId(Long employeeId);
 
+    List<AttendanceRecord> findAllByEmployee_EmployeeIdOrderByCheckInDesc(Long employeeId);
+
+    @Query("SELECT a FROM AttendanceRecord a WHERE a.employee.managerId = :managerId " +
+           "AND EXTRACT(YEAR FROM a.checkIn) = EXTRACT(YEAR FROM CURRENT_DATE) " +
+           "AND EXTRACT(MONTH FROM a.checkIn) = EXTRACT(MONTH FROM CURRENT_DATE) " +
+           "AND EXTRACT(DAY FROM a.checkIn) = EXTRACT(DAY FROM CURRENT_DATE)")
+    List<AttendanceRecord> findTodayRecordsForManager(Long managerId);
+
     @Query("SELECT a FROM AttendanceRecord a WHERE a.employee.employeeId = :employeeId " +
            "AND EXTRACT(MONTH FROM a.checkIn) = :month " +
            "AND EXTRACT(YEAR FROM a.checkIn) = :year")

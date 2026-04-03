@@ -56,6 +56,18 @@ export interface EmployeeSummary {
   employmentStatus: string;
 }
 
+export interface AttendanceRecord {
+  recordId: number;
+  employee: EmployeeSummary;
+  checkIn: string;
+  checkOut?: string;
+  workHours?: number;
+  status: string;
+  isVerifiedByManager: boolean;
+  verifiedAt?: string;
+  managerNotes?: string;
+}
+
 export interface RecruitmentRequest {
   requestId?: number;
   fullName: string;
@@ -130,10 +142,21 @@ export const listEmployees = () => api.get<EmployeeSummary[]>('/employees');
 
 export const listMyTeam = () => api.get<EmployeeSummary[]>('/employees/team');
 
+// Attendance API
+export const getMyAttendance = () =>
+  api.get<AttendanceRecord[]>('/attendance/my-records');
+
+export const getManagerTodayAttendance = () =>
+  api.get<AttendanceRecord[]>('/attendance/manager/today');
+
+export const verifyAttendance = (recordId: number, note?: string) =>
+  api.put(`/attendance/verify/${recordId}`, { note });
+
+export const reportFraud = (recordId: number, note?: string) =>
+  api.put(`/attendance/report-fraud/${recordId}`, { note });
+
 export const clockByNfc = (cardUid: string) =>
   api.post('/attendance/nfc-clock', { cardUid });
-
-
 
 export const calculatePayroll = (month: number, year: number, employeeId?: number) => {
   const params = new URLSearchParams({
