@@ -105,7 +105,10 @@ const EmployeeDashboard = () => {
                 </div>
 
                 <div className="mt-12 flex items-center gap-4">
-                  <button className="bg-white text-black px-8 py-4 rounded-2xl font-bold hover:bg-slate-200 transition-all shadow-xl shadow-white/5">
+                  <button 
+                    onClick={() => alert("قريباً - قيد التطوير")}
+                    className="bg-white text-black px-8 py-4 rounded-2xl font-bold hover:bg-slate-200 transition-all shadow-xl shadow-white/5"
+                  >
                     عرض تفاصيل اليوم
                   </button>
                   <p className="text-sm text-slate-500 font-medium">تم التحديث منذ دقيقتين</p>
@@ -150,7 +153,10 @@ const EmployeeDashboard = () => {
                   <p className="font-bold text-lg leading-tight">طلب إجازة<br/>سريع</p>
                   <ArrowUpRight size={24} />
                 </div>
-                <button className="bg-white/20 backdrop-blur-md hover:bg-white/30 transition-all py-3 rounded-xl font-bold text-sm">
+                <button 
+                  onClick={() => alert("نموذج طلب الإجازة قيد التطوير...")}
+                  className="bg-white/20 backdrop-blur-md hover:bg-white/30 transition-all py-3 rounded-xl font-bold text-sm"
+                >
                   إنشاء طلب جديد
                 </button>
               </motion.div>

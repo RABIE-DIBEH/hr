@@ -21,6 +21,7 @@ const BottomNav = () => {
         {/* Floating Action Button */}
         <div className="absolute left-1/2 -top-12 -translate-x-1/2">
           <motion.button 
+            onClick={() => alert('قريباً...')}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             className="w-16 h-16 rounded-full gold-gradient shadow-[0_8px_30px_rgb(212,175,55,0.3)] flex items-center justify-center text-black border-4 border-luxury-bg"
