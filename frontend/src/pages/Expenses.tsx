@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion';
 import { TrendingDown, Wallet, ChevronLeft } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
-import BottomNav from '../components/BottomNav';
 
 const Expenses = () => {
   const transactions = [
@@ -76,8 +75,6 @@ const Expenses = () => {
           </section>
         </div>
       </main>
-
-      <BottomNav />
     </div>
   );
 };

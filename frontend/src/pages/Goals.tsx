@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion';
 import { Star, Trophy, Target, Gift, Plus } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
-import BottomNav from '../components/BottomNav';
 
 const Goals = () => {
   const goals = [
@@ -74,8 +73,6 @@ const Goals = () => {
           })}
         </div>
       </main>
-
-      <BottomNav />
     </div>
   );
 };
