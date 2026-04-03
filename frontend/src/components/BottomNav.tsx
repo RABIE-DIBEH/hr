@@ -1,8 +1,6 @@
-import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
   Wallet, 
-  PiggyBank, 
   Target, 
   Plus,
   LayoutDashboard
@@ -12,7 +10,6 @@ import { motion } from 'framer-motion';
 const BottomNav = () => {
   const navItems = [
     { path: '/finance', icon: Wallet, label: 'المصاريف' },
-    { path: '/savings', icon: PiggyBank, label: 'الادخار' },
     { path: '/', icon: null, label: '' }, // Placeholder for FAB
     { path: '/goals', icon: Target, label: 'الأهداف' },
     { path: '/dashboard', icon: LayoutDashboard, label: 'الرئيسية' },
@@ -38,13 +35,19 @@ const BottomNav = () => {
             <NavLink
               key={item.path}
               to={item.path}
-              className={({ isActive }) => `
-                flex flex-col items-center gap-1 transition-all duration-300
-                ${isActive ? 'text-luxury-accent' : 'text-white/40 hover:text-white/60'}
-              `}
+              className={({ isActive }) => {
+                return `
+                  flex flex-col items-center gap-1 transition-all duration-300
+                  ${isActive ? 'text-luxury-accent' : 'text-white/40 hover:text-white/60'}
+                `;
+              }}
             >
-              <item.icon size={24} strokeWidth={isActive ? 2.5 : 2} />
-              <span className="text-[10px] font-bold tracking-wide">{item.label}</span>
+              {({ isActive }) => (
+                <>
+                  <item.icon size={24} strokeWidth={isActive ? 2.5 : 2} />
+                  <span className="text-[10px] font-bold tracking-wide">{item.label}</span>
+                </>
+              )}
             </NavLink>
           );
         })}

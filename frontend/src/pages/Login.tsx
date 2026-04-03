@@ -39,7 +39,7 @@ const Login = () => {
       <motion.div 
         initial={{ opacity: 1, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-md w-full card-luxury p-10 relative z-10 bg-white/[0.02] backdrop-blur-2xl"
+        className="max-w-md w-full card-luxury p-10 relative z-10 bg-luxury-surface backdrop-blur-2xl"
       >
         <div className="text-center mb-12">
           <div className="w-20 h-20 gold-gradient rounded-[24px] flex items-center justify-center mx-auto mb-8 shadow-[0_10px_40px_rgba(212,175,55,0.3)]">
@@ -64,7 +64,7 @@ const Login = () => {
                 placeholder="name@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-white/[0.03] border border-white/5 rounded-[20px] py-5 pr-12 pl-4 text-white placeholder:text-white/10 focus:outline-none focus:border-luxury-primary/50 focus:bg-white/[0.05] transition-all text-sm font-medium"
+                className="w-full bg-white/[0.03] border border-white/5 rounded-[20px] py-5 pr-12 pl-4 text-white placeholder:text-white/30 focus:outline-none focus:border-luxury-primary/50 focus:bg-white/[0.05] transition-all text-sm font-medium"
                 required
               />
             </div>
@@ -79,7 +79,7 @@ const Login = () => {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-white/[0.03] border border-white/5 rounded-[20px] py-5 pr-12 pl-4 text-white placeholder:text-white/10 focus:outline-none focus:border-luxury-primary/50 focus:bg-white/[0.05] transition-all text-sm font-medium"
+                className="w-full bg-white/[0.03] border border-white/5 rounded-[20px] py-5 pr-12 pl-4 text-white placeholder:text-white/30 focus:outline-none focus:border-luxury-primary/50 focus:bg-white/[0.05] transition-all text-sm font-medium"
                 required
               />
             </div>

@@ -1,4 +1,3 @@
-import React from 'react';
 import { motion } from 'framer-motion';
 import { TrendingDown, Coffee, ShoppingBag, Car, ChevronLeft } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
@@ -16,7 +15,7 @@ const Expenses = () => {
       <Sidebar />
       <main className="mr-64 flex-1 p-8 pb-32">
         <header className="flex justify-between items-center mb-10">
-          <h1 className="text-2xl font-bold tracking-tight">المصاريف</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-white">المصاريف</h1>
           <div className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center">
             <ChevronLeft size={20} className="text-white/60" />
           </div>

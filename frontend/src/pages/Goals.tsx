@@ -1,4 +1,3 @@
-import React from 'react';
 import { motion } from 'framer-motion';
 import { Plane, Car, Home, Watch, Plus } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
@@ -18,7 +17,7 @@ const Goals = () => {
       <main className="mr-64 flex-1 p-8 pb-32">
         <header className="flex justify-between items-center mb-10">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">أهدافك</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-white">أهدافك</h1>
             <p className="text-white/40 text-sm mt-1">تتبع إنجازاتك المالية</p>
           </div>
           <button className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-luxury-accent">
@@ -49,14 +48,14 @@ const Goals = () => {
                     <goal.icon size={24} />
                   </div>
                   <div>
-                    <h4 className="font-bold text-white/90">{goal.title}</h4>
+                    <h4 className="font-bold text-white">{goal.title}</h4>
                     <p className="text-[10px] text-white/40 font-medium">الهدف: {goal.target} ر.س</p>
                   </div>
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex justify-between items-end">
-                    <p className="text-xl font-black tabular-nums">{goal.current} <span className="text-[10px] opacity-40">ر.س</span></p>
+                    <p className="text-xl font-black tabular-nums text-white">{goal.current} <span className="text-[10px] opacity-40">ر.س</span></p>
                     <p className={`text-xs font-bold ${isCompleted ? 'text-luxury-accent' : 'text-white/40'}`}>
                       {Math.round(progress)}%
                     </p>

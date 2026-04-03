@@ -291,10 +291,8 @@ Entity (core/models/)
 ## Known Gaps and TODOs
 
 ### Security
-- [ ] JWT secret hardcoded in `application.properties` - use environment variables
-- [ ] All endpoints currently `permitAll()` - implement role-based access control
-- [ ] No JWT validation filter in Spring Security chain
-- [ ] BCrypt defined but not enforced for legacy passwords
+- [ ] JWT secret in `application.properties` - consider using environment variables in production
+- [ ] BCrypt migration for legacy plain-text passwords is automatic on first successful login
 
 ### Testing
 - [ ] No test directories exist (`src/test/java/`, `src/test/`)
@@ -302,15 +300,13 @@ Entity (core/models/)
 - [ ] Add Vitest + React Testing Library for frontend
 
 ### Code Quality
-- [ ] No centralized error handling (`@ControllerAdvice` exists but incomplete)
 - [ ] No DTOs for request/response bodies (using `Map<String, String>`)
 - [ ] No input validation (`@Valid` + Bean Validation annotations)
 - [ ] No pagination for list endpoints
+- [x] Centralized error handling implemented (`GlobalExceptionHandler`)
 
 ### Frontend
-- [ ] No TypeScript interfaces for all API payloads
 - [ ] No error boundaries around pages
-- [ ] No API error interceptors
 - [ ] Consider React Query/SWR for data fetching
 
 ---

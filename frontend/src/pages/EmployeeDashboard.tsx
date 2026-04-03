@@ -1,11 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Clock, 
-  Calendar, 
-  CheckCircle, 
-  AlertCircle, 
-  Send, 
+import {
+  Clock,
+  Calendar,
+  CheckCircle,
+  AlertCircle,
   TrendingUp,
   ArrowUpRight,
   Monitor
@@ -14,7 +13,7 @@ import Sidebar from '../components/Sidebar';
 import { getCurrentEmployee, type EmployeeProfile } from '../services/api';
 
 const EmployeeDashboard = () => {
-  const [status, setStatus] = useState('Checked In');
+  const [status] = useState('Checked In');
   const [me, setMe] = useState<EmployeeProfile | null>(null);
 
   useEffect(() => {

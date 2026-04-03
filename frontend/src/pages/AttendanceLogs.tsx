@@ -1,6 +1,5 @@
-import React from 'react';
 import { motion } from 'framer-motion';
-import { Clock, Download, ChevronRight, CheckCircle } from 'lucide-react';
+import { Clock, Download, ChevronRight } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 
 const AttendanceLogs = () => {

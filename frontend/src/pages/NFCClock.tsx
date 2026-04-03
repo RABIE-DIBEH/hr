@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Tablet, CreditCard, CheckCircle, Wifi, ShieldCheck, AlertCircle } from 'lucide-react';
+import { useState } from 'react';
+import { CreditCard, CheckCircle, Wifi, ShieldCheck, AlertCircle } from 'lucide-react';
 import { clockByNfc } from '../services/api';
 
 const NFCClock = () => {

@@ -27,12 +27,15 @@ This repository contains the implementation of a **Human Resources Management Sy
 
 ## Development Status
 -   **Phase**: Implementation & Prototyping.
--   **Current State**: 
-    -   Backend core entities and REST APIs are scaffolded.
-    -   Web frontend UI components and dashboard layouts are in place.
-    -   Mobile application (Flutter) is initialized.
-    -   Database schema is defined.
--   **Next Steps**: 
-    -   Finalize payroll calculation logic.
-    -   Implement NFC communication protocols in the mobile app.
-    -   Full integration testing between frontend and backend.
+-   **Current State**:
+    -   **Backend**: Core REST APIs for Attendance, Leave Management, Payroll, and Employee Directory implemented using Spring Boot 3.2 and Java 21. JWT-based authentication and Role-Based Access Control (RBAC) are configured.
+    -   **Frontend**: Responsive dashboards for all four roles (Employee, Manager, HR, Admin) implemented in React. Includes pages for attendance logs, NFC clock simulation, and payroll overview.
+    -   **Database**: PostgreSQL schema defined and integrated with Spring Data JPA.
+    -   **Data Initialization**: Automatic data seeding for testing is implemented.
+
+-   **Next Steps**:
+    -   **Mobile Development**: Complete the Flutter application to provide full dashboard functionality on mobile devices.
+    -   **NFC Integration**: Implement native NFC reader support in the mobile app and explore USB NFC reader integration for the web dashboard.
+    -   **Advanced Reporting**: Add export capabilities (PDF/Excel) for HR reports and payroll summaries.
+    -   **Deployment**: Set up production environment and CI/CD pipelines.
+    -   **Unit & Integration Testing**: Increase test coverage for critical business logic in both backend and frontend.

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -9,6 +9,7 @@ import {
   LogOut,
   ShieldCheck,
   Settings,
+  Target,
 } from 'lucide-react';
 import { AUTH_TOKEN_KEY, getCurrentEmployee, logout, type EmployeeProfile } from '../services/api';
 
@@ -28,6 +29,7 @@ const Sidebar = () => {
   const menuItems = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'لوحة التحكم' },
     { path: '/finance', icon: Wallet, label: 'المصاريف والمالية' },
+    { path: '/goals', icon: Target, label: 'الأهداف' },
     { path: '/manager', icon: Users, label: 'إدارة الفريق' },
     { path: '/hr', icon: ShieldCheck, label: 'الموارد البشرية' },
     { path: '/admin', icon: Settings, label: 'مدير النظام' },
@@ -50,12 +52,12 @@ const Sidebar = () => {
   };
 
   return (
-    <aside className="fixed inset-y-0 right-0 w-64 bg-slate-900 text-white flex flex-col z-50">
-      <div className="p-6 flex items-center gap-3 border-b border-slate-800">
-        <div className="bg-blue-600 p-2 rounded-lg">
+    <aside className="fixed inset-y-0 right-0 w-64 bg-luxury-surface text-white flex flex-col z-50 border-l border-white/5">
+      <div className="p-6 flex items-center gap-3 border-b border-white/5">
+        <div className="bg-luxury-primary p-2 rounded-lg shadow-[0_0_15px_rgba(106,13,173,0.4)]">
           <ShieldCheck size={24} className="text-white" />
         </div>
-        <span className="font-bold text-xl tracking-tight">نظام الموارد</span>
+        <span className="font-bold text-xl tracking-tight text-white">نظام الموارد</span>
       </div>
 
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -67,8 +69,8 @@ const Sidebar = () => {
               flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
               ${
                 isActive
-                  ? 'bg-blue-600/10 text-blue-400 font-semibold border border-blue-600/20'
-                  : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                  ? 'bg-luxury-primary/10 text-luxury-primary font-semibold border border-luxury-primary/20 shadow-[inset_0_0_10px_rgba(106,13,173,0.05)]'
+                  : 'text-white/40 hover:bg-white/5 hover:text-white'
               }
             `}
           >
@@ -78,15 +80,15 @@ const Sidebar = () => {
         ))}
       </nav>
 
-      <div className="p-4 border-t border-slate-800">
-        <div className="bg-slate-800/50 p-4 rounded-2xl mb-4">
+      <div className="p-4 border-t border-white/5">
+        <div className="bg-white/5 p-4 rounded-2xl mb-4">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center font-bold text-sm text-white shrink-0">
+            <div className="w-10 h-10 rounded-full bg-luxury-primary flex items-center justify-center font-bold text-sm text-white shrink-0 shadow-lg">
               {initials}
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-semibold truncate">{me?.fullName ?? 'جاري التحميل…'}</p>
-              <p className="text-xs text-slate-400 truncate">
+              <p className="text-sm font-semibold truncate text-white">{me?.fullName ?? 'جاري التحميل…'}</p>
+              <p className="text-xs text-white/40 truncate">
                 {me?.teamName ?? me?.roleName ?? '—'}
               </p>
             </div>
@@ -94,14 +96,14 @@ const Sidebar = () => {
           <button
             type="button"
             onClick={handleLogout}
-            className="flex items-center gap-2 text-xs text-red-400 hover:text-red-300 transition-colors w-full justify-start"
+            className="flex items-center gap-2 text-xs text-red-400/80 hover:text-red-400 transition-colors w-full justify-start"
           >
             <LogOut size={14} /> تسجيل الخروج
           </button>
         </div>
         <button
           type="button"
-          className="w-full flex items-center gap-2 text-slate-400 hover:text-white text-sm p-2 justify-start"
+          className="w-full flex items-center gap-2 text-white/40 hover:text-white text-sm p-2 justify-start"
         >
           <Settings size={18} /> الإعدادات
         </button>
