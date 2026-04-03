@@ -97,5 +97,18 @@ CREATE TABLE Recruitment_Requests (
     ApprovedBy INT REFERENCES Employees(EmployeeId)
 );
 
+-- 9. Advance Requests Table
+CREATE TABLE Advance_Requests (
+    AdvanceId SERIAL PRIMARY KEY,
+    EmployeeId INT NOT NULL REFERENCES Employees(EmployeeId),
+    Amount DECIMAL(12, 2) NOT NULL,
+    Reason VARCHAR(500),
+    Status VARCHAR(20) DEFAULT 'Pending',
+    RequestedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ProcessedAt TIMESTAMP,
+    ProcessedBy INT REFERENCES Employees(EmployeeId),
+    HrNote VARCHAR(500)
+);
+
 -- Seed Initial Roles
 INSERT INTO Users_Roles (RoleName) VALUES ('ADMIN'), ('HR'), ('MANAGER'), ('EMPLOYEE');

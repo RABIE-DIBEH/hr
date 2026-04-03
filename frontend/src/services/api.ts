@@ -80,6 +80,20 @@ export interface RecruitmentRequest {
   approvedBy?: number;
 }
 
+export interface AdvanceRequest {
+  advanceId?: number;
+  employeeId?: number;
+  employeeName?: string;
+  amount: number;
+  reason?: string;
+  status?: string;
+  requestedAt?: string;
+  processedAt?: string;
+  processedBy?: number;
+  processedByName?: string;
+  hrNote?: string;
+}
+
 export const login = async (email: string, password: string) => {
   const { data } = await axios.post<{ token: string; message?: string }>(
     `${API_BASE_URL}/auth/login`,
@@ -146,5 +160,26 @@ export const processRecruitmentRequest = (requestId: number, status: string, not
 
 export const getRecruitmentRequest = (requestId: number) =>
   api.get<RecruitmentRequest>(`/recruitment/${requestId}`);
+
+// Advance Request APIs
+export const submitAdvanceRequest = (data: { amount: number; reason?: string }) =>
+  api.post('/advances/request', data);
+
+export const getPendingAdvanceRequests = () =>
+  api.get<AdvanceRequest[]>('/advances/pending');
+
+export const getMyAdvanceRequests = () =>
+  api.get<AdvanceRequest[]>('/advances/my-requests');
+
+export const getAllAdvanceRequests = (status?: string) =>
+  status
+    ? api.get<AdvanceRequest[]>(`/advances/all?status=${encodeURIComponent(status)}`)
+    : api.get<AdvanceRequest[]>('/advances/all');
+
+export const processAdvanceRequest = (advanceId: number, status: string, note?: string) =>
+  api.put(`/advances/process/${advanceId}`, { status, note });
+
+export const getAdvanceRequest = (advanceId: number) =>
+  api.get<AdvanceRequest>(`/advances/${advanceId}`);
 
 export default api;

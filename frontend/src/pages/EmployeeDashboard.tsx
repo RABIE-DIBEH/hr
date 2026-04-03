@@ -7,14 +7,17 @@ import {
   AlertCircle,
   TrendingUp,
   ArrowUpRight,
-  Monitor
+  Monitor,
+  HandCoins,
 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
+import AdvanceRequestForm from '../components/AdvanceRequestForm';
 import { getCurrentEmployee, type EmployeeProfile } from '../services/api';
 
 const EmployeeDashboard = () => {
   const [status] = useState('Checked In');
   const [me, setMe] = useState<EmployeeProfile | null>(null);
+  const [showAdvanceForm, setShowAdvanceForm] = useState(false);
 
   useEffect(() => {
     getCurrentEmployee()
@@ -33,6 +36,10 @@ const EmployeeDashboard = () => {
   const item = {
     hidden: { y: 20, opacity: 1 },
     show: { y: 0, opacity: 1 }
+  };
+
+  const handleAdvanceSuccess = () => {
+    setShowAdvanceForm(false);
   };
 
   return (
@@ -147,6 +154,23 @@ const EmployeeDashboard = () => {
                   إنشاء طلب جديد
                 </button>
               </motion.div>
+
+              {/* Request Advance Card */}
+              <motion.div variants={item} className="bg-gradient-to-br from-purple-600 to-purple-700 p-8 rounded-[2rem] shadow-xl shadow-purple-900/20 text-white flex flex-col justify-between aspect-square lg:aspect-auto h-48">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-bold text-lg leading-tight">طلب سلفة<br/>مالية</p>
+                    <p className="text-purple-200 text-xs mt-1">خصم من الراتب الشهري</p>
+                  </div>
+                  <HandCoins size={24} className="text-purple-200" />
+                </div>
+                <button
+                  onClick={() => setShowAdvanceForm(true)}
+                  className="bg-white/20 backdrop-blur-md hover:bg-white/30 transition-all py-3 rounded-xl font-bold text-sm"
+                >
+                  تقديم الطلب
+                </button>
+              </motion.div>
             </div>
           </motion.div>
 
@@ -186,6 +210,14 @@ const EmployeeDashboard = () => {
           </motion.section>
         </div>
       </main>
+
+      {/* Advance Request Modal */}
+      {showAdvanceForm && (
+        <AdvanceRequestForm
+          onClose={() => setShowAdvanceForm(false)}
+          onSuccess={handleAdvanceSuccess}
+        />
+      )}
     </div>
   );
 };
