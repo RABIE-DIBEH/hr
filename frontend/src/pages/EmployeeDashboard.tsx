@@ -13,19 +13,31 @@ import {
 import Sidebar from '../components/Sidebar';
 import AdvanceRequestForm from '../components/AdvanceRequestForm';
 import LeaveRequestForm from '../components/LeaveRequestForm';
-import { getCurrentEmployee, type EmployeeProfile } from '../services/api';
+import { getCurrentEmployee, getMyAdvanceRequests, type EmployeeProfile, type AdvanceRequest } from '../services/api';
 
 const EmployeeDashboard = () => {
   const [status] = useState('Checked In');
   const [me, setMe] = useState<EmployeeProfile | null>(null);
   const [showAdvanceForm, setShowAdvanceForm] = useState(false);
   const [showLeaveForm, setShowLeaveForm] = useState(false);
+  const [myAdvances, setMyAdvances] = useState<AdvanceRequest[]>([]);
+  const [loadingAdvances, setLoadingAdvances] = useState(false);
 
   useEffect(() => {
     getCurrentEmployee()
       .then((res) => setMe(res.data))
       .catch(() => setMe(null));
   }, []);
+
+  useEffect(() => {
+    if (me) {
+      setLoadingAdvances(true);
+      getMyAdvanceRequests()
+        .then((res) => setMyAdvances(res.data))
+        .catch(() => {})
+        .finally(() => setLoadingAdvances(false));
+    }
+  }, [me, showAdvanceForm]);
 
   const container = {
     hidden: { opacity: 1 },
@@ -187,6 +199,85 @@ const EmployeeDashboard = () => {
               </motion.div>
             </div>
           </motion.div>
+
+          {/* My Advances Section */}
+          <motion.section
+            initial={{ opacity: 1, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="mt-12 bg-luxury-surface rounded-[2rem] p-8 shadow-sm border border-white/5"
+          >
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-xl font-bold text-white tracking-tight">سلفي المالية</h2>
+              <button
+                onClick={() => setShowAdvanceForm(true)}
+                className="text-purple-400 text-sm font-bold hover:underline"
+              >
+                طلب سلفة جديدة
+              </button>
+            </div>
+
+            {loadingAdvances ? (
+              <div className="p-8 text-center text-slate-500">
+                <p>جاري تحميل السلف...</p>
+              </div>
+            ) : myAdvances.length === 0 ? (
+              <div className="p-8 text-center text-slate-500">
+                <HandCoins size={40} className="mx-auto mb-3 opacity-40 text-slate-600" />
+                <p className="font-medium">لا توجد سلف مالية حالياً</p>
+                <p className="text-sm mt-1 text-slate-600">يمكنك طلب سلفة جديدة من الزر أعلاه</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-right border-collapse">
+                  <thead className="bg-white/5 text-slate-400 text-[10px] font-black uppercase tracking-[0.15em]">
+                    <tr>
+                      <th className="p-4">المبلغ</th>
+                      <th className="p-4">السبب</th>
+                      <th className="p-4">الحالة</th>
+                      <th className="p-4">تاريخ الطلب</th>
+                      <th className="p-4">ملاحظات</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {myAdvances.map((adv) => (
+                      <tr key={adv.advanceId} className="hover:bg-white/5 transition-all">
+                        <td className="p-4 font-bold text-purple-300">{adv.amount?.toLocaleString() || 0} ر.س</td>
+                        <td className="p-4 text-slate-300 text-sm">{adv.reason || '—'}</td>
+                        <td className="p-4">
+                          <span
+                            className={`px-3 py-1 rounded-lg text-xs font-bold ${
+                              adv.status === 'Approved'
+                                ? 'bg-green-500/10 text-green-400'
+                                : adv.status === 'Rejected'
+                                ? 'bg-red-500/10 text-red-400'
+                                : adv.status === 'Delivered'
+                                ? 'bg-blue-500/10 text-blue-400'
+                                : 'bg-orange-500/10 text-orange-400'
+                            }`}
+                          >
+                            {adv.status === 'Approved'
+                              ? 'موافق'
+                              : adv.status === 'Rejected'
+                              ? 'مرفوض'
+                              : adv.status === 'Delivered'
+                              ? 'تم التسليم'
+                              : 'معلق'}
+                          </span>
+                        </td>
+                        <td className="p-4 text-slate-400 text-sm">
+                          {adv.requestedAt
+                            ? new Date(adv.requestedAt).toLocaleDateString('ar-SA')
+                            : '—'}
+                        </td>
+                        <td className="p-4 text-slate-500 text-sm">{adv.hrNote || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </motion.section>
 
           {/* Activity Table Mockup */}
           <motion.section 

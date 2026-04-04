@@ -34,15 +34,19 @@ const PayrollDashboard = () => {
       .catch(() => setMe(null));
   }, []);
 
+  const fetchData = () => {
+    getPendingAdvanceRequests()
+      .then((res) => setPendingAdvances(res.data))
+      .catch(() => setLoadError('تعذر تحميل طلبات السلفة المعلقة'));
+
+    getAllAdvanceRequests()
+      .then((res) => setAllAdvances(res.data))
+      .catch(() => setLoadError('تعذر تحميل جميع طلبات السلفة'));
+  };
+
   useEffect(() => {
     if (me?.roleName === 'HR' || me?.roleName === 'ADMIN') {
-      getPendingAdvanceRequests()
-        .then((res) => setPendingAdvances(res.data))
-        .catch(() => setLoadError('تعذر تحميل طلبات السلفة المعلقة'));
-
-      getAllAdvanceRequests()
-        .then((res) => setAllAdvances(res.data))
-        .catch(() => setLoadError('تعذر تحميل جميع طلبات السلفة'));
+      fetchData();
     }
   }, [me?.roleName]);
 
@@ -50,16 +54,9 @@ const PayrollDashboard = () => {
     setProcessingAdvance(advanceId);
     try {
       await processAdvanceRequest(advanceId, status, advanceNote || undefined);
-      setPendingAdvances((prev) => prev.filter((a) => a.advanceId !== advanceId));
-      setAllAdvances((prev) =>
-        prev.map((a) =>
-          a.advanceId === advanceId
-            ? { ...a, status, hrNote: advanceNote || undefined, processedAt: new Date().toISOString() }
-            : a
-        )
-      );
       setAdvanceNote('');
       setSelectedAdvanceId(null);
+      fetchData();
     } catch {
       setLoadError('فشل معالجة طلب السلفة');
     } finally {

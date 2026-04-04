@@ -21,6 +21,9 @@
 3. **Payroll** - Automated salary calculation based on attendance hours
 4. **Role-Based Dashboards** - Separate views for Employee, Manager, HR, and Admin
 5. **Team Monitoring** - Managers can verify team attendance and report fraud
+6. **Recruitment Requests** - HR-managed hiring requests workflow
+7. **Advance Requests** - Employee salary advance requests
+8. **Inbox Messaging** - Role-targeted internal announcements
 
 ---
 
@@ -30,12 +33,13 @@
 project-root/
 ├── backend/                    # Spring Boot application
 │   ├── src/main/java/com/hrms/
-│   │   ├── api/               # REST controllers + SecurityConfig
+│   │   ├── api/               # REST controllers + SecurityConfig + DTOs
 │   │   ├── core/
 │   │   │   ├── models/        # JPA entities
 │   │   │   └── repositories/  # Spring Data JPA interfaces
 │   │   ├── services/          # Business logic
 │   │   ├── security/          # JWT filter, auth configuration
+│   │   ├── DataInitializer.java
 │   │   └── HrmsApplication.java
 │   ├── pom.xml
 │   └── src/main/resources/
@@ -50,7 +54,8 @@ project-root/
 │   └── vite.config.ts
 ├── mobile/                     # Flutter app (scaffolded)
 ├── database/
-│   └── schema.sql             # PostgreSQL DDL
+│   ├── schema.sql             # PostgreSQL DDL
+│   └── seed_test_data.sql     # Test data with default users
 └── docs/
     ├── AGENTS.md              # Development guidelines
     ├── API_DOCS.md            # API endpoint reference
@@ -72,20 +77,25 @@ project-root/
 
 1. Create PostgreSQL database:
 ```sql
-CREATE DATABASE hrms;
+CREATE DATABASE hrms_db;
 ```
 
 2. Run the schema:
 ```bash
-psql -U postgres -d hrms -f database/schema.sql
+psql -U postgres -d hrms_db -f database/schema.sql
 ```
 
-3. Configure `backend/src/main/resources/application.properties`:
-```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/hrms
-spring.datasource.username=postgres
-spring.datasource.password=your_password
-jwt.secret=your_secret_key_here
+3. Seed test data (optional, for development):
+```bash
+psql -U postgres -d hrms_db -f database/seed_test_data.sql
+```
+
+4. Configure `backend/.env.local` (copy from `.env.example`):
+```env
+DB_USERNAME=postgres
+DB_PASSWORD=admin123
+JWT_SECRET=ChangeThisToAVeryLongSecretKeyAtLeast32CharsForHS256!!
+ENVIRONMENT=development
 ```
 
 ### Backend
@@ -129,13 +139,20 @@ npm run preview
 
 ### Default Test Credentials
 
-After running the schema, roles are seeded. Create employees via the application or add test data:
+After running the seed data, use these accounts:
 
-```sql
--- Example test employee (password should be BCrypt hashed)
-INSERT INTO Employees (full_name, email, password_hash, role_id, status)
-VALUES ('Test User', 'test@company.com', '$2a$10$...', 4, 'Active');
-```
+| Role | Email | Password | Dashboard |
+|------|-------|----------|-----------|
+| **ADMIN** | `admin@hrms.com` | `Admin@1234` | `/admin` |
+| **HR** | `hr@hrms.com` | `HR@1234` | `/hr` |
+| **MANAGER** | `manager@hrms.com` | `Manager@1234` | `/manager` |
+| **EMPLOYEE** | `employee@hrms.com` | `Employee@1234` | `/dashboard` |
+
+> **Note:** Passwords are stored as plain-text in the seed file. The backend automatically upgrades them to BCrypt on the **first successful login**.
+
+### Sample NFC Card
+- **Card UID:** `TEST-NFC-UID-0001`
+- Use this UID in the `/clock` page for testing
 
 ---
 
@@ -210,6 +227,16 @@ public class Employee {
     // ... fields, constructors, builder
 }
 ```
+
+**Error Handling**
+- `GlobalExceptionHandler.java` with `@ControllerAdvice` handles:
+  - `ValidationException` → 400 with field errors
+  - `ResponseStatusException` → explicit HTTP status from service logic
+  - `AccessDeniedException` → 403 (security check failures)
+
+**Validation**
+- `@Valid` + Bean Validation annotations on DTOs (`@NotBlank`, `@NotNull`, `@Email`)
+- Examples: `LoginRequest.java`, `LeaveRequestDto.java`, `NfcClockRequest.java`
 
 ### Frontend (TypeScript/React)
 
@@ -348,7 +375,7 @@ rm -rf node_modules package-lock.json && npm install
 ### Database
 ```bash
 # Connect to PostgreSQL
-psql -U postgres -d hrms
+psql -U postgres -d hrms_db
 
 # View all employees
 SELECT * FROM Employees;

@@ -113,7 +113,7 @@ public class AdvanceRequestController {
         if (status != null && !status.trim().isEmpty()) {
             requests = advanceRequestService.getRequestsByStatus(status);
         } else {
-            requests = advanceRequestService.getPendingRequests();
+            requests = advanceRequestService.getAllRequests();
         }
 
         List<AdvanceRequestResponse> responses = requests.stream()

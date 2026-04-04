@@ -141,6 +141,13 @@ public class AdvanceRequestService {
     }
 
     /**
+     * Get all advance requests regardless of status
+     */
+    public List<AdvanceRequest> getAllRequests() {
+        return advanceRequestRepository.findAllRequests();
+    }
+
+    /**
      * Get all requests with a specific status
      */
     public List<AdvanceRequest> getRequestsByStatus(String status) {

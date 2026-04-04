@@ -24,6 +24,12 @@ public interface AdvanceRequestRepository extends JpaRepository<AdvanceRequest, 
     List<AdvanceRequest> findByEmployeeId(@Param("employeeId") Long employeeId);
 
     /**
+     * Find all advance requests regardless of status
+     */
+    @Query("SELECT a FROM AdvanceRequest a ORDER BY a.requestedAt DESC")
+    List<AdvanceRequest> findAllRequests();
+
+    /**
      * Find all requests with a specific status
      */
     @Query("SELECT a FROM AdvanceRequest a WHERE a.status = :status ORDER BY a.requestedAt DESC")
