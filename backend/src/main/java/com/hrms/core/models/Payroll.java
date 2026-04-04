@@ -24,6 +24,9 @@ public class Payroll {
     @Column(precision = 10, scale = 2)
     private BigDecimal overtimeHours;
 
+    @Column(precision = 12, scale = 2)
+    private BigDecimal advanceDeductions;
+
     @Column(precision = 10, scale = 2)
     private BigDecimal deductions;
 
@@ -65,6 +68,8 @@ public class Payroll {
     public void setNetSalary(BigDecimal salary) { this.netSalary = salary; }
     public BigDecimal getOvertimeHours() { return overtimeHours; }
     public void setOvertimeHours(BigDecimal hours) { this.overtimeHours = hours; }
+    public BigDecimal getAdvanceDeductions() { return advanceDeductions; }
+    public void setAdvanceDeductions(BigDecimal advanceDeductions) { this.advanceDeductions = advanceDeductions; }
     public BigDecimal getDeductions() { return deductions; }
     public void setDeductions(BigDecimal deductions) { this.deductions = deductions; }
 

@@ -12,10 +12,22 @@ public class EmployeeUserDetails implements UserDetails {
 
     private final Employee employee;
     private final List<GrantedAuthority> authorities;
+    private final String roleName;
+    private final String teamName;
 
-    public EmployeeUserDetails(Employee employee, String roleName) {
+    public EmployeeUserDetails(Employee employee, String roleName, String teamName) {
         this.employee = employee;
+        this.roleName = roleName;
+        this.teamName = teamName;
         this.authorities = List.of(new SimpleGrantedAuthority("ROLE_" + roleName));
+    }
+
+    public String getRoleName() {
+        return roleName;
+    }
+
+    public String getTeamName() {
+        return teamName;
     }
 
     public Long getEmployeeId() {

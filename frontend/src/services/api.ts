@@ -94,6 +94,7 @@ export interface SystemMetrics {
 export interface RecruitmentRequest {
   requestId?: number;
   fullName: string;
+  email: string;
   nationalId: string;
   address: string;
   jobDescription: string;
@@ -126,6 +127,7 @@ export interface AdvanceRequest {
   processedAt?: string;
   processedBy?: number;
   processedByName?: string;
+  paidAt?: string;
   hrNote?: string;
 }
 
@@ -219,8 +221,8 @@ export const getAllRecruitmentRequests = (status?: string) =>
     ? api.get<RecruitmentRequest[]>(`/recruitment/all?status=${encodeURIComponent(status)}`)
     : api.get<RecruitmentRequest[]>('/recruitment/all');
 
-export const processRecruitmentRequest = (requestId: number, status: string, note?: string) =>
-  api.put(`/recruitment/process/${requestId}`, { status, note });
+export const processRecruitmentRequest = (requestId: number, status: string, note?: string, salary?: number) =>
+  api.put(`/recruitment/process/${requestId}`, { status, note, salary });
 
 export const getRecruitmentRequest = (requestId: number) =>
   api.get<RecruitmentRequest>(`/recruitment/${requestId}`);
@@ -242,6 +244,12 @@ export const getAllAdvanceRequests = (status?: string) =>
 
 export const processAdvanceRequest = (advanceId: number, status: string, note?: string) =>
   api.put(`/advances/process/${advanceId}`, { status, note });
+
+export const deliverAdvanceRequest = (advanceId: number) =>
+  api.put(`/advances/deliver/${advanceId}`);
+
+export const getPaidAdvanceRequests = () =>
+  api.get<AdvanceRequest[]>('/advances/all?status=Delivered');
 
 export const getAdvanceRequest = (advanceId: number) =>
   api.get<AdvanceRequest>(`/advances/${advanceId}`);

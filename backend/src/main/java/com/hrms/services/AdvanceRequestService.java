@@ -64,6 +64,31 @@ public class AdvanceRequestService {
     }
 
     /**
+     * Mark an approved advance request as delivered / paid
+     */
+    @Transactional
+    public AdvanceRequest deliverAdvanceRequest(Long advanceId, Long processorId) {
+        AdvanceRequest request = advanceRequestRepository.findById(advanceId)
+                .orElseThrow(() -> new IllegalArgumentException("Advance request not found"));
+
+        if (!"Approved".equals(request.getStatus())) {
+            throw new IllegalStateException("Only approved advance requests can be marked as delivered");
+        }
+
+        if (request.isPaid()) {
+            throw new IllegalStateException("Advance request has already been marked as delivered");
+        }
+
+        request.setPaid(true);
+        request.setPaidAt(LocalDateTime.now());
+        request.setStatus("Delivered");
+        request.setProcessedBy(processorId);
+        request.setProcessedAt(LocalDateTime.now());
+
+        return advanceRequestRepository.save(request);
+    }
+
+    /**
      * Get all pending advance requests for HR/Payroll review
      */
     public List<AdvanceRequest> getPendingRequests() {
@@ -96,5 +121,22 @@ public class AdvanceRequestService {
      */
     public BigDecimal getPendingAmountForEmployee(Long employeeId) {
         return advanceRequestRepository.sumPendingAmountByEmployee(employeeId);
+    }
+
+    /**
+     * Get total paid advances available for payroll deduction
+     */
+    public BigDecimal getUndeductedDeliveredAmountForEmployee(Long employeeId) {
+        return advanceRequestRepository.sumUndeductedDeliveredAmountByEmployee(employeeId);
+    }
+
+    /**
+     * Mark delivered advances as deducted after payroll creation
+     */
+    @Transactional
+    public void markDeliveredAdvancesAsDeducted(Long employeeId) {
+        List<AdvanceRequest> advances = advanceRequestRepository.findUndeductedDeliveredAdvancesByEmployee(employeeId);
+        advances.forEach(request -> request.setDeducted(true));
+        advanceRequestRepository.saveAll(advances);
     }
 }

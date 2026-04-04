@@ -5,6 +5,7 @@ import com.hrms.core.models.Employee;
 import com.hrms.core.models.Payroll;
 import com.hrms.core.repositories.AttendanceRecordRepository;
 import com.hrms.core.repositories.PayrollRepository;
+import com.hrms.services.AdvanceRequestService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,10 +18,14 @@ public class PayrollService {
 
     private final AttendanceRecordRepository attendanceRepository;
     private final PayrollRepository payrollRepository;
+    private final AdvanceRequestService advanceRequestService;
 
-    public PayrollService(AttendanceRecordRepository attendanceRepository, PayrollRepository payrollRepository) {
+    public PayrollService(AttendanceRecordRepository attendanceRepository,
+                          PayrollRepository payrollRepository,
+                          AdvanceRequestService advanceRequestService) {
         this.attendanceRepository = attendanceRepository;
         this.payrollRepository = payrollRepository;
+        this.advanceRequestService = advanceRequestService;
     }
 
     @Transactional
@@ -45,11 +50,18 @@ public class PayrollService {
                         .year(year)
                         .build());
 
-        payroll.setTotalWorkHours(totalHours);
-        payroll.setNetSalary(netSalary);
-        payroll.setOvertimeHours(totalHours.subtract(standardHours).max(BigDecimal.ZERO));
-        payroll.setDeductions(BigDecimal.ZERO); 
+        BigDecimal advanceDeductions = advanceRequestService.getUndeductedDeliveredAmountForEmployee(employee.getEmployeeId());
+        BigDecimal payrollDeductions = advanceDeductions.max(BigDecimal.ZERO);
+        BigDecimal netSalaryWithDeductions = netSalary.subtract(payrollDeductions).setScale(2, RoundingMode.HALF_UP);
 
-        return payrollRepository.save(payroll);
+        payroll.setTotalWorkHours(totalHours);
+        payroll.setAdvanceDeductions(advanceDeductions);
+        payroll.setOvertimeHours(totalHours.subtract(standardHours).max(BigDecimal.ZERO));
+        payroll.setDeductions(payrollDeductions);
+        payroll.setNetSalary(netSalaryWithDeductions);
+
+        Payroll saved = payrollRepository.save(payroll);
+        advanceRequestService.markDeliveredAdvancesAsDeducted(employee.getEmployeeId());
+        return saved;
     }
 }

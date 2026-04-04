@@ -33,9 +33,10 @@ public class DataInitializer implements CommandLineRunner {
             roleRepository.save(new UsersRole("ADMIN"));
             roleRepository.save(new UsersRole("HR"));
             roleRepository.save(new UsersRole("MANAGER"));
+            roleRepository.save(new UsersRole("PAYROLL"));
             roleRepository.save(new UsersRole("EMPLOYEE"));
             roleRepository.save(new UsersRole("SUPER_ADMIN"));
-            System.out.println(">>> Roles seeded: ADMIN, HR, MANAGER, EMPLOYEE, SUPER_ADMIN");
+            System.out.println(">>> Roles seeded: ADMIN, HR, MANAGER, PAYROLL, EMPLOYEE, SUPER_ADMIN");
         }
 
         // ── Seed teams ────────────────────────────────────────────────────────
@@ -43,7 +44,8 @@ public class DataInitializer implements CommandLineRunner {
             teamRepository.save(new Team(null, "Engineering"));
             teamRepository.save(new Team(null, "Marketing"));
             teamRepository.save(new Team(null, "Sales"));
-            System.out.println(">>> Teams seeded: Engineering, Marketing, Sales");
+            teamRepository.save(new Team(null, "Finance"));
+            System.out.println(">>> Teams seeded: Engineering, Marketing, Sales, Finance");
         }
 
         // ── Seed test employees (dev only) ────────────────────────────────────
@@ -57,8 +59,10 @@ public class DataInitializer implements CommandLineRunner {
                     .map(r -> r.getRoleId()).orElse(2L);
             Long managerRoleId = roleRepository.findByRoleName("MANAGER")
                     .map(r -> r.getRoleId()).orElse(3L);
-            Long employeeRoleId = roleRepository.findByRoleName("EMPLOYEE")
+            Long payrollRoleId = roleRepository.findByRoleName("PAYROLL")
                     .map(r -> r.getRoleId()).orElse(4L);
+            Long employeeRoleId = roleRepository.findByRoleName("EMPLOYEE")
+                    .map(r -> r.getRoleId()).orElse(5L);
 
             // Admin  — email: admin@hrms.com     password: Admin@1234
             employeeRepository.save(Employee.builder()
@@ -90,6 +94,16 @@ public class DataInitializer implements CommandLineRunner {
                     .status("Active")
                     .build());
 
+            // Payroll — email: payroll@hrms.com   password: Payroll@1234
+            employeeRepository.save(Employee.builder()
+                    .fullName("Ahmad Payroll")
+                    .email("payroll@hrms.com")
+                    .passwordHash("Payroll@1234")
+                    .roleId(payrollRoleId)
+                    .baseSalary(new BigDecimal("8500.00"))
+                    .status("Active")
+                    .build());
+
             // Employee — email: employee@hrms.com  password: Employee@1234
             employeeRepository.save(Employee.builder()
                     .fullName("Lina Employee")
@@ -105,6 +119,7 @@ public class DataInitializer implements CommandLineRunner {
             System.out.println("    ADMIN    -> admin@hrms.com    / Admin@1234");
             System.out.println("    HR       -> hr@hrms.com       / HR@1234");
             System.out.println("    MANAGER  -> manager@hrms.com  / Manager@1234");
+            System.out.println("    PAYROLL  -> payroll@hrms.com  / Payroll@1234");
             System.out.println("    EMPLOYEE -> employee@hrms.com / Employee@1234");
         }
     }

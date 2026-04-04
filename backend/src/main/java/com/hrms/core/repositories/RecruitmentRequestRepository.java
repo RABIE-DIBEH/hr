@@ -12,10 +12,10 @@ import java.util.List;
 public interface RecruitmentRequestRepository extends JpaRepository<RecruitmentRequest, Long> {
 
     /**
-     * Find all pending recruitment requests
+     * Find all pending recruitment requests by multiple statuses
      */
-    @Query("SELECT r FROM RecruitmentRequest r WHERE r.status = 'Pending' ORDER BY r.requestedAt DESC")
-    List<RecruitmentRequest> findAllPendingRequests();
+    @Query("SELECT r FROM RecruitmentRequest r WHERE r.status IN :statuses ORDER BY r.requestedAt DESC")
+    List<RecruitmentRequest> findAllByStatuses(@Param("statuses") List<String> statuses);
 
     /**
      * Find all requests created by a specific HR user
@@ -30,14 +30,14 @@ public interface RecruitmentRequestRepository extends JpaRepository<RecruitmentR
     List<RecruitmentRequest> findByStatus(@Param("status") String status);
 
     /**
-     * Find requests by department
+     * Find requests by department and status
      */
-    @Query("SELECT r FROM RecruitmentRequest r WHERE r.department = :department ORDER BY r.requestedAt DESC")
-    List<RecruitmentRequest> findByDepartment(@Param("department") String department);
+    @Query("SELECT r FROM RecruitmentRequest r WHERE r.department = :department AND r.status IN :statuses ORDER BY r.requestedAt DESC")
+    List<RecruitmentRequest> findByDepartmentAndStatuses(@Param("department") String department, @Param("statuses") List<String> statuses);
 
     /**
-     * Check if a national ID already exists
+     * Check if a national ID already exists in non-rejected requests
      */
-    @Query("SELECT COUNT(r) > 0 FROM RecruitmentRequest r WHERE r.nationalId = :nationalId AND r.status = 'Pending'")
-    boolean existsPendingByNationalId(@Param("nationalId") String nationalId);
+    @Query("SELECT COUNT(r) > 0 FROM RecruitmentRequest r WHERE r.nationalId = :nationalId AND r.status != 'REJECTED'")
+    boolean existsActiveByNationalId(@Param("nationalId") String nationalId);
 }

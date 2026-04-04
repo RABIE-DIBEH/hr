@@ -36,6 +36,15 @@ public class AdvanceRequest {
     @Column(name = "hr_note", length = 500)
     private String hrNote;
 
+    @Column(name = "paid", nullable = false)
+    private boolean paid = false;
+
+    @Column(name = "paid_at")
+    private LocalDateTime paidAt;
+
+    @Column(name = "deducted", nullable = false)
+    private boolean deducted = false;
+
     // No-arg constructor (JPA requirement)
     public AdvanceRequest() {
     }
@@ -57,6 +66,8 @@ public class AdvanceRequest {
         if (this.status == null) {
             this.status = "Pending";
         }
+        this.paid = this.paid;
+        this.deducted = this.deducted;
     }
 
     // Getters and Setters
@@ -130,6 +141,30 @@ public class AdvanceRequest {
 
     public void setHrNote(String hrNote) {
         this.hrNote = hrNote;
+    }
+
+    public boolean isPaid() {
+        return paid;
+    }
+
+    public void setPaid(boolean paid) {
+        this.paid = paid;
+    }
+
+    public LocalDateTime getPaidAt() {
+        return paidAt;
+    }
+
+    public void setPaidAt(LocalDateTime paidAt) {
+        this.paidAt = paidAt;
+    }
+
+    public boolean isDeducted() {
+        return deducted;
+    }
+
+    public void setDeducted(boolean deducted) {
+        this.deducted = deducted;
     }
 
     // Manual Builder

@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 public record RecruitmentRequestResponse(
         Long requestId,
         String fullName,
+        String email,
         String nationalId,
         String address,
         String jobDescription,

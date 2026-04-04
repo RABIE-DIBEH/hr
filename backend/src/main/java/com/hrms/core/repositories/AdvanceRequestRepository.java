@@ -34,4 +34,15 @@ public interface AdvanceRequestRepository extends JpaRepository<AdvanceRequest, 
      */
     @Query("SELECT COALESCE(SUM(a.amount), 0) FROM AdvanceRequest a WHERE a.employeeId = :employeeId AND a.status = 'Pending'")
     java.math.BigDecimal sumPendingAmountByEmployee(@Param("employeeId") Long employeeId);
-}
+
+    /**
+     * Get total amount for delivered advances that have not yet been deducted from payroll
+     */
+    @Query("SELECT COALESCE(SUM(a.amount), 0) FROM AdvanceRequest a WHERE a.employeeId = :employeeId AND a.status = 'Delivered' AND a.deducted = false")
+    java.math.BigDecimal sumUndeductedDeliveredAmountByEmployee(@Param("employeeId") Long employeeId);
+
+    /**
+     * Find delivered advances that are ready to be deducted from payroll
+     */
+    @Query("SELECT a FROM AdvanceRequest a WHERE a.employeeId = :employeeId AND a.status = 'Delivered' AND a.deducted = false ORDER BY a.paidAt DESC")
+    List<AdvanceRequest> findUndeductedDeliveredAdvancesByEmployee(@Param("employeeId") Long employeeId);

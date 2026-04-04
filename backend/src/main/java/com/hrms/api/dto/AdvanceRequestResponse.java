@@ -11,6 +11,7 @@ public record AdvanceRequestResponse(
         String status,
         String requestedAt,
         String processedAt,
+        String paidAt,
         Long processedBy,
         String processedByName,
         String hrNote

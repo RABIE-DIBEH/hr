@@ -37,6 +37,7 @@ const ManagerDashboard = () => {
   const [pendingRequests, setPendingRequests] = useState<RecruitmentRequest[]>([]);
   const [processingRequest, setProcessingRequest] = useState<number | null>(null);
   const [processNote, setProcessNote] = useState<string>('');
+  const [adjustedSalary, setAdjustedSalary] = useState<string>('');
   const [selectedRequestId, setSelectedRequestId] = useState<number | null>(null);
 
   // Leaves & Attendance State
@@ -115,9 +116,11 @@ const ManagerDashboard = () => {
   const handleProcessRequest = async (requestId: number, status: 'Approved' | 'Rejected') => {
     setProcessingRequest(requestId);
     try {
-      await processRecruitmentRequest(requestId, status, processNote || undefined);
+      const salaryNum = adjustedSalary ? parseFloat(adjustedSalary) : undefined;
+      await processRecruitmentRequest(requestId, status, processNote || undefined, salaryNum);
       setPendingRequests((prev) => prev.filter((r) => r.requestId !== requestId));
       setProcessNote('');
+      setAdjustedSalary('');
       setSelectedRequestId(null);
     } catch {
       setError('فشل معالجة الطلب');
@@ -288,6 +291,13 @@ const ManagerDashboard = () => {
                         <div className="flex flex-col gap-2 min-w-[200px]">
                           {selectedRequestId === request.requestId ? (
                             <div className="space-y-2">
+                              <input
+                                type="number"
+                                placeholder="تعديل الراتب (اختياري)"
+                                value={adjustedSalary}
+                                onChange={(e) => setAdjustedSalary(e.target.value)}
+                                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/20"
+                              />
                               <input
                                 type="text"
                                 placeholder="ملاحظة (اختياري)"

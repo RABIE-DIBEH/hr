@@ -18,6 +18,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
 
   const [formData, setFormData] = useState({
     fullName: '',
+    email: '',
     nationalId: '',
     address: '',
     jobDescription: '',
@@ -41,6 +42,13 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
     const nameParts = formData.fullName.trim().split(/\s+/);
     if (nameParts.length < 3) {
       newErrors.fullName = 'يجب إدخال الاسم الثلاثي (ثلاثة أجزاء على الأقل)';
+    }
+
+    // Email validation
+    if (!formData.email.trim()) {
+      newErrors.email = 'البريد الإلكتروني مطلوب';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+      newErrors.email = 'صيغة البريد الإلكتروني غير صحيحة';
     }
 
     // National ID validation
@@ -136,6 +144,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
     try {
       const requestData: RecruitmentRequest = {
         fullName: formData.fullName.trim(),
+        email: formData.email.trim(),
         nationalId: formData.nationalId.trim(),
         address: formData.address.trim(),
         jobDescription: formData.jobDescription.trim(),
@@ -257,6 +266,26 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                 />
                 {errors.fullName && (
                   <p className="text-red-500 text-xs mt-1">{errors.fullName}</p>
+                )}
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  البريد الإلكتروني <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="example@company.com"
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    errors.email ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                {errors.email && (
+                  <p className="text-red-500 text-xs mt-1">{errors.email}</p>
                 )}
               </div>
 

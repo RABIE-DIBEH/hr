@@ -82,14 +82,14 @@ const PayrollDashboard = () => {
     },
     {
       label: 'إجمالي المعلق',
-      value: `${totalPendingAmount.toLocaleString()} ر.س`,
+      value: totalPendingAmount.toLocaleString() + ' ر.س',
       icon: HandCoins,
       color: 'text-purple-400',
       bg: 'bg-purple-500/10',
     },
     {
       label: 'تمت الموافقة',
-      value: `${totalApprovedAmount.toLocaleString()} ر.س`,
+      value: totalApprovedAmount.toLocaleString() + ' ر.س',
       icon: TrendingUp,
       color: 'text-green-400',
       bg: 'bg-green-500/10',
@@ -125,7 +125,6 @@ const PayrollDashboard = () => {
             </div>
           )}
 
-          {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
             {stats.map((stat, idx) => (
               <motion.div
@@ -135,7 +134,7 @@ const PayrollDashboard = () => {
                 key={stat.label}
                 className="bg-luxury-surface p-6 rounded-3xl shadow-sm border border-white/5"
               >
-                <div className={`${stat.bg} ${stat.color} w-12 h-12 rounded-2xl flex items-center justify-center mb-4`}>
+                <div className={stat.bg + ' ' + stat.color + ' w-12 h-12 rounded-2xl flex items-center justify-center mb-4'}>
                   <stat.icon size={24} />
                 </div>
                 <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">{stat.label}</p>
@@ -144,7 +143,6 @@ const PayrollDashboard = () => {
             ))}
           </div>
 
-          {/* Tabs */}
           <div className="flex gap-4 mb-6 border-b border-white/10">
             <button
               onClick={() => setActiveTab('pending')}
@@ -168,7 +166,6 @@ const PayrollDashboard = () => {
             </button>
           </div>
 
-          {/* Pending Advances Section */}
           {activeTab === 'pending' && (
             <div className="bg-luxury-surface rounded-[2.5rem] shadow-sm border border-white/5 overflow-hidden">
               {pendingAdvances.length === 0 ? (
@@ -265,7 +262,6 @@ const PayrollDashboard = () => {
             </div>
           )}
 
-          {/* All Advances Section */}
           {activeTab === 'all' && (
             <div className="bg-luxury-surface rounded-[2.5rem] shadow-sm border border-white/5 overflow-hidden">
               {allAdvances.length === 0 ? (

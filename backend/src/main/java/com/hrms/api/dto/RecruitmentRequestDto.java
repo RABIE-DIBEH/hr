@@ -12,6 +12,10 @@ public record RecruitmentRequestDto(
         @NotBlank(message = "Full name is required")
         String fullName,
 
+        @NotBlank(message = "Email is required")
+        @Email(message = "Email format is invalid")
+        String email,
+
         @NotBlank(message = "National ID is required")
         String nationalId,
 

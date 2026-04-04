@@ -150,6 +150,30 @@ public class AdvanceRequestController {
     }
 
     /**
+     * PUT /api/advances/deliver/{advanceId}
+     * Mark an approved advance request as delivered / paid - HR/ADMIN only
+     */
+    @PutMapping("/deliver/{advanceId}")
+    public ResponseEntity<?> deliverRequest(@PathVariable Long advanceId,
+                                            @AuthenticationPrincipal EmployeeUserDetails principal) {
+        if (!hasAnyRole(principal, "HR", "ADMIN")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+        }
+
+        try {
+            AdvanceRequest delivered = advanceRequestService.deliverAdvanceRequest(advanceId, principal.getEmployeeId());
+            return ResponseEntity.ok(ApiResponse.success(
+                    Map.of("status", delivered.getStatus(), "paidAt", delivered.getPaidAt() != null ? delivered.getPaidAt().toString() : null),
+                    "Advance request marked as delivered successfully"
+            ));
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+        } catch (IllegalStateException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    /**
      * GET /api/advances/{advanceId}
      * Get a specific advance request
      */
@@ -190,6 +214,7 @@ public class AdvanceRequestController {
                 request.getStatus(),
                 request.getRequestedAt() != null ? request.getRequestedAt().toString() : null,
                 processedAt,
+                request.getPaidAt() != null ? request.getPaidAt().toString() : null,
                 request.getProcessedBy(),
                 processedByName,
                 request.getHrNote()

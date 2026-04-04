@@ -15,6 +15,9 @@ public class RecruitmentRequest {
     @Column(name = "full_name", nullable = false, length = 200)
     private String fullName;
 
+    @Column(name = "email", nullable = false, length = 200)
+    private String email;
+
     @Column(name = "national_id", nullable = false, length = 50, unique = true)
     private String nationalId;
 
@@ -57,6 +60,11 @@ public class RecruitmentRequest {
     @Column(name = "status", nullable = false, length = 20)
     private String status;
 
+    public static final String STATUS_PENDING_MANAGER = "PENDING_MANAGER";
+    public static final String STATUS_PENDING_PAYROLL = "PENDING_PAYROLL";
+    public static final String STATUS_APPROVED = "APPROVED";
+    public static final String STATUS_REJECTED = "REJECTED";
+
     @Column(name = "manager_note", length = 500)
     private String managerNote;
 
@@ -74,13 +82,14 @@ public class RecruitmentRequest {
     }
 
     // All-args constructor
-    public RecruitmentRequest(String fullName, String nationalId, String address,
+    public RecruitmentRequest(String fullName, String email, String nationalId, String address,
                               String jobDescription, String department, Integer age,
                               String insuranceNumber, String healthNumber,
                               String militaryServiceStatus, String maritalStatus,
                               Integer numberOfChildren, String mobileNumber,
                               BigDecimal expectedSalary, Long requestedBy) {
         this.fullName = fullName;
+        this.email = email;
         this.nationalId = nationalId;
         this.address = address;
         this.jobDescription = jobDescription;
@@ -94,7 +103,7 @@ public class RecruitmentRequest {
         this.mobileNumber = mobileNumber;
         this.expectedSalary = expectedSalary;
         this.requestedBy = requestedBy;
-        this.status = "Pending";
+        this.status = STATUS_PENDING_MANAGER;
         this.requestedAt = LocalDateTime.now();
     }
 
@@ -104,7 +113,7 @@ public class RecruitmentRequest {
             this.requestedAt = LocalDateTime.now();
         }
         if (this.status == null) {
-            this.status = "Pending";
+            this.status = STATUS_PENDING_MANAGER;
         }
     }
 
@@ -123,6 +132,14 @@ public class RecruitmentRequest {
 
     public void setFullName(String fullName) {
         this.fullName = fullName;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public String getNationalId() {
@@ -272,6 +289,7 @@ public class RecruitmentRequest {
     // Manual Builder
     public static class RecruitmentRequestBuilder {
         private String fullName;
+        private String email;
         private String nationalId;
         private String address;
         private String jobDescription;
@@ -288,6 +306,11 @@ public class RecruitmentRequest {
 
         public RecruitmentRequestBuilder fullName(String fullName) {
             this.fullName = fullName;
+            return this;
+        }
+
+        public RecruitmentRequestBuilder email(String email) {
+            this.email = email;
             return this;
         }
 
@@ -357,7 +380,7 @@ public class RecruitmentRequest {
         }
 
         public RecruitmentRequest build() {
-            return new RecruitmentRequest(fullName, nationalId, address, jobDescription,
+            return new RecruitmentRequest(fullName, email, nationalId, address, jobDescription,
                     department, age, insuranceNumber, healthNumber, militaryServiceStatus,
                     maritalStatus, numberOfChildren, mobileNumber, expectedSalary, requestedBy);
         }

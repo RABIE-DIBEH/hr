@@ -1,9 +1,11 @@
 package com.hrms.security;
 
 import com.hrms.core.models.Employee;
+import com.hrms.core.models.Team;
 import com.hrms.core.models.UsersRole;
 import com.hrms.core.repositories.EmployeeRepository;
 import com.hrms.core.repositories.RoleRepository;
+import com.hrms.core.repositories.TeamRepository;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -14,10 +16,14 @@ public class EmployeeUserDetailsService implements UserDetailsService {
 
     private final EmployeeRepository employeeRepository;
     private final RoleRepository roleRepository;
+    private final TeamRepository teamRepository;
 
-    public EmployeeUserDetailsService(EmployeeRepository employeeRepository, RoleRepository roleRepository) {
+    public EmployeeUserDetailsService(EmployeeRepository employeeRepository, 
+                                    RoleRepository roleRepository,
+                                    TeamRepository teamRepository) {
         this.employeeRepository = employeeRepository;
         this.roleRepository = roleRepository;
+        this.teamRepository = teamRepository;
     }
 
     @Override
@@ -32,6 +38,13 @@ public class EmployeeUserDetailsService implements UserDetailsService {
         UsersRole role = roleRepository.findById(employee.getRoleId())
                 .orElseThrow(() -> new UsernameNotFoundException("Role not found for user"));
 
-        return new EmployeeUserDetails(employee, role.getRoleName());
+        String teamName = null;
+        if (employee.getTeamId() != null) {
+            teamName = teamRepository.findById(employee.getTeamId())
+                    .map(Team::getName)
+                    .orElse(null);
+        }
+
+        return new EmployeeUserDetails(employee, role.getRoleName(), teamName);
     }
 }
