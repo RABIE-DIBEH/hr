@@ -22,9 +22,24 @@ import java.util.Optional;
 public class RecruitmentRequestService {
 
     private final RecruitmentRequestRepository recruitmentRequestRepository;
+    private final EmployeeRepository employeeRepository;
+    private final RoleRepository roleRepository;
+    private final TeamRepository teamRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final InboxService inboxService;
 
-    public RecruitmentRequestService(RecruitmentRequestRepository recruitmentRequestRepository) {
+    public RecruitmentRequestService(RecruitmentRequestRepository recruitmentRequestRepository,
+                                   EmployeeRepository employeeRepository,
+                                   RoleRepository roleRepository,
+                                   TeamRepository teamRepository,
+                                   PasswordEncoder passwordEncoder,
+                                   InboxService inboxService) {
         this.recruitmentRequestRepository = recruitmentRequestRepository;
+        this.employeeRepository = employeeRepository;
+        this.roleRepository = roleRepository;
+        this.teamRepository = teamRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.inboxService = inboxService;
     }
 
     /**
@@ -80,10 +95,25 @@ public class RecruitmentRequestService {
             request.setManagerNote(note);
             request.setProcessedAt(LocalDateTime.now());
             request.setApprovedBy(processorId);
-            return recruitmentRequestRepository.save(request);
+            
+            RecruitmentRequest saved = recruitmentRequestRepository.save(request);
+            
+            // Notify the original requester about rejection
+            if (saved.getRequestedBy() != null) {
+                inboxService.sendPersonalMessage(
+                    "Recruitment Request Rejected",
+                    "Your recruitment request for " + saved.getJobDescription() + " has been rejected.",
+                    saved.getRequestedBy(),
+                    "System",
+                    "HIGH"
+                );
+            }
+            
+            return saved;
         }
 
         // Action is "Approved"
+        String oldStatus = request.getStatus();
         if (RecruitmentRequest.STATUS_PENDING_MANAGER.equals(currentStatus)) {
             // Manager Approval -> Move to Payroll
             request.setStatus(RecruitmentRequest.STATUS_PENDING_PAYROLL);
@@ -103,7 +133,20 @@ public class RecruitmentRequestService {
         request.setProcessedAt(LocalDateTime.now());
         request.setApprovedBy(processorId);
 
-        return recruitmentRequestRepository.save(request);
+        RecruitmentRequest saved = recruitmentRequestRepository.save(request);
+        
+        // Notify the original requester about status change
+        if (saved.getRequestedBy() != null && !saved.getStatus().equals(oldStatus)) {
+            inboxService.sendPersonalMessage(
+                "Recruitment Request Updated",
+                "Your recruitment request for " + saved.getJobDescription() + " is now " + saved.getStatus().replace("_", " ") + ".",
+                saved.getRequestedBy(),
+                "System",
+                "MEDIUM"
+            );
+        }
+
+        return saved;
     }
 
     private void createEmployeeFromRequest(RecruitmentRequest request) {
@@ -112,7 +155,7 @@ public class RecruitmentRequestService {
                 .map(UsersRole::getRoleId).orElse(null);
         
         Long teamId = teamRepository.findAll().stream()
-                .filter(t -> t.getTeamName().equalsIgnoreCase(request.getDepartment()))
+                .filter(t -> t.getName().equalsIgnoreCase(request.getDepartment()))
                 .map(Team::getTeamId)
                 .findFirst().orElse(null);
 

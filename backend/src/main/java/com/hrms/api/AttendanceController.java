@@ -38,13 +38,16 @@ public class AttendanceController {
     }
 
     @PutMapping("/report-fraud/{recordId}")
-    public ResponseEntity<Map<String, String>> reportFraud(
+    public ResponseEntity<ApiResponse<Map<String, String>>> reportFraud(
             @PathVariable Long recordId,
             @RequestBody FraudReportRequest request,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
 
         return attendanceService.reportFraud(recordId, request.noteOrDefault(), principal)
-                .map(record -> ResponseEntity.ok(Map.of("message", "Fraud reported successfully for record: " + recordId)))
+                .map(record -> ResponseEntity.ok(ApiResponse.success(
+                        Map.of("message", "Fraud reported successfully for record: " + recordId),
+                        "Fraud reported successfully"
+                )))
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -65,14 +68,17 @@ public class AttendanceController {
     }
 
     @PutMapping("/verify/{recordId}")
-    public ResponseEntity<Map<String, String>> verifyRecord(
+    public ResponseEntity<ApiResponse<Map<String, String>>> verifyRecord(
             @PathVariable Long recordId,
             @RequestBody(required = false) FraudReportRequest request,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
 
         String note = (request != null && request.noteOrDefault() != null) ? request.noteOrDefault() : "Verified via Dashboard";
         return attendanceService.verifyRecord(recordId, note, principal)
-                .map(record -> ResponseEntity.ok(Map.of("message", "Attendance record verified successfully.")))
+                .map(record -> ResponseEntity.ok(ApiResponse.success(
+                        Map.of("message", "Attendance record verified successfully."),
+                        "Attendance verified successfully"
+                )))
                 .orElse(ResponseEntity.notFound().build());
     }
 

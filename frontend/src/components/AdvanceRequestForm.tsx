@@ -173,7 +173,7 @@ const AdvanceRequestForm = ({ onClose, onSuccess }: AdvanceRequestFormProps) => 
                 placeholder="0.00"
                 min="0"
                 step="0.01"
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg font-semibold ${
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg font-semibold text-gray-900 ${
                   errors.amount ? 'border-red-500' : 'border-gray-300'
                 }`}
               />
@@ -186,7 +186,7 @@ const AdvanceRequestForm = ({ onClose, onSuccess }: AdvanceRequestFormProps) => 
               الحد الأقصى المسموح: 100,000 ر.س
             </p>
           </div>
-
+ 
           {/* Reason */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -199,7 +199,7 @@ const AdvanceRequestForm = ({ onClose, onSuccess }: AdvanceRequestFormProps) => 
               placeholder="اكتب سبب طلب السلفة (اختياري)..."
               rows={4}
               maxLength={500}
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none ${
+              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none text-gray-900 font-medium ${
                 errors.reason ? 'border-red-500' : 'border-gray-300'
               }`}
             />

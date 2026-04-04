@@ -70,7 +70,7 @@ public class AdvanceRequestController {
     public ResponseEntity<ApiResponse<List<AdvanceRequestResponse>>> getPendingRequests(
             @AuthenticationPrincipal EmployeeUserDetails principal) {
         
-        if (!hasAnyRole(principal, "HR", "ADMIN")) {
+        if (!hasAnyRole(principal, "HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         }
 
@@ -105,7 +105,7 @@ public class AdvanceRequestController {
             @RequestParam(required = false) String status,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
         
-        if (!hasAnyRole(principal, "HR", "ADMIN")) {
+        if (!hasAnyRole(principal, "HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         }
 
@@ -131,7 +131,7 @@ public class AdvanceRequestController {
     public ResponseEntity<?> processRequest(@PathVariable Long advanceId,
                                             @Valid @RequestBody ProcessAdvanceRequestDto dto,
                                             @AuthenticationPrincipal EmployeeUserDetails principal) {
-        if (!hasAnyRole(principal, "HR", "ADMIN")) {
+        if (!hasAnyRole(principal, "HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         }
 
@@ -156,7 +156,7 @@ public class AdvanceRequestController {
     @PutMapping("/deliver/{advanceId}")
     public ResponseEntity<?> deliverRequest(@PathVariable Long advanceId,
                                             @AuthenticationPrincipal EmployeeUserDetails principal) {
-        if (!hasAnyRole(principal, "HR", "ADMIN")) {
+        if (!hasAnyRole(principal, "HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         }
 
@@ -191,7 +191,7 @@ public class AdvanceRequestController {
 
         // Check access: requester can view, or HR/ADMIN can view all
         if (!request.getEmployeeId().equals(principal.getEmployeeId()) 
-                && !hasAnyRole(principal, "HR", "ADMIN")) {
+                && !hasAnyRole(principal, "HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         }
 

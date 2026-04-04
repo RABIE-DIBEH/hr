@@ -29,98 +29,84 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) {
         // ── Seed roles ────────────────────────────────────────────────────────
-        if (roleRepository.count() == 0) {
-            roleRepository.save(new UsersRole("ADMIN"));
-            roleRepository.save(new UsersRole("HR"));
-            roleRepository.save(new UsersRole("MANAGER"));
-            roleRepository.save(new UsersRole("PAYROLL"));
-            roleRepository.save(new UsersRole("EMPLOYEE"));
-            roleRepository.save(new UsersRole("SUPER_ADMIN"));
-            System.out.println(">>> Roles seeded: ADMIN, HR, MANAGER, PAYROLL, EMPLOYEE, SUPER_ADMIN");
-        }
+        seedRoles();
 
         // ── Seed teams ────────────────────────────────────────────────────────
-        if (teamRepository.count() == 0) {
-            teamRepository.save(new Team(null, "Engineering"));
-            teamRepository.save(new Team(null, "Marketing"));
-            teamRepository.save(new Team(null, "Sales"));
-            teamRepository.save(new Team(null, "Finance"));
-            System.out.println(">>> Teams seeded: Engineering, Marketing, Sales, Finance");
-        }
+        seedTeams();
 
         // ── Seed test employees (dev only) ────────────────────────────────────
-        // Passwords are stored as plain-text here.
-        // AuthService auto-upgrades them to BCrypt on the first successful login.
-        if (employeeRepository.count() == 0) {
-            // Resolve role IDs by name so order doesn't matter
-            Long adminRoleId = roleRepository.findByRoleName("ADMIN")
-                    .map(r -> r.getRoleId()).orElse(1L);
-            Long hrRoleId = roleRepository.findByRoleName("HR")
-                    .map(r -> r.getRoleId()).orElse(2L);
-            Long managerRoleId = roleRepository.findByRoleName("MANAGER")
-                    .map(r -> r.getRoleId()).orElse(3L);
-            Long payrollRoleId = roleRepository.findByRoleName("PAYROLL")
-                    .map(r -> r.getRoleId()).orElse(4L);
-            Long employeeRoleId = roleRepository.findByRoleName("EMPLOYEE")
-                    .map(r -> r.getRoleId()).orElse(5L);
+        seedEmployees();
+    }
 
-            // Admin  — email: admin@hrms.com     password: Admin@1234
-            employeeRepository.save(Employee.builder()
-                    .fullName("System Admin")
-                    .email("admin@hrms.com")
-                    .passwordHash("Admin@1234")
-                    .roleId(adminRoleId)
-                    .baseSalary(new BigDecimal("15000.00"))
-                    .status("Active")
-                    .build());
-
-            // HR     — email: hr@hrms.com         password: HR@1234
-            employeeRepository.save(Employee.builder()
-                    .fullName("Sara HR")
-                    .email("hr@hrms.com")
-                    .passwordHash("HR@1234")
-                    .roleId(hrRoleId)
-                    .baseSalary(new BigDecimal("9000.00"))
-                    .status("Active")
-                    .build());
-
-            // Manager — email: manager@hrms.com   password: Manager@1234
-            Employee manager = employeeRepository.save(Employee.builder()
-                    .fullName("Khalid Manager")
-                    .email("manager@hrms.com")
-                    .passwordHash("Manager@1234")
-                    .roleId(managerRoleId)
-                    .baseSalary(new BigDecimal("12000.00"))
-                    .status("Active")
-                    .build());
-
-            // Payroll — email: payroll@hrms.com   password: Payroll@1234
-            employeeRepository.save(Employee.builder()
-                    .fullName("Ahmad Payroll")
-                    .email("payroll@hrms.com")
-                    .passwordHash("Payroll@1234")
-                    .roleId(payrollRoleId)
-                    .baseSalary(new BigDecimal("8500.00"))
-                    .status("Active")
-                    .build());
-
-            // Employee — email: employee@hrms.com  password: Employee@1234
-            employeeRepository.save(Employee.builder()
-                    .fullName("Lina Employee")
-                    .email("employee@hrms.com")
-                    .passwordHash("Employee@1234")
-                    .roleId(employeeRoleId)
-                    .managerId(manager.getEmployeeId())
-                    .baseSalary(new BigDecimal("5000.00"))
-                    .status("Active")
-                    .build());
-
-            System.out.println(">>> Test employees seeded:");
-            System.out.println("    ADMIN    -> admin@hrms.com    / Admin@1234");
-            System.out.println("    HR       -> hr@hrms.com       / HR@1234");
-            System.out.println("    MANAGER  -> manager@hrms.com  / Manager@1234");
-            System.out.println("    PAYROLL  -> payroll@hrms.com  / Payroll@1234");
-            System.out.println("    EMPLOYEE -> employee@hrms.com / Employee@1234");
+    private void seedRoles() {
+        String[] roles = {"ADMIN", "HR", "MANAGER", "PAYROLL", "EMPLOYEE", "SUPER_ADMIN"};
+        for (String roleName : roles) {
+            if (roleRepository.findByRoleName(roleName).isEmpty()) {
+                roleRepository.save(new UsersRole(roleName));
+                System.out.println(">>> Role seeded: " + roleName);
+            }
         }
+    }
+
+    private void seedTeams() {
+        String[] teams = {"Engineering", "Marketing", "Sales", "Finance"};
+        for (String teamName : teams) {
+            if (teamRepository.findAll().stream().noneMatch(t -> t.getName().equalsIgnoreCase(teamName))) {
+                teamRepository.save(new Team(null, teamName));
+                System.out.println(">>> Team seeded: " + teamName);
+            }
+        }
+    }
+
+    private void seedEmployees() {
+        // Resolve role IDs by name so order doesn't matter
+        Long superAdminRoleId = roleRepository.findByRoleName("SUPER_ADMIN")
+                .map(UsersRole::getRoleId).orElse(null);
+        Long adminRoleId = roleRepository.findByRoleName("ADMIN")
+                .map(UsersRole::getRoleId).orElse(null);
+        Long hrRoleId = roleRepository.findByRoleName("HR")
+                .map(UsersRole::getRoleId).orElse(null);
+        Long managerRoleId = roleRepository.findByRoleName("MANAGER")
+                .map(UsersRole::getRoleId).orElse(null);
+        Long payrollRoleId = roleRepository.findByRoleName("PAYROLL")
+                .map(UsersRole::getRoleId).orElse(null);
+        Long employeeRoleId = roleRepository.findByRoleName("EMPLOYEE")
+                .map(UsersRole::getRoleId).orElse(null);
+
+        // SUPER_ADMIN — email: dev@hrms.com        password: Dev@1234
+        seedUser("Dev Super Admin", "dev@hrms.com", "Dev@1234", superAdminRoleId, new BigDecimal("25000.00"), null);
+
+        // Admin — email: admin@hrms.com            password: Admin@1234
+        seedUser("System Admin", "admin@hrms.com", "Admin@1234", adminRoleId, new BigDecimal("15000.00"), null);
+
+        // HR — email: hr@hrms.com                  password: HR@1234
+        seedUser("Sara HR", "hr@hrms.com", "HR@1234", hrRoleId, new BigDecimal("9000.00"), null);
+
+        // Manager — email: manager@hrms.com        password: Manager@1234
+        Employee manager = seedUser("Khalid Manager", "manager@hrms.com", "Manager@1234", managerRoleId, new BigDecimal("12000.00"), null);
+
+        // Payroll — email: payroll@hrms.com        password: Payroll@1234
+        seedUser("Ahmad Payroll", "payroll@hrms.com", "Payroll@1234", payrollRoleId, new BigDecimal("8500.00"), null);
+
+        // Employee — email: employee@hrms.com      password: Employee@1234
+        seedUser("Lina Employee", "employee@hrms.com", "Employee@1234", employeeRoleId, new BigDecimal("5000.00"), manager != null ? manager.getEmployeeId() : null);
+    }
+
+    private Employee seedUser(String fullName, String email, String password, Long roleId, BigDecimal salary, Long managerId) {
+        if (employeeRepository.findByEmail(email).isEmpty()) {
+            Employee employee = Employee.builder()
+                    .fullName(fullName)
+                    .email(email)
+                    .passwordHash(password)
+                    .roleId(roleId)
+                    .managerId(managerId)
+                    .baseSalary(salary)
+                    .status("Active")
+                    .build();
+            Employee saved = employeeRepository.save(employee);
+            System.out.println(">>> User seeded: " + fullName + " (" + email + ")");
+            return saved;
+        }
+        return employeeRepository.findByEmail(email).orElse(null);
     }
 }

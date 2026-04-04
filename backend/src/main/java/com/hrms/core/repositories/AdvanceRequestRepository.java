@@ -46,3 +46,4 @@ public interface AdvanceRequestRepository extends JpaRepository<AdvanceRequest, 
      */
     @Query("SELECT a FROM AdvanceRequest a WHERE a.employeeId = :employeeId AND a.status = 'Delivered' AND a.deducted = false ORDER BY a.paidAt DESC")
     List<AdvanceRequest> findUndeductedDeliveredAdvancesByEmployee(@Param("employeeId") Long employeeId);
+}

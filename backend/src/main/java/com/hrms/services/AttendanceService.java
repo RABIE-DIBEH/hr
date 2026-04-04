@@ -9,10 +9,9 @@ import com.hrms.security.EmployeeUserDetails;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
-import org.springframework.http.HttpStatus;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -142,11 +141,6 @@ public class AttendanceService {
     }
 
     public List<AttendanceRecord> getCompanyMonthlyAttendance(int month, int year, EmployeeUserDetails actor) {
-        boolean privileged = actor.getAuthorities().stream().anyMatch(a ->
-                "ROLE_HR".equals(a.getAuthority()) || "ROLE_ADMIN".equals(a.getAuthority()) || "ROLE_SUPER_ADMIN".equals(a.getAuthority()));
-        if (!privileged) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only HR or Admins can access the master attendance view.");
-        }
         return attendanceRepository.findAllMonthlyRecords(month, year);
     }
 }

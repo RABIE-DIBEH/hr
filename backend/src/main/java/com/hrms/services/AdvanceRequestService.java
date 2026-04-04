@@ -112,10 +112,18 @@ public class AdvanceRequestService {
         request.setPaid(true);
         request.setPaidAt(LocalDateTime.now());
         request.setStatus("Delivered");
-        request.setProcessedBy(processorId);
-        request.setProcessedAt(LocalDateTime.now());
+        AdvanceRequest saved = advanceRequestRepository.save(request);
 
-        return advanceRequestRepository.save(request);
+        // Notify Employee about delivery
+        inboxService.sendPersonalMessage(
+            "Advance Funds Delivered",
+            "Your advance request for " + saved.getAmount() + " has been marked as delivered/paid. The amount will be deducted from your next payroll.",
+            saved.getEmployeeId(),
+            "Payroll Department",
+            "MEDIUM"
+        );
+
+        return saved;
     }
 
     /**

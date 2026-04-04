@@ -65,22 +65,20 @@ public class SecurityConfig {
                         
                         // Attendance endpoints
                         .requestMatchers(HttpMethod.POST, "/api/attendance/clock").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/attendance").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/attendance/**").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/attendance/logs").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/attendance/report-fraud/**").hasAnyRole("MANAGER", "HR", "ADMIN", "SUPER_ADMIN")
                         
                         // Advance request endpoints - employees can request/view own, HR/ADMIN process
                         .requestMatchers(HttpMethod.POST, "/api/advances/request").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/advances/my-requests").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/advances/pending").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")
-                        .requestMatchers(HttpMethod.GET, "/api/advances/all").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")
+                        .requestMatchers(HttpMethod.GET, "/api/advances/**").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")
                         .requestMatchers(HttpMethod.PUT, "/api/advances/process/**").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")
                         
                         // Recruitment request endpoints - HR/ADMIN can request, managers can view, HR/ADMIN process
                         .requestMatchers(HttpMethod.POST, "/api/recruitment/request").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/recruitment/pending").hasAnyRole("MANAGER", "HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")
                         .requestMatchers(HttpMethod.GET, "/api/recruitment/my-requests").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/recruitment/all").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")
+                        .requestMatchers(HttpMethod.GET, "/api/recruitment/**").hasAnyRole("MANAGER", "HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")
                         .requestMatchers(HttpMethod.PUT, "/api/recruitment/process/**").hasAnyRole("MANAGER", "HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")
                         
                         // Payroll endpoints
