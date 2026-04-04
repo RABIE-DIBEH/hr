@@ -1,5 +1,6 @@
 package com.hrms.api;
 
+import com.hrms.api.dto.ApiResponse;
 import com.hrms.core.models.Employee;
 import com.hrms.core.models.Payroll;
 import com.hrms.core.repositories.EmployeeRepository;
@@ -24,7 +25,7 @@ public class PayrollController {
     }
 
     @PostMapping("/calculate")
-    public ResponseEntity<Payroll> calculatePayroll(
+    public ResponseEntity<ApiResponse<Payroll>> calculatePayroll(
             @RequestParam(required = false) Long employeeId,
             @RequestParam int month,
             @RequestParam int year,
@@ -47,7 +48,10 @@ public class PayrollController {
         Employee employee = employeeRepository.findById(targetId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
 
-        return ResponseEntity.ok(payrollService.calculateMonthlyPayroll(employee, month, year));
+        return ResponseEntity.ok(ApiResponse.success(
+                payrollService.calculateMonthlyPayroll(employee, month, year),
+                "Payroll calculated successfully"
+        ));
     }
 
     private static boolean hasAnyRole(EmployeeUserDetails principal, String... roles) {

@@ -47,20 +47,51 @@ public class SecurityConfig {
                     response.getWriter().write("{\"message\":\"Unauthorized\"}");
                 }))
                 .authorizeHttpRequests(auth -> auth
+                        // Public endpoints
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/login").permitAll()
+                        
+                        // Employee endpoints
                         .requestMatchers(HttpMethod.GET, "/api/employees/me").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/employees/team").hasAnyRole("MANAGER", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/employees").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/payroll/calculate").hasAnyRole("HR", "ADMIN", "EMPLOYEE", "MANAGER", "SUPER_ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/leaves/manager/pending").hasAnyRole("MANAGER", "HR", "ADMIN", "SUPER_ADMIN")
+                        
+                        // Leave endpoints - employees can request/view own, managers/HR process
+                        .requestMatchers(HttpMethod.POST, "/api/leaves/request").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/leaves/my-requests").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/leaves/pending").hasAnyRole("MANAGER", "HR", "ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/leaves/all").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/leaves/process/**").hasAnyRole("MANAGER", "HR", "ADMIN", "SUPER_ADMIN")
+                        
+                        // Attendance endpoints
+                        .requestMatchers(HttpMethod.POST, "/api/attendance/clock").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/attendance").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/attendance/logs").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/attendance/report-fraud/**").hasAnyRole("MANAGER", "HR", "ADMIN", "SUPER_ADMIN")
-                        // Advance request endpoints
-                        .requestMatchers(HttpMethod.POST, "/api/advances/request").authenticated() // Any employee can request
+                        
+                        // Advance request endpoints - employees can request/view own, HR/ADMIN process
+                        .requestMatchers(HttpMethod.POST, "/api/advances/request").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/advances/my-requests").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/advances/pending").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/advances/all").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/advances/process/**").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
+                        
+                        // Recruitment request endpoints - HR/ADMIN can request, managers can view, HR/ADMIN process
+                        .requestMatchers(HttpMethod.POST, "/api/recruitment/request").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/recruitment/pending").hasAnyRole("MANAGER", "HR", "ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/recruitment/my-requests").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/recruitment/all").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/recruitment/process/**").hasAnyRole("MANAGER", "HR", "ADMIN", "SUPER_ADMIN")
+                        
+                        // Payroll endpoints
+                        .requestMatchers(HttpMethod.GET, "/api/payroll").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/payroll/calculate").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/payroll/**").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
+                        
+                        // Admin endpoints - ADMIN/SUPER_ADMIN only
+                        .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                        
+                        // Default: all other /api/** require authentication
                         .requestMatchers("/api/**").authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

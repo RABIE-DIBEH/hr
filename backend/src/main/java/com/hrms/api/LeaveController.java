@@ -2,6 +2,7 @@ package com.hrms.api;
 
 import com.hrms.api.dto.LeaveDecisionRequest;
 import com.hrms.api.dto.LeaveRequestDto;
+import com.hrms.api.dto.ApiResponse;
 import com.hrms.core.models.Employee;
 import com.hrms.core.models.LeaveRequest;
 import com.hrms.core.repositories.EmployeeRepository;
@@ -29,7 +30,7 @@ public class LeaveController {
     }
 
     @PostMapping("/request")
-    public ResponseEntity<LeaveRequest> requestLeave(
+    public ResponseEntity<ApiResponse<LeaveRequest>> requestLeave(
             @Valid @RequestBody LeaveRequestDto dto,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
 
@@ -44,11 +45,14 @@ public class LeaveController {
         request.setDuration(dto.duration());
         request.setReason(dto.reason());
 
-        return ResponseEntity.ok(leaveService.submitRequest(employee, request));
+        return ResponseEntity.ok(ApiResponse.success(
+                leaveService.submitRequest(employee, request),
+                "Leave request submitted successfully"
+        ));
     }
 
     @GetMapping("/my-requests")
-    public ResponseEntity<List<LeaveRequest>> getMyRequests(
+    public ResponseEntity<ApiResponse<List<LeaveRequest>>> getMyRequests(
             @RequestParam(required = false) Long employeeId,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
 
@@ -58,11 +62,14 @@ public class LeaveController {
                 && !hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot view another employee's requests");
         }
-        return ResponseEntity.ok(leaveService.getEmployeeRequests(targetEmployeeId));
+        return ResponseEntity.ok(ApiResponse.success(
+                leaveService.getEmployeeRequests(targetEmployeeId),
+                "Leave requests retrieved successfully"
+        ));
     }
 
     @GetMapping("/manager/pending")
-    public ResponseEntity<List<LeaveRequest>> getPendingForManager(
+    public ResponseEntity<ApiResponse<List<LeaveRequest>>> getPendingForManager(
             @RequestParam Long managerId,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
 
@@ -70,7 +77,10 @@ public class LeaveController {
                 && !hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot view pending requests for another manager");
         }
-        return ResponseEntity.ok(leaveService.getPendingRequestsForManager(managerId));
+        return ResponseEntity.ok(ApiResponse.success(
+                leaveService.getPendingRequestsForManager(managerId),
+                "Pending leave requests retrieved successfully"
+        ));
     }
 
     @GetMapping("/hr/pending")

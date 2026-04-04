@@ -1,11 +1,15 @@
 package com.hrms.api;
 
+import com.hrms.api.dto.AdvanceRequestDto;
+import com.hrms.api.dto.ProcessAdvanceRequestDto;
 import com.hrms.api.dto.AdvanceRequestResponse;
+import com.hrms.api.dto.ApiResponse;
 import com.hrms.core.models.AdvanceRequest;
 import com.hrms.core.models.Employee;
 import com.hrms.core.repositories.EmployeeRepository;
 import com.hrms.security.EmployeeUserDetails;
 import com.hrms.services.AdvanceRequestService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -33,30 +37,26 @@ public class AdvanceRequestController {
     /**
      * POST /api/advances/request
      * Submit a new advance request (any authenticated employee)
+     * Uses @Valid to validate AdvanceRequestDto fields via Bean Validation annotations
      */
     @PostMapping("/request")
-    public ResponseEntity<?> createRequest(@RequestBody Map<String, Object> requestData,
+    public ResponseEntity<?> createRequest(@Valid @RequestBody AdvanceRequestDto dto,
                                            @AuthenticationPrincipal EmployeeUserDetails principal) {
-        // Validate amount
-        BigDecimal amount = getRequiredBigDecimal(requestData, "amount", "Amount is required");
-        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Amount must be greater than zero");
-        }
-
-        String reason = (String) requestData.get("reason");
-
+        // Build advance request from DTO
         AdvanceRequest request = new AdvanceRequest.AdvanceRequestBuilder()
                 .employeeId(principal.getEmployeeId())
-                .amount(amount)
-                .reason(reason)
+                .amount(dto.amount())
+                .reason(dto.reason())
                 .build();
 
         try {
             AdvanceRequest saved = advanceRequestService.submitRequest(request);
-            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                    "message", "Advance request submitted successfully",
-                    "advanceId", saved.getAdvanceId()
-            ));
+            return ResponseEntity.status(HttpStatus.CREATED).body(
+                    ApiResponse.success(
+                            Map.of("advanceId", saved.getAdvanceId()),
+                            "Advance request submitted successfully"
+                    )
+            );
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
@@ -67,7 +67,7 @@ public class AdvanceRequestController {
      * Get all pending advance requests (HR/ADMIN only)
      */
     @GetMapping("/pending")
-    public ResponseEntity<List<AdvanceRequestResponse>> getPendingRequests(
+    public ResponseEntity<ApiResponse<List<AdvanceRequestResponse>>> getPendingRequests(
             @AuthenticationPrincipal EmployeeUserDetails principal) {
         
         if (!hasAnyRole(principal, "HR", "ADMIN")) {
@@ -75,9 +75,10 @@ public class AdvanceRequestController {
         }
 
         List<AdvanceRequest> requests = advanceRequestService.getPendingRequests();
-        return ResponseEntity.ok(requests.stream()
+        List<AdvanceRequestResponse> responses = requests.stream()
                 .map(this::toResponse)
-                .toList());
+                .toList();
+        return ResponseEntity.ok(ApiResponse.success(responses, "Pending advance requests retrieved successfully"));
     }
 
     /**
@@ -85,13 +86,14 @@ public class AdvanceRequestController {
      * Get all advance requests for current employee
      */
     @GetMapping("/my-requests")
-    public ResponseEntity<List<AdvanceRequestResponse>> getMyRequests(
+    public ResponseEntity<ApiResponse<List<AdvanceRequestResponse>>> getMyRequests(
             @AuthenticationPrincipal EmployeeUserDetails principal) {
         
         List<AdvanceRequest> requests = advanceRequestService.getEmployeeRequests(principal.getEmployeeId());
-        return ResponseEntity.ok(requests.stream()
+        List<AdvanceRequestResponse> responses = requests.stream()
                 .map(this::toResponse)
-                .toList());
+                .toList();
+        return ResponseEntity.ok(ApiResponse.success(responses, "Your advance requests retrieved successfully"));
     }
 
     /**
@@ -99,7 +101,7 @@ public class AdvanceRequestController {
      * Get all advance requests (HR/ADMIN only)
      */
     @GetMapping("/all")
-    public ResponseEntity<List<AdvanceRequestResponse>> getAllRequests(
+    public ResponseEntity<ApiResponse<List<AdvanceRequestResponse>>> getAllRequests(
             @RequestParam(required = false) String status,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
         
@@ -114,36 +116,31 @@ public class AdvanceRequestController {
             requests = advanceRequestService.getPendingRequests();
         }
 
-        return ResponseEntity.ok(requests.stream()
+        List<AdvanceRequestResponse> responses = requests.stream()
                 .map(this::toResponse)
-                .toList());
+                .toList();
+        return ResponseEntity.ok(ApiResponse.success(responses, "All advance requests retrieved successfully"));
     }
 
     /**
      * PUT /api/advances/process/{advanceId}
      * Process an advance request (approve/reject) - HR/ADMIN only
+     * Uses @Valid to validate ProcessAdvanceRequestDto fields
      */
     @PutMapping("/process/{advanceId}")
     public ResponseEntity<?> processRequest(@PathVariable Long advanceId,
-                                            @RequestBody Map<String, String> processData,
+                                            @Valid @RequestBody ProcessAdvanceRequestDto dto,
                                             @AuthenticationPrincipal EmployeeUserDetails principal) {
         if (!hasAnyRole(principal, "HR", "ADMIN")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         }
 
-        String status = processData.get("status");
-        String note = processData.get("note");
-
-        if (status == null || (!"Approved".equals(status) && !"Rejected".equals(status))) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Status must be 'Approved' or 'Rejected'");
-        }
-
         try {
             AdvanceRequest processed = advanceRequestService.processRequest(
-                    advanceId, status, note, principal.getEmployeeId());
-            return ResponseEntity.ok(Map.of(
-                    "message", "Advance request processed successfully",
-                    "status", processed.getStatus()
+                    advanceId, dto.status(), dto.note(), principal.getEmployeeId());
+            return ResponseEntity.ok(ApiResponse.success(
+                    Map.of("status", processed.getStatus()),
+                    "Advance request processed successfully"
             ));
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
@@ -157,7 +154,7 @@ public class AdvanceRequestController {
      * Get a specific advance request
      */
     @GetMapping("/{advanceId}")
-    public ResponseEntity<AdvanceRequestResponse> getRequest(
+    public ResponseEntity<ApiResponse<AdvanceRequestResponse>> getRequest(
             @PathVariable Long advanceId,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
         
@@ -174,7 +171,7 @@ public class AdvanceRequestController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         }
 
-        return ResponseEntity.ok(toResponse(request));
+        return ResponseEntity.ok(ApiResponse.success(toResponse(request), "Advance request retrieved successfully"));
     }
 
     // Helper methods
@@ -203,18 +200,6 @@ public class AdvanceRequestController {
         if (employeeId == null) return null;
         Optional<Employee> emp = employeeRepository.findById(employeeId);
         return emp.map(Employee::getFullName).orElse("Unknown");
-    }
-
-    private BigDecimal getRequiredBigDecimal(Map<String, Object> data, String key, String errorMessage) {
-        Object value = data.get(key);
-        if (value == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, errorMessage);
-        }
-        try {
-            return new BigDecimal(value.toString());
-        } catch (NumberFormatException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, errorMessage);
-        }
     }
 
     private static boolean hasAnyRole(EmployeeUserDetails principal, String... roles) {

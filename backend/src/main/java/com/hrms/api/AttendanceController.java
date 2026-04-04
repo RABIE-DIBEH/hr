@@ -2,6 +2,7 @@ package com.hrms.api;
 
 import com.hrms.api.dto.FraudReportRequest;
 import com.hrms.api.dto.NfcClockRequest;
+import com.hrms.api.dto.ApiResponse;
 import com.hrms.security.EmployeeUserDetails;
 import com.hrms.services.AttendanceService;
 import jakarta.validation.Valid;
@@ -24,16 +25,16 @@ public class AttendanceController {
     }
 
     @PostMapping("/nfc-clock")
-    public ResponseEntity<Map<String, String>> clockByNfc(
+    public ResponseEntity<?> clockByNfc(
             @Valid @RequestBody NfcClockRequest request,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
 
         String result = attendanceService.clockByNfcUid(request.cardUid(), principal);
         if (result.startsWith("Error")) {
-            return ResponseEntity.status(401).body(Map.of("message", result));
+            return ResponseEntity.status(401).body(ApiResponse.error(401, result));
         }
 
-        return ResponseEntity.ok(Map.of("message", result));
+        return ResponseEntity.ok(ApiResponse.success(Map.of("result", result), result));
     }
 
     @PutMapping("/report-fraud/{recordId}")
@@ -48,13 +49,19 @@ public class AttendanceController {
     }
 
     @GetMapping("/my-records")
-    public ResponseEntity<List<AttendanceRecord>> getMyRecords(@AuthenticationPrincipal EmployeeUserDetails principal) {
-        return ResponseEntity.ok(attendanceService.getMyRecords(principal.getEmployeeId()));
+    public ResponseEntity<ApiResponse<List<AttendanceRecord>>> getMyRecords(@AuthenticationPrincipal EmployeeUserDetails principal) {
+        return ResponseEntity.ok(ApiResponse.success(
+                attendanceService.getMyRecords(principal.getEmployeeId()),
+                "Your attendance records retrieved successfully"
+        ));
     }
 
     @GetMapping("/manager/today")
-    public ResponseEntity<List<AttendanceRecord>> getManagerTodayRecords(@AuthenticationPrincipal EmployeeUserDetails principal) {
-        return ResponseEntity.ok(attendanceService.getTodayRecordsForManager(principal.getEmployeeId()));
+    public ResponseEntity<ApiResponse<List<AttendanceRecord>>> getManagerTodayRecords(@AuthenticationPrincipal EmployeeUserDetails principal) {
+        return ResponseEntity.ok(ApiResponse.success(
+                attendanceService.getTodayRecordsForManager(principal.getEmployeeId()),
+                "Today's team attendance retrieved successfully"
+        ));
     }
 
     @PutMapping("/verify/{recordId}")
@@ -70,11 +77,14 @@ public class AttendanceController {
     }
 
     @GetMapping("/hr/monthly")
-    public ResponseEntity<List<AttendanceRecord>> getCompanyMonthlyAttendance(
+    public ResponseEntity<ApiResponse<List<AttendanceRecord>>> getCompanyMonthlyAttendance(
             @RequestParam int month,
             @RequestParam int year,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
         
-        return ResponseEntity.ok(attendanceService.getCompanyMonthlyAttendance(month, year, principal));
+        return ResponseEntity.ok(ApiResponse.success(
+                attendanceService.getCompanyMonthlyAttendance(month, year, principal),
+                "Company monthly attendance retrieved successfully"
+        ));
     }
 }

@@ -1,10 +1,14 @@
 # AGENTS.md - HRMS Project Guidelines
 
+**Last Updated**: April 2026 | **Status**: 85% implementation compliance
+
 ## Project Overview
-Human Resources Management System (HRMS) with NFC-based attendance tracking.
+Human Resources Management System (HRMS) with NFC-based attendance tracking and multi-role dashboard system.
 - **Backend**: Java 21, Spring Boot 3.2.0, Maven, PostgreSQL
 - **Frontend**: React 19, TypeScript, Vite, Tailwind CSS v4
 - **Mobile**: Flutter (planned, minimal scaffolding)
+- **Authentication**: JWT + Spring Security with role-based access control
+- **Database**: PostgreSQL with JPA/Hibernate ORM
 
 ## Directory Structure
 ```
@@ -84,20 +88,50 @@ public class AuthController {
 - Use Spring Data derived queries for simple lookups
 
 **Entities**
-- No-arg constructor (required by JPA) + all-args constructor
-- Use `@PrePersist` for auto-setting timestamps
-- Manual builder inner classes (no Lombok)
-- JPA annotations: `@Entity`, `@Table`, `@Column`, `@ManyToOne`, `@OneToOne`
+- No-arg constructor (required by JPA) + all-args constructor with builder inner class
+- Use `@PrePersist` for auto-setting `createdAt` timestamp (see `Employee.java`)
+- Manual builder pattern (no Lombok to reduce external dependencies)
+- JPA annotations: `@Entity`, `@Table`, `@Column`, `@ManyToOne`, `@OneToOne`, `@Predicate`
 - Use `GenerationType.IDENTITY` for auto-generated IDs
+- Foreign key relationships: Use `@ManyToOne(fetch=FetchType.LAZY)` to avoid N+1 queries
+- Example: `Employee.java` has `managerId` (FK), `teamId` (FK), `departmentId` (FK)
 
 **Error Handling**
-- Currently: inline `ResponseEntity.badRequest()` / `.notFound()`
-- **Add `@ControllerAdvice`** for centralized exception handling
-- Create custom exception classes and `ErrorResponse` DTOs
+- ✅ **Already implemented**: `GlobalExceptionHandler.java` with `@ControllerAdvice` handles:
+  - `ValidationException` → 400 with field errors
+  - `ResponseStatusException` → explicit HTTP status from service logic
+  - `AccessDeniedException` → 403 (security check failures)
+- **Current gap**: Inconsistent response formats (some controllers return `Map<String, Object>`, others use DTOs)
+- **Roadmap**: Create standardized `ApiResponse<T>` wrapper for all endpoints (see below)
 
 **Validation**
-- Add `@Valid` + Bean Validation annotations (`@NotBlank`, `@NotNull`, etc.) to DTOs
-- Currently no input validation exists
+- ✅ **Already in place**: `@Valid` + Bean Validation annotations on DTOs (`@NotBlank`, `@NotNull`, `@Email`)
+- Examples: `LoginRequest.java`, `LeaveRequestDto.java`, `NfcClockRequest.java`
+- **Current gap**: Some endpoints (RecruitmentRequest, AdvanceRequest) still accept `Map<String, Object>` instead of DTOs
+- **Roadmap**: Migrate all Map-based requests to typed DTOs
+
+**Security & Authentication**
+- ✅ JWT filter implemented: `JwtAuthenticationFilter.java` (OncePerRequestFilter)
+- ✅ Password upgrade on first login: Plaintext → BCrypt migration in `AuthService.java`
+- ✅ Role-based access: Pattern is `@AuthenticationPrincipal EmployeeUserDetails principal` + `hasAnyRole(principal, "ROLE_X")`
+- ✅ Stateless sessions: `SecurityConfig.java` uses `SessionCreationPolicy.STATELESS`
+- ✅ CORS configured for localhost:5173
+- ⚠️ **Security gaps**: JWT secret + DB password hardcoded in `application.properties`; all endpoints default to `permitAll()`
+- **Roadmap**: Move secrets to environment variables, enforce role-based endpoint security
+
+### Backend: Actual Working Patterns
+
+These patterns are **actively used and verified** across the codebase. Reference these files when implementing similar features:
+
+| Pattern | Example File | Key Lines |
+|---------|--------------|-----------|
+| **DTO with Validation** | `LoginRequest.java` | Uses records with `@Email`, `@NotBlank` annotations |
+| **Service Layer** | `AuthService.java` | Shows @Transactional, password upgrade, BCrypt usage |
+| **Controllers** | `EmployeeController.java` | Response DTOs, role checks, clean response structure |
+| **Exception Handling** | `GlobalExceptionHandler.java` | @ControllerAdvice catches and formats errors |
+| **Entity Modeling** | `Employee.java` | No-arg/all-args constructors, builder pattern, @PrePersist, foreign keys |
+| **JWT Security** | `JwtAuthenticationFilter.java` | OncePerRequestFilter with proper Spring Security integration |
+| **Repositories** | Various in `core/repositories/` | Spring Data derived queries; custom @Query for complex lookups |
 
 ### Frontend (TypeScript/React)
 
@@ -149,21 +183,140 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 - Add request/response interceptors for auth token injection
 - Add error interceptors for centralized error handling
 
+### Frontend: Actual Working Patterns
+
+These patterns are **actively used and verified** across the codebase. Reference these files when implementing similar features:
+
+| Pattern | Example File | Key Implementation |
+|---------|--------------|-------------------|
+| **API Types & Interceptors** | `api.ts` | Comprehensive type interfaces + request interceptor auto-injects JWT + response interceptor handles 401 |
+| **Auth Module** | `auth.ts` | JWT decode with expiry validation, role checking helpers |
+| **Protected Routes** | `ProtectedRoute.tsx` | Role-based access control with redirect to intended route |
+| **Form Components** | `LeaveRequestForm.tsx`, `AdvanceRequestForm.tsx` | Validation, loading state, error handling, submission |
+| **Role-based Navigation** | `Sidebar.tsx` | Filters menu items by role; SUPER_ADMIN sees entire menu |
+| **Error Boundary** | `ErrorBoundary.tsx` | Class component with error UI and recovery |
+| **Page Components** | `EmployeeDashboard.tsx`, `HRDashboard.tsx` | useEffect data fetching, composition of smaller components |
+
+**API Layer Implementation Details**
+- ✅ Request interceptor adds `Authorization: Bearer <token>` header
+- ✅ Response interceptor catches 401 and redirects to `/login`
+- ✅ All API payloads have TypeScript interfaces (no `any` types)
+- ⚠️ **Current gaps**: Plain axios with useEffect (no React Query/SWR → possible duplicate requests, no caching); form validation duplicated on frontend (same rules exist on backend)
+
 ## Key Patterns to Follow
 
-### Backend
-- Create DTOs for request/response bodies instead of raw `Map<String, String>`
-- Add `@ControllerAdvice` for centralized error handling
-- Add `@Valid` + Bean Validation annotations
-- Consider using Lombok to reduce boilerplate (builder, getters, setters)
-- Add pagination for list endpoints
+### Backend Best Practices (Reference Implementations)
 
-### Frontend
-- Define TypeScript interfaces for all API payloads
-- Use `clsx`/`tailwind-merge` for conditional className strings
-- Add error boundaries around pages
-- Consider adding React Query/SWR for data fetching
-- Add tests before implementing new features
+**When writing a new controller:**
+1. Use DTOs for request/response bodies (see `LoginRequest.java` pattern)
+2. Apply `@Valid` on `@RequestBody` parameter
+3. Return `ResponseEntity<DTO>` with explicit status codes
+4. For errors, throw `ResponseStatusException` (GlobalExceptionHandler catches it)
+5. Inject dependencies via constructor with `final` fields
+
+**When writing a new service:**
+1. Annotate class with `@Service`
+2. Add `@Transactional` on write operations (create, update, delete)
+3. Use constructor injection with `final` fields
+4. Example: `AuthService` shows password upgrade + BCrypt usage pattern
+
+**When creating a new entity:**
+1. Require no-arg constructor for JPA
+2. Create all-args constructor + builder inner class
+3. Use `@PrePersist` for auto-set timestamps (like `Employee.java`)
+4. Use `@ManyToOne(fetch=FetchType.LAZY)` for foreign keys to avoid N+1 queries
+
+**When working with repositories:**
+1. Use Spring Data derived queries for simple lookups: `findById()`, `findByEmail()`
+2. Use `@Query` with JPQL for complex queries requiring joins or custom logic
+3. Always include pagination support for list endpoints
+
+### Frontend Best Practices (Reference Implementations)
+
+**When fetching data:**
+1. Call API functions from `services/api.ts` (has interceptors pre-configured)
+2. Define TypeScript interfaces for all payloads (no `any` types)
+3. Handle errors with proper type checking: `err instanceof Error ? err.message : 'Unknown'`
+4. Example: Use `EmployeeProfile`, `AttendanceRecord` interfaces from `api.ts`
+
+**When creating protected components:**
+1. Wrap routes with `ProtectedRoute.tsx`
+2. Filter UI elements by role using `getRole()` from `auth.ts`
+3. Allow SUPER_ADMIN to access all sections (reference: `Sidebar.tsx`)
+
+**When building forms:**
+1. Use `useState` for loading + error state
+2. Validate on submit (backend validation is authoritative)
+3. Show errors from backend response (field-level validation from GlobalExceptionHandler)
+4. Reference: `LeaveRequestForm.tsx` or `AdvanceRequestForm.tsx`
+
+**When styling:**
+1. Use Tailwind CSS v4 utility classes
+2. Use `clsx` + `tailwind-merge` for conditional classes (already installed)
+3. Maintain both dark luxury theme (fintech) and light slate theme (HRMS dashboards)
+
+### Validation Strategy (Split Frontend/Backend)
+
+- **Frontend validation**: For immediate user feedback (required fields, email format, date ranges)
+- **Backend validation**: @Valid + Bean Validation annotations (security boundary—never trust client)
+- **Keep them in sync**: Document validation rules in both frontend and backend consistently
+
+### Response Format Strategy (Under Development)
+
+Currently inconsistent—some endpoints return `Map<String, Object>`, others use DTOs. **Roadmap: standardize all responses to use:**
+```java
+record ApiResponse<T>(
+    int status,
+    String message,
+    T data,
+    LocalDateTime timestamp
+) {}
+```
+
+### Pagination Strategy (Under Development)
+
+List endpoints should support pagination—currently return unlimited results. **Recommended pattern:**
+```java
+record PaginationRequest(int page, int pageSize) {}
+record PaginatedResponse<T>(List<T> items, int total, int page, int pageSize) {}
+```
+
+### Logging Pattern
+
+- Use SLF4J (not `System.out.println()`): `private static final Logger log = LoggerFactory.getLogger(...);`
+- Log at appropriate levels: DEBUG for flow, INFO for significant events, ERROR for failures
+
+## Known Inconsistencies & Gaps
+
+| Category | Issue | Severity | Affected Files | Recommended Fix |
+|----------|-------|----------|-----------------|-----------------|
+| **Request Format** | Some endpoints accept `Map<String, Object>` instead of DTOs | 🔴 | RecruitmentRequestController, AdvanceRequestController | Create RecruitmentRequestDto, AdvanceRequestDto |
+| **Response Format** | Mixed return types (Map vs DTO vs Entity) | 🔴 | Various controllers | Standardize to ApiResponse<T> wrapper |
+| **Pagination** | No pagination on list endpoints | 🟡 | All `/api/**` list endpoints | Add PageRequest/PageResponse pattern |
+| **Logging** | System.out.println in AuthService | 🟡 | AuthService.java | Replace with SLF4J logger |
+| **Data Fetching** | No React Query/SWR (potential duplicate requests) | 🟡 | api.ts | Consider adding React Query |
+| **Secrets** | JWT secret + DB password hardcoded | 🔴 | application.properties | Use environment variables |
+| **Endpoint Security** | All endpoints default to permitAll() | 🔴 | SecurityConfig.java | Add role-based endpoint guards |
+| **Form Validation Sync** | Rules duplicated frontend/backend | 🟡 | LeaveRequestForm, etc. | Document sync strategy |
+| **Error Boundaries** | No error boundaries on all pages | 🟡 | Dashboard pages | Wrap pages in ErrorBoundary |
+
+## Backend
+- ✅ Constructor injection consistently applied
+- ✅ DTOs + @Valid pattern in place (LoginRequest exemplar)
+- ✅ GlobalExceptionHandler working
+- ✅ JWT authentication functional
+- ✅ @Transactional on write operations
+- ⚠️ Some endpoints bypass DTOs (Map-based requests need fixing)
+- ⚠️ Responses not standardized
+
+## Frontend
+- ✅ Strict TypeScript enabled
+- ✅ API interceptors working (JWT injection, 401 handling)
+- ✅ Role-based access control in UI
+- ✅ Protected routes functional
+- ✅ Error boundaries implemented
+- ⚠️ No data fetching library (React Query recommended)
+- ⚠️ Form validation duplicated from backend
 
 ## Security Notes (Current Gaps)
 - All endpoints are `permitAll()` - no actual authentication enforcement
@@ -172,11 +325,10 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 - Password comparison is plaintext (BCrypt bean defined but unused)
 - **Recommendations**: Use environment variables for secrets, implement JWT filter, add role-based access control
 
-## Future Improvements
-1. Add test directories (`src/test/java/`, `src/`) with proper test framework
-2. Implement centralized error handling (`@ControllerAdvice`)
-3. Add DTOs and input validation
-4. Fix security configuration (JWT filter, BCrypt, env vars)
-5. Add TypeScript interfaces to frontend
-6. Configure path aliases in Vite/TypeScript
-7. Add error boundaries and API interceptors on frontend
+## Future Improvements (Roadmap)
+1. ✅ **Done**: GlobalExceptionHandler, JWT auth, @Valid validation, constructior injection pattern
+2. ⚠️ **In Progress**: Standardize response DTOs, pagination pattern
+3. 🔴 **Priority**: Fix Map-based request endpoints, migrate secrets to env vars, add endpoint security
+4. 📋 **Medium Priority**: Zero tests yet (add JUnit 5/Mockito for backend; Vitest/RTL for frontend)
+5. 📋 **Medium Priority**: Implement React Query/SWR for data fetching, add centralized form error handler
+6. 🎯 **Future**: DB migrations (Liquibase/Flyway), request/response logging, type-safe validation sharing
