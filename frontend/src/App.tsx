@@ -13,6 +13,7 @@ import NFCClock from './pages/NFCClock';
 import Login from './pages/Login';
 import Expenses from './pages/Expenses';
 import Goals from './pages/Goals';
+import Inbox from './pages/Inbox';
 
 function App() {
   return (
@@ -74,6 +75,11 @@ function App() {
           <Route path="/goals" element={
             <ProtectedRoute>
               <Goals />
+            </ProtectedRoute>
+          } />
+          <Route path="/inbox" element={
+            <ProtectedRoute>
+              <Inbox />
             </ProtectedRoute>
           } />
         </Routes>

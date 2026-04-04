@@ -110,5 +110,22 @@ CREATE TABLE Advance_Requests (
     HrNote VARCHAR(500)
 );
 
+-- 10. Inbox Messages Table
+CREATE TABLE Inbox_Messages (
+    MessageId SERIAL PRIMARY KEY,
+    Title VARCHAR(255) NOT NULL,
+    Message TEXT NOT NULL,
+    TargetRole VARCHAR(50) NOT NULL,
+    SenderName VARCHAR(255) NOT NULL,
+    Priority VARCHAR(20) DEFAULT 'MEDIUM',
+    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ReadAt TIMESTAMP,
+    Archived BOOLEAN DEFAULT FALSE
+);
+
+-- Create index on TargetRole for faster role-based queries
+CREATE INDEX idx_inbox_target_role ON Inbox_Messages(TargetRole);
+CREATE INDEX idx_inbox_created_at ON Inbox_Messages(CreatedAt DESC);
+
 -- Seed Initial Roles
 INSERT INTO Users_Roles (RoleName) VALUES ('ADMIN'), ('HR'), ('MANAGER'), ('EMPLOYEE');

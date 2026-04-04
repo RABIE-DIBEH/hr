@@ -91,6 +91,17 @@ public class SecurityConfig {
                         // Admin endpoints - ADMIN/SUPER_ADMIN only
                         .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                         
+                        // Inbox endpoints - authenticated users can view/manage own inbox
+                        .requestMatchers(HttpMethod.GET, "/api/inbox").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/inbox/unread").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/inbox/unread-count").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/inbox/high-priority").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/inbox/*/read").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/inbox/read-all").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/inbox/*/archive").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/inbox/send").hasAnyRole("ADMIN", "SUPER_ADMIN") // Only admins send messages
+                        .requestMatchers(HttpMethod.DELETE, "/api/inbox/**").hasAnyRole("ADMIN", "SUPER_ADMIN") // Only admins delete
+                        
                         // Default: all other /api/** require authentication
                         .requestMatchers("/api/**").authenticated()
                 )

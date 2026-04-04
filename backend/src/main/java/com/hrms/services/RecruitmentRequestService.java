@@ -16,9 +16,11 @@ import java.util.Optional;
 public class RecruitmentRequestService {
 
     private final RecruitmentRequestRepository recruitmentRequestRepository;
+    private final InboxService inboxService;
 
-    public RecruitmentRequestService(RecruitmentRequestRepository recruitmentRequestRepository) {
+    public RecruitmentRequestService(RecruitmentRequestRepository recruitmentRequestRepository, InboxService inboxService) {
         this.recruitmentRequestRepository = recruitmentRequestRepository;
+        this.inboxService = inboxService;
     }
 
     /**
@@ -33,7 +35,18 @@ public class RecruitmentRequestService {
 
         request.setStatus("Pending");
         request.setRequestedAt(LocalDateTime.now());
-        return recruitmentRequestRepository.save(request);
+        RecruitmentRequest saved = recruitmentRequestRepository.save(request);
+
+        // Notify HR role about new recruitment request
+        inboxService.sendMessage(
+            "New Recruitment Request",
+            "A new recruitment request for " + saved.getJobDescription() + " has been submitted and is pending review.",
+            "HR",
+            "System",
+            "MEDIUM"
+        );
+
+        return saved;
     }
 
     /**
@@ -62,7 +75,20 @@ public class RecruitmentRequestService {
         request.setProcessedAt(LocalDateTime.now());
         request.setApprovedBy(processorId);
 
-        return recruitmentRequestRepository.save(request);
+        RecruitmentRequest saved = recruitmentRequestRepository.save(request);
+
+        // Notify the original requester
+        if (saved.getRequestedBy() != null) {
+            inboxService.sendPersonalMessage(
+                "Recruitment Request " + status,
+                "Your recruitment request for " + saved.getJobDescription() + " has been " + status.toLowerCase() + ".",
+                saved.getRequestedBy(),
+                "System",
+                "MEDIUM"
+            );
+        }
+
+        return saved;
     }
 
     /**

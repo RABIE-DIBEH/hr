@@ -18,9 +18,15 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Auto-logout on 401 (expired or invalid token)
+// Auto-unwrap ApiResponse data field and handle 401
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // If the response follows the ApiResponse structure, return the data field
+    if (response.data && typeof response.data === 'object' && 'data' in response.data && 'status' in response.data) {
+      return { ...response, data: response.data.data };
+    }
+    return response;
+  },
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem(AUTH_TOKEN_KEY);
@@ -143,14 +149,29 @@ export interface LeaveRequest {
   requestedAt?: string;
 }
 
+/** 
+ * Typed response from the login endpoint 
+ * Matches the backend ApiResponse<Map<string, string>>
+ */
+interface LoginResponse {
+  status: number;
+  message: string;
+  data: {
+    token: string;
+  };
+}
+
 export const login = async (email: string, password: string) => {
-  const { data } = await axios.post<{ token: string; message?: string }>(
+  const { data } = await axios.post<LoginResponse>(
     `${API_BASE_URL}/auth/login`,
     { email, password },
     { headers: { 'Content-Type': 'application/json' } }
   );
-  if (data.token) {
-    localStorage.setItem(AUTH_TOKEN_KEY, data.token);
+  
+  // Extract token from the nested data field in ApiResponse
+  const token = data.data?.token;
+  if (token) {
+    localStorage.setItem(AUTH_TOKEN_KEY, token);
   }
   return data;
 };
@@ -261,5 +282,42 @@ export const getPendingLeavesForHr = () =>
 
 export const processLeaveRequest = (requestId: number, status: string, note?: string) =>
   api.put(`/leaves/process/${requestId}`, { status, note });
+
+// Inbox APIs
+export interface InboxMessage {
+  messageId: number;
+  title: string;
+  message: string;
+  targetRole: string;
+  senderName: string;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH';
+  createdAt: string;
+  readAt?: string;
+  archived: boolean;
+}
+
+export const getInbox = () =>
+  api.get<InboxMessage[]>('/inbox');
+
+export const getUnreadMessages = () =>
+  api.get<InboxMessage[]>('/inbox/unread');
+
+export const getUnreadCount = () =>
+  api.get<{ count: number }>('/inbox/unread-count');
+
+export const getHighPriorityMessages = () =>
+  api.get<InboxMessage[]>('/inbox/high-priority');
+
+export const markMessageAsRead = (messageId: number) =>
+  api.put(`/inbox/${messageId}/read`);
+
+export const markAllAsRead = () =>
+  api.put('/inbox/read-all', {});
+
+export const archiveMessage = (messageId: number) =>
+  api.put(`/inbox/${messageId}/archive`);
+
+export const sendMessage = (data: { title: string; message: string; targetRole: string; senderName?: string; priority?: string }) =>
+  api.post('/inbox/send', data);
 
 export default api;

@@ -49,7 +49,9 @@ public class AttendanceService {
 
     private boolean canUseNfcCard(NFCCard card, EmployeeUserDetails principal) {
         boolean privileged = principal.getAuthorities().stream().anyMatch(a ->
-                "ROLE_HR".equals(a.getAuthority()) || "ROLE_ADMIN".equals(a.getAuthority()));
+                "ROLE_HR".equals(a.getAuthority()) ||
+                "ROLE_ADMIN".equals(a.getAuthority()) ||
+                "ROLE_SUPER_ADMIN".equals(a.getAuthority()));
         if (privileged) {
             return true;
         }
@@ -77,10 +79,11 @@ public class AttendanceService {
 
     private boolean canReportFraudOn(Employee target, EmployeeUserDetails principal) {
         for (var a : principal.getAuthorities()) {
-            if ("ROLE_ADMIN".equals(a.getAuthority()) || "ROLE_HR".equals(a.getAuthority())) {
+            String authority = a.getAuthority();
+            if ("ROLE_ADMIN".equals(authority) || "ROLE_HR".equals(authority) || "ROLE_SUPER_ADMIN".equals(authority)) {
                 return true;
             }
-            if ("ROLE_MANAGER".equals(a.getAuthority())) {
+            if ("ROLE_MANAGER".equals(authority)) {
                 return target.getManagerId() != null && target.getManagerId().equals(principal.getEmployeeId());
             }
         }

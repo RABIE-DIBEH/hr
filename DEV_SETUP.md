@@ -65,7 +65,52 @@ psql -U postgres -d hrms_db -f database/seed_test_data.sql
 
 ---
 
-## 3. Backend Setup
+## 3. Environment Configuration (.env Setup)
+
+Create an `.env` file in the backend directory with your local development secrets. This file is **not committed to Git** and overrides `application.properties` values.
+
+### Windows
+```cmd
+cd backend
+copy .env.example .env.local
+```
+
+### Fedora/Linux
+```bash
+cd backend
+cp .env.example .env.local
+```
+
+### Edit `.env.local`
+```env
+# Database configuration
+DB_USERNAME=postgres
+DB_PASSWORD=admin123
+
+# JWT Secret (generate a new one for production)
+JWT_SECRET=ChangeThisToAVeryLongSecretKeyAtLeast32CharsForHS256!!
+
+# Environment
+ENVIRONMENT=development
+```
+
+**To generate a strong JWT_SECRET:**
+
+**Windows (PowerShell):**
+```powershell
+[System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes((New-Guid).ToString() + (New-Guid).ToString())) | % { $_.Substring(0, 44) }
+```
+
+**Fedora/Linux (bash):**
+```bash
+openssl rand -base64 32
+```
+
+> The `application.properties` will automatically load these values via Spring's property placeholder syntax: `${DB_USERNAME:postgres}`, `${DB_PASSWORD:admin123}`, etc.
+
+---
+
+## 4. Backend Setup
 
 The `application.properties` is already configured for local dev (port `8080`, DB `hrms_db`).
 
@@ -85,7 +130,7 @@ mvn spring-boot:run
 
 ---
 
-## 4. Frontend Setup
+## 5. Frontend Setup
 
 ```bash
 cd frontend
@@ -97,7 +142,7 @@ npm run dev
 
 ---
 
-## 5. Test Credentials
+## 6. Test Credentials
 
 Once the backend is running and the seed data is loaded, use these accounts:
 
@@ -117,7 +162,7 @@ The test employee has a linked NFC card for clock-in simulation:
 
 ---
 
-## 6. Database Config (`application.properties`)
+## 7. Database Config (`application.properties`)
 
 ```properties
 spring.datasource.url=jdbc:postgresql://localhost:5432/hrms_db
@@ -130,7 +175,7 @@ jwt.secret=ChangeThisToAVeryLongSecretKeyAtLeast32CharsForHS256!!
 
 ---
 
-## 7. Useful Commands
+## 8. Useful Commands
 
 ### Backend
 ```bash
@@ -164,7 +209,7 @@ SELECT * FROM Leave_Requests;
 
 ---
 
-## 8. Cross-Platform Notes
+## 9. Cross-Platform Notes
 
 | Topic | Detail |
 |---|---|

@@ -1,0 +1,255 @@
+package com.hrms.api;
+
+import com.hrms.api.dto.ApiResponse;
+import com.hrms.api.dto.InboxMessageResponse;
+import com.hrms.api.dto.SendInboxMessageDto;
+import com.hrms.core.models.InboxMessage;
+import com.hrms.security.EmployeeUserDetails;
+import com.hrms.services.InboxService;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Inbox Controller - Role-based and Personal messaging system
+ */
+@RestController
+@RequestMapping("/api/inbox")
+public class InboxController {
+    
+    private final InboxService inboxService;
+    
+    public InboxController(InboxService inboxService) {
+        this.inboxService = inboxService;
+    }
+    
+    /**
+     * GET /api/inbox
+     * Get all messages for current user (role-based + personal)
+     */
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<InboxMessageResponse>>> getInbox(
+            @AuthenticationPrincipal EmployeeUserDetails principal) {
+        
+        String role = extractRole(principal);
+        Long employeeId = principal.getEmployeeId();
+        
+        List<InboxMessage> messages = inboxService.getInboxForUser(role, employeeId);
+        List<InboxMessageResponse> responses = messages.stream()
+                .map(InboxMessageResponse::from)
+                .toList();
+        
+        return ResponseEntity.ok(ApiResponse.success(
+                responses,
+                "Inbox retrieved successfully"
+        ));
+    }
+    
+    /**
+     * GET /api/inbox/unread
+     * Get unread messages for current user
+     */
+    @GetMapping("/unread")
+    public ResponseEntity<ApiResponse<List<InboxMessageResponse>>> getUnreadMessages(
+            @AuthenticationPrincipal EmployeeUserDetails principal) {
+        
+        String role = extractRole(principal);
+        Long employeeId = principal.getEmployeeId();
+        
+        List<InboxMessage> messages = inboxService.getUnreadMessagesForUser(role, employeeId);
+        List<InboxMessageResponse> responses = messages.stream()
+                .map(InboxMessageResponse::from)
+                .toList();
+        
+        return ResponseEntity.ok(ApiResponse.success(
+                responses,
+                "Unread messages retrieved successfully"
+        ));
+    }
+    
+    /**
+     * GET /api/inbox/unread-count
+     * Get count of unread messages
+     */
+    @GetMapping("/unread-count")
+    public ResponseEntity<ApiResponse<Map<String, Integer>>> getUnreadCount(
+            @AuthenticationPrincipal EmployeeUserDetails principal) {
+        
+        String role = extractRole(principal);
+        Long employeeId = principal.getEmployeeId();
+        int count = inboxService.getUnreadCount(role, employeeId);
+        
+        return ResponseEntity.ok(ApiResponse.success(
+                Map.of("unreadCount", count),
+                "Unread count retrieved"
+        ));
+    }
+    
+    /**
+     * GET /api/inbox/high-priority
+     * Get high priority messages for current user
+     */
+    @GetMapping("/high-priority")
+    public ResponseEntity<ApiResponse<List<InboxMessageResponse>>> getHighPriorityMessages(
+            @AuthenticationPrincipal EmployeeUserDetails principal) {
+        
+        String role = extractRole(principal);
+        Long employeeId = principal.getEmployeeId();
+        
+        List<InboxMessage> messages = inboxService.getHighPriorityMessages(role, employeeId);
+        List<InboxMessageResponse> responses = messages.stream()
+                .map(InboxMessageResponse::from)
+                .toList();
+        
+        return ResponseEntity.ok(ApiResponse.success(
+                responses,
+                "High priority messages retrieved successfully"
+        ));
+    }
+    
+    /**
+     * PUT /api/inbox/{messageId}/read
+     * Mark a message as read
+     */
+    @PutMapping("/{messageId}/read")
+    public ResponseEntity<ApiResponse<InboxMessageResponse>> markAsRead(
+            @PathVariable Long messageId,
+            @AuthenticationPrincipal EmployeeUserDetails principal) {
+        
+        InboxMessage message = inboxService.markAsRead(messageId);
+        if (message == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Message not found");
+        }
+        
+        return ResponseEntity.ok(ApiResponse.success(
+                InboxMessageResponse.from(message),
+                "Message marked as read"
+        ));
+    }
+    
+    /**
+     * PUT /api/inbox/read-all
+     * Mark all messages as read for current user
+     */
+    @PutMapping("/read-all")
+    public ResponseEntity<ApiResponse<Map<String, String>>> markAllAsRead(
+            @AuthenticationPrincipal EmployeeUserDetails principal) {
+        
+        String role = extractRole(principal);
+        Long employeeId = principal.getEmployeeId();
+        inboxService.markAllAsRead(role, employeeId);
+        
+        return ResponseEntity.ok(ApiResponse.success(
+                Map.of("status", "all-marked-as-read"),
+                "All messages marked as read"
+        ));
+    }
+    
+    /**
+     * PUT /api/inbox/{messageId}/archive
+     * Archive a message
+     */
+    @PutMapping("/{messageId}/archive")
+    public ResponseEntity<ApiResponse<Map<String, String>>> archiveMessage(
+            @PathVariable Long messageId,
+            @AuthenticationPrincipal EmployeeUserDetails principal) {
+        
+        InboxMessage message = inboxService.archiveMessage(messageId);
+        if (message == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Message not found");
+        }
+        
+        return ResponseEntity.ok(ApiResponse.success(
+                Map.of("status", "archived", "messageId", messageId.toString()),
+                "Message archived successfully"
+        ));
+    }
+    
+    /**
+     * POST /api/inbox/send
+     * Send a message (ADMIN/SUPER_ADMIN only)
+     */
+    @PostMapping("/send")
+    public ResponseEntity<ApiResponse<InboxMessageResponse>> sendMessage(
+            @Valid @RequestBody SendInboxMessageDto dto,
+            @AuthenticationPrincipal EmployeeUserDetails principal) {
+        
+        // Check authorization
+        if (!hasAnyRole(principal, "ROLE_ADMIN", "ROLE_SUPER_ADMIN")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                    "Only admins can send messages");
+        }
+        
+        InboxMessage message;
+        if (dto.targetEmployeeId() != null) {
+            message = inboxService.sendPersonalMessage(
+                dto.title(),
+                dto.message(),
+                dto.targetEmployeeId(),
+                dto.senderName(),
+                dto.priority()
+            );
+        } else {
+            message = inboxService.sendMessage(
+                dto.title(),
+                dto.message(),
+                dto.targetRole(),
+                dto.senderName(),
+                dto.priority()
+            );
+        }
+        
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(
+                InboxMessageResponse.from(message),
+                "Message sent successfully"
+        ));
+    }
+    
+    /**
+     * DELETE /api/inbox/{messageId}
+     * Delete a message (ADMIN/SUPER_ADMIN only)
+     */
+    @DeleteMapping("/{messageId}")
+    public ResponseEntity<ApiResponse<Map<String, String>>> deleteMessage(
+            @PathVariable Long messageId,
+            @AuthenticationPrincipal EmployeeUserDetails principal) {
+        
+        // Check authorization
+        if (!hasAnyRole(principal, "ROLE_ADMIN", "ROLE_SUPER_ADMIN")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+                    "Only admins can delete messages");
+        }
+        
+        inboxService.deleteMessage(messageId);
+        
+        return ResponseEntity.ok(ApiResponse.success(
+                Map.of("status", "deleted", "messageId", messageId.toString()),
+                "Message deleted successfully"
+        ));
+    }
+    
+    // Helper methods
+    
+    private String extractRole(EmployeeUserDetails principal) {
+        return principal.getAuthorities().stream()
+                .map(auth -> auth.getAuthority().replace("ROLE_", ""))
+                .findFirst()
+                .orElse("EMPLOYEE");
+    }
+    
+    private static boolean hasAnyRole(EmployeeUserDetails principal, String... roles) {
+        for (String role : roles) {
+            if (principal.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals(role))) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
