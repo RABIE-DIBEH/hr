@@ -22,21 +22,9 @@ import java.util.Optional;
 public class RecruitmentRequestService {
 
     private final RecruitmentRequestRepository recruitmentRequestRepository;
-    private final EmployeeRepository employeeRepository;
-    private final RoleRepository roleRepository;
-    private final TeamRepository teamRepository;
-    private final PasswordEncoder passwordEncoder;
 
-    public RecruitmentRequestService(RecruitmentRequestRepository recruitmentRequestRepository,
-                                   EmployeeRepository employeeRepository,
-                                   RoleRepository roleRepository,
-                                   TeamRepository teamRepository,
-                                   PasswordEncoder passwordEncoder) {
+    public RecruitmentRequestService(RecruitmentRequestRepository recruitmentRequestRepository) {
         this.recruitmentRequestRepository = recruitmentRequestRepository;
-        this.employeeRepository = employeeRepository;
-        this.roleRepository = roleRepository;
-        this.teamRepository = teamRepository;
-        this.passwordEncoder = passwordEncoder;
     }
 
     /**
@@ -56,7 +44,18 @@ public class RecruitmentRequestService {
 
         request.setStatus(RecruitmentRequest.STATUS_PENDING_MANAGER);
         request.setRequestedAt(LocalDateTime.now());
-        return recruitmentRequestRepository.save(request);
+        RecruitmentRequest saved = recruitmentRequestRepository.save(request);
+
+        // Notify HR role about new recruitment request
+        inboxService.sendMessage(
+            "New Recruitment Request",
+            "A new recruitment request for " + saved.getJobDescription() + " has been submitted and is pending review.",
+            "HR",
+            "System",
+            "MEDIUM"
+        );
+
+        return saved;
     }
 
     /**
@@ -103,6 +102,7 @@ public class RecruitmentRequestService {
         request.setManagerNote(note);
         request.setProcessedAt(LocalDateTime.now());
         request.setApprovedBy(processorId);
+
         return recruitmentRequestRepository.save(request);
     }
 

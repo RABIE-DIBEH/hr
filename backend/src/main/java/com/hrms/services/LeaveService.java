@@ -18,17 +18,40 @@ public class LeaveService {
 
     private final LeaveRequestRepository leaveRequestRepository;
     private final EmployeeRepository employeeRepository;
+    private final InboxService inboxService;
 
-    public LeaveService(LeaveRequestRepository leaveRequestRepository, EmployeeRepository employeeRepository) {
+    public LeaveService(LeaveRequestRepository leaveRequestRepository, EmployeeRepository employeeRepository, InboxService inboxService) {
         this.leaveRequestRepository = leaveRequestRepository;
         this.employeeRepository = employeeRepository;
+        this.inboxService = inboxService;
     }
 
     @Transactional
     public LeaveRequest submitRequest(Employee employee, LeaveRequest requestData) {
         requestData.setEmployee(employee);
         requestData.setStatus("PENDING_MANAGER");
-        return leaveRequestRepository.save(requestData);
+        LeaveRequest saved = leaveRequestRepository.save(requestData);
+
+        // Notify specific manager if exists, otherwise notify general MANAGER role
+        if (employee.getManagerId() != null) {
+            inboxService.sendPersonalMessage(
+                "New Leave Request",
+                "Employee " + employee.getFullName() + " has submitted a leave request for " + saved.getLeaveType() + ".",
+                employee.getManagerId(),
+                "System",
+                "MEDIUM"
+            );
+        } else {
+            inboxService.sendMessage(
+                "New Leave Request",
+                "Employee " + employee.getFullName() + " has submitted a leave request for " + saved.getLeaveType() + ".",
+                "MANAGER",
+                "System",
+                "MEDIUM"
+            );
+        }
+
+        return saved;
     }
 
     @Transactional
@@ -43,6 +66,7 @@ public class LeaveService {
             boolean isHrOrAdmin = principal.getAuthorities().stream().anyMatch(a -> 
                 a.getAuthority().equals("ROLE_HR") || a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPER_ADMIN"));
 
+            String oldStatus = request.getStatus();
             if ("REJECTED".equalsIgnoreCase(status)) {
                 request.setStatus("REJECTED");
             } else if ("APPROVED".equalsIgnoreCase(status)) {
@@ -69,7 +93,37 @@ public class LeaveService {
             
             request.setManagerNote(note);
             request.setProcessedAt(LocalDateTime.now());
-            return leaveRequestRepository.save(request);
+            LeaveRequest saved = leaveRequestRepository.save(request);
+
+            // Notify Employee if status changed to a final state or PENDING_HR
+            if (!saved.getStatus().equals(oldStatus)) {
+                String title = "Leave Request Update";
+                String message = "Your leave request for " + saved.getLeaveType() + " is now " + saved.getStatus().replace("_", " ") + ".";
+                if (note != null && !note.isBlank()) {
+                    message += " Note: " + note;
+                }
+                
+                inboxService.sendPersonalMessage(
+                    title,
+                    message,
+                    requester.getEmployeeId(),
+                    "HR/Manager",
+                    saved.getStatus().equals("REJECTED") ? "HIGH" : "MEDIUM"
+                );
+
+                // If it moved to PENDING_HR, notify HR role
+                if ("PENDING_HR".equals(saved.getStatus())) {
+                    inboxService.sendMessage(
+                        "Leave Request Awaiting HR Approval",
+                        "A leave request from " + requester.getFullName() + " has been approved by their manager and is now awaiting HR final review.",
+                        "HR",
+                        "System",
+                        "MEDIUM"
+                    );
+                }
+            }
+
+            return saved;
         });
     }
 

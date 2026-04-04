@@ -11,9 +11,11 @@ import {
   Settings,
   Star,
   HandCoins,
+  Bell,
 } from 'lucide-react';
 import { AUTH_TOKEN_KEY, getCurrentEmployee, logout, type EmployeeProfile } from '../services/api';
 import { getRole, isSuperAdmin } from '../services/auth';
+import NotificationBadge from './NotificationBadge';
 import type { UserRole } from '../services/auth';
 
 interface MenuItem {
@@ -34,6 +36,7 @@ const allMenuItems: MenuItem[] = [
   { path: '/admin',     icon: Settings,        label: 'مدير النظام',     roles: ['ADMIN', 'SUPER_ADMIN'] },
   { path: '/clock',     icon: CreditCard,      label: 'جهاز البصمة' },
   { path: '/attendance', icon: Clock,           label: 'سجل حضوري' },
+  { path: '/inbox',     icon: Bell,            label: 'صندوق الرسائل' },
 ];
 
 const Sidebar = () => {
@@ -75,11 +78,16 @@ const Sidebar = () => {
 
   return (
     <aside className="fixed inset-y-0 right-0 w-64 bg-luxury-surface text-white flex flex-col z-50 border-l border-white/5">
-      <div className="p-6 flex items-center gap-3 border-b border-white/5">
-        <div className="bg-luxury-primary p-2 rounded-lg shadow-[0_0_15px_rgba(106,13,173,0.4)]">
-          <ShieldCheck size={24} className="text-white" />
+      <div className="p-6 flex items-center justify-between border-b border-white/5">
+        <div className="flex items-center gap-3">
+          <div className="bg-luxury-primary p-2 rounded-lg shadow-[0_0_15px_rgba(106,13,173,0.4)]">
+            <ShieldCheck size={24} className="text-white" />
+          </div>
+          <span className="font-bold text-xl tracking-tight text-white">نظام الموارد</span>
         </div>
-        <span className="font-bold text-xl tracking-tight text-white">نظام الموارد</span>
+        <NavLink to="/inbox" className="p-2 rounded-lg hover:bg-white/10 transition-all">
+          <NotificationBadge />
+        </NavLink>
       </div>
 
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">

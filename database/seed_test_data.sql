@@ -59,3 +59,32 @@ SELECT 'TEST-NFC-UID-0001', e.EmployeeId, 'Active'
 FROM   Employees e
 WHERE  e.Email = 'employee@hrms.com'
 ON CONFLICT (Uid) DO NOTHING;
+
+-- ── Sample Inbox Messages ────────────────────────────────────
+-- Messages for testing the inbox system
+-- Roles: EMPLOYEE, MANAGER, HR, ADMIN, SUPER_ADMIN
+INSERT INTO Inbox_Messages (Title, Message, TargetRole, SenderName, Priority, CreatedAt, ReadAt, Archived)
+VALUES
+  -- Messages for EMPLOYEE role
+  ('مرحباً بك في النظام', 'نرحب بك في نظام إدارة الموارد البشرية. يمكنك الآن الوصول إلى لوحة التحكم الخاصة بك.', 'EMPLOYEE', 'نظام الإدارة', 'LOW', NOW() - INTERVAL 3 DAY, NOW() - INTERVAL 2 DAY, false),
+  ('تحديث سياسة الإجازات', 'تم تحديث سياسة الإجازات السنوية. يرجى مراجعة القسم الجديد في نظام الإدارة.', 'EMPLOYEE', 'قسم الموارد البشرية', 'MEDIUM', NOW() - INTERVAL 2 DAY, NULL, false),
+  ('تجديد شهادة الأمان والصحة', 'يجب عليك تجديد شهادة الأمان والصحة قبل نهاية الشهر الحالي.', 'EMPLOYEE', 'قسم الموارد البشرية', 'HIGH', NOW() - INTERVAL 1 DAY, NULL, false),
+  ('إشعار بتحديث النظام', 'سيتم تحديث النظام غذا الساعة 2:00 صباحاً. قد يحدث انقطاع مؤقت في الخدمة.', 'EMPLOYEE', 'نظام الإدارة', 'MEDIUM', NOW(), NULL, false),
+
+  -- Messages for MANAGER role
+  ('تقرير الفريق الأسبوعي', 'يرجى تقديم تقرير الفريق الأسبوعي بحلول يوم الجمعة.', 'MANAGER', 'قسم الموارد البشرية', 'MEDIUM', NOW() - INTERVAL 2 DAY, NOW() - INTERVAL 1 DAY, false),
+  ('اجتماع القيادة', 'هناك اجتماع قيادة مهم يوم الثلاثاء في الساعة 10:00 صباحاً.', 'MANAGER', 'نظام الإدارة', 'HIGH', NOW() - INTERVAL 1 DAY, NULL, false),
+  ('من فضلك راجع طلبات الإجازة المعلقة', 'هناك عدة طلبات إجازة معلقة بانتظار موافقتك.', 'MANAGER', 'نظام الإدارة', 'HIGH', NOW(), NULL, false),
+
+  -- Messages for HR role
+  ('تقرير الموارد البشرية الشهري', 'من فضلك أرسل التقرير الشهري للموارد البشرية في نهاية الشهر.', 'HR', 'قسم الإدارة', 'MEDIUM', NOW() - INTERVAL 2 DAY, NOW() - INTERVAL 1 DAY, false),
+  ('معالجة تعويضات الموظفين', 'هناك طلب معالجة تعويضات معلق. يرجى المراجعة والموافقة.', 'HR', 'نظام الإدارة', 'HIGH', NOW() - INTERVAL 1 DAY, NULL, false),
+  ('تدريب الموارد البشرية الجديد', 'يتم فتح دورة تدريبية جديدة للموارد البشرية. يرجى التسجيل إذا كنت مهتماً.', 'HR', 'قسم التطوير', 'LOW', NOW(), NULL, false),
+
+  -- Messages for ADMIN role
+  ('تقرير الأنظمة', 'قدم تقرير شامل عن حالة جميع الأنظمة.', 'ADMIN', 'نظام المراقبة', 'HIGH', NOW() - INTERVAL 1 DAY, NULL, false),
+  ('نسخة احتياطية من قاعدة البيانات', 'تم إكمال النسخة الاحتياطية بنجاح. جميع البيانات آمنة.', 'ADMIN', 'نظام الإدارة', 'LOW', NOW(), NOW(), false),
+
+  -- Messages for ALL roles
+  ('إشعار أمني هام', 'تم اكتشاف نشاط مريب. يرجى تحديث كلمات المرور الخاصة بك فوراً.', 'ALL', 'نظام الأمان', 'HIGH', NOW() - INTERVAL 1 DAY, NULL, false);
+

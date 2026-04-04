@@ -14,9 +14,11 @@ import java.util.Optional;
 public class AdvanceRequestService {
 
     private final AdvanceRequestRepository advanceRequestRepository;
+    private final InboxService inboxService;
 
-    public AdvanceRequestService(AdvanceRequestRepository advanceRequestRepository) {
+    public AdvanceRequestService(AdvanceRequestRepository advanceRequestRepository, InboxService inboxService) {
         this.advanceRequestRepository = advanceRequestRepository;
+        this.inboxService = inboxService;
     }
 
     /**
@@ -31,7 +33,18 @@ public class AdvanceRequestService {
 
         request.setStatus("Pending");
         request.setRequestedAt(LocalDateTime.now());
-        return advanceRequestRepository.save(request);
+        AdvanceRequest saved = advanceRequestRepository.save(request);
+
+        // Notify HR about new request
+        inboxService.sendMessage(
+            "New Advance Request",
+            "A new advance request of " + saved.getAmount() + " has been submitted and is pending review.",
+            "HR",
+            "System",
+            "MEDIUM"
+        );
+
+        return saved;
     }
 
     /**
@@ -60,7 +73,24 @@ public class AdvanceRequestService {
         request.setProcessedAt(LocalDateTime.now());
         request.setProcessedBy(processorId);
 
-        return advanceRequestRepository.save(request);
+        AdvanceRequest saved = advanceRequestRepository.save(request);
+
+        // Notify Employee about the decision
+        String title = "Advance Request " + status;
+        String message = "Your advance request for " + saved.getAmount() + " has been " + status.toLowerCase() + ".";
+        if (note != null && !note.isBlank()) {
+            message += " Note: " + note;
+        }
+
+        inboxService.sendPersonalMessage(
+            title,
+            message,
+            saved.getEmployeeId(),
+            "HR Department",
+            status.equals("Approved") ? "MEDIUM" : "HIGH"
+        );
+
+        return saved;
     }
 
     /**

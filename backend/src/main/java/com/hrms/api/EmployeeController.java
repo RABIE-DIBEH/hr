@@ -35,7 +35,7 @@ public class EmployeeController {
 
     @GetMapping("/team")
     public ResponseEntity<ApiResponse<List<EmployeeSummaryResponse>>> myTeam(@AuthenticationPrincipal EmployeeUserDetails principal) {
-        if (!hasAnyRole(principal, "ROLE_MANAGER")) {
+        if (!hasAnyRole(principal, "ROLE_MANAGER", "ROLE_SUPER_ADMIN")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only managers can view their team list");
         }
         return ResponseEntity.ok(ApiResponse.success(
@@ -46,7 +46,7 @@ public class EmployeeController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<EmployeeSummaryResponse>>> listEmployees(@AuthenticationPrincipal EmployeeUserDetails principal) {
-        if (!hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN")) {
+        if (!hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Insufficient permissions");
         }
         return ResponseEntity.ok(ApiResponse.success(
