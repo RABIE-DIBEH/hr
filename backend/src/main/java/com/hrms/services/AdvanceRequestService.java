@@ -116,7 +116,7 @@ public class AdvanceRequestService {
             "Advance Funds Delivered",
             "Your advance request for " + saved.getAmount() + " has been marked as delivered/paid. The amount will be deducted from your next payroll.",
             saved.getEmployeeId(),
-            "Payroll Department",
+            "Payroll Management Department",
             "MEDIUM"
         );
 

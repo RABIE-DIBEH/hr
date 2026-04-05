@@ -1,5 +1,6 @@
 import { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
@@ -13,7 +14,6 @@ const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const AttendanceLogs = lazy(() => import('./pages/AttendanceLogs'));
 const NFCClock = lazy(() => import('./pages/NFCClock'));
 const Login = lazy(() => import('./pages/Login'));
-const Expenses = lazy(() => import('./pages/Expenses'));
 const Goals = lazy(() => import('./pages/Goals'));
 const Inbox = lazy(() => import('./pages/Inbox'));
 
@@ -77,8 +77,8 @@ function App() {
               </ProtectedRoute>
             } />
             <Route path="/finance" element={
-              <ProtectedRoute>
-                <Expenses />
+              <ProtectedRoute allowedRoles={['HR', 'ADMIN']}>
+                <Navigate to="/payroll" replace />
               </ProtectedRoute>
             } />
             <Route path="/goals" element={
