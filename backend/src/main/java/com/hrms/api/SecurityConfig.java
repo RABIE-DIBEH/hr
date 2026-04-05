@@ -86,6 +86,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/recruitment/process/**").hasAnyRole("MANAGER", "HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")
                         
                         // Payroll endpoints
+                        .requestMatchers(HttpMethod.GET, "/api/payroll/my-slips").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/payroll").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")
                         .requestMatchers(HttpMethod.POST, "/api/payroll/calculate").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")
                         .requestMatchers(HttpMethod.GET, "/api/payroll/**").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")

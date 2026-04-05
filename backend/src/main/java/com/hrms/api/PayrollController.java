@@ -1,6 +1,7 @@
 package com.hrms.api;
 
 import com.hrms.api.dto.ApiResponse;
+import com.hrms.api.dto.PayrollResponse;
 import com.hrms.core.models.Employee;
 import com.hrms.core.models.Payroll;
 import com.hrms.core.repositories.EmployeeRepository;
@@ -11,6 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/payroll")
@@ -52,6 +55,37 @@ public class PayrollController {
                 payrollService.calculateMonthlyPayroll(employee, month, year),
                 "Payroll calculated successfully"
         ));
+    }
+
+    /**
+     * GET /api/payroll/my-slips
+     * Get payroll history for the current employee
+     */
+    @GetMapping("/my-slips")
+    public ResponseEntity<ApiResponse<List<PayrollResponse>>> getMyPayrollSlips(
+            @AuthenticationPrincipal EmployeeUserDetails principal) {
+
+        List<PayrollResponse> slips = payrollService.getEmployeePayrollHistory(principal.getEmployeeId())
+                .stream()
+                .map(this::toPayrollResponse)
+                .toList();
+
+        return ResponseEntity.ok(ApiResponse.success(slips, "Your payroll history retrieved successfully"));
+    }
+
+    private PayrollResponse toPayrollResponse(Payroll payroll) {
+        return new PayrollResponse(
+                payroll.getPayrollId(),
+                payroll.getEmployee().getEmployeeId(),
+                payroll.getEmployee().getFullName(),
+                payroll.getMonth(),
+                payroll.getYear(),
+                payroll.getTotalWorkHours(),
+                payroll.getOvertimeHours(),
+                payroll.getDeductions(),
+                payroll.getNetSalary(),
+                payroll.getGeneratedAt() != null ? payroll.getGeneratedAt().toString() : null
+        );
     }
 
     private static boolean hasAnyRole(EmployeeUserDetails principal, String... roles) {

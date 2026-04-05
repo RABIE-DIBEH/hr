@@ -64,4 +64,12 @@ public class PayrollService {
         advanceRequestService.markDeliveredAdvancesAsDeducted(employee.getEmployeeId());
         return saved;
     }
+
+    /**
+     * Get all payroll records for a specific employee
+     */
+    @Transactional(readOnly = true)
+    public List<Payroll> getEmployeePayrollHistory(Long employeeId) {
+        return payrollRepository.findByEmployeeId(employeeId);
+    }
 }

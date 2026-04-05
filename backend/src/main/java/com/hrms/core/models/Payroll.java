@@ -72,6 +72,8 @@ public class Payroll {
     public void setAdvanceDeductions(BigDecimal advanceDeductions) { this.advanceDeductions = advanceDeductions; }
     public BigDecimal getDeductions() { return deductions; }
     public void setDeductions(BigDecimal deductions) { this.deductions = deductions; }
+    public LocalDateTime getGeneratedAt() { return generatedAt; }
+    public void setGeneratedAt(LocalDateTime generatedAt) { this.generatedAt = generatedAt; }
 
     public static class PayrollBuilder {
         private Long payrollId;

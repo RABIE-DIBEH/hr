@@ -24,6 +24,12 @@ public interface RecruitmentRequestRepository extends JpaRepository<RecruitmentR
     List<RecruitmentRequest> findByRequestedBy(@Param("requestedBy") Long requestedBy);
 
     /**
+     * Find all recruitment requests regardless of status
+     */
+    @Query("SELECT r FROM RecruitmentRequest r ORDER BY r.requestedAt DESC")
+    List<RecruitmentRequest> findAllRequests();
+
+    /**
      * Find all requests with a specific status
      */
     @Query("SELECT r FROM RecruitmentRequest r WHERE r.status = :status ORDER BY r.requestedAt DESC")

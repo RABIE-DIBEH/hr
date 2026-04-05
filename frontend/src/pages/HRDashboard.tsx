@@ -16,8 +16,11 @@ import {
   listEmployees,
   getPendingLeavesForHr,
   processLeaveRequest,
+  getPendingRecruitmentRequests,
+  processRecruitmentRequest,
   type EmployeeSummary,
   type LeaveRequest,
+  type RecruitmentRequest,
 } from '../services/api';
 
 const HRDashboard = () => {
@@ -33,6 +36,13 @@ const HRDashboard = () => {
   const [leaveNote, setLeaveNote] = useState<string>('');
   const [selectedLeaveId, setSelectedLeaveId] = useState<number | null>(null);
 
+  // Recruitment Requests state
+  const [pendingRecruitment, setPendingRecruitment] = useState<RecruitmentRequest[]>([]);
+  const [processingRecruitment, setProcessingRecruitment] = useState<number | null>(null);
+  const [recruitmentNote, setRecruitmentNote] = useState<string>('');
+  const [adjustedSalary, setAdjustedSalary] = useState<string>('');
+  const [selectedRecruitmentId, setSelectedRecruitmentId] = useState<number | null>(null);
+
   useEffect(() => {
     listEmployees()
       .then((res) => {
@@ -44,6 +54,10 @@ const HRDashboard = () => {
     getPendingLeavesForHr()
       .then((res) => setPendingLeaves(res.data))
       .catch(() => console.error('Failed to load pending leaves for HR'));
+
+    getPendingRecruitmentRequests()
+      .then((res) => setPendingRecruitment(res.data))
+      .catch(() => console.error('Failed to load pending recruitment requests'));
   }, []);
 
   const handleBind = () => {
@@ -58,6 +72,26 @@ const HRDashboard = () => {
 
   const handleRecruitmentSuccess = () => {
     setShowRecruitmentForm(false);
+    // Refresh the pending list after submitting a new request
+    getPendingRecruitmentRequests()
+      .then((res) => setPendingRecruitment(res.data))
+      .catch(() => {});
+  };
+
+  const handleProcessRecruitment = async (requestId: number, status: 'Approved' | 'Rejected') => {
+    setProcessingRecruitment(requestId);
+    try {
+      const salaryNum = adjustedSalary ? parseFloat(adjustedSalary) : undefined;
+      await processRecruitmentRequest(requestId, status, recruitmentNote || undefined, salaryNum);
+      setPendingRecruitment((prev) => prev.filter((r) => r.requestId !== requestId));
+      setRecruitmentNote('');
+      setAdjustedSalary('');
+      setSelectedRecruitmentId(null);
+    } catch {
+      setLoadError('فشل معالجة طلب التوظيف');
+    } finally {
+      setProcessingRecruitment(null);
+    }
   };
 
   const handleProcessLeave = async (requestId: number, status: 'APPROVED' | 'REJECTED') => {
@@ -191,6 +225,123 @@ const HRDashboard = () => {
             </motion.div>
 
 
+          </div>
+
+          {/* Pending Recruitment Requests Section */}
+          <div className="bg-luxury-surface rounded-[2.5rem] shadow-sm border border-white/5 overflow-hidden mb-10">
+            <div className="p-8 border-b border-white/5 flex items-center gap-3">
+              <div className="bg-orange-500/10 w-12 h-12 rounded-2xl flex items-center justify-center text-orange-400">
+                <UserPlus size={24} />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white">طلبات التوظيف المعلقة</h2>
+                <p className="text-slate-400 text-sm">
+                  {pendingRecruitment.length} طلب بانتظار المراجعة
+                </p>
+              </div>
+            </div>
+
+            {pendingRecruitment.length === 0 ? (
+              <div className="p-12 text-center text-slate-500">
+                <UserPlus size={48} className="mx-auto mb-4 opacity-50" />
+                <p>لا توجد طلبات توظيف معلقة</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-white/5">
+                {pendingRecruitment.map((request) => (
+                  <div key={request.requestId} className="p-6 hover:bg-white/5 transition-all">
+                    <div className="flex justify-between items-start gap-6">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-3">
+                          <h3 className="text-lg font-bold text-white">{request.fullName}</h3>
+                          <span className="bg-orange-500/10 text-orange-400 px-3 py-1 rounded-lg text-xs font-bold">
+                            {request.status?.replace('_', ' ') || 'قيد المراجعة'}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                          <div>
+                            <p className="text-slate-500 text-xs mb-1">الوظيفة</p>
+                            <p className="text-slate-200 font-medium">{request.jobDescription}</p>
+                          </div>
+                          <div>
+                            <p className="text-slate-500 text-xs mb-1">القسم</p>
+                            <p className="text-slate-200 font-medium">{request.department}</p>
+                          </div>
+                          <div>
+                            <p className="text-slate-500 text-xs mb-1">الراتب المتوقع</p>
+                            <p className="text-slate-200 font-medium">{request.expectedSalary} ريال</p>
+                          </div>
+                          <div>
+                            <p className="text-slate-500 text-xs mb-1">رقم الهوية</p>
+                            <p className="text-slate-200 font-mono">{request.nationalId}</p>
+                          </div>
+                          <div>
+                            <p className="text-slate-500 text-xs mb-1">الجوال</p>
+                            <p className="text-slate-200 font-mono">{request.mobileNumber}</p>
+                          </div>
+                          <div>
+                            <p className="text-slate-500 text-xs mb-1">تاريخ الطلب</p>
+                            <p className="text-slate-200">
+                              {request.requestedAt
+                                ? new Date(request.requestedAt).toLocaleDateString('ar-SA')
+                                : '—'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-2 min-w-[220px]">
+                        {selectedRecruitmentId === request.requestId ? (
+                          <div className="space-y-2">
+                            <input
+                              type="number"
+                              placeholder="تعديل الراتب (اختياري)"
+                              value={adjustedSalary}
+                              onChange={(e) => setAdjustedSalary(e.target.value)}
+                              className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/20"
+                            />
+                            <input
+                              type="text"
+                              placeholder="ملاحظة (اختياري)"
+                              value={recruitmentNote}
+                              onChange={(e) => setRecruitmentNote(e.target.value)}
+                              className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/20"
+                            />
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleProcessRecruitment(request.requestId!, 'Approved')}
+                                disabled={processingRecruitment === request.requestId}
+                                className="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-1 disabled:opacity-50"
+                              >
+                                موافقة
+                              </button>
+                              <button
+                                onClick={() => handleProcessRecruitment(request.requestId!, 'Rejected')}
+                                disabled={processingRecruitment === request.requestId}
+                                className="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-1 disabled:opacity-50"
+                              >
+                                رفض
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setSelectedRecruitmentId(request.requestId!);
+                              setRecruitmentNote('');
+                              setAdjustedSalary('');
+                            }}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                          >
+                            مراجعة الطلب
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Pending Leave Requests Section */}

@@ -9,11 +9,12 @@ import {
   ArrowUpRight,
   Monitor,
   HandCoins,
+  DollarSign,
 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import AdvanceRequestForm from '../components/AdvanceRequestForm';
 import LeaveRequestForm from '../components/LeaveRequestForm';
-import { getCurrentEmployee, getMyAdvanceRequests, type EmployeeProfile, type AdvanceRequest } from '../services/api';
+import { getCurrentEmployee, getMyAdvanceRequests, getMyPayrollSlips, type EmployeeProfile, type AdvanceRequest, type PayrollSlip } from '../services/api';
 
 const EmployeeDashboard = () => {
   const [status] = useState('Checked In');
@@ -22,6 +23,8 @@ const EmployeeDashboard = () => {
   const [showLeaveForm, setShowLeaveForm] = useState(false);
   const [myAdvances, setMyAdvances] = useState<AdvanceRequest[]>([]);
   const [loadingAdvances, setLoadingAdvances] = useState(false);
+  const [myPayrollSlips, setMyPayrollSlips] = useState<PayrollSlip[]>([]);
+  const [loadingPayroll, setLoadingPayroll] = useState(false);
 
   useEffect(() => {
     getCurrentEmployee()
@@ -36,6 +39,12 @@ const EmployeeDashboard = () => {
         .then((res) => setMyAdvances(res.data))
         .catch(() => {})
         .finally(() => setLoadingAdvances(false));
+
+      setLoadingPayroll(true);
+      getMyPayrollSlips()
+        .then((res) => setMyPayrollSlips(res.data))
+        .catch(() => {})
+        .finally(() => setLoadingPayroll(false));
     }
   }, [me, showAdvanceForm]);
 
@@ -271,6 +280,63 @@ const EmployeeDashboard = () => {
                             : '—'}
                         </td>
                         <td className="p-4 text-slate-500 text-sm">{adv.hrNote || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </motion.section>
+
+          {/* Payroll Slips Section */}
+          <motion.section
+            initial={{ opacity: 1, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.45 }}
+            className="mt-12 bg-luxury-surface rounded-[2rem] p-8 shadow-sm border border-white/5"
+          >
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-xl font-bold text-white tracking-tight">قسائم الراتب</h2>
+            </div>
+
+            {loadingPayroll ? (
+              <div className="p-8 text-center text-slate-500">
+                <p>جاري تحميل قسائم الراتب...</p>
+              </div>
+            ) : myPayrollSlips.length === 0 ? (
+              <div className="p-8 text-center text-slate-500">
+                <DollarSign size={40} className="mx-auto mb-3 opacity-40 text-slate-600" />
+                <p className="font-medium">لا توجد قسائم راتب حالياً</p>
+                <p className="text-sm mt-1 text-slate-600">سيتم إنشاء قسيمة الراتب عند معالجة الرواتب من قبل HR</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-right border-collapse">
+                  <thead className="bg-white/5 text-slate-400 text-[10px] font-black uppercase tracking-[0.15em]">
+                    <tr>
+                      <th className="p-4">الشهر / السنة</th>
+                      <th className="p-4">ساعات العمل</th>
+                      <th className="p-4">ساعات إضافية</th>
+                      <th className="p-4">الخصومات</th>
+                      <th className="p-4">صافي الراتب</th>
+                      <th className="p-4">تاريخ الإصدار</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {myPayrollSlips.map((slip) => (
+                      <tr key={slip.payrollId} className="hover:bg-white/5 transition-all">
+                        <td className="p-4 font-bold text-slate-100">
+                          {new Date(slip.year, slip.month - 1).toLocaleDateString('ar-SA', { month: 'long', year: 'numeric' })}
+                        </td>
+                        <td className="p-4 text-slate-300 text-sm">{slip.totalWorkHours ?? 0} ساعة</td>
+                        <td className="p-4 text-slate-300 text-sm">{slip.overtimeHours ?? 0} ساعة</td>
+                        <td className="p-4 text-red-400 text-sm">{slip.deductions ?? 0} ر.س</td>
+                        <td className="p-4 font-bold text-green-400">{slip.netSalary?.toLocaleString() ?? 0} ر.س</td>
+                        <td className="p-4 text-slate-500 text-sm">
+                          {slip.generatedAt
+                            ? new Date(slip.generatedAt).toLocaleDateString('ar-SA')
+                            : '—'}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

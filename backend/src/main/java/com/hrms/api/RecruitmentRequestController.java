@@ -130,7 +130,7 @@ public class RecruitmentRequestController {
         if (status != null && !status.trim().isEmpty()) {
             requests = recruitmentRequestService.getRequestsByStatus(status);
         } else {
-            requests = recruitmentRequestService.getPendingRequests();
+            requests = recruitmentRequestService.getAllRequests();
         }
 
         List<RecruitmentRequestResponse> responses = requests.stream()

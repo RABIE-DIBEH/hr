@@ -280,6 +280,23 @@ export const getPaidAdvanceRequests = () =>
 export const getAdvanceRequest = (advanceId: number) =>
   api.get<AdvanceRequest>(`/advances/${advanceId}`);
 
+// Payroll slip API
+export const getMyPayrollSlips = () =>
+  api.get<PayrollSlip[]>('/payroll/my-slips');
+
+export interface PayrollSlip {
+  payrollId: number;
+  employeeId: number;
+  employeeName: string;
+  month: number;
+  year: number;
+  totalWorkHours: number;
+  overtimeHours: number;
+  deductions: number;
+  netSalary: number;
+  generatedAt: string;
+}
+
 // Leave Request APIs
 export const submitLeaveRequest = (data: { leaveType: string; startDate: string; endDate: string; duration: number; reason?: string }) =>
   api.post('/leaves/request', data);

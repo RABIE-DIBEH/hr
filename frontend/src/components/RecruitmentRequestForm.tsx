@@ -260,7 +260,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                   value={formData.fullName}
                   onChange={handleChange}
                   placeholder="مثال: أحمد محمد علي"
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  className={`w-full px-4 py-2 border rounded-lg text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                     errors.fullName ? 'border-red-500' : 'border-gray-300'
                   }`}
                 />
@@ -280,7 +280,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="example@company.com"
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  className={`w-full px-4 py-2 border rounded-lg text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                     errors.email ? 'border-red-500' : 'border-gray-300'
                   }`}
                 />
@@ -301,7 +301,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                   onChange={handleChange}
                   placeholder="10 أرقام"
                   maxLength={10}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  className={`w-full px-4 py-2 border rounded-lg text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                     errors.nationalId ? 'border-red-500' : 'border-gray-300'
                   }`}
                 />
@@ -323,7 +323,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                   placeholder="18-65"
                   min="18"
                   max="65"
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  className={`w-full px-4 py-2 border rounded-lg text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                     errors.age ? 'border-red-500' : 'border-gray-300'
                   }`}
                 />
@@ -341,7 +341,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                   name="maritalStatus"
                   value={formData.maritalStatus}
                   onChange={handleChange}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  className={`w-full px-4 py-2 border rounded-lg text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                     errors.maritalStatus ? 'border-red-500' : 'border-gray-300'
                   }`}
                 >
@@ -368,7 +368,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                   onChange={handleChange}
                   placeholder="0"
                   min="0"
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  className={`w-full px-4 py-2 border rounded-lg text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                     errors.numberOfChildren ? 'border-red-500' : 'border-gray-300'
                   }`}
                 />
@@ -386,7 +386,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                   name="militaryServiceStatus"
                   value={formData.militaryServiceStatus}
                   onChange={handleChange}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  className={`w-full px-4 py-2 border rounded-lg text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                     errors.militaryServiceStatus ? 'border-red-500' : 'border-gray-300'
                   }`}
                 >
@@ -419,7 +419,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                   onChange={handleChange}
                   placeholder="05XXXXXXXX"
                   maxLength={10}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  className={`w-full px-4 py-2 border rounded-lg text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                     errors.mobileNumber ? 'border-red-500' : 'border-gray-300'
                   }`}
                 />
@@ -439,7 +439,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                   value={formData.address}
                   onChange={handleChange}
                   placeholder="المدينة، الحي، الشارع"
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  className={`w-full px-4 py-2 border rounded-lg text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                     errors.address ? 'border-red-500' : 'border-gray-300'
                   }`}
                 />
@@ -465,7 +465,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                   value={formData.jobDescription}
                   onChange={handleChange}
                   placeholder="مثال: مطور برمجيات"
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  className={`w-full px-4 py-2 border rounded-lg text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                     errors.jobDescription ? 'border-red-500' : 'border-gray-300'
                   }`}
                 />
@@ -485,7 +485,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                   value={formData.department}
                   onChange={handleChange}
                   placeholder="مثال: تقنية المعلومات"
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  className={`w-full px-4 py-2 border rounded-lg text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                     errors.department ? 'border-red-500' : 'border-gray-300'
                   }`}
                 />
@@ -507,7 +507,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                   placeholder="0.00"
                   min="0"
                   step="0.01"
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  className={`w-full px-4 py-2 border rounded-lg text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                     errors.expectedSalary ? 'border-red-500' : 'border-gray-300'
                   }`}
                 />

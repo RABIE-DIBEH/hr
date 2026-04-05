@@ -8,6 +8,7 @@ import com.hrms.core.repositories.EmployeeRepository;
 import com.hrms.core.repositories.RecruitmentRequestRepository;
 import com.hrms.core.repositories.RoleRepository;
 import com.hrms.core.repositories.TeamRepository;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -59,7 +60,12 @@ public class RecruitmentRequestService {
 
         request.setStatus(RecruitmentRequest.STATUS_PENDING_MANAGER);
         request.setRequestedAt(LocalDateTime.now());
-        RecruitmentRequest saved = recruitmentRequestRepository.save(request);
+        RecruitmentRequest saved;
+        try {
+            saved = recruitmentRequestRepository.save(request);
+        } catch (DataIntegrityViolationException e) {
+            throw new IllegalArgumentException("رقم الهوية هذا موجود بالفعل في النظام. لا يمكن إنشاء طلب مكرر.");
+        }
 
         // Notify HR role about new recruitment request
         inboxService.sendMessage(
@@ -179,8 +185,8 @@ public class RecruitmentRequestService {
      */
     public List<RecruitmentRequest> getPendingRequestsForRole(String roleName, String department) {
         if ("MANAGER".equals(roleName)) {
-            // Managers see requests in their department that are pending manager review
-            return recruitmentRequestRepository.findByDepartmentAndStatuses(department, List.of(RecruitmentRequest.STATUS_PENDING_MANAGER));
+            // Managers see ALL requests pending manager review (not filtered by department)
+            return recruitmentRequestRepository.findByStatus(RecruitmentRequest.STATUS_PENDING_MANAGER);
         } else if ("PAYROLL".equals(roleName)) {
             // Payroll sees all requests pending payroll review
             return recruitmentRequestRepository.findByStatus(RecruitmentRequest.STATUS_PENDING_PAYROLL);
@@ -214,6 +220,13 @@ public class RecruitmentRequestService {
 
     public List<RecruitmentRequest> getRequestsByStatus(String status) {
         return recruitmentRequestRepository.findByStatus(status);
+    }
+
+    /**
+     * Get all recruitment requests regardless of status
+     */
+    public List<RecruitmentRequest> getAllRequests() {
+        return recruitmentRequestRepository.findAllRequests();
     }
 
     public Optional<RecruitmentRequest> getRequestById(Long requestId) {

@@ -77,7 +77,7 @@ CREATE TABLE Payroll (
 CREATE TABLE Recruitment_Requests (
     RequestId SERIAL PRIMARY KEY,
     FullName VARCHAR(200) NOT NULL,
-    NationalId VARCHAR(50) UNIQUE NOT NULL,
+    NationalId VARCHAR(50) NOT NULL,
     Address VARCHAR(500) NOT NULL,
     JobDescription VARCHAR(300) NOT NULL,
     Department VARCHAR(100) NOT NULL,
