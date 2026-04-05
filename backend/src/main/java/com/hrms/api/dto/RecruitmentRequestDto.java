@@ -50,5 +50,9 @@ public record RecruitmentRequestDto(
         // Optional fields
         String insuranceNumber,
         String healthNumber,
-        Integer numberOfChildren
+        Integer numberOfChildren,
+
+        // Employee ID assignment options
+        Long employeeId,
+        Boolean autoGenerateEmployeeId
 ) {}

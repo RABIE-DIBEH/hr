@@ -59,6 +59,8 @@ public class RecruitmentRequestController {
                 .mobileNumber(dto.mobileNumber())
                 .expectedSalary(dto.expectedSalary())
                 .requestedBy(principal.getEmployeeId())
+                .employeeId(dto.employeeId())
+                .autoGenerateEmployeeId(dto.autoGenerateEmployeeId())
                 .build();
 
         try {
@@ -70,6 +72,8 @@ public class RecruitmentRequestController {
                     )
             );
         } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (IllegalStateException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
     }
@@ -186,7 +190,7 @@ public class RecruitmentRequestController {
     public ResponseEntity<ApiResponse<RecruitmentRequestResponse>> getRequest(
             @PathVariable Long requestId,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
-        
+
         Optional<RecruitmentRequest> optional = recruitmentRequestService.getRequestById(requestId);
         if (optional.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Request not found");
@@ -194,7 +198,7 @@ public class RecruitmentRequestController {
 
         RecruitmentRequest request = optional.get();
 
-        if (!request.getRequestedBy().equals(principal.getEmployeeId()) 
+        if (!request.getRequestedBy().equals(principal.getEmployeeId())
                 && !hasAnyRole(principal, "MANAGER", "HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         }
@@ -202,10 +206,29 @@ public class RecruitmentRequestController {
         return ResponseEntity.ok(ApiResponse.success(toResponse(request), "Recruitment request retrieved successfully"));
     }
 
+    /**
+     * GET /api/recruitment/next-employee-id
+     * Get the next available auto-generated employee ID
+     */
+    @GetMapping("/next-employee-id")
+    public ResponseEntity<ApiResponse<IdResponseDto>> getNextEmployeeId(
+            @AuthenticationPrincipal EmployeeUserDetails principal) {
+
+        if (!hasAnyRole(principal, "HR", "ADMIN", "SUPER_ADMIN")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+        }
+
+        Long nextId = recruitmentRequestService.generateNextEmployeeId();
+        return ResponseEntity.ok(ApiResponse.success(
+                new IdResponseDto(nextId),
+                "Next available employee ID"
+        ));
+    }
+
     private RecruitmentRequestResponse toResponse(RecruitmentRequest request) {
         String requestedByName = getEmployeeName(request.getRequestedBy());
         String processedAt = request.getProcessedAt() != null ? request.getProcessedAt().toString() : null;
-        
+
         return new RecruitmentRequestResponse(
                 request.getRequestId(),
                 request.getFullName(),
@@ -228,7 +251,9 @@ public class RecruitmentRequestController {
                 request.getManagerNote(),
                 request.getRequestedAt() != null ? request.getRequestedAt().toString() : null,
                 processedAt,
-                request.getApprovedBy()
+                request.getApprovedBy(),
+                request.getEmployeeId(),
+                request.getAutoGenerateEmployeeId()
         );
     }
 

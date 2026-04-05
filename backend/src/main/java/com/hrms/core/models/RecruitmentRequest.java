@@ -77,6 +77,20 @@ public class RecruitmentRequest {
     @Column(name = "approved_by")
     private Long approvedBy;
 
+    /**
+     * The employee ID to assign when the request is approved and the employee is created.
+     * If null and autoGenerateEmployeeId is true, the system will auto-generate one.
+     */
+    @Column(name = "employee_id")
+    private Long employeeId;
+
+    /**
+     * When true, the system auto-generates the employee ID based on the last auto-generated ID.
+     * When false, the HR manager must provide a specific employeeId manually.
+     */
+    @Column(name = "auto_generate_employee_id")
+    private Boolean autoGenerateEmployeeId;
+
     // No-arg constructor (JPA requirement)
     public RecruitmentRequest() {
     }
@@ -286,6 +300,22 @@ public class RecruitmentRequest {
         this.approvedBy = approvedBy;
     }
 
+    public Long getEmployeeId() {
+        return employeeId;
+    }
+
+    public void setEmployeeId(Long employeeId) {
+        this.employeeId = employeeId;
+    }
+
+    public Boolean getAutoGenerateEmployeeId() {
+        return autoGenerateEmployeeId;
+    }
+
+    public void setAutoGenerateEmployeeId(Boolean autoGenerateEmployeeId) {
+        this.autoGenerateEmployeeId = autoGenerateEmployeeId;
+    }
+
     // Manual Builder
     public static class RecruitmentRequestBuilder {
         private String fullName;
@@ -303,6 +333,8 @@ public class RecruitmentRequest {
         private String mobileNumber;
         private BigDecimal expectedSalary;
         private Long requestedBy;
+        private Long employeeId;
+        private Boolean autoGenerateEmployeeId;
 
         public RecruitmentRequestBuilder fullName(String fullName) {
             this.fullName = fullName;
@@ -379,10 +411,23 @@ public class RecruitmentRequest {
             return this;
         }
 
+        public RecruitmentRequestBuilder employeeId(Long employeeId) {
+            this.employeeId = employeeId;
+            return this;
+        }
+
+        public RecruitmentRequestBuilder autoGenerateEmployeeId(Boolean autoGenerateEmployeeId) {
+            this.autoGenerateEmployeeId = autoGenerateEmployeeId;
+            return this;
+        }
+
         public RecruitmentRequest build() {
-            return new RecruitmentRequest(fullName, email, nationalId, address, jobDescription,
+            RecruitmentRequest request = new RecruitmentRequest(fullName, email, nationalId, address, jobDescription,
                     department, age, insuranceNumber, healthNumber, militaryServiceStatus,
                     maritalStatus, numberOfChildren, mobileNumber, expectedSalary, requestedBy);
+            request.employeeId = this.employeeId;
+            request.autoGenerateEmployeeId = this.autoGenerateEmployeeId;
+            return request;
         }
     }
 }

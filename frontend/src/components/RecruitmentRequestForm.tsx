@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { submitRecruitmentRequest, type RecruitmentRequest } from '../services/api';
+import { useState, useEffect } from 'react';
+import { submitRecruitmentRequest, getNextEmployeeId, type RecruitmentRequest } from '../services/api';
 import { motion } from 'framer-motion';
 
 interface RecruitmentRequestFormProps {
@@ -32,6 +32,32 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
     mobileNumber: '',
     expectedSalary: '',
   });
+
+  // Employee ID assignment mode: 'auto' or 'manual'
+  const [employeeIdMode, setEmployeeIdMode] = useState<'auto' | 'manual'>('auto');
+  const [manualEmployeeId, setManualEmployeeId] = useState('');
+  const [nextAutoEmployeeId, setNextAutoEmployeeId] = useState<number | null>(null);
+  const [requiresStartingNumber, setRequiresStartingNumber] = useState(false);
+
+  // Fetch the next auto-generated employee ID on mount
+  useEffect(() => {
+    const fetchNextId = async () => {
+      try {
+        const res = await getNextEmployeeId();
+        if (res.data.id != null) {
+          setNextAutoEmployeeId(res.data.id);
+          setRequiresStartingNumber(false);
+        } else {
+          // No starting number set yet
+          setNextAutoEmployeeId(null);
+          setRequiresStartingNumber(true);
+        }
+      } catch {
+        // Silently ignore - the backend will still generate it on submit
+      }
+    };
+    void fetchNextId();
+  }, []);
 
   const [errors, setErrors] = useState<FormErrors>({});
 
@@ -114,6 +140,30 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
       newErrors.expectedSalary = 'الراتب يجب أن يكون رقماً موجباً';
     }
 
+    // Manual employee ID validation
+    if (employeeIdMode === 'manual') {
+      if (!manualEmployeeId.trim()) {
+        newErrors.employeeId = 'رقم الموظف مطلوب';
+      } else {
+        const empId = parseInt(manualEmployeeId);
+        if (isNaN(empId) || empId <= 0) {
+          newErrors.employeeId = 'رقم الموظف يجب أن يكون رقماً موجباً';
+        }
+      }
+    }
+
+    // Auto-generate starting number validation
+    if (employeeIdMode === 'auto' && requiresStartingNumber) {
+      if (!manualEmployeeId.trim()) {
+        newErrors.employeeId = 'يجب إدخال رقم بداية للموظفين (يُستخدم كرقم أولي ثم يتم الزيادة تلقائياً)';
+      } else {
+        const empId = parseInt(manualEmployeeId);
+        if (isNaN(empId) || empId <= 0) {
+          newErrors.employeeId = 'رقم البداية يجب أن يكون رقماً موجباً';
+        }
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -157,6 +207,13 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
         numberOfChildren: formData.numberOfChildren ? parseInt(formData.numberOfChildren) : undefined,
         mobileNumber: formData.mobileNumber.trim(),
         expectedSalary: parseFloat(formData.expectedSalary),
+        // When auto-generate is selected for the first time, send the starting number as employeeId
+        employeeId: employeeIdMode === 'manual'
+          ? parseInt(manualEmployeeId)
+          : requiresStartingNumber && manualEmployeeId
+            ? parseInt(manualEmployeeId)
+            : undefined,
+        autoGenerateEmployeeId: employeeIdMode === 'auto',
       };
 
       await submitRecruitmentRequest(requestData);
@@ -491,6 +548,98 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                 />
                 {errors.department && (
                   <p className="text-red-500 text-xs mt-1">{errors.department}</p>
+                )}
+              </div>
+
+              {/* Employee ID Assignment */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  رقم الموظف <span className="text-red-500">*</span>
+                </label>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  {/* Auto-generate option */}
+                  <label className="flex items-center gap-2 cursor-pointer bg-blue-50 border-2 border-blue-300 rounded-lg px-4 py-3 flex-1">
+                    <input
+                      type="radio"
+                      name="employeeIdMode"
+                      value="auto"
+                      checked={employeeIdMode === 'auto'}
+                      onChange={() => setEmployeeIdMode('auto')}
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    <div className="flex-1">
+                      <span className="text-sm font-medium text-gray-800">توليد تلقائي</span>
+                      {requiresStartingNumber ? (
+                        <p className="text-xs text-amber-600 mt-1">
+                          ⚠️ أدخل رقم البداية أدناه
+                        </p>
+                      ) : nextAutoEmployeeId != null ? (
+                        <p className="text-xs text-gray-500 mt-1">
+                          سيتم تعيين الرقم: <span className="font-mono font-bold text-blue-600">{nextAutoEmployeeId}</span>
+                        </p>
+                      ) : (
+                        <p className="text-xs text-gray-500 mt-1">
+                          جاري التحميل...
+                        </p>
+                      )}
+                    </div>
+                  </label>
+
+                  {/* Manual entry option */}
+                  <label className="flex items-center gap-2 cursor-pointer bg-gray-50 border-2 border-gray-300 rounded-lg px-4 py-3 flex-1">
+                    <input
+                      type="radio"
+                      name="employeeIdMode"
+                      value="manual"
+                      checked={employeeIdMode === 'manual'}
+                      onChange={() => setEmployeeIdMode('manual')}
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    <div className="flex-1">
+                      <span className="text-sm font-medium text-gray-800">إدخال يدوي</span>
+                    </div>
+                  </label>
+                </div>
+
+                {/* Starting number input (shown when auto-generate is selected for the first time) */}
+                {employeeIdMode === 'auto' && requiresStartingNumber && (
+                  <div className="mt-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-sm text-amber-800 mb-2">
+                      🔢 <strong>أول استخدام:</strong> أدخل رقم البداية وسيتم توليد الأرقام التالية تلقائياً
+                    </p>
+                    <input
+                      type="number"
+                      value={manualEmployeeId}
+                      onChange={(e) => setManualEmployeeId(e.target.value)}
+                      placeholder="مثال: 5000"
+                      min="1"
+                      className={`w-full px-4 py-2 border rounded-lg bg-white text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        errors.employeeId ? 'border-red-500' : 'border-amber-300'
+                      }`}
+                    />
+                    {errors.employeeId && (
+                      <p className="text-red-500 text-xs mt-1">{errors.employeeId}</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Manual employee ID input (shown when manual mode is selected) */}
+                {employeeIdMode === 'manual' && (
+                  <div className="mt-3">
+                    <input
+                      type="number"
+                      value={manualEmployeeId}
+                      onChange={(e) => setManualEmployeeId(e.target.value)}
+                      placeholder="أدخل رقم الموظف"
+                      min="1"
+                      className={`w-full px-4 py-2 border rounded-lg bg-white text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        errors.employeeId ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    />
+                    {errors.employeeId && (
+                      <p className="text-red-500 text-xs mt-1">{errors.employeeId}</p>
+                    )}
+                  </div>
                 )}
               </div>
 

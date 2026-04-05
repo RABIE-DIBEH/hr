@@ -24,5 +24,7 @@ public record RecruitmentRequestResponse(
         String managerNote,
         String requestedAt,
         String processedAt,
-        Long approvedBy
+        Long approvedBy,
+        Long employeeId,
+        Boolean autoGenerateEmployeeId
 ) {}

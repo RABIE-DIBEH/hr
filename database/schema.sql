@@ -109,7 +109,9 @@ CREATE TABLE Recruitment_Requests (
     manager_note VARCHAR(500),
     requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     processed_at TIMESTAMP,
-    approved_by INT REFERENCES Employees(employee_id)
+    approved_by INT REFERENCES Employees(employee_id),
+    employee_id BIGINT,
+    auto_generate_employee_id BOOLEAN DEFAULT FALSE
 );
 
 -- 9. Advance Requests Table

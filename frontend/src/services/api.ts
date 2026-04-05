@@ -176,6 +176,8 @@ export interface RecruitmentRequest {
   requestedAt?: string;
   processedAt?: string;
   approvedBy?: number;
+  employeeId?: number;
+  autoGenerateEmployeeId?: boolean;
 }
 
 export interface AdvanceRequest {
@@ -363,6 +365,9 @@ export const calculatePayroll = (month: number, year: number, employeeId?: numbe
 // Recruitment Request APIs
 export const submitRecruitmentRequest = (data: RecruitmentRequest) =>
   api.post('/recruitment/request', data);
+
+export const getNextEmployeeId = () =>
+  api.get<{ id: number }>('/recruitment/next-employee-id');
 
 export const getPendingRecruitmentRequests = (department?: string) =>
   department
