@@ -80,7 +80,9 @@ export interface EmployeeSummary {
 
 export interface AttendanceRecord {
   recordId: number;
-  employee: EmployeeSummary;
+  employeeId: number;
+  employeeName: string;
+  employeeEmail: string;
   checkIn: string;
   checkOut?: string;
   workHours?: number;

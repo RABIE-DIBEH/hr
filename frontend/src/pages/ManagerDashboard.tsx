@@ -475,7 +475,7 @@ const ManagerDashboard = () => {
 
                       return (
                       <tr key={record.recordId} className="hover:bg-white/5 transition-all">
-                        <td className="p-6 font-bold text-slate-100">{record.employee.fullName}</td>
+                        <td className="p-6 font-bold text-slate-100">{record.employeeName}</td>
                         <td className="p-6 font-mono text-slate-400 text-sm">{new Date(record.checkIn).toLocaleTimeString('ar-EG', {hour: '2-digit', minute: '2-digit'})}</td>
                         <td className="p-6 font-mono text-slate-400 text-sm">{record.checkOut ? new Date(record.checkOut).toLocaleTimeString('ar-EG', {hour: '2-digit', minute: '2-digit'}) : '—'}</td>
                         <td className="p-6">

@@ -7,7 +7,7 @@ import com.hrms.api.dto.ApiResponse;
 import com.hrms.api.dto.IdResponseDto;
 import com.hrms.api.dto.StatusResponseDto;
 import com.hrms.api.dto.PaginatedResponse;
-import com.hrms.core.models.AttendanceRecord;
+import com.hrms.api.dto.AttendanceRecordDto;
 import com.hrms.security.EmployeeUserDetails;
 import com.hrms.services.AttendanceService;
 import jakarta.validation.Valid;
@@ -58,10 +58,10 @@ public class AttendanceController {
     }
 
     @GetMapping("/my-records")
-    public ResponseEntity<ApiResponse<PaginatedResponse<AttendanceRecord>>> getMyRecords(
+    public ResponseEntity<ApiResponse<PaginatedResponse<AttendanceRecordDto>>> getMyRecords(
             @AuthenticationPrincipal EmployeeUserDetails principal,
             @PageableDefault(size = 20) Pageable pageable) {
-        Page<AttendanceRecord> page = attendanceService.getMyRecords(principal.getEmployeeId(), pageable);
+        Page<AttendanceRecordDto> page = attendanceService.getMyRecords(principal.getEmployeeId(), pageable);
         return ResponseEntity.ok(ApiResponse.success(
                 PaginatedResponse.of(page.getContent(), page.getTotalElements(), page.getNumber(), page.getSize()),
                 "Your attendance records retrieved successfully"
@@ -69,10 +69,10 @@ public class AttendanceController {
     }
 
     @GetMapping("/manager/today")
-    public ResponseEntity<ApiResponse<PaginatedResponse<AttendanceRecord>>> getManagerTodayRecords(
+    public ResponseEntity<ApiResponse<PaginatedResponse<AttendanceRecordDto>>> getManagerTodayRecords(
             @AuthenticationPrincipal EmployeeUserDetails principal,
             @PageableDefault(size = 20) Pageable pageable) {
-        Page<AttendanceRecord> page = attendanceService.getTodayRecordsForManager(principal.getEmployeeId(), pageable, principal);
+        Page<AttendanceRecordDto> page = attendanceService.getTodayRecordsForManager(principal.getEmployeeId(), pageable, principal);
         return ResponseEntity.ok(ApiResponse.success(
                 PaginatedResponse.of(page.getContent(), page.getTotalElements(), page.getNumber(), page.getSize()),
                 "Today's team attendance retrieved successfully"
@@ -115,13 +115,13 @@ public class AttendanceController {
     }
 
     @GetMapping("/hr/monthly")
-    public ResponseEntity<ApiResponse<PaginatedResponse<AttendanceRecord>>> getCompanyMonthlyAttendance(
+    public ResponseEntity<ApiResponse<PaginatedResponse<AttendanceRecordDto>>> getCompanyMonthlyAttendance(
             @RequestParam int month,
             @RequestParam int year,
             @AuthenticationPrincipal EmployeeUserDetails principal,
             @PageableDefault(size = 20) Pageable pageable) {
-        
-        Page<AttendanceRecord> page = attendanceService.getCompanyMonthlyAttendance(month, year, pageable, principal);
+
+        Page<AttendanceRecordDto> page = attendanceService.getCompanyMonthlyAttendance(month, year, pageable, principal);
         return ResponseEntity.ok(ApiResponse.success(
                 PaginatedResponse.of(page.getContent(), page.getTotalElements(), page.getNumber(), page.getSize()),
                 "Company monthly attendance retrieved successfully"

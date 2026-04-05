@@ -1,5 +1,6 @@
 package com.hrms.services;
 
+import com.hrms.api.dto.AttendanceRecordDto;
 import com.hrms.core.models.AttendanceRecord;
 import com.hrms.core.models.Employee;
 import com.hrms.core.models.NFCCard;
@@ -117,19 +118,20 @@ public class AttendanceService {
         return "Checked In Successfully at " + newRecord.getCheckIn();
     }
 
-    public Page<AttendanceRecord> getMyRecords(Long employeeId, Pageable pageable) {
-        return attendanceRepository.findAllByEmployee_EmployeeIdOrderByCheckInDesc(employeeId, pageable);
+    public Page<AttendanceRecordDto> getMyRecords(Long employeeId, Pageable pageable) {
+        return attendanceRepository.findAllByEmployee_EmployeeIdOrderByCheckInDesc(employeeId, pageable)
+                .map(this::toDto);
     }
 
-    public Page<AttendanceRecord> getTodayRecordsForManager(Long managerId, Pageable pageable, EmployeeUserDetails principal) {
+    public Page<AttendanceRecordDto> getTodayRecordsForManager(Long managerId, Pageable pageable, EmployeeUserDetails principal) {
         boolean privileged = principal.getAuthorities().stream().anyMatch(a ->
                 "ROLE_HR".equals(a.getAuthority()) ||
                 "ROLE_ADMIN".equals(a.getAuthority()) ||
                 "ROLE_SUPER_ADMIN".equals(a.getAuthority()));
         if (privileged) {
-            return attendanceRepository.findTodayRecords(pageable);
+            return attendanceRepository.findTodayRecords(pageable).map(this::toDto);
         }
-        return attendanceRepository.findTodayRecordsForManager(managerId, pageable);
+        return attendanceRepository.findTodayRecordsForManager(managerId, pageable).map(this::toDto);
     }
 
     @Transactional
@@ -204,8 +206,8 @@ public class AttendanceService {
         return Optional.of(attendanceRepository.save(record));
     }
 
-    public Page<AttendanceRecord> getCompanyMonthlyAttendance(int month, int year, Pageable pageable, EmployeeUserDetails actor) {
-        return attendanceRepository.findAllMonthlyRecords(month, year, pageable);
+    public Page<AttendanceRecordDto> getCompanyMonthlyAttendance(int month, int year, Pageable pageable, EmployeeUserDetails actor) {
+        return attendanceRepository.findAllMonthlyRecords(month, year, pageable).map(this::toDto);
     }
 
     private boolean hasAnyRole(EmployeeUserDetails principal, String... roles) {
@@ -215,5 +217,28 @@ public class AttendanceService {
             }
         }
         return false;
+    }
+
+    private AttendanceRecordDto toDto(AttendanceRecord record) {
+        Employee employee = record.getEmployee();
+        return AttendanceRecordDto.of(
+                record.getRecordId(),
+                employee != null ? employee.getEmployeeId() : null,
+                employee != null ? employee.getFullName() : "Unknown",
+                employee != null ? employee.getEmail() : null,
+                record.getCheckIn(),
+                record.getCheckOut(),
+                record.getWorkHours(),
+                record.getStatus(),
+                record.getIsVerifiedByManager(),
+                record.getVerifiedAt(),
+                record.getManagerNotes(),
+                record.getReviewStatus(),
+                record.getPayrollStatus(),
+                record.getManuallyAdjusted(),
+                record.getManuallyAdjustedAt(),
+                record.getManuallyAdjustedBy(),
+                record.getManualAdjustmentReason()
+        );
     }
 }

@@ -108,7 +108,7 @@ const HRAttendanceGrid = () => {
     const dailyRecords = records.filter(r => {
       if (!r.checkIn) return false;
       const checkInDate = new Date(r.checkIn);
-      return r.employee && r.employee.employeeId === empId && checkInDate.getDate() === day;
+      return r.employeeId === empId && checkInDate.getDate() === day;
     });
 
     if (dailyRecords.length === 0) {
@@ -387,7 +387,7 @@ const HRAttendanceGrid = () => {
                       return (
                         <tr key={record.recordId} className="hover:bg-white/5">
                           <td className="p-5">
-                            <p className="font-bold text-slate-100">{record.employee.fullName}</p>
+                            <p className="font-bold text-slate-100">{record.employeeName}</p>
                             <p className="mt-1 text-xs text-slate-500">#{record.recordId}</p>
                           </td>
                           <td className="p-5 text-sm text-slate-300">
@@ -449,7 +449,7 @@ const HRAttendanceGrid = () => {
               <div>
                 <h2 className="text-2xl font-black text-white">تصحيح سجل حضور</h2>
                 <p className="mt-2 text-sm text-slate-400">
-                  {selectedRecord.employee.fullName} • سجل رقم {selectedRecord.recordId}
+                  {selectedRecord.employeeName} • سجل رقم {selectedRecord.recordId}
                 </p>
               </div>
               <button

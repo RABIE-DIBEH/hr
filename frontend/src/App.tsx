@@ -9,7 +9,6 @@ const ManagerDashboard = lazy(() => import('./pages/ManagerDashboard'));
 const HRDashboard = lazy(() => import('./pages/HRDashboard'));
 const HRAttendanceGrid = lazy(() => import('./pages/HRAttendanceGrid'));
 const PayrollDashboard = lazy(() => import('./pages/PayrollDashboard'));
-const PayrollHistory = lazy(() => import('./pages/PayrollHistory'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const AttendanceLogs = lazy(() => import('./pages/AttendanceLogs'));
 const NFCClock = lazy(() => import('./pages/NFCClock'));
@@ -58,11 +57,6 @@ function App() {
             <Route path="/payroll" element={
               <ProtectedRoute allowedRoles={['HR', 'ADMIN']}>
                 <PayrollDashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/payroll/history" element={
-              <ProtectedRoute allowedRoles={['HR', 'ADMIN']}>
-                <PayrollHistory />
               </ProtectedRoute>
             } />
             <Route path="/admin" element={

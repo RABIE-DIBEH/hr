@@ -10,7 +10,6 @@ import {
   ShieldCheck,
   Settings,
   Star,
-  HandCoins,
   Bell,
   DollarSign,
 } from 'lucide-react';
@@ -30,8 +29,7 @@ interface MenuItem {
 const allMenuItems: MenuItem[] = [
   { path: '/dashboard', icon: LayoutDashboard, label: 'لوحة التحكم',     roles: ['EMPLOYEE', 'SUPER_ADMIN'] },
   { path: '/finance',   icon: Wallet,          label: 'إدارة المرتبات',   roles: ['HR', 'ADMIN', 'SUPER_ADMIN'] },
-  { path: '/payroll',   icon: HandCoins,       label: 'السلف المالية',    roles: ['HR', 'ADMIN', 'SUPER_ADMIN'] },
-  { path: '/payroll/history', icon: DollarSign, label: 'سجل الرواتب',     roles: ['HR', 'ADMIN', 'SUPER_ADMIN'] },
+  { path: '/payroll',   icon: DollarSign,      label: 'قسم الرواتب',      roles: ['HR', 'ADMIN', 'SUPER_ADMIN'] },
   { path: '/goals',     icon: Star,            label: 'النقاط' },
   { path: '/manager',   icon: Users,           label: 'إدارة الفريق',    roles: ['MANAGER', 'SUPER_ADMIN'] },
   { path: '/hr',        icon: ShieldCheck,     label: 'الموارد البشرية',  roles: ['HR', 'SUPER_ADMIN'] },
