@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import PaginationControls from '../components/PaginationControls';
 import Sidebar from '../components/Sidebar';
+import CurrentDateTimePanel from '../components/CurrentDateTimePanel';
 import { 
   getAdminMetrics, 
   getSystemLogsPage, 
@@ -125,7 +126,8 @@ const AdminDashboard = () => {
               <h1 className="text-3xl font-black text-white tracking-tight arabic-text">لوحة التحكم الفنية (Admin)</h1>
               <p className="text-slate-400 mt-1">مراقبة أداء الخوادم والأمان والنسخ الاحتياطي</p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex items-center gap-3">
+              <CurrentDateTimePanel />
               <button onClick={handleBackup} className="bg-white text-black px-5 py-3 rounded-xl font-bold flex items-center gap-2 shadow-xl shadow-white/5 transition-transform hover:scale-105 active:scale-95">
                 <Database size={18} />
                 <span>النسخ الاحتياطي الآن</span>

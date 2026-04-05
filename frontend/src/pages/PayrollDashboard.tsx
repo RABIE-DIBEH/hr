@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import PaginationControls from '../components/PaginationControls';
 import Sidebar from '../components/Sidebar';
+import CurrentDateTimePanel from '../components/CurrentDateTimePanel';
 import {
   getCurrentEmployee,
   getPendingAdvanceRequestsPage,
@@ -141,9 +142,12 @@ const PayrollDashboard = () => {
                   مراجعة والموافقة على طلبات السلفة من الموظفين
                 </p>
               </div>
-              <div className="flex items-center gap-3 bg-purple-500/10 px-4 py-2 rounded-xl">
+              <div className="flex items-center gap-3">
+                <CurrentDateTimePanel />
+                <div className="flex items-center gap-3 bg-purple-500/10 px-4 py-2 rounded-xl">
                 <DollarSign size={20} className="text-purple-400" />
                 <span className="text-purple-300 font-medium text-sm">قسم الرواتب</span>
+                </div>
               </div>
             </div>
           </header>

@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import PaginationControls from '../components/PaginationControls';
 import Sidebar from '../components/Sidebar';
+import CurrentDateTimePanel from '../components/CurrentDateTimePanel';
 import AdvanceRequestForm from '../components/AdvanceRequestForm';
 import LeaveRequestForm from '../components/LeaveRequestForm';
 import { getCurrentEmployee, updateProfileMe, getMyAdvanceRequests, getMyPayrollSlipsPage, type EmployeeProfile, type EmployeeProfileUpdatePayload, type AdvanceRequest, type PayrollSlip } from '../services/api';
@@ -161,7 +162,8 @@ const EmployeeDashboard = () => {
                 {[me?.teamName, me?.roleName].filter(Boolean).join(' | ') || 'عرض تقرير الدوام'}
               </p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex items-center gap-3">
+              <CurrentDateTimePanel />
               <button
                 onClick={openProfileEdit}
                 className="bg-luxury-surface border border-white/5 p-3 rounded-xl shadow-sm hover:bg-white/5 transition-all flex items-center gap-2 text-slate-300"

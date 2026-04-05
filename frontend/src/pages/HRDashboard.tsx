@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import PaginationControls from '../components/PaginationControls';
 import Sidebar from '../components/Sidebar';
+import CurrentDateTimePanel from '../components/CurrentDateTimePanel';
 import RecruitmentRequestForm from '../components/RecruitmentRequestForm';
 import {
   assignEmployeeNfcCard,
@@ -262,7 +263,8 @@ const HRDashboard = () => {
                 </h1>
                 <p className="text-slate-400 mt-1">إدارة البطاقات الذكية ومعالجة الرواتب الشهرية</p>
               </div>
-              <div className="flex gap-4">
+              <div className="flex items-center gap-4">
+                <CurrentDateTimePanel />
                 <Link
                   to="/hr/grid"
                   className="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all border border-white/10"
