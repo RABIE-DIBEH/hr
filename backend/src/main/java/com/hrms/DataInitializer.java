@@ -6,6 +6,8 @@ import com.hrms.core.models.UsersRole;
 import com.hrms.core.repositories.EmployeeRepository;
 import com.hrms.core.repositories.RoleRepository;
 import com.hrms.core.repositories.TeamRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
@@ -13,6 +15,8 @@ import java.math.BigDecimal;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
+
+    private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
 
     private final RoleRepository roleRepository;
     private final TeamRepository teamRepository;
@@ -43,7 +47,7 @@ public class DataInitializer implements CommandLineRunner {
         for (String roleName : roles) {
             if (roleRepository.findByRoleName(roleName).isEmpty()) {
                 roleRepository.save(new UsersRole(roleName));
-                System.out.println(">>> Role seeded: " + roleName);
+                log.info("Role seeded: {}", roleName);
             }
         }
     }
@@ -53,7 +57,7 @@ public class DataInitializer implements CommandLineRunner {
         for (String teamName : teams) {
             if (teamRepository.findAll().stream().noneMatch(t -> t.getName().equalsIgnoreCase(teamName))) {
                 teamRepository.save(new Team(null, teamName));
-                System.out.println(">>> Team seeded: " + teamName);
+                log.info("Team seeded: {}", teamName);
             }
         }
     }
@@ -104,7 +108,7 @@ public class DataInitializer implements CommandLineRunner {
                     .status("Active")
                     .build();
             Employee saved = employeeRepository.save(employee);
-            System.out.println(">>> User seeded: " + fullName + " (" + email + ")");
+            log.info("User seeded: {} ({})", fullName, email);
             return saved;
         }
         return employeeRepository.findByEmail(email).orElse(null);
