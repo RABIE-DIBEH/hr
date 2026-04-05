@@ -81,6 +81,7 @@ CREATE TABLE Payroll (
     year INT NOT NULL,
     total_work_hours DECIMAL(10, 2),
     overtime_hours DECIMAL(10, 2),
+    advance_deductions DECIMAL(12, 2),
     deductions DECIMAL(10, 2),
     net_salary DECIMAL(12, 2),
     generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -121,7 +122,10 @@ CREATE TABLE Advance_Requests (
     requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     processed_at TIMESTAMP,
     processed_by INT REFERENCES Employees(employee_id),
-    hr_note VARCHAR(500)
+    hr_note VARCHAR(500),
+    paid BOOLEAN DEFAULT FALSE,
+    paid_at TIMESTAMP,
+    deducted BOOLEAN DEFAULT FALSE
 );
 
 -- 10. Inbox Messages Table
@@ -130,6 +134,7 @@ CREATE TABLE Inbox_Messages (
     title VARCHAR(255) NOT NULL,
     message TEXT NOT NULL,
     target_role VARCHAR(50) NOT NULL,
+    target_employee_id INT REFERENCES Employees(employee_id),
     sender_name VARCHAR(255) NOT NULL,
     priority VARCHAR(20) DEFAULT 'MEDIUM',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -137,9 +142,27 @@ CREATE TABLE Inbox_Messages (
     archived BOOLEAN DEFAULT FALSE
 );
 
--- Create index on target_role for faster role-based queries
+-- Create index on target_role and target_employee_id for faster role-based queries
 CREATE INDEX idx_inbox_target_role ON Inbox_Messages(target_role);
+CREATE INDEX idx_inbox_target_employee ON Inbox_Messages(target_employee_id);
 CREATE INDEX idx_inbox_created_at ON Inbox_Messages(created_at DESC);
+
+-- 11. System Logs Table
+CREATE TABLE system_logs (
+    log_id SERIAL PRIMARY KEY,
+    action VARCHAR(255) NOT NULL,
+    origin_user VARCHAR(255) NOT NULL,
+    timestamp TIMESTAMP NOT NULL,
+    status VARCHAR(50) NOT NULL
+);
+
+-- 12. NFC Devices Table
+CREATE TABLE nfc_devices (
+    device_id VARCHAR(100) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    status VARCHAR(50) NOT NULL,
+    system_load VARCHAR(50)
+);
 
 -- Seed Initial Roles
 INSERT INTO Users_Roles (role_name) VALUES ('ADMIN'), ('HR'), ('MANAGER'), ('EMPLOYEE');
