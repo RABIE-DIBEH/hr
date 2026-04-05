@@ -45,35 +45,37 @@ const PayrollDashboard = () => {
     || me?.roleName === 'ADMIN'
     || me?.roleName === 'SUPER_ADMIN';
 
-  const fetchPendingAdvances = () => {
-    getPendingAdvanceRequestsPage({ page: pendingPage, size: 10 })
-      .then((res) => {
-        setPendingAdvances(res.data.items);
-        setPendingTotalPages(res.data.totalPages);
-        setPendingTotalCount(res.data.totalCount);
-      })
-      .catch(() => setLoadError('تعذر تحميل طلبات السلفة المعلقة'));
+  const loadPendingAdvances = async (page: number) => {
+    try {
+      const res = await getPendingAdvanceRequestsPage({ page, size: 10 });
+      setPendingAdvances(res.data.items);
+      setPendingTotalPages(res.data.totalPages);
+      setPendingTotalCount(res.data.totalCount);
+    } catch {
+      setLoadError('تعذر تحميل طلبات السلفة المعلقة');
+    }
   };
 
-  const fetchAllAdvances = () => {
-    getAllAdvanceRequestsPage({ page: allPage, size: 10 })
-      .then((res) => {
-        setAllAdvances(res.data.items);
-        setAllTotalPages(res.data.totalPages);
-        setAllTotalCount(res.data.totalCount);
-      })
-      .catch(() => setLoadError('تعذر تحميل جميع طلبات السلفة'));
+  const loadAllAdvances = async (page: number) => {
+    try {
+      const res = await getAllAdvanceRequestsPage({ page, size: 10 });
+      setAllAdvances(res.data.items);
+      setAllTotalPages(res.data.totalPages);
+      setAllTotalCount(res.data.totalCount);
+    } catch {
+      setLoadError('تعذر تحميل جميع طلبات السلفة');
+    }
   };
 
   useEffect(() => {
     if (canManageAdvances) {
-      fetchPendingAdvances();
+      void loadPendingAdvances(pendingPage);
     }
   }, [canManageAdvances, pendingPage]);
 
   useEffect(() => {
     if (canManageAdvances) {
-      fetchAllAdvances();
+      void loadAllAdvances(allPage);
     }
   }, [canManageAdvances, allPage]);
 
@@ -83,8 +85,10 @@ const PayrollDashboard = () => {
       await processAdvanceRequest(advanceId, status, advanceNote || undefined);
       setAdvanceNote('');
       setSelectedAdvanceId(null);
-      fetchPendingAdvances();
-      fetchAllAdvances();
+      await Promise.all([
+        loadPendingAdvances(pendingPage),
+        loadAllAdvances(allPage),
+      ]);
     } catch {
       setLoadError('فشل معالجة طلب السلفة');
     } finally {

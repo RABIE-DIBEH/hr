@@ -1,6 +1,6 @@
 # AGENTS.md - HRMS Project Guidelines
 
-**Last Updated**: April 2026 | **Status**: 85% implementation compliance
+**Last Updated**: April 2026 | **Status**: Active project guidance, partially updated
 
 ## Project Overview
 Human Resources Management System (HRMS) with NFC-based attendance tracking and multi-role dashboard system.
@@ -31,7 +31,7 @@ frontend/src/
 mvn clean compile           # Compile Java sources
 mvn spring-boot:run        # Start dev server (port 8080)
 mvn clean package            # Build JAR
-mvn test                    # Run all tests (none currently exist)
+mvn test                    # Run backend tests
 mvn test -Dtest=ClassName   # Run single test class
 mvn test -Dtest=ClassName#methodName  # Run single test method
 ```
@@ -45,10 +45,10 @@ npm run preview             # Preview production build
 ```
 
 ### Notes
-- **No test framework is currently configured** in either backend or frontend.
-- `spring-boot-starter-test` is in `pom.xml` but `src/test/` does not exist.
+- Backend tests exist under `backend/src/test/` and use JUnit 5 + Mockito + MockMvc.
 - Frontend has no testing libraries (Vitest, Jest, or RTL not installed).
 - To add tests: use JUnit 5 + Mockito for backend; Vitest + React Testing Library for frontend.
+- Backend local secrets are loaded from `backend/.env` via Spring config import. Commit `.env.example`, not `.env`.
 
 ## Code Style Conventions
 
@@ -116,8 +116,9 @@ public class AuthController {
 - ✅ Role-based access: Pattern is `@AuthenticationPrincipal EmployeeUserDetails principal` + `hasAnyRole(principal, "ROLE_X")`
 - ✅ Stateless sessions: `SecurityConfig.java` uses `SessionCreationPolicy.STATELESS`
 - ✅ CORS configured for localhost:5173
-- ⚠️ **Security gaps**: JWT secret + DB password hardcoded in `application.properties`; all endpoints default to `permitAll()`
-- **Roadmap**: Move secrets to environment variables, enforce role-based endpoint security
+- ✅ JWT secret + DB credentials now come from environment-backed config (`backend/.env` locally)
+- ✅ Security config enforces authenticated and role-based endpoint access across `/api/**`
+- ⚠️ **Remaining gap**: local dev seed users still use predictable dev passwords until first login upgrade or explicit replacement
 
 ### Backend: Actual Working Patterns
 
@@ -131,6 +132,7 @@ These patterns are **actively used and verified** across the codebase. Reference
 | **Exception Handling** | `GlobalExceptionHandler.java` | @ControllerAdvice catches and formats errors |
 | **Entity Modeling** | `Employee.java` | No-arg/all-args constructors, builder pattern, @PrePersist, foreign keys |
 | **JWT Security** | `JwtAuthenticationFilter.java` | OncePerRequestFilter with proper Spring Security integration |
+| **Local Env Loading** | `application.properties` + `backend/.env.example` | Spring imports local `.env` automatically |
 | **Repositories** | Various in `core/repositories/` | Spring Data derived queries; custom @Query for complex lookups |
 
 ### Frontend (TypeScript/React)
@@ -290,13 +292,13 @@ record PaginatedResponse<T>(List<T> items, int total, int page, int pageSize) {}
 
 | Category | Issue | Severity | Affected Files | Recommended Fix |
 |----------|-------|----------|-----------------|-----------------|
-| **Request Format** | Some endpoints accept `Map<String, Object>` instead of DTOs | 🔴 | RecruitmentRequestController, AdvanceRequestController | Create RecruitmentRequestDto, AdvanceRequestDto |
+| **Request Format** | Some legacy notes are outdated; current recruitment and advance endpoints use DTOs | 🟡 | Review docs before assuming gaps | Keep docs aligned with code |
 | **Response Format** | Mixed return types (Map vs DTO vs Entity) | 🔴 | Various controllers | Standardize to ApiResponse<T> wrapper |
 | **Pagination** | No pagination on list endpoints | 🟡 | All `/api/**` list endpoints | Add PageRequest/PageResponse pattern |
-| **Logging** | System.out.println in AuthService | 🟡 | AuthService.java | Replace with SLF4J logger |
+| **Logging** | Some legacy notes mention `System.out.println`, but AuthService/DataInitializer are already on SLF4J | 🟡 | Review remaining services opportunistically | Keep logging consistent |
 | **Data Fetching** | No React Query/SWR (potential duplicate requests) | 🟡 | api.ts | Consider adding React Query |
-| **Secrets** | JWT secret + DB password hardcoded | 🔴 | application.properties | Use environment variables |
-| **Endpoint Security** | All endpoints default to permitAll() | 🔴 | SecurityConfig.java | Add role-based endpoint guards |
+| **Secrets** | Secrets must now be supplied via env or local `.env` | 🟡 | `backend/.env` local only | Keep `.env` out of git |
+| **Endpoint Security** | Legacy note was outdated; role-based guards are already configured | 🟡 | SecurityConfig.java | Add coverage tests when changing rules |
 | **Form Validation Sync** | Rules duplicated frontend/backend | 🟡 | LeaveRequestForm, etc. | Document sync strategy |
 | **Error Boundaries** | No error boundaries on all pages | 🟡 | Dashboard pages | Wrap pages in ErrorBoundary |
 
@@ -319,16 +321,16 @@ record PaginatedResponse<T>(List<T> items, int total, int page, int pageSize) {}
 - ⚠️ Form validation duplicated from backend
 
 ## Security Notes (Current Gaps)
-- All endpoints are `permitAll()` - no actual authentication enforcement
-- JWT secret is hardcoded in code; DB password in `application.properties`
-- No JWT validation filter in Spring Security chain
-- Password comparison is plaintext (BCrypt bean defined but unused)
-- **Recommendations**: Use environment variables for secrets, implement JWT filter, add role-based access control
+- JWT filter is in the security chain
+- Endpoint access rules are enforced in `SecurityConfig.java`
+- Local secrets now come from `backend/.env` or environment variables
+- Dev seed users still start from predictable local passwords, so treat them as dev-only credentials
+- **Recommendations**: rotate local secrets when sharing environments, keep `.env` out of git, add more security-rule tests as access rules evolve
 
 ## Future Improvements (Roadmap)
-1. ✅ **Done**: GlobalExceptionHandler, JWT auth, @Valid validation, constructior injection pattern
-2. ⚠️ **In Progress**: Standardize response DTOs, pagination pattern
-3. 🔴 **Priority**: Fix Map-based request endpoints, migrate secrets to env vars, add endpoint security
-4. 📋 **Medium Priority**: Zero tests yet (add JUnit 5/Mockito for backend; Vitest/RTL for frontend)
-5. 📋 **Medium Priority**: Implement React Query/SWR for data fetching, add centralized form error handler
+1. ✅ **Done**: GlobalExceptionHandler, JWT auth, `@Valid` validation, constructor injection pattern
+2. ✅ **Done**: secrets moved to env-backed config and endpoint security enforced
+3. ⚠️ **In Progress**: standardize response DTOs and remaining pagination consistency
+4. 📋 **Medium Priority**: expand backend tests and add frontend test tooling
+5. 📋 **Medium Priority**: implement React Query/SWR for data fetching, add centralized form error handler
 6. 🎯 **Future**: DB migrations (Liquibase/Flyway), request/response logging, type-safe validation sharing

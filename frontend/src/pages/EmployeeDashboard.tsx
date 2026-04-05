@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useEffectEvent, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Clock,
@@ -30,6 +30,33 @@ const EmployeeDashboard = () => {
   const [payrollTotalPages, setPayrollTotalPages] = useState(0);
   const [payrollTotalCount, setPayrollTotalCount] = useState(0);
 
+  const loadEmployeeData = useEffectEvent(async () => {
+    if (!me) {
+      return;
+    }
+
+    setLoadingAdvances(true);
+    setLoadingPayroll(true);
+
+    const [advancesResult, payrollResult] = await Promise.allSettled([
+      getMyAdvanceRequests(),
+      getMyPayrollSlipsPage({ page: payrollPage, size: 6 }),
+    ]);
+
+    if (advancesResult.status === 'fulfilled') {
+      setMyAdvances(advancesResult.value.data);
+    }
+
+    if (payrollResult.status === 'fulfilled') {
+      setMyPayrollSlips(payrollResult.value.data.items);
+      setPayrollTotalPages(payrollResult.value.data.totalPages);
+      setPayrollTotalCount(payrollResult.value.data.totalCount);
+    }
+
+    setLoadingAdvances(false);
+    setLoadingPayroll(false);
+  });
+
   useEffect(() => {
     getCurrentEmployee()
       .then((res) => setMe(res.data))
@@ -37,23 +64,7 @@ const EmployeeDashboard = () => {
   }, []);
 
   useEffect(() => {
-    if (me) {
-      setLoadingAdvances(true);
-      getMyAdvanceRequests()
-        .then((res) => setMyAdvances(res.data))
-        .catch(() => {})
-        .finally(() => setLoadingAdvances(false));
-
-      setLoadingPayroll(true);
-      getMyPayrollSlipsPage({ page: payrollPage, size: 6 })
-        .then((res) => {
-          setMyPayrollSlips(res.data.items);
-          setPayrollTotalPages(res.data.totalPages);
-          setPayrollTotalCount(res.data.totalCount);
-        })
-        .catch(() => {})
-        .finally(() => setLoadingPayroll(false));
-    }
+    void loadEmployeeData();
   }, [me, showAdvanceForm, payrollPage]);
 
   const container = {

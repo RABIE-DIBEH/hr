@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useEffectEvent, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Bell, Archive, Check, CheckCheck, AlertCircle, Trash2, FolderOpen, Square, SquareCheck } from 'lucide-react';
 import PaginationControls from '../components/PaginationControls';
@@ -16,6 +16,13 @@ import {
 } from '../services/api';
 
 const Inbox = () => {
+  const filters: Array<{ value: 'all' | 'unread' | 'high-priority' | 'archived'; label: string }> = [
+    { value: 'all', label: 'الكل' },
+    { value: 'unread', label: 'غير المقروءة' },
+    { value: 'high-priority', label: 'ذات الأولوية' },
+    { value: 'archived', label: 'الأرشيف' },
+  ];
+
   const [messages, setMessages] = useState<InboxMessage[]>([]);
   const [filteredMessages, setFilteredMessages] = useState<InboxMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,15 +33,7 @@ const Inbox = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
 
-  useEffect(() => {
-    loadMessages();
-  }, [filter, page]);
-
-  useEffect(() => {
-    setPage(0);
-  }, [filter]);
-
-  const loadMessages = async () => {
+  const loadMessages = useEffectEvent(async () => {
     setLoading(true);
     setError(null);
     setSelectedIds(new Set());
@@ -62,7 +61,15 @@ const Inbox = () => {
     } finally {
       setLoading(false);
     }
-  };
+  });
+
+  useEffect(() => {
+    void loadMessages();
+  }, [filter, page]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [filter]);
 
   const handleMarkAsRead = async (messageId: number) => {
     try {
@@ -223,20 +230,20 @@ const Inbox = () => {
 
             {/* Filters */}
             <div className="flex gap-3 flex-wrap">
-              {['all', 'unread', 'high-priority', 'archived'].map((f) => (
+              {filters.map((item) => (
                 <button
-                  key={f}
-                  onClick={() => setFilter(f as any)}
+                  key={item.value}
+                  onClick={() => setFilter(item.value)}
                   className={`px-4 py-2 rounded-lg font-semibold transition-all flex items-center gap-2 ${
-                    filter === f
+                    filter === item.value
                       ? 'bg-luxury-primary/20 text-luxury-primary border border-luxury-primary/30'
                       : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'
                   }`}
                 >
-                  {f === 'all' && 'الكل'}
-                  {f === 'unread' && `غير المقروءة (${unreadCount})`}
-                  {f === 'high-priority' && 'ذات الأولوية'}
-                  {f === 'archived' && <><FolderOpen size={14} /> الأرشيف</>}
+                  {item.value === 'all' && item.label}
+                  {item.value === 'unread' && `${item.label} (${unreadCount})`}
+                  {item.value === 'high-priority' && item.label}
+                  {item.value === 'archived' && <><FolderOpen size={14} /> {item.label}</>}
                 </button>
               ))}
             </div>

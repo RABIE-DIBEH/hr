@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useEffectEvent, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   DollarSign,
@@ -22,16 +22,24 @@ const PayrollHistory = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
 
-  useEffect(() => {
+  const loadPayrollHistory = useEffectEvent(async () => {
     setLoading(true);
-    getAllPayrollHistoryPage({ page, size: 12 })
-      .then((res) => {
-        setSlips(res.data.items);
-        setTotalPages(res.data.totalPages);
-        setTotalCount(res.data.totalCount);
-      })
-      .catch(() => setError('تعذر تحميل سجل الرواتب'))
-      .finally(() => setLoading(false));
+    setError(null);
+
+    try {
+      const res = await getAllPayrollHistoryPage({ page, size: 12 });
+      setSlips(res.data.items);
+      setTotalPages(res.data.totalPages);
+      setTotalCount(res.data.totalCount);
+    } catch {
+      setError('تعذر تحميل سجل الرواتب');
+    } finally {
+      setLoading(false);
+    }
+  });
+
+  useEffect(() => {
+    void loadPayrollHistory();
   }, [page]);
 
   const filteredSlips = slips.filter((slip) => {

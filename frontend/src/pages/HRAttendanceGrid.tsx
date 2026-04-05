@@ -38,15 +38,13 @@ const HRAttendanceGrid = () => {
     fetchData();
   }, [month, year, page]);
 
-  useEffect(() => {
-    setPage(0);
-  }, [month, year]);
-
   const handlePrevMonth = () => {
+    setPage(0);
     setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
   };
 
   const handleNextMonth = () => {
+    setPage(0);
     setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
   };
   

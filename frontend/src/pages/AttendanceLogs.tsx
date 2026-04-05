@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useEffectEvent, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Download, ChevronRight, RefreshCcw } from 'lucide-react';
 import PaginationControls from '../components/PaginationControls';
@@ -13,7 +13,7 @@ const AttendanceLogs = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchLogs = async () => {
+  const fetchLogs = useEffectEvent(async () => {
     setLoading(true);
     try {
       const res = await getMyAttendancePage({ page, size: 20 });
@@ -26,10 +26,10 @@ const AttendanceLogs = () => {
     } finally {
       setLoading(false);
     }
-  };
+  });
 
   useEffect(() => {
-    fetchLogs();
+    void fetchLogs();
   }, [page]);
 
   const formatTime = (dateStr: string) => {

@@ -108,7 +108,7 @@ export interface PaginationParams {
   size?: number;
 }
 
-export interface PaginatedList<T> extends PaginatedResponse<T> {}
+export type PaginatedList<T> = PaginatedResponse<T>;
 
 export interface SystemMetrics {
   cpu: string;
