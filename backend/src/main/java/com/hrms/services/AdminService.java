@@ -1,5 +1,7 @@
 package com.hrms.services;
 
+import com.hrms.api.dto.CreateNfcDeviceRequest;
+import com.hrms.api.dto.SystemMetricsDto;
 import com.hrms.core.models.NfcDevice;
 import com.hrms.core.models.SystemLog;
 import com.hrms.core.repositories.NfcDeviceRepository;
@@ -9,10 +11,7 @@ import org.springframework.stereotype.Service;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.time.format.DateTimeFormatter;
 import java.time.LocalDateTime;
 
 @Service
@@ -44,9 +43,7 @@ public class AdminService {
         logRepository.save(log);
     }
 
-    public Map<String, Object> getSystemMetrics() {
-        Map<String, Object> metrics = new HashMap<>();
-
+    public SystemMetricsDto getSystemMetrics() {
         // Uptime
         RuntimeMXBean rb = ManagementFactory.getRuntimeMXBean();
         long uptimeMillis = rb.getUptime();
@@ -72,14 +69,14 @@ public class AdminService {
         long freeMemory = Runtime.getRuntime().freeMemory();
         long usedMemory = totalMemory - freeMemory;
         String memoryUsageStr = String.format("%.2f GB", usedMemory / (1024.0 * 1024.0 * 1024.0));
-        
-        metrics.put("cpu", cpuUsage);
-        metrics.put("storage", memoryUsageStr); 
-        metrics.put("uptime", uptimeScore + "%");
-        metrics.put("uptimeStr", uptimeStr);
-        metrics.put("status", "System Healthy");
 
-        return metrics;
+        return new SystemMetricsDto(
+                cpuUsage,
+                memoryUsageStr,
+                uptimeScore + "%",
+                uptimeStr,
+                "System Healthy"
+        );
     }
 
     public void clearAllLogs(String user) {
@@ -87,10 +84,17 @@ public class AdminService {
         logSystemEvent("Clear Audit Logs", user, "Success");
     }
 
-    public NfcDevice addNfcDevice(NfcDevice device) {
+    public NfcDevice addNfcDevice(CreateNfcDeviceRequest request) {
+        NfcDevice device = NfcDevice.builder()
+                .deviceId(request.deviceId())
+                .name(request.name())
+                .status(request.status())
+                .systemLoad(request.systemLoad())
+                .build();
+
         // Simple default handling for new devices being registered
         if (device.getStatus() == null) device.setStatus("Offline");
-        if (device.getSystemLoad() == null) device.getSystemLoad();
+        if (device.getSystemLoad() == null) device.setSystemLoad("0%");
         
         logSystemEvent("Add NFC Device " + device.getDeviceId(), "Admin", "Success");
         return deviceRepository.save(device);

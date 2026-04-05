@@ -46,7 +46,7 @@ const AdminDashboard = () => {
   const handleBackup = async () => {
     try {
       const res = await triggerBackup();
-      alert(res.data.message || 'Backup executed securely');
+      alert(res.data.status || 'Backup executed securely');
       getSystemLogs().then(r => setLogs(r.data)); // refresh logs
     } catch {
       alert('Error triggering backup');

@@ -1,14 +1,17 @@
 package com.hrms.api;
 
 import com.hrms.api.dto.ApiResponse;
-import com.hrms.core.models.NfcDevice;
+import com.hrms.api.dto.CreateNfcDeviceRequest;
+import com.hrms.api.dto.NfcDeviceResponseDto;
+import com.hrms.api.dto.StatusResponseDto;
+import com.hrms.api.dto.SystemMetricsDto;
 import com.hrms.core.models.SystemLog;
 import com.hrms.services.AdminService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -21,7 +24,7 @@ public class AdminController {
     }
 
     @GetMapping("/metrics")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getMetrics() {
+    public ResponseEntity<ApiResponse<SystemMetricsDto>> getMetrics() {
         return ResponseEntity.ok(ApiResponse.success(
                 adminService.getSystemMetrics(),
                 "System metrics retrieved successfully"
@@ -37,35 +40,37 @@ public class AdminController {
     }
 
     @GetMapping("/devices")
-    public ResponseEntity<ApiResponse<List<NfcDevice>>> getDevices() {
+    public ResponseEntity<ApiResponse<List<NfcDeviceResponseDto>>> getDevices() {
         return ResponseEntity.ok(ApiResponse.success(
-                adminService.getAllDevices(),
+                adminService.getAllDevices().stream()
+                        .map(NfcDeviceResponseDto::from)
+                        .toList(),
                 "NFC devices retrieved successfully"
         ));
     }
 
     @DeleteMapping("/logs")
-    public ResponseEntity<ApiResponse<Map<String, String>>> clearLogs() {
+    public ResponseEntity<ApiResponse<StatusResponseDto>> clearLogs() {
         adminService.clearAllLogs("Admin");
         return ResponseEntity.ok(ApiResponse.success(
-                Map.of("status", "cleared"),
+                new StatusResponseDto("cleared"),
                 "Logs cleared successfully"
         ));
     }
 
     @PostMapping("/devices")
-    public ResponseEntity<ApiResponse<NfcDevice>> addDevice(@RequestBody NfcDevice device) {
+    public ResponseEntity<ApiResponse<NfcDeviceResponseDto>> addDevice(@Valid @RequestBody CreateNfcDeviceRequest device) {
         return ResponseEntity.ok(ApiResponse.success(
-                adminService.addNfcDevice(device),
+                NfcDeviceResponseDto.from(adminService.addNfcDevice(device)),
                 "NFC device added successfully"
         ));
     }
 
     @PostMapping("/backup")
-    public ResponseEntity<ApiResponse<Map<String, String>>> triggerBackup() {
+    public ResponseEntity<ApiResponse<StatusResponseDto>> triggerBackup() {
         String status = adminService.triggerBackup("Admin");
         return ResponseEntity.ok(ApiResponse.success(
-                Map.of("status", status),
+                new StatusResponseDto(status),
                 "Backup triggered successfully"
         ));
     }

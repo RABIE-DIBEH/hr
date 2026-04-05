@@ -249,8 +249,9 @@ export const getAdminMetrics = () => api.get<SystemMetrics>('/admin/metrics');
 export const getSystemLogs = () => api.get<SystemLog[]>('/admin/logs');
 export const getNfcDevices = () => api.get<NfcDevice[]>('/admin/devices');
 export const clearSystemLogs = () => api.delete('/admin/logs');
-export const addNfcDevice = (device: Partial<NfcDevice>) => api.post('/admin/devices', device);
-export const triggerBackup = () => api.post('/admin/backup', {});
+export const addNfcDevice = (device: Pick<NfcDevice, 'deviceId' | 'name' | 'status' | 'systemLoad'>) =>
+  api.post<NfcDevice>('/admin/devices', device);
+export const triggerBackup = () => api.post<{ status: string }>('/admin/backup', {});
 export const getHrMonthlyAttendance = (month: number, year: number) => 
   getPaginatedItems<AttendanceRecord>(`/attendance/hr/monthly?month=${month}&year=${year}`);
 
