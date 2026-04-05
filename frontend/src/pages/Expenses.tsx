@@ -9,15 +9,19 @@ import {
   AlertCircle,
   Download,
   Search,
+  Users,
+  Clock,
 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
-import { calculatePayroll, listEmployees, type EmployeeSummary } from '../services/api';
+import { calculatePayroll, listEmployees, getAllPayrollHistory, type EmployeeSummary, type PayrollSlip } from '../services/api';
 
 const Expenses = () => {
   const [employees, setEmployees] = useState<EmployeeSummary[]>([]);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | ''>('');
   const [payrollLoading, setPayrollLoading] = useState(false);
   const [payrollMessage, setPayrollMessage] = useState<string | null>(null);
+  const [payrollHistory, setPayrollHistory] = useState<PayrollSlip[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
   const now = new Date();
   const [payrollMonth, setPayrollMonth] = useState(now.getMonth() + 1);
   const [payrollYear, setPayrollYear] = useState(now.getFullYear());
@@ -26,6 +30,14 @@ const Expenses = () => {
     listEmployees()
       .then((res) => setEmployees(res.data))
       .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    setLoadingHistory(true);
+    getAllPayrollHistory()
+      .then((res) => setPayrollHistory(res.data))
+      .catch(() => {})
+      .finally(() => setLoadingHistory(false));
   }, []);
 
   const handlePayroll = async () => {
@@ -40,6 +52,10 @@ const Expenses = () => {
       setPayrollMessage(
         `تم احتساب الراتب: ${data.netSalary} (ساعات: ${data.totalWorkHours ?? '—'}) للموظف ${selectedEmployeeId}`
       );
+      // Refresh history after calculating
+      getAllPayrollHistory()
+        .then((res) => setPayrollHistory(res.data))
+        .catch(() => {});
     } catch {
       setPayrollMessage('فشل احتساب الراتب. تحقق من البيانات أو الصلاحيات.');
     } finally {
@@ -47,14 +63,16 @@ const Expenses = () => {
     }
   };
 
-  const transactions = [
-    { id: 1, label: 'أحمد محمد - راتب مارس', date: 'اليوم، 10:30 ص', amount: '8,500.00', icon: Wallet, category: 'رواتب' },
-    { id: 2, label: 'سارة خالد - راتب مارس', date: 'أمس، 08:15 م', amount: '9,250.00', icon: Wallet, category: 'رواتب' },
-    { id: 3, label: 'خالد عبد الله - مكافأة', date: '20 مايو، 02:45 م', amount: '1,500.00', icon: Wallet, category: 'مكافآت' },
-  ];
+  // Calculate real totals from payroll history
+  const currentMonthPayroll = payrollHistory.filter(
+    (p) => p.month === payrollMonth && p.year === payrollYear
+  );
+  const totalMonthlySalary = currentMonthPayroll.reduce((sum, p) => sum + (p.netSalary || 0), 0);
+  const totalEmployees = currentMonthPayroll.length;
+  const totalHours = currentMonthPayroll.reduce((sum, p) => sum + (p.totalWorkHours || 0), 0);
 
   return (
-    <div className="flex min-h-screen bg-luxury-bg" dir="rtl">
+    <div className="flex min-h-screen bg-black" dir="rtl">
       <Sidebar />
       <main className="mr-64 flex-1 p-8 pb-32">
         <header className="flex justify-between items-center mb-10">
@@ -65,27 +83,48 @@ const Expenses = () => {
         </header>
 
         <div className="space-y-10">
-          {/* Total Balance Card */}
-          <motion.div 
-            animate={{ opacity: 1, scale: 1 }}
-            className="purple-gradient p-8 rounded-[32px] shadow-[0_20px_50px_rgba(106,13,173,0.3)] relative overflow-hidden"
-          >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl" />
-            <div className="relative z-10">
-              <p className="text-white/60 text-sm font-medium mb-2">إجمالي الرواتب المصروفة هذا الشهر</p>
-              <h2 className="text-4xl font-black tabular-nums tracking-tighter mb-8">14,250.00 <span className="text-xl font-medium opacity-60">ر.س</span></h2>
-              
-              <div className="flex justify-between items-center">
-                <div className="bg-black/20 backdrop-blur-md px-4 py-2 rounded-xl flex items-center gap-2">
-                  <TrendingDown size={16} className="text-red-400" />
-                  <span className="text-xs font-bold text-red-100">أعلى بنسبة 12%</span>
-                </div>
-                <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">تحديث: منذ ساعة</p>
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <motion.div
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-luxury-surface p-6 rounded-3xl shadow-sm border border-white/5"
+            >
+              <div className="bg-green-500/10 text-green-400 w-12 h-12 rounded-2xl flex items-center justify-center mb-4">
+                <DollarSign size={24} />
               </div>
-            </div>
-          </motion.div>
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">إجمالي الرواتب</p>
+              <p className="text-2xl font-black text-white">{totalMonthlySalary.toLocaleString()} ر.س</p>
+              <p className="text-[10px] text-slate-500 mt-1">
+                {new Date(payrollYear, payrollMonth - 1).toLocaleDateString('ar-SA', { month: 'long', year: 'numeric' })}
+              </p>
+            </motion.div>
 
-          {/* ── Payroll Calculator (moved from HR Dashboard) ── */}
+            <motion.div
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-luxury-surface p-6 rounded-3xl shadow-sm border border-white/5"
+            >
+              <div className="bg-blue-500/10 text-blue-400 w-12 h-12 rounded-2xl flex items-center justify-center mb-4">
+                <Users size={24} />
+              </div>
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">الموظفون المصروف لهم</p>
+              <p className="text-2xl font-black text-white">{totalEmployees}</p>
+              <p className="text-[10px] text-slate-500 mt-1">من أصل {employees.length} موظف</p>
+            </motion.div>
+
+            <motion.div
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-luxury-surface p-6 rounded-3xl shadow-sm border border-white/5"
+            >
+              <div className="bg-purple-500/10 text-purple-400 w-12 h-12 rounded-2xl flex items-center justify-center mb-4">
+                <Clock size={24} />
+              </div>
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">إجمالي الساعات</p>
+              <p className="text-2xl font-black text-white">{totalHours.toFixed(1)}</p>
+              <p className="text-[10px] text-slate-500 mt-1">ساعة عمل</p>
+            </motion.div>
+          </div>
+
+          {/* ── Payroll Calculator ── */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -158,7 +197,7 @@ const Expenses = () => {
             <div className="p-5 bg-orange-500/10 border border-orange-500/10 rounded-2xl flex gap-4 items-start mb-8">
               <AlertCircle className="text-orange-400 shrink-0" size={20} />
               <p className="text-orange-200 text-xs leading-relaxed font-medium">
-                اختر موظفاً من القائمة أعلاه ثم نفّذ الاحتسال. البيانات مأخوذة من الجداول الفعلية للنظام.
+                اختر موظفاً من القائمة أعلاه ثم نفّذ الاحتساب. البيانات مأخوذة من الجداول الفعلية للنظام.
               </p>
             </div>
 
@@ -172,47 +211,61 @@ const Expenses = () => {
                 {payrollLoading ? <RefreshCcw className="animate-spin" size={20} /> : <RefreshCcw size={20} />}
                 <span>احتساب الراتب للموظف المحدد</span>
               </button>
-              <button
-                type="button"
-                className="w-full bg-luxury-surface border border-white/5 text-slate-300 py-3 rounded-2xl font-bold hover:bg-white/5 transition-all flex items-center justify-center gap-2"
-              >
-                <Download size={18} />
-                <span>تصدير (قريباً)</span>
-              </button>
             </div>
           </motion.div>
 
-          {/* Transactions List */}
+          {/* Recent Payroll Records */}
           <section className="space-y-6">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-bold text-white/90">أحدث العمليات</h3>
-              <button className="text-luxury-accent text-xs font-bold hover:underline">مشاهدة الكل</button>
+              <h3 className="text-lg font-bold text-white/90">أحدث عمليات صرف الرواتب</h3>
             </div>
 
-            <div className="space-y-4">
-              {transactions.map((t, idx) => (
-                <motion.div 
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: idx * 0.1 }}
-                  key={t.id} 
-                  className="card-luxury p-5 flex justify-between items-center group hover:bg-white/5 transition-all"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-luxury-gold-soft flex items-center justify-center text-luxury-accent group-hover:bg-luxury-accent group-hover:text-black transition-all">
-                      <t.icon size={24} />
+            {loadingHistory ? (
+              <div className="text-center py-12 text-slate-500">
+                <p>جاري تحميل سجل الرواتب...</p>
+              </div>
+            ) : payrollHistory.length === 0 ? (
+              <div className="text-center py-12 text-slate-500">
+                <Wallet size={48} className="mx-auto mb-4 opacity-50" />
+                <p className="text-lg font-medium">لا توجد عمليات صرف رواتب بعد</p>
+                <p className="text-sm mt-2 text-slate-600">قم باحتساب رواتب الموظفين أولاً</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {payrollHistory.slice(0, 10).map((slip, idx) => (
+                  <motion.div
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    key={slip.payrollId}
+                    className="bg-luxury-surface p-5 rounded-2xl border border-white/5 flex justify-between items-center group hover:bg-white/5 transition-all"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 group-hover:bg-emerald-500/20 transition-all">
+                        <Wallet size={24} />
+                      </div>
+                      <div>
+                        <p className="font-bold text-white tracking-tight">{slip.employeeName}</p>
+                        <p className="text-[10px] text-slate-400 font-medium mt-1">
+                          {new Date(slip.year, slip.month - 1).toLocaleDateString('ar-SA', { month: 'long', year: 'numeric' })}
+                          {' • '}
+                          {slip.totalWorkHours ?? 0} ساعة عمل
+                          {slip.overtimeHours ? ` • ${slip.overtimeHours} ساعة إضافية` : ''}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-bold text-white tracking-tight">{t.label}</p>
-                      <p className="text-[10px] text-white/40 font-medium mt-1">{t.date} • {t.category}</p>
+                    <div className="text-right">
+                      <p className="font-black tabular-nums text-green-400 tracking-tighter">{slip.netSalary?.toLocaleString() ?? 0}</p>
+                      <p className="text-[10px] text-slate-500 font-bold">ر.س</p>
+                      {slip.deductions ? (
+                        <p className="text-[10px] text-red-400 font-medium">
+                          خصم: {slip.deductions.toLocaleString()} ر.س
+                        </p>
+                      ) : null}
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-black tabular-nums text-white tracking-tighter">-{t.amount}</p>
-                    <p className="text-[10px] text-white/20 font-bold">ر.س</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
           </section>
         </div>
       </main>
