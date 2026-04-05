@@ -2,6 +2,7 @@ package com.hrms.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.hrms.api.dto.AttendanceRecordDto;
 import com.hrms.core.models.AttendanceRecord;
 import com.hrms.core.models.Employee;
 import com.hrms.security.EmployeeUserDetails;
@@ -72,21 +73,25 @@ class AttendanceControllerTest {
 
     @Test
     void getManagerTodayRecords_AllowsSuperAdminToViewCompanyAttendance() throws Exception {
-        Employee employee = Employee.builder()
-                .employeeId(55L)
-                .fullName("Attendance User")
-                .email("attendance@example.com")
-                .passwordHash("secret")
-                .status("Active")
-                .build();
-
-        AttendanceRecord record = AttendanceRecord.builder()
-                .employee(employee)
-                .checkIn(LocalDateTime.of(2026, 4, 5, 8, 30))
-                .status("Normal")
-                .isVerifiedByManager(false)
-                .build();
-        record.setRecordId(99L);
+        AttendanceRecordDto record = AttendanceRecordDto.of(
+                99L,
+                55L,
+                "Attendance User",
+                "attendance@example.com",
+                LocalDateTime.of(2026, 4, 5, 8, 30),
+                null,
+                null,
+                "Normal",
+                false,
+                null,
+                null,
+                "PENDING_REVIEW",
+                "PENDING_APPROVAL",
+                false,
+                null,
+                null,
+                null
+        );
 
         when(attendanceService.getTodayRecordsForManager(eq(1L), eq(PageRequest.of(0, 20)), eq(principal)))
                 .thenReturn(new PageImpl<>(List.of(record), PageRequest.of(0, 20), 1));
@@ -94,7 +99,8 @@ class AttendanceControllerTest {
         mockMvc.perform(get("/api/attendance/manager/today"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.items[0].recordId").value(99))
-                .andExpect(jsonPath("$.data.items[0].employee.employeeId").value(55));
+                .andExpect(jsonPath("$.data.items[0].employeeId").value(55))
+                .andExpect(jsonPath("$.data.items[0].employeeName").value("Attendance User"));
 
         ArgumentCaptor<org.springframework.data.domain.Pageable> pageableCaptor =
                 ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
