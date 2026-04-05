@@ -38,4 +38,11 @@ public interface InboxMessageRepository extends JpaRepository<InboxMessage, Long
     @Query("SELECT m FROM InboxMessage m WHERE (m.targetRole = :role OR m.targetRole = 'ALL' OR m.targetEmployeeId = :employeeId) " +
            "AND m.priority = 'HIGH' AND m.archived = false ORDER BY m.createdAt DESC")
     List<InboxMessage> findHighPriorityByTargetRoleOrEmployee(@Param("role") String role, @Param("employeeId") Long employeeId);
+
+    /**
+     * Find archived messages for a specific role or specifically for a client
+     */
+    @Query("SELECT m FROM InboxMessage m WHERE (m.targetRole = :role OR m.targetRole = 'ALL' OR m.targetEmployeeId = :employeeId) " +
+           "AND m.archived = true ORDER BY m.createdAt DESC")
+    List<InboxMessage> findArchivedByTargetRoleOrEmployee(@Param("role") String role, @Param("employeeId") Long employeeId);
 }

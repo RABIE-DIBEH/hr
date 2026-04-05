@@ -112,6 +112,13 @@ public class InboxService {
     }
     
     /**
+     * Get archived messages for a specific role and employee
+     */
+    public List<InboxMessage> getArchivedMessagesForUser(String role, Long employeeId) {
+        return inboxMessageRepository.findArchivedByTargetRoleOrEmployee(role, employeeId);
+    }
+
+    /**
      * Archive a message
      */
     @Transactional

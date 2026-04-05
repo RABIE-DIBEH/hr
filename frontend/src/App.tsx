@@ -7,6 +7,7 @@ import ManagerDashboard from './pages/ManagerDashboard';
 import HRDashboard from './pages/HRDashboard';
 import HRAttendanceGrid from './pages/HRAttendanceGrid';
 import PayrollDashboard from './pages/PayrollDashboard';
+import PayrollHistory from './pages/PayrollHistory';
 import AdminDashboard from './pages/AdminDashboard';
 import AttendanceLogs from './pages/AttendanceLogs';
 import NFCClock from './pages/NFCClock';
@@ -48,6 +49,11 @@ function App() {
           <Route path="/payroll" element={
             <ProtectedRoute allowedRoles={['HR', 'ADMIN']}>
               <PayrollDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/payroll/history" element={
+            <ProtectedRoute allowedRoles={['HR', 'ADMIN']}>
+              <PayrollHistory />
             </ProtectedRoute>
           } />
           <Route path="/admin" element={

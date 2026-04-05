@@ -152,6 +152,28 @@ public class InboxController {
     }
     
     /**
+     * GET /api/inbox/archived
+     * Get archived messages for current user
+     */
+    @GetMapping("/archived")
+    public ResponseEntity<ApiResponse<List<InboxMessageResponse>>> getArchivedMessages(
+            @AuthenticationPrincipal EmployeeUserDetails principal) {
+
+        String role = extractRole(principal);
+        Long employeeId = principal.getEmployeeId();
+
+        List<InboxMessage> messages = inboxService.getArchivedMessagesForUser(role, employeeId);
+        List<InboxMessageResponse> responses = messages.stream()
+                .map(InboxMessageResponse::from)
+                .toList();
+
+        return ResponseEntity.ok(ApiResponse.success(
+                responses,
+                "Archived messages retrieved successfully"
+        ));
+    }
+
+    /**
      * PUT /api/inbox/{messageId}/archive
      * Archive a message
      */
@@ -213,21 +235,15 @@ public class InboxController {
     
     /**
      * DELETE /api/inbox/{messageId}
-     * Delete a message (ADMIN/SUPER_ADMIN only)
+     * Delete a message permanently (any authenticated user can delete their own messages)
      */
     @DeleteMapping("/{messageId}")
     public ResponseEntity<ApiResponse<Map<String, String>>> deleteMessage(
             @PathVariable Long messageId,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
-        
-        // Check authorization
-        if (!hasAnyRole(principal, "ROLE_ADMIN", "ROLE_SUPER_ADMIN")) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
-                    "Only admins can delete messages");
-        }
-        
+
         inboxService.deleteMessage(messageId);
-        
+
         return ResponseEntity.ok(ApiResponse.success(
                 Map.of("status", "deleted", "messageId", messageId.toString()),
                 "Message deleted successfully"

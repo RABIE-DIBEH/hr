@@ -88,6 +88,26 @@ public class PayrollController {
         );
     }
 
+    /**
+     * GET /api/payroll/history
+     * Get all payroll records across all employees (HR/Admin only)
+     */
+    @GetMapping("/history")
+    public ResponseEntity<ApiResponse<List<PayrollResponse>>> getAllPayrollHistory(
+            @AuthenticationPrincipal EmployeeUserDetails principal) {
+
+        if (!hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+        }
+
+        List<PayrollResponse> slips = payrollService.getAllPayrollHistory()
+                .stream()
+                .map(this::toPayrollResponse)
+                .toList();
+
+        return ResponseEntity.ok(ApiResponse.success(slips, "All payroll history retrieved successfully"));
+    }
+
     private static boolean hasAnyRole(EmployeeUserDetails principal, String... roles) {
         for (String role : roles) {
             if (principal.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals(role))) {

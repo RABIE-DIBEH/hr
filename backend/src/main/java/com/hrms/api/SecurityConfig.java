@@ -87,6 +87,7 @@ public class SecurityConfig {
                         
                         // Payroll endpoints
                         .requestMatchers(HttpMethod.GET, "/api/payroll/my-slips").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/payroll/history").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")
                         .requestMatchers(HttpMethod.GET, "/api/payroll").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")
                         .requestMatchers(HttpMethod.POST, "/api/payroll/calculate").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")
                         .requestMatchers(HttpMethod.GET, "/api/payroll/**").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")
@@ -99,11 +100,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/inbox/unread").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/inbox/unread-count").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/inbox/high-priority").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/inbox/archived").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/inbox/*/read").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/inbox/read-all").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/inbox/*/archive").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/inbox/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/inbox/send").hasAnyRole("ADMIN", "SUPER_ADMIN") // Only admins send messages
-                        .requestMatchers(HttpMethod.DELETE, "/api/inbox/**").hasAnyRole("ADMIN", "SUPER_ADMIN") // Only admins delete
                         
                         // Default: all other /api/** require authentication
                         .requestMatchers("/api/**").authenticated()

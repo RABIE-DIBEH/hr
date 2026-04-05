@@ -72,4 +72,12 @@ public class PayrollService {
     public List<Payroll> getEmployeePayrollHistory(Long employeeId) {
         return payrollRepository.findByEmployeeId(employeeId);
     }
+
+    /**
+     * Get all payroll records across all employees (HR/Admin only)
+     */
+    @Transactional(readOnly = true)
+    public List<Payroll> getAllPayrollHistory() {
+        return payrollRepository.findAllPayrollRecords();
+    }
 }

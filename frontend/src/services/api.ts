@@ -284,6 +284,9 @@ export const getAdvanceRequest = (advanceId: number) =>
 export const getMyPayrollSlips = () =>
   api.get<PayrollSlip[]>('/payroll/my-slips');
 
+export const getAllPayrollHistory = () =>
+  api.get<PayrollSlip[]>('/payroll/history');
+
 export interface PayrollSlip {
   payrollId: number;
   employeeId: number;
@@ -346,6 +349,12 @@ export const markAllAsRead = () =>
 
 export const archiveMessage = (messageId: number) =>
   api.put(`/inbox/${messageId}/archive`);
+
+export const getArchivedMessages = () =>
+  api.get<InboxMessage[]>('/inbox/archived');
+
+export const deleteMessage = (messageId: number) =>
+  api.delete(`/inbox/${messageId}`);
 
 export const sendMessage = (data: { title: string; message: string; targetRole: string; senderName?: string; priority?: string }) =>
   api.post('/inbox/send', data);

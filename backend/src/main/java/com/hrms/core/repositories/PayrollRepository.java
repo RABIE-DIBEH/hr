@@ -18,4 +18,10 @@ public interface PayrollRepository extends JpaRepository<Payroll, Long> {
      */
     @Query("SELECT p FROM Payroll p WHERE p.employee.employeeId = :employeeId ORDER BY p.year DESC, p.month DESC")
     List<Payroll> findByEmployeeId(@Param("employeeId") Long employeeId);
+
+    /**
+     * Get all payroll records across all employees, ordered by month/year descending
+     */
+    @Query("SELECT p FROM Payroll p ORDER BY p.year DESC, p.month DESC, p.employee.fullName ASC")
+    List<Payroll> findAllPayrollRecords();
 }

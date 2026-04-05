@@ -12,6 +12,7 @@ import {
   Star,
   HandCoins,
   Bell,
+  DollarSign,
 } from 'lucide-react';
 import { AUTH_TOKEN_KEY, getCurrentEmployee, logout, type EmployeeProfile } from '../services/api';
 import { getRole, isSuperAdmin } from '../services/auth';
@@ -30,6 +31,7 @@ const allMenuItems: MenuItem[] = [
   { path: '/dashboard', icon: LayoutDashboard, label: 'لوحة التحكم',     roles: ['EMPLOYEE', 'SUPER_ADMIN'] },
   { path: '/finance',   icon: Wallet,          label: 'إدارة المرتبات',   roles: ['HR', 'ADMIN', 'SUPER_ADMIN'] },
   { path: '/payroll',   icon: HandCoins,       label: 'السلف المالية',    roles: ['HR', 'ADMIN', 'SUPER_ADMIN'] },
+  { path: '/payroll/history', icon: DollarSign, label: 'سجل الرواتب',     roles: ['HR', 'ADMIN', 'SUPER_ADMIN'] },
   { path: '/goals',     icon: Star,            label: 'النقاط' },
   { path: '/manager',   icon: Users,           label: 'إدارة الفريق',    roles: ['MANAGER', 'SUPER_ADMIN'] },
   { path: '/hr',        icon: ShieldCheck,     label: 'الموارد البشرية',  roles: ['HR', 'SUPER_ADMIN'] },
@@ -95,6 +97,7 @@ const Sidebar = () => {
           <NavLink
             key={item.path}
             to={item.path}
+            end={item.path === '/payroll'}
             className={({ isActive }) => `
               flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
               ${
