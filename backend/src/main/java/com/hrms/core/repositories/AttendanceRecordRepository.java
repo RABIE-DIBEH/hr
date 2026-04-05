@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -41,6 +42,11 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
            "AND EXTRACT(YEAR FROM a.checkIn) = :year " +
            "AND a.payrollStatus IN :payrollStatuses")
     List<AttendanceRecord> findMonthlyRecordsByPayrollStatuses(Long employeeId, int month, int year, List<String> payrollStatuses);
+
+    @Query("SELECT a FROM AttendanceRecord a WHERE EXTRACT(MONTH FROM a.checkIn) = :month " +
+           "AND EXTRACT(YEAR FROM a.checkIn) = :year " +
+           "ORDER BY a.checkIn ASC")
+    List<AttendanceRecord> findAllMonthlyRecords(@Param("month") int month, @Param("year") int year);
 
     @Query("SELECT a FROM AttendanceRecord a WHERE EXTRACT(MONTH FROM a.checkIn) = :month " +
            "AND EXTRACT(YEAR FROM a.checkIn) = :year")
