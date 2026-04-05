@@ -7,6 +7,11 @@ import {
   DollarSign,
   TrendingUp,
   Clock,
+  FileText,
+  FileSpreadsheet,
+  ChevronLeft,
+  ChevronRight,
+  Calendar,
 } from 'lucide-react';
 import PaginationControls from '../components/PaginationControls';
 import Sidebar from '../components/Sidebar';
@@ -15,6 +20,8 @@ import {
   getPendingAdvanceRequestsPage,
   processAdvanceRequest,
   getAllAdvanceRequestsPage,
+  downloadPayrollPdf,
+  downloadPayrollExcel,
   type EmployeeProfile,
   type AdvanceRequest,
 } from '../services/api';
@@ -34,12 +41,51 @@ const PayrollDashboard = () => {
   const [allPage, setAllPage] = useState(0);
   const [allTotalPages, setAllTotalPages] = useState(0);
   const [allTotalCount, setAllTotalCount] = useState(0);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  const reportMonth = currentDate.getMonth() + 1;
+  const reportYear = currentDate.getFullYear();
 
   useEffect(() => {
     getCurrentEmployee()
       .then((res) => setMe(res.data))
       .catch(() => setMe(null));
   }, []);
+
+  const handlePrevMonth = () => {
+    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  };
+
+  const handleDownloadPayroll = async (type: 'pdf' | 'excel') => {
+    setIsDownloading(true);
+    try {
+      const response = type === 'pdf' 
+        ? await downloadPayrollPdf(reportMonth, reportYear)
+        : await downloadPayrollExcel(reportMonth, reportYear);
+      
+      const blob = new Blob([response.data], { 
+        type: type === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `payroll_report_${reportMonth}_${reportYear}.${type === 'pdf' ? 'pdf' : 'xlsx'}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download failed', error);
+      alert('فشل تحميل تقرير الرواتب. يرجى المحاولة مرة أخرى.');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   const canManageAdvances = me?.roleName === 'HR'
     || me?.roleName === 'ADMIN'
@@ -170,6 +216,53 @@ const PayrollDashboard = () => {
                 <p className="text-2xl font-black text-white">{stat.value}</p>
               </motion.div>
             ))}
+          </div>
+
+          <div className="mb-10 bg-luxury-surface p-8 rounded-[2.5rem] border border-white/5 shadow-sm">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+              <div>
+                <h3 className="text-xl font-bold text-white flex items-center gap-3">
+                  <Calendar className="text-purple-500" size={24} />
+                  تقارير الرواتب الشهرية
+                </h3>
+                <p className="text-slate-400 text-sm mt-1">تصدير ملخص الرواتب لجميع الموظفين حسب الشهر</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-3 bg-white/5 px-5 py-2 rounded-xl border border-white/5">
+                  <button onClick={handlePrevMonth} className="text-slate-400 hover:text-white transition-colors">
+                    <ChevronRight size={20} />
+                  </button>
+                  <span className="text-white font-bold min-w-[100px] text-center">
+                    {currentDate.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' })}
+                  </span>
+                  <button 
+                    onClick={handleNextMonth} 
+                    disabled={currentDate >= new Date()} 
+                    className="text-slate-400 hover:text-white disabled:opacity-30 transition-colors"
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+                </div>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => handleDownloadPayroll('pdf')}
+                    disabled={isDownloading}
+                    className="bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all text-sm"
+                  >
+                    <FileText size={16} />
+                    {isDownloading ? '...' : 'PDF'}
+                  </button>
+                  <button 
+                    onClick={() => handleDownloadPayroll('excel')}
+                    disabled={isDownloading}
+                    className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-800 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all text-sm"
+                  >
+                    <FileSpreadsheet size={16} />
+                    {isDownloading ? '...' : 'Excel'}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="flex gap-4 mb-6 border-b border-white/10">

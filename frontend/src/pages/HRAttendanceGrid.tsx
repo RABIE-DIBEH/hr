@@ -5,7 +5,8 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
-  Download,
+  FileSpreadsheet,
+  FileText,
   PencilLine,
   ShieldCheck,
   Users,
@@ -17,6 +18,8 @@ import {
   getHrMonthlyAttendancePage,
   listEmployees,
   manuallyCorrectAttendance,
+  downloadAttendancePdf,
+  downloadAttendanceExcel,
   type AttendanceRecord,
   type EmployeeSummary,
 } from '../services/api';
@@ -36,6 +39,7 @@ const HRAttendanceGrid = () => {
   const [approveForPayroll, setApproveForPayroll] = useState(true);
   const [submittingCorrection, setSubmittingCorrection] = useState(false);
   const [correctionFeedback, setCorrectionFeedback] = useState<string | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -71,6 +75,32 @@ const HRAttendanceGrid = () => {
   const handleNextMonth = () => {
     setPage(0);
     setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  };
+
+  const handleDownloadAttendance = async (type: 'pdf' | 'excel') => {
+    setIsDownloading(true);
+    try {
+      const response = type === 'pdf' 
+        ? await downloadAttendancePdf(month, year)
+        : await downloadAttendanceExcel(month, year);
+      
+      const blob = new Blob([response.data], { 
+        type: type === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `attendance_report_${month}_${year}.${type === 'pdf' ? 'pdf' : 'xlsx'}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download failed', error);
+      alert('فشل تحميل التقرير. يرجى المحاولة مرة أخرى.');
+    } finally {
+      setIsDownloading(false);
+    }
   };
   
   // Matrix Building Logic
@@ -230,10 +260,24 @@ const HRAttendanceGrid = () => {
                   <ChevronLeft size={24} />
                 </button>
               </div>
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-blue-500/20">
-                <Download size={18} />
-                تصدير PDF
-              </button>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => handleDownloadAttendance('pdf')}
+                  disabled={isDownloading}
+                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-blue-500/20 transition-all"
+                >
+                  <FileText size={18} />
+                  {isDownloading ? 'جارٍ التحميل...' : 'تصدير PDF'}
+                </button>
+                <button 
+                  onClick={() => handleDownloadAttendance('excel')}
+                  disabled={isDownloading}
+                  className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-800 text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition-all"
+                >
+                  <FileSpreadsheet size={18} />
+                  {isDownloading ? 'جارٍ التحميل...' : 'تصدير Excel'}
+                </button>
+              </div>
             </div>
           </header>
 

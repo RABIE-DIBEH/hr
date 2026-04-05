@@ -522,4 +522,17 @@ export const deleteMessage = (messageId: number) =>
 export const sendMessage = (data: { title: string; message: string; targetRole: string; senderName?: string; priority?: string }) =>
   api.post('/inbox/send', data);
 
+// Reports API
+export const downloadAttendancePdf = (month: number, year: number) =>
+  api.get(`/reports/attendance/pdf?month=${month}&year=${year}`, { responseType: 'blob' });
+
+export const downloadAttendanceExcel = (month: number, year: number) =>
+  api.get(`/reports/attendance/excel?month=${month}&year=${year}`, { responseType: 'blob' });
+
+export const downloadPayrollPdf = (month: number, year: number) =>
+  api.get(`/reports/payroll/pdf?month=${month}&year=${year}`, { responseType: 'blob' });
+
+export const downloadPayrollExcel = (month: number, year: number) =>
+  api.get(`/reports/payroll/excel?month=${month}&year=${year}`, { responseType: 'blob' });
+
 export default api;
