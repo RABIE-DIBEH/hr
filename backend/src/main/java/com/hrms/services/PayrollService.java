@@ -6,6 +6,8 @@ import com.hrms.core.models.Payroll;
 import com.hrms.core.repositories.AttendanceRecordRepository;
 import com.hrms.core.repositories.PayrollRepository;
 import com.hrms.services.AdvanceRequestService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -69,15 +71,15 @@ public class PayrollService {
      * Get all payroll records for a specific employee
      */
     @Transactional(readOnly = true)
-    public List<Payroll> getEmployeePayrollHistory(Long employeeId) {
-        return payrollRepository.findByEmployeeId(employeeId);
+    public Page<Payroll> getEmployeePayrollHistory(Long employeeId, Pageable pageable) {
+        return payrollRepository.findByEmployeeId(employeeId, pageable);
     }
 
     /**
      * Get all payroll records across all employees (HR/Admin only)
      */
     @Transactional(readOnly = true)
-    public List<Payroll> getAllPayrollHistory() {
-        return payrollRepository.findAllPayrollRecords();
+    public Page<Payroll> getAllPayrollHistory(Pageable pageable) {
+        return payrollRepository.findAllPayrollRecords(pageable);
     }
 }

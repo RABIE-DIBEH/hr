@@ -12,11 +12,12 @@ import {
   RefreshCw,
   Cpu
 } from 'lucide-react';
+import PaginationControls from '../components/PaginationControls';
 import Sidebar from '../components/Sidebar';
 import { 
   getAdminMetrics, 
-  getSystemLogs, 
-  getNfcDevices, 
+  getSystemLogsPage, 
+  getNfcDevicesPage, 
   clearSystemLogs, 
   triggerBackup, 
   addNfcDevice,
@@ -30,24 +31,42 @@ const AdminDashboard = () => {
   const [logs, setLogs] = useState<SystemLog[]>([]);
   const [devices, setDevices] = useState<NfcDevice[]>([]);
   const [showRawLogs, setShowRawLogs] = useState(false);
+  const [logsPage, setLogsPage] = useState(0);
+  const [logsTotalPages, setLogsTotalPages] = useState(0);
+  const [logsTotalCount, setLogsTotalCount] = useState(0);
+  const [devicesPage, setDevicesPage] = useState(0);
+  const [devicesTotalPages, setDevicesTotalPages] = useState(0);
+  const [devicesTotalCount, setDevicesTotalCount] = useState(0);
 
   useEffect(() => {
     const loadData = () => {
       getAdminMetrics().then(res => setMetrics(res.data)).catch(console.error);
-      getSystemLogs().then(res => setLogs(res.data)).catch(console.error);
-      getNfcDevices().then(res => setDevices(res.data)).catch(console.error);
+      getSystemLogsPage({ page: logsPage, size: 10 }).then(res => {
+        setLogs(res.data.items);
+        setLogsTotalPages(res.data.totalPages);
+        setLogsTotalCount(res.data.totalCount);
+      }).catch(console.error);
+      getNfcDevicesPage({ page: devicesPage, size: 8 }).then(res => {
+        setDevices(res.data.items);
+        setDevicesTotalPages(res.data.totalPages);
+        setDevicesTotalCount(res.data.totalCount);
+      }).catch(console.error);
     };
 
     loadData();
     const interval = setInterval(loadData, 30000); // refresh every 30s
     return () => clearInterval(interval);
-  }, []);
+  }, [logsPage, devicesPage]);
 
   const handleBackup = async () => {
     try {
       const res = await triggerBackup();
       alert(res.data.status || 'Backup executed securely');
-      getSystemLogs().then(r => setLogs(r.data)); // refresh logs
+      getSystemLogsPage({ page: logsPage, size: 10 }).then(r => {
+        setLogs(r.data.items);
+        setLogsTotalPages(r.data.totalPages);
+        setLogsTotalCount(r.data.totalCount);
+      });
     } catch {
       alert('Error triggering backup');
     }
@@ -59,7 +78,11 @@ const AdminDashboard = () => {
       await clearSystemLogs();
       setLogs([]);
       alert('All previous logs cleared.');
-      getSystemLogs().then(r => setLogs(r.data)); // Should bring up the "Clear Logs" record
+      getSystemLogsPage({ page: logsPage, size: 10 }).then(r => {
+        setLogs(r.data.items);
+        setLogsTotalPages(r.data.totalPages);
+        setLogsTotalCount(r.data.totalCount);
+      }); // Should bring up the "Clear Logs" record
     } catch {
       alert('Failed to clear logs.');
     }
@@ -76,8 +99,16 @@ const AdminDashboard = () => {
         systemLoad: "0%"
       };
       await addNfcDevice(payload);
-      getNfcDevices().then(r => setDevices(r.data));
-      getSystemLogs().then(r => setLogs(r.data));
+      getNfcDevicesPage({ page: devicesPage, size: 8 }).then(r => {
+        setDevices(r.data.items);
+        setDevicesTotalPages(r.data.totalPages);
+        setDevicesTotalCount(r.data.totalCount);
+      });
+      getSystemLogsPage({ page: logsPage, size: 10 }).then(r => {
+        setLogs(r.data.items);
+        setLogsTotalPages(r.data.totalPages);
+        setLogsTotalCount(r.data.totalCount);
+      });
     } catch {
       alert('Failed to register device.');
     }
@@ -178,6 +209,13 @@ const AdminDashboard = () => {
               <button onClick={handleAddDevice} className="w-full mt-6 py-3 rounded-xl border border-white/10 text-slate-400 font-bold text-sm hover:bg-white/5 hover:text-white transition-all">
                 Add New Device
               </button>
+              <PaginationControls
+                page={devicesPage}
+                totalPages={devicesTotalPages}
+                totalCount={devicesTotalCount}
+                onPageChange={setDevicesPage}
+                className="mt-6 rounded-2xl"
+              />
             </motion.div>
           </div>
 
@@ -226,6 +264,12 @@ const AdminDashboard = () => {
                 </tbody>
               </table>
             </div>
+            <PaginationControls
+              page={logsPage}
+              totalPages={logsTotalPages}
+              totalCount={logsTotalCount}
+              onPageChange={setLogsPage}
+            />
           </section>
         </div>
       </main>

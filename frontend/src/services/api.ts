@@ -205,9 +205,13 @@ export const logout = () => {
 
 export const getCurrentEmployee = () => api.get<EmployeeProfile>('/employees/me');
 
-export const listEmployees = () => api.get<EmployeeSummary[]>('/employees');
+export const listEmployees = () => getPaginatedItems<EmployeeSummary>('/employees');
+export const listEmployeesPage = (params?: PaginationParams) =>
+  getPaginatedPage<EmployeeSummary>('/employees', params);
 
-export const listMyTeam = () => api.get<EmployeeSummary[]>('/employees/team');
+export const listMyTeam = () => getPaginatedItems<EmployeeSummary>('/employees/team');
+export const listMyTeamPage = (params?: PaginationParams) =>
+  getPaginatedPage<EmployeeSummary>('/employees/team', params);
 
 const buildPaginatedPath = (path: string, page: number, pageSize: number) => {
   const separator = path.includes('?') ? '&' : '?';
@@ -268,8 +272,12 @@ export const clockByNfc = (cardUid: string) =>
 
 // Admin API
 export const getAdminMetrics = () => api.get<SystemMetrics>('/admin/metrics');
-export const getSystemLogs = () => api.get<SystemLog[]>('/admin/logs');
-export const getNfcDevices = () => api.get<NfcDevice[]>('/admin/devices');
+export const getSystemLogs = () => getPaginatedItems<SystemLog>('/admin/logs');
+export const getSystemLogsPage = (params?: PaginationParams) =>
+  getPaginatedPage<SystemLog>('/admin/logs', params);
+export const getNfcDevices = () => getPaginatedItems<NfcDevice>('/admin/devices');
+export const getNfcDevicesPage = (params?: PaginationParams) =>
+  getPaginatedPage<NfcDevice>('/admin/devices', params);
 export const clearSystemLogs = () => api.delete('/admin/logs');
 export const addNfcDevice = (device: Pick<NfcDevice, 'deviceId' | 'name' | 'status' | 'systemLoad'>) =>
   api.post<NfcDevice>('/admin/devices', device);
@@ -356,10 +364,14 @@ export const getAdvanceRequest = (advanceId: number) =>
 
 // Payroll slip API
 export const getMyPayrollSlips = () =>
-  api.get<PayrollSlip[]>('/payroll/my-slips');
+  getPaginatedItems<PayrollSlip>('/payroll/my-slips');
+export const getMyPayrollSlipsPage = (params?: PaginationParams) =>
+  getPaginatedPage<PayrollSlip>('/payroll/my-slips', params);
 
 export const getAllPayrollHistory = () =>
-  api.get<PayrollSlip[]>('/payroll/history');
+  getPaginatedItems<PayrollSlip>('/payroll/history');
+export const getAllPayrollHistoryPage = (params?: PaginationParams) =>
+  getPaginatedPage<PayrollSlip>('/payroll/history', params);
 
 export interface PayrollSlip {
   payrollId: number;

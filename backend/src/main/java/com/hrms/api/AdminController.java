@@ -3,15 +3,18 @@ package com.hrms.api;
 import com.hrms.api.dto.ApiResponse;
 import com.hrms.api.dto.CreateNfcDeviceRequest;
 import com.hrms.api.dto.NfcDeviceResponseDto;
+import com.hrms.api.dto.PaginatedResponse;
 import com.hrms.api.dto.StatusResponseDto;
 import com.hrms.api.dto.SystemMetricsDto;
+import com.hrms.core.models.NfcDevice;
 import com.hrms.core.models.SystemLog;
 import com.hrms.services.AdminService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -32,19 +35,23 @@ public class AdminController {
     }
 
     @GetMapping("/logs")
-    public ResponseEntity<ApiResponse<List<SystemLog>>> getLogs() {
+    public ResponseEntity<ApiResponse<PaginatedResponse<SystemLog>>> getLogs(
+            @PageableDefault(size = 20) Pageable pageable) {
+        Page<SystemLog> page = adminService.getLogs(pageable);
         return ResponseEntity.ok(ApiResponse.success(
-                adminService.getRecentLogs(),
+                PaginatedResponse.of(page.getContent(), page.getTotalElements(), page.getNumber(), page.getSize()),
                 "Recent system logs retrieved successfully"
         ));
     }
 
     @GetMapping("/devices")
-    public ResponseEntity<ApiResponse<List<NfcDeviceResponseDto>>> getDevices() {
+    public ResponseEntity<ApiResponse<PaginatedResponse<NfcDeviceResponseDto>>> getDevices(
+            @PageableDefault(size = 20) Pageable pageable) {
+        Page<NfcDevice> page = adminService.getDevices(pageable);
         return ResponseEntity.ok(ApiResponse.success(
-                adminService.getAllDevices().stream()
+                PaginatedResponse.of(page.getContent().stream()
                         .map(NfcDeviceResponseDto::from)
-                        .toList(),
+                        .toList(), page.getTotalElements(), page.getNumber(), page.getSize()),
                 "NFC devices retrieved successfully"
         ));
     }

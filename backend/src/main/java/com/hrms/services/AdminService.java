@@ -6,6 +6,8 @@ import com.hrms.core.models.NfcDevice;
 import com.hrms.core.models.SystemLog;
 import com.hrms.core.repositories.NfcDeviceRepository;
 import com.hrms.core.repositories.SystemLogRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.lang.management.ManagementFactory;
@@ -29,8 +31,16 @@ public class AdminService {
         return logRepository.findTop50ByOrderByTimestampDesc();
     }
 
+    public Page<SystemLog> getLogs(Pageable pageable) {
+        return logRepository.findAllByOrderByTimestampDesc(pageable);
+    }
+
     public List<NfcDevice> getAllDevices() {
         return deviceRepository.findAll();
+    }
+
+    public Page<NfcDevice> getDevices(Pageable pageable) {
+        return deviceRepository.findAll(pageable);
     }
 
     public void logSystemEvent(String action, String user, String status) {

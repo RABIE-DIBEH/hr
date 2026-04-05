@@ -16,7 +16,7 @@ import PaginationControls from '../components/PaginationControls';
 import Sidebar from '../components/Sidebar';
 import {
   getCurrentEmployee,
-  listMyTeam,
+  listMyTeamPage,
   getPendingRecruitmentRequestsPage,
   processRecruitmentRequest,
   getPendingLeavesForManagerPage,
@@ -58,6 +58,9 @@ const ManagerDashboard = () => {
   const [leavePage, setLeavePage] = useState(0);
   const [leaveTotalPages, setLeaveTotalPages] = useState(0);
   const [leaveTotalCount, setLeaveTotalCount] = useState(0);
+  const [teamPage, setTeamPage] = useState(0);
+  const [teamTotalPages, setTeamTotalPages] = useState(0);
+  const [teamTotalCount, setTeamTotalCount] = useState(0);
 
   useEffect(() => {
     getCurrentEmployee()
@@ -90,9 +93,11 @@ const ManagerDashboard = () => {
       setTeam([]);
       return;
     }
-    listMyTeam()
+    listMyTeamPage({ page: teamPage, size: 10 })
       .then((res) => {
-        setTeam(res.data);
+        setTeam(res.data.items);
+        setTeamTotalPages(res.data.totalPages);
+        setTeamTotalCount(res.data.totalCount);
         setError(null);
       })
       .catch(() => setError('تعذر تحميل فريقك. تحقق من أن حسابك بصلاحية مدير.'));
@@ -107,7 +112,7 @@ const ManagerDashboard = () => {
         })
         .catch(() => console.error('Failed to load leaves'));
     }
-  }, [me?.roleName, me?.employeeId, leavePage]);
+  }, [me?.roleName, me?.employeeId, leavePage, teamPage]);
 
   const stats = [
     {
@@ -651,6 +656,12 @@ const ManagerDashboard = () => {
             <div className="p-6 bg-white/[0.02] border-t border-white/5 flex justify-between items-center text-xs text-slate-500 font-medium">
               <p>إجمالي {team.length} موظفاً في فريقك</p>
             </div>
+            <PaginationControls
+              page={teamPage}
+              totalPages={teamTotalPages}
+              totalCount={teamTotalCount}
+              onPageChange={setTeamPage}
+            />
           </div>
         </div>
       </main>

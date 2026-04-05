@@ -3,8 +3,12 @@ package com.hrms.api;
 import com.hrms.api.dto.EmployeeProfileResponse;
 import com.hrms.api.dto.EmployeeSummaryResponse;
 import com.hrms.api.dto.ApiResponse;
+import com.hrms.api.dto.PaginatedResponse;
 import com.hrms.security.EmployeeUserDetails;
 import com.hrms.services.EmployeeDirectoryService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -12,8 +16,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/employees")
@@ -34,23 +36,29 @@ public class EmployeeController {
     }
 
     @GetMapping("/team")
-    public ResponseEntity<ApiResponse<List<EmployeeSummaryResponse>>> myTeam(@AuthenticationPrincipal EmployeeUserDetails principal) {
+    public ResponseEntity<ApiResponse<PaginatedResponse<EmployeeSummaryResponse>>> myTeam(
+            @AuthenticationPrincipal EmployeeUserDetails principal,
+            @PageableDefault(size = 20) Pageable pageable) {
         if (!hasAnyRole(principal, "ROLE_MANAGER", "ROLE_SUPER_ADMIN")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only managers can view their team list");
         }
+        Page<EmployeeSummaryResponse> page = employeeDirectoryService.listDirectReports(principal.getEmployeeId(), pageable);
         return ResponseEntity.ok(ApiResponse.success(
-                employeeDirectoryService.listDirectReports(principal.getEmployeeId()),
+                PaginatedResponse.of(page.getContent(), page.getTotalElements(), page.getNumber(), page.getSize()),
                 "Team members retrieved successfully"
         ));
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<EmployeeSummaryResponse>>> listEmployees(@AuthenticationPrincipal EmployeeUserDetails principal) {
+    public ResponseEntity<ApiResponse<PaginatedResponse<EmployeeSummaryResponse>>> listEmployees(
+            @AuthenticationPrincipal EmployeeUserDetails principal,
+            @PageableDefault(size = 20) Pageable pageable) {
         if (!hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Insufficient permissions");
         }
+        Page<EmployeeSummaryResponse> page = employeeDirectoryService.listAllSummaries(pageable);
         return ResponseEntity.ok(ApiResponse.success(
-                employeeDirectoryService.listAllSummaries(),
+                PaginatedResponse.of(page.getContent(), page.getTotalElements(), page.getNumber(), page.getSize()),
                 "All employees retrieved successfully"
         ));
     }

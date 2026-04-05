@@ -9,11 +9,11 @@ import com.hrms.core.repositories.EmployeeRepository;
 import com.hrms.core.repositories.NFCCardRepository;
 import com.hrms.core.repositories.RoleRepository;
 import com.hrms.core.repositories.TeamRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-
-import java.util.List;
 
 @Service
 public class EmployeeDirectoryService {
@@ -57,16 +57,15 @@ public class EmployeeDirectoryService {
         );
     }
 
-    public List<EmployeeSummaryResponse> listAllSummaries() {
-        return employeeRepository.findAll().stream()
-                .map(this::toSummary)
-                .toList();
+    public Page<EmployeeSummaryResponse> listAllSummaries(Pageable pageable) {
+        return employeeRepository.findAll(pageable)
+                .map(this::toSummary);
     }
 
-    public List<EmployeeSummaryResponse> listDirectReports(Long managerEmployeeId) {
-        return employeeRepository.findAllByManagerId(managerEmployeeId).stream()
+    public Page<EmployeeSummaryResponse> listDirectReports(Long managerEmployeeId, Pageable pageable) {
+        return employeeRepository.findAllByManagerId(managerEmployeeId, pageable)
                 .map(this::toSummary)
-                .toList();
+                ;
     }
 
     private EmployeeSummaryResponse toSummary(Employee employee) {

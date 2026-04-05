@@ -1,19 +1,21 @@
 package com.hrms.api;
 
 import com.hrms.api.dto.ApiResponse;
+import com.hrms.api.dto.PaginatedResponse;
 import com.hrms.api.dto.PayrollResponse;
 import com.hrms.core.models.Employee;
 import com.hrms.core.models.Payroll;
 import com.hrms.core.repositories.EmployeeRepository;
 import com.hrms.security.EmployeeUserDetails;
 import com.hrms.services.PayrollService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/payroll")
@@ -62,15 +64,19 @@ public class PayrollController {
      * Get payroll history for the current employee
      */
     @GetMapping("/my-slips")
-    public ResponseEntity<ApiResponse<List<PayrollResponse>>> getMyPayrollSlips(
-            @AuthenticationPrincipal EmployeeUserDetails principal) {
+    public ResponseEntity<ApiResponse<PaginatedResponse<PayrollResponse>>> getMyPayrollSlips(
+            @AuthenticationPrincipal EmployeeUserDetails principal,
+            @PageableDefault(size = 20) Pageable pageable) {
 
-        List<PayrollResponse> slips = payrollService.getEmployeePayrollHistory(principal.getEmployeeId())
-                .stream()
+        Page<Payroll> page = payrollService.getEmployeePayrollHistory(principal.getEmployeeId(), pageable);
+        var slips = page.getContent().stream()
                 .map(this::toPayrollResponse)
                 .toList();
 
-        return ResponseEntity.ok(ApiResponse.success(slips, "Your payroll history retrieved successfully"));
+        return ResponseEntity.ok(ApiResponse.success(
+                PaginatedResponse.of(slips, page.getTotalElements(), page.getNumber(), page.getSize()),
+                "Your payroll history retrieved successfully"
+        ));
     }
 
     private PayrollResponse toPayrollResponse(Payroll payroll) {
@@ -93,19 +99,23 @@ public class PayrollController {
      * Get all payroll records across all employees (HR/Admin only)
      */
     @GetMapping("/history")
-    public ResponseEntity<ApiResponse<List<PayrollResponse>>> getAllPayrollHistory(
-            @AuthenticationPrincipal EmployeeUserDetails principal) {
+    public ResponseEntity<ApiResponse<PaginatedResponse<PayrollResponse>>> getAllPayrollHistory(
+            @AuthenticationPrincipal EmployeeUserDetails principal,
+            @PageableDefault(size = 20) Pageable pageable) {
 
         if (!hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         }
 
-        List<PayrollResponse> slips = payrollService.getAllPayrollHistory()
-                .stream()
+        Page<Payroll> page = payrollService.getAllPayrollHistory(pageable);
+        var slips = page.getContent().stream()
                 .map(this::toPayrollResponse)
                 .toList();
 
-        return ResponseEntity.ok(ApiResponse.success(slips, "All payroll history retrieved successfully"));
+        return ResponseEntity.ok(ApiResponse.success(
+                PaginatedResponse.of(slips, page.getTotalElements(), page.getNumber(), page.getSize()),
+                "All payroll history retrieved successfully"
+        ));
     }
 
     private static boolean hasAnyRole(EmployeeUserDetails principal, String... roles) {

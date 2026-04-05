@@ -8,8 +8,9 @@ import {
   Download,
   Search,
 } from 'lucide-react';
+import PaginationControls from '../components/PaginationControls';
 import Sidebar from '../components/Sidebar';
-import { getAllPayrollHistory, type PayrollSlip } from '../services/api';
+import { getAllPayrollHistoryPage, type PayrollSlip } from '../services/api';
 
 const PayrollHistory = () => {
   const [slips, setSlips] = useState<PayrollSlip[]>([]);
@@ -17,14 +18,21 @@ const PayrollHistory = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMonth, setFilterMonth] = useState<string>('');
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
 
   useEffect(() => {
     setLoading(true);
-    getAllPayrollHistory()
-      .then((res) => setSlips(res.data))
+    getAllPayrollHistoryPage({ page, size: 12 })
+      .then((res) => {
+        setSlips(res.data.items);
+        setTotalPages(res.data.totalPages);
+        setTotalCount(res.data.totalCount);
+      })
       .catch(() => setError('تعذر تحميل سجل الرواتب'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [page]);
 
   const filteredSlips = slips.filter((slip) => {
     const matchesSearch = slip.employeeName?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -197,6 +205,12 @@ const PayrollHistory = () => {
                 </table>
               </div>
             )}
+            <PaginationControls
+              page={page}
+              totalPages={totalPages}
+              totalCount={totalCount}
+              onPageChange={setPage}
+            />
           </div>
         </div>
       </main>

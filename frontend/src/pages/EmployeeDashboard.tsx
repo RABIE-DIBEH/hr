@@ -11,10 +11,11 @@ import {
   HandCoins,
   DollarSign,
 } from 'lucide-react';
+import PaginationControls from '../components/PaginationControls';
 import Sidebar from '../components/Sidebar';
 import AdvanceRequestForm from '../components/AdvanceRequestForm';
 import LeaveRequestForm from '../components/LeaveRequestForm';
-import { getCurrentEmployee, getMyAdvanceRequests, getMyPayrollSlips, type EmployeeProfile, type AdvanceRequest, type PayrollSlip } from '../services/api';
+import { getCurrentEmployee, getMyAdvanceRequests, getMyPayrollSlipsPage, type EmployeeProfile, type AdvanceRequest, type PayrollSlip } from '../services/api';
 
 const EmployeeDashboard = () => {
   const [status] = useState('Checked In');
@@ -25,6 +26,9 @@ const EmployeeDashboard = () => {
   const [loadingAdvances, setLoadingAdvances] = useState(false);
   const [myPayrollSlips, setMyPayrollSlips] = useState<PayrollSlip[]>([]);
   const [loadingPayroll, setLoadingPayroll] = useState(false);
+  const [payrollPage, setPayrollPage] = useState(0);
+  const [payrollTotalPages, setPayrollTotalPages] = useState(0);
+  const [payrollTotalCount, setPayrollTotalCount] = useState(0);
 
   useEffect(() => {
     getCurrentEmployee()
@@ -41,12 +45,16 @@ const EmployeeDashboard = () => {
         .finally(() => setLoadingAdvances(false));
 
       setLoadingPayroll(true);
-      getMyPayrollSlips()
-        .then((res) => setMyPayrollSlips(res.data))
+      getMyPayrollSlipsPage({ page: payrollPage, size: 6 })
+        .then((res) => {
+          setMyPayrollSlips(res.data.items);
+          setPayrollTotalPages(res.data.totalPages);
+          setPayrollTotalCount(res.data.totalCount);
+        })
         .catch(() => {})
         .finally(() => setLoadingPayroll(false));
     }
-  }, [me, showAdvanceForm]);
+  }, [me, showAdvanceForm, payrollPage]);
 
   const container = {
     hidden: { opacity: 1 },
@@ -286,6 +294,12 @@ const EmployeeDashboard = () => {
                 </table>
               </div>
             )}
+            <PaginationControls
+              page={payrollPage}
+              totalPages={payrollTotalPages}
+              totalCount={payrollTotalCount}
+              onPageChange={setPayrollPage}
+            />
           </motion.section>
 
           {/* Payroll Slips Section */}
