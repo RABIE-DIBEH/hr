@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Bell, Archive, Check, CheckCheck, AlertCircle, Trash2, FolderOpen, Square, SquareCheck } from 'lucide-react';
+import PaginationControls from '../components/PaginationControls';
 import Sidebar from '../components/Sidebar';
 import {
-  getInbox,
-  getUnreadMessages,
-  getHighPriorityMessages,
-  getArchivedMessages,
+  getInboxPage,
+  getUnreadMessagesPage,
+  getHighPriorityMessagesPage,
+  getArchivedMessagesPage,
   markMessageAsRead,
   markAllAsRead,
   archiveMessage,
@@ -21,9 +22,16 @@ const Inbox = () => {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'unread' | 'high-priority' | 'archived'>('all');
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
 
   useEffect(() => {
     loadMessages();
+  }, [filter, page]);
+
+  useEffect(() => {
+    setPage(0);
   }, [filter]);
 
   const loadMessages = async () => {
@@ -33,17 +41,19 @@ const Inbox = () => {
     try {
       let response;
       if (filter === 'unread') {
-        response = await getUnreadMessages();
+        response = await getUnreadMessagesPage({ page, size: 20 });
       } else if (filter === 'high-priority') {
-        response = await getHighPriorityMessages();
+        response = await getHighPriorityMessagesPage({ page, size: 20 });
       } else if (filter === 'archived') {
-        response = await getArchivedMessages();
+        response = await getArchivedMessagesPage({ page, size: 20 });
       } else {
-        response = await getInbox();
+        response = await getInboxPage({ page, size: 20 });
       }
-      const sorted = response.data.sort(
+      const sorted = response.data.items.sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
+      setTotalPages(response.data.totalPages);
+      setTotalCount(response.data.totalCount);
       setMessages(sorted);
       setFilteredMessages(sorted);
     } catch (err) {
@@ -406,6 +416,13 @@ const Inbox = () => {
               })}
             </motion.div>
           )}
+          <PaginationControls
+            page={page}
+            totalPages={totalPages}
+            totalCount={totalCount}
+            onPageChange={setPage}
+            className="mt-6 rounded-2xl"
+          />
         </div>
       </main>
     </div>

@@ -8,12 +8,13 @@ import {
   TrendingUp,
   Clock,
 } from 'lucide-react';
+import PaginationControls from '../components/PaginationControls';
 import Sidebar from '../components/Sidebar';
 import {
   getCurrentEmployee,
-  getPendingAdvanceRequests,
+  getPendingAdvanceRequestsPage,
   processAdvanceRequest,
-  getAllAdvanceRequests,
+  getAllAdvanceRequestsPage,
   type EmployeeProfile,
   type AdvanceRequest,
 } from '../services/api';
@@ -27,6 +28,12 @@ const PayrollDashboard = () => {
   const [advanceNote, setAdvanceNote] = useState<string>('');
   const [selectedAdvanceId, setSelectedAdvanceId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'pending' | 'all'>('pending');
+  const [pendingPage, setPendingPage] = useState(0);
+  const [pendingTotalPages, setPendingTotalPages] = useState(0);
+  const [pendingTotalCount, setPendingTotalCount] = useState(0);
+  const [allPage, setAllPage] = useState(0);
+  const [allTotalPages, setAllTotalPages] = useState(0);
+  const [allTotalCount, setAllTotalCount] = useState(0);
 
   useEffect(() => {
     getCurrentEmployee()
@@ -34,21 +41,37 @@ const PayrollDashboard = () => {
       .catch(() => setMe(null));
   }, []);
 
-  const fetchData = () => {
-    getPendingAdvanceRequests()
-      .then((res) => setPendingAdvances(res.data))
+  const fetchPendingAdvances = () => {
+    getPendingAdvanceRequestsPage({ page: pendingPage, size: 10 })
+      .then((res) => {
+        setPendingAdvances(res.data.items);
+        setPendingTotalPages(res.data.totalPages);
+        setPendingTotalCount(res.data.totalCount);
+      })
       .catch(() => setLoadError('تعذر تحميل طلبات السلفة المعلقة'));
+  };
 
-    getAllAdvanceRequests()
-      .then((res) => setAllAdvances(res.data))
+  const fetchAllAdvances = () => {
+    getAllAdvanceRequestsPage({ page: allPage, size: 10 })
+      .then((res) => {
+        setAllAdvances(res.data.items);
+        setAllTotalPages(res.data.totalPages);
+        setAllTotalCount(res.data.totalCount);
+      })
       .catch(() => setLoadError('تعذر تحميل جميع طلبات السلفة'));
   };
 
   useEffect(() => {
     if (me?.roleName === 'HR' || me?.roleName === 'ADMIN') {
-      fetchData();
+      fetchPendingAdvances();
     }
-  }, [me?.roleName]);
+  }, [me?.roleName, pendingPage]);
+
+  useEffect(() => {
+    if (me?.roleName === 'HR' || me?.roleName === 'ADMIN') {
+      fetchAllAdvances();
+    }
+  }, [me?.roleName, allPage]);
 
   const handleProcessAdvance = async (advanceId: number, status: 'Approved' | 'Rejected') => {
     setProcessingAdvance(advanceId);
@@ -56,7 +79,8 @@ const PayrollDashboard = () => {
       await processAdvanceRequest(advanceId, status, advanceNote || undefined);
       setAdvanceNote('');
       setSelectedAdvanceId(null);
-      fetchData();
+      fetchPendingAdvances();
+      fetchAllAdvances();
     } catch {
       setLoadError('فشل معالجة طلب السلفة');
     } finally {
@@ -256,6 +280,12 @@ const PayrollDashboard = () => {
                   ))}
                 </div>
               )}
+              <PaginationControls
+                page={pendingPage}
+                totalPages={pendingTotalPages}
+                totalCount={pendingTotalCount}
+                onPageChange={setPendingPage}
+              />
             </div>
           )}
 
@@ -314,6 +344,12 @@ const PayrollDashboard = () => {
                   </table>
                 </div>
               )}
+              <PaginationControls
+                page={allPage}
+                totalPages={allTotalPages}
+                totalCount={allTotalCount}
+                onPageChange={setAllPage}
+              />
             </div>
           )}
         </div>

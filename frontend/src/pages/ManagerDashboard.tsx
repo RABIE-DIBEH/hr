@@ -12,15 +12,16 @@ import {
   Check,
   X,
 } from 'lucide-react';
+import PaginationControls from '../components/PaginationControls';
 import Sidebar from '../components/Sidebar';
 import {
   getCurrentEmployee,
   listMyTeam,
-  getPendingRecruitmentRequests,
+  getPendingRecruitmentRequestsPage,
   processRecruitmentRequest,
-  getPendingLeavesForManager,
+  getPendingLeavesForManagerPage,
   processLeaveRequest,
-  getManagerTodayAttendance,
+  getManagerTodayAttendancePage,
   verifyAttendance,
   reportFraud,
   type EmployeeProfile,
@@ -48,6 +49,15 @@ const ManagerDashboard = () => {
   const [verifyingRecord, setVerifyingRecord] = useState<number | null>(null);
   const [leaveNote, setLeaveNote] = useState<string>('');
   const [selectedLeaveId, setSelectedLeaveId] = useState<number | null>(null);
+  const [requestPage, setRequestPage] = useState(0);
+  const [requestTotalPages, setRequestTotalPages] = useState(0);
+  const [requestTotalCount, setRequestTotalCount] = useState(0);
+  const [attendancePage, setAttendancePage] = useState(0);
+  const [attendanceTotalPages, setAttendanceTotalPages] = useState(0);
+  const [attendanceTotalCount, setAttendanceTotalCount] = useState(0);
+  const [leavePage, setLeavePage] = useState(0);
+  const [leaveTotalPages, setLeaveTotalPages] = useState(0);
+  const [leaveTotalCount, setLeaveTotalCount] = useState(0);
 
   useEffect(() => {
     getCurrentEmployee()
@@ -57,15 +67,23 @@ const ManagerDashboard = () => {
 
   useEffect(() => {
     if (me?.roleName === 'MANAGER' || me?.roleName === 'HR' || me?.roleName === 'ADMIN') {
-      getPendingRecruitmentRequests()
-        .then((res) => setPendingRequests(res.data))
+      getPendingRecruitmentRequestsPage({ page: requestPage, size: 10 })
+        .then((res) => {
+          setPendingRequests(res.data.items);
+          setRequestTotalPages(res.data.totalPages);
+          setRequestTotalCount(res.data.totalCount);
+        })
         .catch(() => setError('تعذر تحميل طلبات التوظيف المعلقة'));
 
-      getManagerTodayAttendance()
-        .then((res) => setTodayAttendance(res.data))
+      getManagerTodayAttendancePage({ page: attendancePage, size: 10 })
+        .then((res) => {
+          setTodayAttendance(res.data.items);
+          setAttendanceTotalPages(res.data.totalPages);
+          setAttendanceTotalCount(res.data.totalCount);
+        })
         .catch(() => console.error('Failed to load attendance for today'));
     }
-  }, [me?.roleName]);
+  }, [me?.roleName, requestPage, attendancePage]);
 
   useEffect(() => {
     if (me?.roleName !== 'MANAGER') {
@@ -81,11 +99,15 @@ const ManagerDashboard = () => {
 
     // Fetch leaves
     if (me?.employeeId) {
-      getPendingLeavesForManager(me.employeeId)
-        .then((res) => setPendingLeaves(res.data))
+      getPendingLeavesForManagerPage(me.employeeId, { page: leavePage, size: 10 })
+        .then((res) => {
+          setPendingLeaves(res.data.items);
+          setLeaveTotalPages(res.data.totalPages);
+          setLeaveTotalCount(res.data.totalCount);
+        })
         .catch(() => console.error('Failed to load leaves'));
     }
-  }, [me?.roleName, me?.employeeId]);
+  }, [me?.roleName, me?.employeeId, leavePage]);
 
   const stats = [
     {
@@ -341,6 +363,12 @@ const ManagerDashboard = () => {
                   ))}
                 </div>
               )}
+              <PaginationControls
+                page={requestPage}
+                totalPages={requestTotalPages}
+                totalCount={requestTotalCount}
+                onPageChange={setRequestPage}
+              />
             </div>
           )}
 
@@ -425,6 +453,12 @@ const ManagerDashboard = () => {
                 </table>
               </div>
             )}
+            <PaginationControls
+              page={attendancePage}
+              totalPages={attendanceTotalPages}
+              totalCount={attendanceTotalCount}
+              onPageChange={setAttendancePage}
+            />
           </div>
 
           {/* Pending Leave Requests Section */}
@@ -521,6 +555,12 @@ const ManagerDashboard = () => {
                   ))}
                 </div>
               )}
+              <PaginationControls
+                page={leavePage}
+                totalPages={leaveTotalPages}
+                totalCount={leaveTotalCount}
+                onPageChange={setLeavePage}
+              />
             </div>
           )}
 

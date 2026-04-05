@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, ChevronLeft, ChevronRight, Download, Users } from 'lucide-react';
+import PaginationControls from '../components/PaginationControls';
 import Sidebar from '../components/Sidebar';
-import { listEmployees, getHrMonthlyAttendance, type EmployeeSummary, type AttendanceRecord } from '../services/api';
+import { listEmployees, getHrMonthlyAttendancePage, type EmployeeSummary, type AttendanceRecord } from '../services/api';
 
 const HRAttendanceGrid = () => {
   const [employees, setEmployees] = useState<EmployeeSummary[]>([]);
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -22,14 +26,20 @@ const HRAttendanceGrid = () => {
       try {
         const empRes = await listEmployees();
         setEmployees(empRes.data);
-        const recordRes = await getHrMonthlyAttendance(month, year);
-        setRecords(recordRes.data);
+        const recordRes = await getHrMonthlyAttendancePage(month, year, { page, size: 100 });
+        setRecords(recordRes.data.items);
+        setTotalPages(recordRes.data.totalPages);
+        setTotalCount(recordRes.data.totalCount);
         setLoadError(null);
       } catch {
         setLoadError('تعذر تحميل البيانات المركزية للحضور. تأكد من صلاحيات HR.');
       }
     };
     fetchData();
+  }, [month, year, page]);
+
+  useEffect(() => {
+    setPage(0);
   }, [month, year]);
 
   const handlePrevMonth = () => {
@@ -195,6 +205,12 @@ const HRAttendanceGrid = () => {
               )}
             </div>
           </motion.div>
+          <PaginationControls
+            page={page}
+            totalPages={totalPages}
+            totalCount={totalCount}
+            onPageChange={setPage}
+          />
         </div>
       </main>
     </div>

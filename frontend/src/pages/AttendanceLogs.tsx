@@ -1,19 +1,25 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Download, ChevronRight, RefreshCcw } from 'lucide-react';
+import PaginationControls from '../components/PaginationControls';
 import Sidebar from '../components/Sidebar';
-import { getMyAttendance, type AttendanceRecord } from '../services/api';
+import { getMyAttendancePage, type AttendanceRecord } from '../services/api';
 
 const AttendanceLogs = () => {
   const [logs, setLogs] = useState<AttendanceRecord[]>([]);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const res = await getMyAttendance();
-      setLogs(res.data);
+      const res = await getMyAttendancePage({ page, size: 20 });
+      setLogs(res.data.items);
+      setTotalPages(res.data.totalPages);
+      setTotalCount(res.data.totalCount);
       setError(null);
     } catch {
       setError('فشل في جلب سجل الدوام');
@@ -24,7 +30,7 @@ const AttendanceLogs = () => {
 
   useEffect(() => {
     fetchLogs();
-  }, []);
+  }, [page]);
 
   const formatTime = (dateStr: string) => {
     return new Date(dateStr).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
@@ -108,6 +114,12 @@ const AttendanceLogs = () => {
                 ))
               )}
             </div>
+            <PaginationControls
+              page={page}
+              totalPages={totalPages}
+              totalCount={totalCount}
+              onPageChange={setPage}
+            />
           </div>
         </div>
       </main>

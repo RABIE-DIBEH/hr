@@ -10,13 +10,14 @@ import {
   Search,
   UserPlus,
 } from 'lucide-react';
+import PaginationControls from '../components/PaginationControls';
 import Sidebar from '../components/Sidebar';
 import RecruitmentRequestForm from '../components/RecruitmentRequestForm';
 import {
   listEmployees,
-  getPendingLeavesForHr,
+  getPendingLeavesForHrPage,
   processLeaveRequest,
-  getPendingRecruitmentRequests,
+  getPendingRecruitmentRequestsPage,
   processRecruitmentRequest,
   type EmployeeSummary,
   type LeaveRequest,
@@ -42,6 +43,12 @@ const HRDashboard = () => {
   const [recruitmentNote, setRecruitmentNote] = useState<string>('');
   const [adjustedSalary, setAdjustedSalary] = useState<string>('');
   const [selectedRecruitmentId, setSelectedRecruitmentId] = useState<number | null>(null);
+  const [recruitmentPage, setRecruitmentPage] = useState(0);
+  const [recruitmentTotalPages, setRecruitmentTotalPages] = useState(0);
+  const [recruitmentTotalCount, setRecruitmentTotalCount] = useState(0);
+  const [leavePage, setLeavePage] = useState(0);
+  const [leaveTotalPages, setLeaveTotalPages] = useState(0);
+  const [leaveTotalCount, setLeaveTotalCount] = useState(0);
 
   useEffect(() => {
     listEmployees()
@@ -51,14 +58,22 @@ const HRDashboard = () => {
       })
       .catch(() => setLoadError('تعذر تحميل قائمة الموظفين. تأكد من صلاحيات HR والاتصال بالخادم.'));
 
-    getPendingLeavesForHr()
-      .then((res) => setPendingLeaves(res.data))
+    getPendingLeavesForHrPage({ page: leavePage, size: 10 })
+      .then((res) => {
+        setPendingLeaves(res.data.items);
+        setLeaveTotalPages(res.data.totalPages);
+        setLeaveTotalCount(res.data.totalCount);
+      })
       .catch(() => console.error('Failed to load pending leaves for HR'));
 
-    getPendingRecruitmentRequests()
-      .then((res) => setPendingRecruitment(res.data))
+    getPendingRecruitmentRequestsPage({ page: recruitmentPage, size: 10 })
+      .then((res) => {
+        setPendingRecruitment(res.data.items);
+        setRecruitmentTotalPages(res.data.totalPages);
+        setRecruitmentTotalCount(res.data.totalCount);
+      })
       .catch(() => console.error('Failed to load pending recruitment requests'));
-  }, []);
+  }, [leavePage, recruitmentPage]);
 
   const handleBind = () => {
     setBindingStatus('Reading');
@@ -73,8 +88,12 @@ const HRDashboard = () => {
   const handleRecruitmentSuccess = () => {
     setShowRecruitmentForm(false);
     // Refresh the pending list after submitting a new request
-    getPendingRecruitmentRequests()
-      .then((res) => setPendingRecruitment(res.data))
+    getPendingRecruitmentRequestsPage({ page: recruitmentPage, size: 10 })
+      .then((res) => {
+        setPendingRecruitment(res.data.items);
+        setRecruitmentTotalPages(res.data.totalPages);
+        setRecruitmentTotalCount(res.data.totalCount);
+      })
       .catch(() => {});
   };
 
@@ -342,6 +361,12 @@ const HRDashboard = () => {
                 ))}
               </div>
             )}
+            <PaginationControls
+              page={recruitmentPage}
+              totalPages={recruitmentTotalPages}
+              totalCount={recruitmentTotalCount}
+              onPageChange={setRecruitmentPage}
+            />
           </div>
 
           {/* Pending Leave Requests Section */}
@@ -443,6 +468,12 @@ const HRDashboard = () => {
                 ))}
               </div>
             )}
+            <PaginationControls
+              page={leavePage}
+              totalPages={leaveTotalPages}
+              totalCount={leaveTotalCount}
+              onPageChange={setLeavePage}
+            />
           </div>
 
           <section className="bg-luxury-surface rounded-[2.5rem] shadow-sm border border-white/5 overflow-hidden">

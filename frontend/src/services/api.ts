@@ -103,6 +103,13 @@ interface PaginatedResponse<T> {
   hasNext: boolean;
 }
 
+export interface PaginationParams {
+  page?: number;
+  size?: number;
+}
+
+export interface PaginatedList<T> extends PaginatedResponse<T> {}
+
 export interface SystemMetrics {
   cpu: string;
   storage: string;
@@ -207,6 +214,15 @@ const buildPaginatedPath = (path: string, page: number, pageSize: number) => {
   return `${path}${separator}page=${page}&size=${pageSize}`;
 };
 
+const getPaginatedPage = async <T>(path: string, params: PaginationParams = {}) => {
+  const page = params.page ?? 0;
+  const size = params.size ?? 20;
+  const response = await api.get<PaginatedResponse<T>>(buildPaginatedPath(path, page, size));
+  return {
+    data: response.data as PaginatedList<T>,
+  };
+};
+
 const getPaginatedItems = async <T>(path: string, pageSize = 100) => {
   let page = 0;
   let hasNext = true;
@@ -232,8 +248,14 @@ const getPaginatedItems = async <T>(path: string, pageSize = 100) => {
 export const getMyAttendance = () =>
   getPaginatedItems<AttendanceRecord>('/attendance/my-records');
 
+export const getMyAttendancePage = (params?: PaginationParams) =>
+  getPaginatedPage<AttendanceRecord>('/attendance/my-records', params);
+
 export const getManagerTodayAttendance = () =>
   getPaginatedItems<AttendanceRecord>('/attendance/manager/today');
+
+export const getManagerTodayAttendancePage = (params?: PaginationParams) =>
+  getPaginatedPage<AttendanceRecord>('/attendance/manager/today', params);
 
 export const verifyAttendance = (recordId: number, note?: string) =>
   api.put(`/attendance/verify/${recordId}`, { note });
@@ -255,6 +277,9 @@ export const triggerBackup = () => api.post<{ status: string }>('/admin/backup',
 export const getHrMonthlyAttendance = (month: number, year: number) => 
   getPaginatedItems<AttendanceRecord>(`/attendance/hr/monthly?month=${month}&year=${year}`);
 
+export const getHrMonthlyAttendancePage = (month: number, year: number, params?: PaginationParams) =>
+  getPaginatedPage<AttendanceRecord>(`/attendance/hr/monthly?month=${month}&year=${year}`, params);
+
 export const calculatePayroll = (month: number, year: number, employeeId?: number) => {
   const params = new URLSearchParams({
     month: String(month),
@@ -274,6 +299,11 @@ export const getPendingRecruitmentRequests = (department?: string) =>
   department
     ? getPaginatedItems<RecruitmentRequest>(`/recruitment/pending?department=${encodeURIComponent(department)}`)
     : getPaginatedItems<RecruitmentRequest>('/recruitment/pending');
+
+export const getPendingRecruitmentRequestsPage = (params?: PaginationParams, department?: string) =>
+  department
+    ? getPaginatedPage<RecruitmentRequest>(`/recruitment/pending?department=${encodeURIComponent(department)}`, params)
+    : getPaginatedPage<RecruitmentRequest>('/recruitment/pending', params);
 
 export const getMyRecruitmentRequests = () =>
   getPaginatedItems<RecruitmentRequest>('/recruitment/my-requests');
@@ -296,6 +326,9 @@ export const submitAdvanceRequest = (data: { amount: number; reason?: string }) 
 export const getPendingAdvanceRequests = () =>
   getPaginatedItems<AdvanceRequest>('/advances/pending');
 
+export const getPendingAdvanceRequestsPage = (params?: PaginationParams) =>
+  getPaginatedPage<AdvanceRequest>('/advances/pending', params);
+
 export const getMyAdvanceRequests = () =>
   getPaginatedItems<AdvanceRequest>('/advances/my-requests');
 
@@ -303,6 +336,11 @@ export const getAllAdvanceRequests = (status?: string) =>
   status
     ? getPaginatedItems<AdvanceRequest>(`/advances/all?status=${encodeURIComponent(status)}`)
     : getPaginatedItems<AdvanceRequest>('/advances/all');
+
+export const getAllAdvanceRequestsPage = (params?: PaginationParams, status?: string) =>
+  status
+    ? getPaginatedPage<AdvanceRequest>(`/advances/all?status=${encodeURIComponent(status)}`, params)
+    : getPaginatedPage<AdvanceRequest>('/advances/all', params);
 
 export const processAdvanceRequest = (advanceId: number, status: string, note?: string) =>
   api.put(`/advances/process/${advanceId}`, { status, note });
@@ -346,8 +384,14 @@ export const getMyLeaveRequests = () =>
 export const getPendingLeavesForManager = (managerId: number) =>
   getPaginatedItems<LeaveRequest>(`/leaves/manager/pending?managerId=${managerId}`);
 
+export const getPendingLeavesForManagerPage = (managerId: number, params?: PaginationParams) =>
+  getPaginatedPage<LeaveRequest>(`/leaves/manager/pending?managerId=${managerId}`, params);
+
 export const getPendingLeavesForHr = () =>
   getPaginatedItems<LeaveRequest>('/leaves/hr/pending');
+
+export const getPendingLeavesForHrPage = (params?: PaginationParams) =>
+  getPaginatedPage<LeaveRequest>('/leaves/hr/pending', params);
 
 export const processLeaveRequest = (requestId: number, status: string, note?: string) =>
   api.put(`/leaves/process/${requestId}`, { status, note });
@@ -368,14 +412,23 @@ export interface InboxMessage {
 export const getInbox = () =>
   getPaginatedItems<InboxMessage>('/inbox');
 
+export const getInboxPage = (params?: PaginationParams) =>
+  getPaginatedPage<InboxMessage>('/inbox', params);
+
 export const getUnreadMessages = () =>
   getPaginatedItems<InboxMessage>('/inbox/unread');
+
+export const getUnreadMessagesPage = (params?: PaginationParams) =>
+  getPaginatedPage<InboxMessage>('/inbox/unread', params);
 
 export const getUnreadCount = () =>
   api.get<{ unreadCount: number }>('/inbox/unread-count');
 
 export const getHighPriorityMessages = () =>
   getPaginatedItems<InboxMessage>('/inbox/high-priority');
+
+export const getHighPriorityMessagesPage = (params?: PaginationParams) =>
+  getPaginatedPage<InboxMessage>('/inbox/high-priority', params);
 
 export const markMessageAsRead = (messageId: number) =>
   api.put(`/inbox/${messageId}/read`);
@@ -388,6 +441,9 @@ export const archiveMessage = (messageId: number) =>
 
 export const getArchivedMessages = () =>
   getPaginatedItems<InboxMessage>('/inbox/archived');
+
+export const getArchivedMessagesPage = (params?: PaginationParams) =>
+  getPaginatedPage<InboxMessage>('/inbox/archived', params);
 
 export const deleteMessage = (messageId: number) =>
   api.delete(`/inbox/${messageId}`);
