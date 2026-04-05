@@ -46,9 +46,12 @@ public class Employee {
     @Column(name = "national_id")
     private String nationalId;
 
+    @Column(name = "avatar_url")
+    private String avatarUrl;
+
     public Employee() {}
 
-    public Employee(Long employeeId, String fullName, String email, String passwordHash, Long teamId, Long roleId, Long managerId, BigDecimal baseSalary, String status) {
+    public Employee(Long employeeId, String fullName, String email, String passwordHash, Long teamId, Long roleId, Long managerId, BigDecimal baseSalary, String status, String avatarUrl) {
         this.employeeId = employeeId;
         this.fullName = fullName;
         this.email = email;
@@ -58,6 +61,7 @@ public class Employee {
         this.managerId = managerId;
         this.baseSalary = baseSalary;
         this.status = status;
+        this.avatarUrl = avatarUrl;
     }
 
     public static EmployeeBuilder builder() {
@@ -99,6 +103,8 @@ public class Employee {
     public void setAddress(String address) { this.address = address; }
     public String getNationalId() { return nationalId; }
     public void setNationalId(String nationalId) { this.nationalId = nationalId; }
+    public String getAvatarUrl() { return avatarUrl; }
+    public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
 
     // Full builder for compatibility
     public static class EmployeeBuilder {
@@ -111,6 +117,7 @@ public class Employee {
         private Long managerId;
         private BigDecimal baseSalary;
         private String status = "Active";
+        private String avatarUrl;
 
         public EmployeeBuilder employeeId(Long id) { this.employeeId = id; return this; }
         public EmployeeBuilder fullName(String name) { this.fullName = name; return this; }
@@ -121,8 +128,9 @@ public class Employee {
         public EmployeeBuilder managerId(Long id) { this.managerId = id; return this; }
         public EmployeeBuilder baseSalary(BigDecimal salary) { this.baseSalary = salary; return this; }
         public EmployeeBuilder status(String status) { this.status = status; return this; }
+        public EmployeeBuilder avatarUrl(String url) { this.avatarUrl = url; return this; }
         public Employee build() {
-            return new Employee(employeeId, fullName, email, passwordHash, teamId, roleId, managerId, baseSalary, status);
+            return new Employee(employeeId, fullName, email, passwordHash, teamId, roleId, managerId, baseSalary, status, avatarUrl);
         }
     }
 }

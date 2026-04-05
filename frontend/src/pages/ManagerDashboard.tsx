@@ -268,13 +268,6 @@ const ManagerDashboard = () => {
             </div>
             <div className="flex items-center gap-3">
               <CurrentDateTimePanel />
-              <button
-              type="button"
-              className="flex items-center gap-2 bg-luxury-surface border border-white/5 px-4 py-2.5 rounded-xl shadow-sm font-semibold text-slate-200 hover:bg-white/5 transition-all"
-            >
-              <FileText size={18} />
-              <span>تصدير تقرير Excel</span>
-              </button>
             </div>
           </header>
 

@@ -58,7 +58,8 @@ public class EmployeeDirectoryService {
                 employee.getStatus(),
                 employee.getMobileNumber(),
                 employee.getAddress(),
-                employee.getNationalId()
+                employee.getNationalId(),
+                employee.getAvatarUrl()
         );
     }
 
@@ -92,6 +93,7 @@ public class EmployeeDirectoryService {
         employee.setMobileNumber(update.mobileNumber());
         employee.setAddress(update.address());
         employee.setNationalId(update.nationalId());
+        employee.setAvatarUrl(update.avatarUrl());
 
         employeeRepository.save(employee);
         return getProfile(employeeId);

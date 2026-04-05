@@ -11,6 +11,7 @@ import {
   Star,
   Bell,
   DollarSign,
+  Calendar,
 } from 'lucide-react';
 import { AUTH_TOKEN_KEY, getCurrentEmployee, logout, type EmployeeProfile } from '../services/api';
 import { getRole, isSuperAdmin } from '../services/auth';
@@ -28,6 +29,7 @@ interface MenuItem {
 const allMenuItems: MenuItem[] = [
   { path: '/dashboard', icon: LayoutDashboard, label: 'لوحة التحكم',     roles: ['EMPLOYEE', 'SUPER_ADMIN'] },
   { path: '/payroll',   icon: DollarSign,      label: 'إدارة الرواتب',    roles: ['HR', 'ADMIN', 'SUPER_ADMIN'] },
+  { path: '/leave-calendar', icon: Calendar,    label: 'تقويم الإجازات',   roles: ['HR', 'MANAGER', 'ADMIN', 'SUPER_ADMIN'] },
   { path: '/goals',     icon: Star,            label: 'النقاط' },
   { path: '/manager',   icon: Users,           label: 'إدارة الفريق',    roles: ['MANAGER', 'SUPER_ADMIN'] },
   { path: '/hr',        icon: ShieldCheck,     label: 'الموارد البشرية',  roles: ['HR', 'SUPER_ADMIN'] },

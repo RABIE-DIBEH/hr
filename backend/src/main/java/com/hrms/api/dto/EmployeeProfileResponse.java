@@ -15,5 +15,6 @@ public record EmployeeProfileResponse(
         String status,
         String mobileNumber,
         String address,
-        String nationalId
+        String nationalId,
+        String avatarUrl
 ) {}

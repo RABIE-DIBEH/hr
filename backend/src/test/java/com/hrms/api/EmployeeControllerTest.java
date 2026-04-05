@@ -66,7 +66,7 @@ class EmployeeControllerTest {
         when(employeeDirectoryService.getProfile(eq(1L)))
                 .thenReturn(new com.hrms.api.dto.EmployeeProfileResponse(
                         1L, "Test User", "test@hrms.com", null, "General",
-                        4L, "EMPLOYEE", null, null, "Active", null, null, null
+                        4L, "EMPLOYEE", null, null, "Active", null, null, null, null
                 ));
 
         mockMvc.perform(get("/api/employees/me"))
@@ -78,13 +78,13 @@ class EmployeeControllerTest {
     @Test
     void updateProfile_ValidRequest_ReturnsUpdatedProfile() throws Exception {
         EmployeeProfileUpdate update = new EmployeeProfileUpdate(
-                "Updated Name", "updated@hrms.com", "0512345678", "Riyadh", "1234567890"
+                "Updated Name", "updated@hrms.com", "0512345678", "Riyadh", "1234567890", null
         );
 
         when(employeeDirectoryService.updateProfile(eq(1L), any(EmployeeProfileUpdate.class)))
                 .thenReturn(new com.hrms.api.dto.EmployeeProfileResponse(
                         1L, "Updated Name", "updated@hrms.com", null, "General",
-                        4L, "EMPLOYEE", null, null, "Active", "0512345678", "Riyadh", "1234567890"
+                        4L, "EMPLOYEE", null, null, "Active", "0512345678", "Riyadh", "1234567890", null
                 ));
 
         mockMvc.perform(put("/api/employees/me")
@@ -109,7 +109,7 @@ class EmployeeControllerTest {
         when(employeeDirectoryService.updateProfile(eq(1L), any(EmployeeProfileUpdate.class)))
                 .thenReturn(new com.hrms.api.dto.EmployeeProfileResponse(
                         1L, "Test User", "test@hrms.com", null, "General",
-                        4L, "EMPLOYEE", null, null, "Active", null, null, null
+                        4L, "EMPLOYEE", null, null, "Active", null, null, null, null
                 ));
 
         mockMvc.perform(put("/api/employees/me")

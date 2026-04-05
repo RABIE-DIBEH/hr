@@ -126,6 +126,9 @@ const HRAttendanceGrid = () => {
     const hasFraud = dailyRecords.some(r => r.status === 'Fraud' || r.status === 'FRAUD');
     if (hasFraud) return 'fraud';
 
+    const hasSuspicious = dailyRecords.some(r => r.reviewStatus === 'SUSPICIOUS');
+    if (hasSuspicious) return 'suspicious';
+
     const totalHours = dailyRecords.reduce((sum, r) => sum + (r.workHours || 0), 0);
     
     // Simple 8 hour expectation logic or just anything > 0 
@@ -140,6 +143,7 @@ const HRAttendanceGrid = () => {
       case 'present': return 'bg-green-500/80 border-green-400';
       case 'absent': return 'bg-red-500/80 border-red-400';
       case 'fraud': return 'bg-orange-500/80 border-orange-400';
+      case 'suspicious': return 'bg-purple-500/80 border-purple-400';
       case 'late-or-incomplete': return 'bg-yellow-500/80 border-yellow-400';
       case 'weekend': return 'bg-slate-700/50 border-transparent';
       case 'neutral': return 'bg-white/5 border-transparent';
@@ -152,6 +156,7 @@ const HRAttendanceGrid = () => {
       case 'present': return 'حضور';
       case 'absent': return 'غياب';
       case 'fraud': return 'مخالفة';
+      case 'suspicious': return 'نشاط مشبوه';
       case 'late-or-incomplete': return 'نقص ساعات';
       case 'weekend': return 'عطلة';
       case 'neutral': return '—';
@@ -234,8 +239,8 @@ const HRAttendanceGrid = () => {
   return (
     <div className="flex min-h-screen bg-black font-sans" dir="rtl">
       <Sidebar />
-      <main className="mr-64 flex-1 p-8">
-        <div className="max-w-[95%] mx-auto">
+      <main className="mr-64 flex-1 p-8 overflow-hidden">
+        <div className="w-full">
           <header className="mb-10 flex justify-between items-center bg-luxury-surface p-6 rounded-3xl border border-white/5">
             <div>
               <h1 className="text-3xl font-black text-white tracking-tight arabic-text flex items-center gap-3">
@@ -291,25 +296,26 @@ const HRAttendanceGrid = () => {
             <span className="flex items-center gap-2 text-xs font-bold text-slate-400"><div className="w-3 h-3 rounded bg-green-500/80"></div> حضور كامل</span>
             <span className="flex items-center gap-2 text-xs font-bold text-slate-400"><div className="w-3 h-3 rounded bg-red-500/80"></div> غياب</span>
             <span className="flex items-center gap-2 text-xs font-bold text-slate-400"><div className="w-3 h-3 rounded bg-yellow-500/80"></div> نقص بساعات العمل</span>
+            <span className="flex items-center gap-2 text-xs font-bold text-slate-400"><div className="w-3 h-3 rounded bg-purple-500/80"></div> نشاط مشبوه (تحذير تلقائي)</span>
             <span className="flex items-center gap-2 text-xs font-bold text-slate-400"><div className="w-3 h-3 rounded bg-orange-500/80"></div> مخالفة / احتيال</span>
           </div>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-luxury-surface rounded-3xl shadow-sm border border-white/5 overflow-hidden"
+            className="bg-luxury-surface rounded-3xl shadow-sm border border-white/5"
           >
-            <div className="overflow-x-auto p-4 custom-scrollbar">
-              <table className="w-full text-center border-collapse text-xs whitespace-nowrap">
+            <div className="overflow-x-auto custom-scrollbar p-1">
+              <table className="w-full text-center border-collapse text-[10px] whitespace-nowrap">
                 <thead className="bg-white/5 border-b border-white/10">
                   <tr>
-                    <th className="p-4 text-right sticky right-0 bg-[#0f0a1a] z-20 shadow-[inset_1px_0_0_rgba(255,255,255,0.05)] w-48 min-w-[200px]">
-                      <div className="flex items-center gap-2 text-slate-300">
-                        <Users size={16} /> اسم الموظف
+                    <th className="p-4 text-right sticky right-0 bg-[#0f0a1a] z-30 shadow-[inset_-1px_0_0_rgba(255,255,255,0.05)] w-48 min-w-[180px]">
+                      <div className="flex items-center gap-2 text-slate-300 font-bold">
+                        <Users size={14} /> اسم الموظف
                       </div>
                     </th>
                     {daysArray.map((day) => (
-                      <th key={day} className="p-3 text-slate-400 font-bold min-w-[40px] border-l border-white/5">
+                      <th key={day} className="p-2 text-slate-400 font-bold min-w-[35px] border-l border-white/5">
                         {day}
                       </th>
                     ))}
@@ -318,17 +324,17 @@ const HRAttendanceGrid = () => {
                 <tbody className="divide-y divide-white/5">
                   {employees.map((emp) => (
                     <tr key={emp.employeeId} className="hover:bg-white/[0.02]">
-                      <td className="p-4 text-right font-bold text-slate-200 sticky right-0 bg-[#0f0a1a] z-10 shadow-[inset_1px_0_0_rgba(255,255,255,0.05)] border-l border-white/5">
+                      <td className="p-4 text-right font-bold text-slate-200 sticky right-0 bg-[#0f0a1a] z-20 shadow-[inset_-1px_0_0_rgba(255,255,255,0.05)] border-l border-white/5">
                         {emp.fullName}
                       </td>
                       {daysArray.map((day) => {
                         const status = getDailyStatus(emp.employeeId, day);
                         const colorClass = getStatusColor(status);
                         return (
-                          <td key={day} className="p-1 border-l border-white/5">
+                          <td key={day} className="p-0.5 border-l border-white/5">
                             <div 
                               title={`${emp.fullName} - اليوم ${day} - ${getStatusLabel(status)}`}
-                              className={`w-full h-8 rounded-md flex items-center justify-center cursor-default transition-all hover:brightness-125 border ${colorClass}`}
+                              className={`w-full h-7 rounded flex items-center justify-center cursor-default transition-all hover:brightness-125 border ${colorClass}`}
                             >
                               {status === 'neutral' ? '-' : ''}
                             </div>

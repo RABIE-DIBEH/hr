@@ -18,7 +18,9 @@ public record EmployeeProfileUpdate(
         String address,
 
         @Pattern(regexp = "^\\d{10}$", message = "رقم الهوية يجب أن يكون 10 أرقام")
-        String nationalId
+        String nationalId,
+
+        String avatarUrl
 ) {
     public EmployeeProfileUpdate {
         // Normalize blank optional strings to null so @Pattern skips them

@@ -42,10 +42,12 @@ const EmployeeDashboard = () => {
     mobileNumber: '',
     address: '',
     nationalId: '',
+    avatarUrl: '',
   });
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [profileSuccess, setProfileSuccess] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
   const loadEmployeeData = useEffectEvent(async () => {
     if (!me) {
@@ -109,7 +111,9 @@ const EmployeeDashboard = () => {
       mobileNumber: me.mobileNumber ?? '',
       address: me.address ?? '',
       nationalId: me.nationalId ?? '',
+      avatarUrl: me.avatarUrl ?? '',
     });
+    setAvatarPreview(me.avatarUrl ?? null);
     setProfileError(null);
     setProfileSuccess(false);
     setShowProfileEdit(true);
@@ -118,6 +122,23 @@ const EmployeeDashboard = () => {
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setProfileForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 1024 * 1024) {
+        alert('حجم الصورة يجب أن لا يتجاوز 1 ميجابايت');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setAvatarPreview(base64String);
+        setProfileForm(prev => ({ ...prev, avatarUrl: base64String }));
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
@@ -154,13 +175,22 @@ const EmployeeDashboard = () => {
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <header className="flex justify-between items-end mb-10">
-            <div>
-              <h1 className="text-3xl font-bold text-white tracking-tight arabic-text">
-                مرحباً، {me?.fullName ?? '…'} 👋
-              </h1>
-              <p className="text-slate-400 mt-1">
-                {[me?.teamName, me?.roleName].filter(Boolean).join(' | ') || 'عرض تقرير الدوام'}
-              </p>
+            <div className="flex items-center gap-5">
+              <div className="w-20 h-20 rounded-2xl bg-luxury-surface border border-white/5 overflow-hidden flex items-center justify-center text-3xl font-bold text-white shadow-2xl">
+                {me?.avatarUrl ? (
+                  <img src={me.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  me?.fullName?.charAt(0) || '?'
+                )}
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-white tracking-tight arabic-text">
+                  مرحباً، {me?.fullName ?? '…'} 👋
+                </h1>
+                <p className="text-slate-400 mt-1">
+                  {[me?.teamName, me?.roleName].filter(Boolean).join(' | ') || 'عرض تقرير الدوام'}
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <CurrentDateTimePanel />
@@ -522,6 +552,22 @@ const EmployeeDashboard = () => {
                   ✓ تم تحديث الملف الشخصي بنجاح
                 </div>
               )}
+
+              {/* Avatar Upload */}
+              <div className="flex flex-col items-center gap-4 mb-6 pb-6 border-b border-gray-100">
+                <div className="w-24 h-24 rounded-full border-4 border-blue-50 overflow-hidden bg-gray-100 flex items-center justify-center text-gray-400">
+                  {avatarPreview ? (
+                    <img src={avatarPreview} alt="Preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <User size={40} />
+                  )}
+                </div>
+                <label className="cursor-pointer bg-blue-50 text-blue-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-100 transition-colors">
+                  تغيير الصورة الشخصية
+                  <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+                </label>
+                <p className="text-[10px] text-gray-400">يدعم JPG, PNG. الحد الأقصى 1MB</p>
+              </div>
 
               {/* Full Name */}
               <div>

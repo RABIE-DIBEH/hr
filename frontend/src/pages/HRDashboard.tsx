@@ -12,6 +12,10 @@ import {
   Search,
   Trash2,
   UserPlus,
+  FileText,
+  FileSpreadsheet,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import PaginationControls from '../components/PaginationControls';
 import Sidebar from '../components/Sidebar';
@@ -28,6 +32,8 @@ import {
   replaceEmployeeNfcCard,
   unassignEmployeeNfcCard,
   updateEmployeeNfcCardStatus,
+  downloadRecruitmentPdf,
+  downloadRecruitmentExcel,
   type EmployeeSummary,
   type LeaveRequest,
   type NfcCard,
@@ -43,6 +49,11 @@ const HRDashboard = () => {
   const [cardActionLoading, setCardActionLoading] = useState(false);
   const [cardFeedback, setCardFeedback] = useState<string | null>(null);
   const [showRecruitmentForm, setShowRecruitmentForm] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [reportDate, setReportDate] = useState(new Date());
+
+  const reportMonth = reportDate.getMonth() + 1;
+  const reportYear = reportDate.getFullYear();
 
   // Leave Requests state
   const [pendingLeaves, setPendingLeaves] = useState<LeaveRequest[]>([]);
@@ -209,6 +220,39 @@ const HRDashboard = () => {
         setRecruitmentTotalCount(res.data.totalCount);
       })
       .catch(() => {});
+  };
+
+  const handlePrevMonth = () => {
+    setReportDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setReportDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  };
+
+  const handleDownloadRecruitment = async (type: 'pdf' | 'excel') => {
+    setIsDownloading(true);
+    try {
+      const response = type === 'pdf' 
+        ? await downloadRecruitmentPdf(reportMonth, reportYear)
+        : await downloadRecruitmentExcel(reportMonth, reportYear);
+      
+      const blob = new Blob([response.data], { 
+        type: type === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `recruitment_report_${reportMonth}_${reportYear}.${type === 'pdf' ? 'pdf' : 'xlsx'}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      alert('فشل تحميل تقرير التوظيف. يرجى المحاولة مرة أخرى.');
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const handleProcessRecruitment = async (requestId: number, status: 'Approved' | 'Rejected') => {
@@ -443,15 +487,53 @@ const HRDashboard = () => {
           </div>
 
           <div className="bg-luxury-surface rounded-[2.5rem] shadow-sm border border-white/5 overflow-hidden mb-10">
-            <div className="p-8 border-b border-white/5 flex items-center gap-3">
-              <div className="bg-orange-500/10 w-12 h-12 rounded-2xl flex items-center justify-center text-orange-400">
-                <UserPlus size={24} />
+            <div className="p-8 border-b border-white/5 flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-3">
+                <div className="bg-orange-500/10 w-12 h-12 rounded-2xl flex items-center justify-center text-orange-400">
+                  <UserPlus size={24} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">طلبات التوظيف المعلقة</h2>
+                  <p className="text-slate-400 text-sm">
+                    {pendingRecruitment.length} طلب بانتظار المراجعة
+                  </p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-xl font-bold text-white">طلبات التوظيف المعلقة</h2>
-                <p className="text-slate-400 text-sm">
-                  {pendingRecruitment.length} طلب بانتظار المراجعة
-                </p>
+
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/10">
+                  <button onClick={handlePrevMonth} className="text-slate-400 hover:text-white transition-colors">
+                    <ChevronRight size={18} />
+                  </button>
+                  <span className="text-white font-bold text-xs min-w-[100px] text-center">
+                    {reportDate.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' })}
+                  </span>
+                  <button 
+                    onClick={handleNextMonth} 
+                    disabled={reportDate >= new Date()} 
+                    className="text-slate-400 hover:text-white disabled:opacity-30 transition-colors"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                </div>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => handleDownloadRecruitment('pdf')}
+                    disabled={isDownloading}
+                    className="bg-orange-600/20 hover:bg-orange-600/30 text-orange-400 px-4 py-2 rounded-xl font-bold flex items-center gap-2 transition-all text-xs border border-orange-500/20"
+                  >
+                    <FileText size={14} />
+                    PDF
+                  </button>
+                  <button 
+                    onClick={() => handleDownloadRecruitment('excel')}
+                    disabled={isDownloading}
+                    className="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 px-4 py-2 rounded-xl font-bold flex items-center gap-2 transition-all text-xs border border-emerald-500/20"
+                  >
+                    <FileSpreadsheet size={14} />
+                    Excel
+                  </button>
+                </div>
               </div>
             </div>
 

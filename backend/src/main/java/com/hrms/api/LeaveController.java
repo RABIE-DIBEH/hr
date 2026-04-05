@@ -19,6 +19,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/leaves")
 public class LeaveController {
@@ -116,6 +119,20 @@ public class LeaveController {
         return leaveService.processRequest(requestId, decision.status(), decision.note(), principal)
                 .map(request -> ResponseEntity.ok(ApiResponse.success(request, "Leave request processed successfully")))
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/calendar")
+    public ResponseEntity<ApiResponse<List<LeaveRequest>>> getCalendarLeaves(
+            @RequestParam LocalDate start,
+            @RequestParam LocalDate end,
+            @AuthenticationPrincipal EmployeeUserDetails principal) {
+
+        if (!hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN", "ROLE_MANAGER")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+        }
+        
+        List<LeaveRequest> leaves = leaveService.getAllLeavesInRange(start, end);
+        return ResponseEntity.ok(ApiResponse.success(leaves, "Calendar leaves retrieved successfully"));
     }
 
     private static boolean hasAnyRole(EmployeeUserDetails principal, String... roles) {

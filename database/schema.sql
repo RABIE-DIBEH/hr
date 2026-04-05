@@ -27,7 +27,8 @@ CREATE TABLE Employees (
     overtime_balance_hours DOUBLE PRECISION DEFAULT 0.0,
     mobile_number VARCHAR(20),
     address VARCHAR(500),
-    national_id VARCHAR(20)
+    national_id VARCHAR(20),
+    avatar_url VARCHAR(500)
 );
 
 -- 4. NFC Cards Table

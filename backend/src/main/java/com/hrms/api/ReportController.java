@@ -64,4 +64,52 @@ public class ReportController {
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(excel);
     }
+
+    @GetMapping("/leave/pdf")
+    @PreAuthorize("hasAnyRole('HR', 'ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<byte[]> downloadLeavePdf(
+            @RequestParam int month,
+            @RequestParam int year) {
+        byte[] pdf = reportService.generateLeavePdfReport(month, year);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=leave_report_" + month + "_" + year + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
+    @GetMapping("/leave/excel")
+    @PreAuthorize("hasAnyRole('HR', 'ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<byte[]> downloadLeaveExcel(
+            @RequestParam int month,
+            @RequestParam int year) {
+        byte[] excel = reportService.generateLeaveExcelReport(month, year);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=leave_report_" + month + "_" + year + ".xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(excel);
+    }
+
+    @GetMapping("/recruitment/pdf")
+    @PreAuthorize("hasAnyRole('HR', 'ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<byte[]> downloadRecruitmentPdf(
+            @RequestParam int month,
+            @RequestParam int year) {
+        byte[] pdf = reportService.generateRecruitmentPdfReport(month, year);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=recruitment_report_" + month + "_" + year + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
+    @GetMapping("/recruitment/excel")
+    @PreAuthorize("hasAnyRole('HR', 'ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<byte[]> downloadRecruitmentExcel(
+            @RequestParam int month,
+            @RequestParam int year) {
+        byte[] excel = reportService.generateRecruitmentExcelReport(month, year);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=recruitment_report_" + month + "_" + year + ".xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(excel);
+    }
 }

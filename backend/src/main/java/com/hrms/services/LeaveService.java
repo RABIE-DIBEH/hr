@@ -20,11 +20,16 @@ public class LeaveService {
     private final LeaveRequestRepository leaveRequestRepository;
     private final EmployeeRepository employeeRepository;
     private final InboxService inboxService;
+    private final EmailService emailService;
 
-    public LeaveService(LeaveRequestRepository leaveRequestRepository, EmployeeRepository employeeRepository, InboxService inboxService) {
+    public LeaveService(LeaveRequestRepository leaveRequestRepository,
+                        EmployeeRepository employeeRepository,
+                        InboxService inboxService,
+                        EmailService emailService) {
         this.leaveRequestRepository = leaveRequestRepository;
         this.employeeRepository = employeeRepository;
         this.inboxService = inboxService;
+        this.emailService = emailService;
     }
 
     @Transactional
@@ -112,6 +117,23 @@ public class LeaveService {
                     saved.getStatus().equals("REJECTED") ? "HIGH" : "MEDIUM"
                 );
 
+                // Send email notification
+                try {
+                    String emailSubject = "Leave Request " + saved.getStatus().replace("_", " ");
+                    String emailBody = String.format(
+                        "Dear %s,\n\nYour leave request for %s from %s to %s has been %s.\n%s\n\nBest regards,\nHRMS Team",
+                        requester.getFullName(),
+                        saved.getLeaveType(),
+                        saved.getStartDate(),
+                        saved.getEndDate(),
+                        saved.getStatus().replace("_", " ").toLowerCase(),
+                        note != null && !note.isBlank() ? "Manager Note: " + note : ""
+                    );
+                    emailService.sendEmail(requester.getEmail(), emailSubject, emailBody);
+                } catch (Exception e) {
+                    // Email failure is non-critical; log but don't fail the transaction
+                }
+
                 // If it moved to PENDING_HR, notify HR role
                 if ("PENDING_HR".equals(saved.getStatus())) {
                     inboxService.sendMessage(
@@ -150,5 +172,12 @@ public class LeaveService {
 
     public Page<LeaveRequest> getPendingRequestsForHr(Pageable pageable) {
         return leaveRequestRepository.findPendingRequestsForHr(pageable);
+    }
+
+    /**
+     * Get all leaves (Approved/Pending) within a date range for the calendar view.
+     */
+    public java.util.List<LeaveRequest> getAllLeavesInRange(java.time.LocalDate start, java.time.LocalDate end) {
+        return leaveRequestRepository.findAllInRange(start, end);
     }
 }

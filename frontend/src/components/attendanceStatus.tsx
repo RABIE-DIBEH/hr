@@ -22,6 +22,10 @@ const reviewStatusMap: Record<string, StatusMeta> = {
     label: 'تم التصحيح يدوياً',
     className: 'bg-sky-500/10 text-sky-300 border border-sky-500/20',
   },
+  SUSPICIOUS: {
+    label: 'نشاط مشبوه',
+    className: 'bg-orange-500/10 text-orange-300 border border-orange-500/20',
+  },
 };
 
 const payrollStatusMap: Record<string, StatusMeta> = {
@@ -69,6 +73,13 @@ export const getLegacyAttendanceStatusMeta = (record: AttendanceRecord): StatusM
     return {
       label: 'تلاعب',
       className: 'bg-rose-500/10 text-rose-300 border border-rose-500/20',
+    };
+  }
+
+  if (record.reviewStatus === 'SUSPICIOUS') {
+    return {
+      label: 'مشبوه',
+      className: 'bg-orange-500/10 text-orange-300 border border-orange-500/20',
     };
   }
 

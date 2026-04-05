@@ -59,7 +59,7 @@ class EmployeeDirectoryServiceTest {
         when(employeeRepository.save(any(Employee.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         EmployeeProfileUpdate update = new EmployeeProfileUpdate(
-                "New Name", "new@hrms.com", "0512345678", "Riyadh", "1234567890"
+                "New Name", "new@hrms.com", "0512345678", "Riyadh", "1234567890", null
         );
 
         EmployeeProfileResponse result = service.updateProfile(1L, update);
@@ -95,7 +95,7 @@ class EmployeeDirectoryServiceTest {
         when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee));
         // DTO normalizes blanks to null, so service receives null
         EmployeeProfileUpdate update = new EmployeeProfileUpdate(
-                "Test User", "test@hrms.com", null, null, null
+                "Test User", "test@hrms.com", null, null, null, null
         );
         when(employeeRepository.findByEmailIgnoreCase("test@hrms.com"))
                 .thenReturn(Optional.of(employee)); // same email, should be allowed
@@ -117,7 +117,7 @@ class EmployeeDirectoryServiceTest {
     void updateProfile_BlankStringDto_NormalizesToNull() {
         // This test proves the compact constructor normalizes "" → null
         EmployeeProfileUpdate dto = new EmployeeProfileUpdate(
-                "Test User", "test@hrms.com", "", "", ""
+                "Test User", "test@hrms.com", "", "", "", null
         );
 
         assertNull(dto.mobileNumber(), "blank mobileNumber should be null");
@@ -148,7 +148,7 @@ class EmployeeDirectoryServiceTest {
                 .thenReturn(Optional.of(otherEmployee));
 
         EmployeeProfileUpdate update = new EmployeeProfileUpdate(
-                "Test User", "duplicate@hrms.com", null, null, null
+                "Test User", "duplicate@hrms.com", null, null, null, null
         );
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
@@ -175,7 +175,7 @@ class EmployeeDirectoryServiceTest {
         when(employeeRepository.save(any(Employee.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         EmployeeProfileUpdate update = new EmployeeProfileUpdate(
-                "Updated Name", "test@hrms.com", null, null, null
+                "Updated Name", "test@hrms.com", null, null, null, null
         );
 
         EmployeeProfileResponse result = service.updateProfile(1L, update);
@@ -189,7 +189,7 @@ class EmployeeDirectoryServiceTest {
         when(employeeRepository.findById(999L)).thenReturn(Optional.empty());
 
         EmployeeProfileUpdate update = new EmployeeProfileUpdate(
-                "Name", "email@test.com", null, null, null
+                "Name", "email@test.com", null, null, null, null
         );
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,

@@ -1,6 +1,6 @@
 import { useEffect, useEffectEvent, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Clock, Download, ChevronRight, RefreshCcw } from 'lucide-react';
+import { Clock, RefreshCcw } from 'lucide-react';
 import PaginationControls from '../components/PaginationControls';
 import Sidebar from '../components/Sidebar';
 import CurrentDateTimePanel from '../components/CurrentDateTimePanel';
@@ -55,12 +55,7 @@ const AttendanceLogs = () => {
               <h1 className="text-3xl font-black text-white arabic-text">سجل دوامي</h1>
               <p className="text-slate-400 mt-1">عرض تفاصيل الحضور والانصراف اليومية</p>
             </div>
-            <div className="flex items-center gap-3">
-              <CurrentDateTimePanel />
-              <button className="bg-luxury-surface border border-white/5 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-white/5 transition-all text-white">
-                <Download size={16} /> تصدير PDF
-              </button>
-            </div>
+            <CurrentDateTimePanel />
           </header>
 
             <div className="bg-luxury-surface rounded-[2rem] shadow-sm border border-white/5 overflow-hidden">

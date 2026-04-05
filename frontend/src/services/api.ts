@@ -55,6 +55,7 @@ export interface EmployeeProfile {
   mobileNumber?: string;
   address?: string;
   nationalId?: string;
+  avatarUrl?: string;
 }
 
 export interface EmployeeProfileUpdatePayload {
@@ -63,6 +64,7 @@ export interface EmployeeProfileUpdatePayload {
   mobileNumber?: string;
   address?: string;
   nationalId?: string;
+  avatarUrl?: string;
 }
 
 export interface EmployeeSummary {
@@ -474,7 +476,34 @@ export const getPendingLeavesForHrPage = (params?: PaginationParams) =>
 export const processLeaveRequest = (requestId: number, status: string, note?: string) =>
   api.put(`/leaves/process/${requestId}`, { status, note });
 
-// Inbox APIs
+export const getLeaveCalendar = (start: string, end: string) =>
+  api.get<LeaveRequest[]>(`/leaves/calendar?start=${start}&end=${end}`);
+
+// Report API 
+export const downloadAttendancePdf = (month: number, year: number) =>
+  api.get(`/reports/attendance/pdf?month=${month}&year=${year}`, { responseType: 'blob' });
+
+export const downloadAttendanceExcel = (month: number, year: number) =>
+  api.get(`/reports/attendance/excel?month=${month}&year=${year}`, { responseType: 'blob' });
+
+export const downloadPayrollPdf = (month: number, year: number) =>
+  api.get(`/reports/payroll/pdf?month=${month}&year=${year}`, { responseType: 'blob' });
+
+export const downloadPayrollExcel = (month: number, year: number) =>
+  api.get(`/reports/payroll/excel?month=${month}&year=${year}`, { responseType: 'blob' });
+
+export const downloadLeavePdf = (month: number, year: number) =>
+  api.get(`/reports/leave/pdf?month=${month}&year=${year}`, { responseType: 'blob' });
+
+export const downloadLeaveExcel = (month: number, year: number) =>
+  api.get(`/reports/leave/excel?month=${month}&year=${year}`, { responseType: 'blob' });
+
+export const downloadRecruitmentPdf = (month: number, year: number) =>
+  api.get(`/reports/recruitment/pdf?month=${month}&year=${year}`, { responseType: 'blob' });
+
+export const downloadRecruitmentExcel = (month: number, year: number) =>
+  api.get(`/reports/recruitment/excel?month=${month}&year=${year}`, { responseType: 'blob' });
+
 export interface InboxMessage {
   messageId: number;
   title: string;
@@ -528,18 +557,5 @@ export const deleteMessage = (messageId: number) =>
 
 export const sendMessage = (data: { title: string; message: string; targetRole: string; senderName?: string; priority?: string }) =>
   api.post('/inbox/send', data);
-
-// Reports API
-export const downloadAttendancePdf = (month: number, year: number) =>
-  api.get(`/reports/attendance/pdf?month=${month}&year=${year}`, { responseType: 'blob' });
-
-export const downloadAttendanceExcel = (month: number, year: number) =>
-  api.get(`/reports/attendance/excel?month=${month}&year=${year}`, { responseType: 'blob' });
-
-export const downloadPayrollPdf = (month: number, year: number) =>
-  api.get(`/reports/payroll/pdf?month=${month}&year=${year}`, { responseType: 'blob' });
-
-export const downloadPayrollExcel = (month: number, year: number) =>
-  api.get(`/reports/payroll/excel?month=${month}&year=${year}`, { responseType: 'blob' });
 
 export default api;
