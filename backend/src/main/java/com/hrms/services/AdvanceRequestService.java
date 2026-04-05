@@ -2,6 +2,8 @@ package com.hrms.services;
 
 import com.hrms.core.models.AdvanceRequest;
 import com.hrms.core.repositories.AdvanceRequestRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -9,6 +11,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Objects;
 
 @Service
 public class AdvanceRequestService {
@@ -52,13 +55,8 @@ public class AdvanceRequestService {
      */
     @Transactional
     public AdvanceRequest processRequest(Long advanceId, String status, String note, Long processorId) {
-        Optional<AdvanceRequest> optional = advanceRequestRepository.findById(advanceId);
-        
-        if (optional.isEmpty()) {
-            throw new IllegalArgumentException("Advance request not found");
-        }
-
-        AdvanceRequest request = optional.get();
+        AdvanceRequest request = advanceRequestRepository.findById(Objects.requireNonNull(advanceId))
+                .orElseThrow(() -> new IllegalArgumentException("Advance request not found"));
 
         if (!"Pending".equals(request.getStatus())) {
             throw new IllegalStateException("Request has already been processed");
@@ -96,9 +94,8 @@ public class AdvanceRequestService {
     /**
      * Mark an approved advance request as delivered / paid
      */
-    @Transactional
     public AdvanceRequest deliverAdvanceRequest(Long advanceId, Long processorId) {
-        AdvanceRequest request = advanceRequestRepository.findById(advanceId)
+        AdvanceRequest request = advanceRequestRepository.findById(Objects.requireNonNull(advanceId))
                 .orElseThrow(() -> new IllegalArgumentException("Advance request not found"));
 
         if (!"Approved".equals(request.getStatus())) {
@@ -129,36 +126,36 @@ public class AdvanceRequestService {
     /**
      * Get all pending advance requests for HR/Payroll review
      */
-    public List<AdvanceRequest> getPendingRequests() {
-        return advanceRequestRepository.findAllPendingRequests();
+    public Page<AdvanceRequest> getPendingRequests(Pageable pageable) {
+        return advanceRequestRepository.findAllPendingRequests(pageable);
     }
 
     /**
      * Get all advance requests for a specific employee
      */
-    public List<AdvanceRequest> getEmployeeRequests(Long employeeId) {
-        return advanceRequestRepository.findByEmployeeId(employeeId);
+    public Page<AdvanceRequest> getEmployeeRequests(Long employeeId, Pageable pageable) {
+        return advanceRequestRepository.findByEmployeeId(employeeId, pageable);
     }
 
     /**
      * Get all advance requests regardless of status
      */
-    public List<AdvanceRequest> getAllRequests() {
-        return advanceRequestRepository.findAllRequests();
+    public Page<AdvanceRequest> getAllRequests(Pageable pageable) {
+        return advanceRequestRepository.findAllRequests(pageable);
     }
 
     /**
      * Get all requests with a specific status
      */
-    public List<AdvanceRequest> getRequestsByStatus(String status) {
-        return advanceRequestRepository.findByStatus(status);
+    public Page<AdvanceRequest> getRequestsByStatus(String status, Pageable pageable) {
+        return advanceRequestRepository.findByStatus(status, pageable);
     }
 
     /**
      * Get a specific request by ID
      */
     public Optional<AdvanceRequest> getRequestById(Long advanceId) {
-        return advanceRequestRepository.findById(advanceId);
+        return advanceRequestRepository.findById(Objects.requireNonNull(advanceId));
     }
 
     /**

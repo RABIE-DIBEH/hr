@@ -1,12 +1,13 @@
 package com.hrms.api;
 
-import com.hrms.api.dto.ApiResponse;
-import com.hrms.api.dto.InboxMessageResponse;
-import com.hrms.api.dto.SendInboxMessageDto;
+import com.hrms.api.dto.*;
 import com.hrms.core.models.InboxMessage;
 import com.hrms.security.EmployeeUserDetails;
 import com.hrms.services.InboxService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -14,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Inbox Controller - Role-based and Personal messaging system
@@ -34,19 +34,20 @@ public class InboxController {
      * Get all messages for current user (role-based + personal)
      */
     @GetMapping
-    public ResponseEntity<ApiResponse<List<InboxMessageResponse>>> getInbox(
-            @AuthenticationPrincipal EmployeeUserDetails principal) {
+    public ResponseEntity<ApiResponse<PaginatedResponse<InboxMessageResponse>>> getInbox(
+            @AuthenticationPrincipal EmployeeUserDetails principal,
+            @PageableDefault(size = 20) Pageable pageable) {
         
         String role = extractRole(principal);
         Long employeeId = principal.getEmployeeId();
         
-        List<InboxMessage> messages = inboxService.getInboxForUser(role, employeeId);
-        List<InboxMessageResponse> responses = messages.stream()
+        Page<InboxMessage> page = inboxService.getInboxForUser(role, employeeId, pageable);
+        List<InboxMessageResponse> responses = page.getContent().stream()
                 .map(InboxMessageResponse::from)
                 .toList();
         
         return ResponseEntity.ok(ApiResponse.success(
-                responses,
+                PaginatedResponse.of(responses, page.getTotalElements(), page.getNumber(), page.getSize()),
                 "Inbox retrieved successfully"
         ));
     }
@@ -56,19 +57,20 @@ public class InboxController {
      * Get unread messages for current user
      */
     @GetMapping("/unread")
-    public ResponseEntity<ApiResponse<List<InboxMessageResponse>>> getUnreadMessages(
-            @AuthenticationPrincipal EmployeeUserDetails principal) {
+    public ResponseEntity<ApiResponse<PaginatedResponse<InboxMessageResponse>>> getUnreadMessages(
+            @AuthenticationPrincipal EmployeeUserDetails principal,
+            @PageableDefault(size = 20) Pageable pageable) {
         
         String role = extractRole(principal);
         Long employeeId = principal.getEmployeeId();
         
-        List<InboxMessage> messages = inboxService.getUnreadMessagesForUser(role, employeeId);
-        List<InboxMessageResponse> responses = messages.stream()
+        Page<InboxMessage> page = inboxService.getUnreadMessagesForUser(role, employeeId, pageable);
+        List<InboxMessageResponse> responses = page.getContent().stream()
                 .map(InboxMessageResponse::from)
                 .toList();
         
         return ResponseEntity.ok(ApiResponse.success(
-                responses,
+                PaginatedResponse.of(responses, page.getTotalElements(), page.getNumber(), page.getSize()),
                 "Unread messages retrieved successfully"
         ));
     }
@@ -78,7 +80,7 @@ public class InboxController {
      * Get count of unread messages
      */
     @GetMapping("/unread-count")
-    public ResponseEntity<ApiResponse<Map<String, Integer>>> getUnreadCount(
+    public ResponseEntity<ApiResponse<UnreadCountDto>> getUnreadCount(
             @AuthenticationPrincipal EmployeeUserDetails principal) {
         
         String role = extractRole(principal);
@@ -86,7 +88,7 @@ public class InboxController {
         int count = inboxService.getUnreadCount(role, employeeId);
         
         return ResponseEntity.ok(ApiResponse.success(
-                Map.of("unreadCount", count),
+                new UnreadCountDto(count),
                 "Unread count retrieved"
         ));
     }
@@ -96,19 +98,20 @@ public class InboxController {
      * Get high priority messages for current user
      */
     @GetMapping("/high-priority")
-    public ResponseEntity<ApiResponse<List<InboxMessageResponse>>> getHighPriorityMessages(
-            @AuthenticationPrincipal EmployeeUserDetails principal) {
+    public ResponseEntity<ApiResponse<PaginatedResponse<InboxMessageResponse>>> getHighPriorityMessages(
+            @AuthenticationPrincipal EmployeeUserDetails principal,
+            @PageableDefault(size = 20) Pageable pageable) {
         
         String role = extractRole(principal);
         Long employeeId = principal.getEmployeeId();
         
-        List<InboxMessage> messages = inboxService.getHighPriorityMessages(role, employeeId);
-        List<InboxMessageResponse> responses = messages.stream()
+        Page<InboxMessage> page = inboxService.getHighPriorityMessages(role, employeeId, pageable);
+        List<InboxMessageResponse> responses = page.getContent().stream()
                 .map(InboxMessageResponse::from)
                 .toList();
         
         return ResponseEntity.ok(ApiResponse.success(
-                responses,
+                PaginatedResponse.of(responses, page.getTotalElements(), page.getNumber(), page.getSize()),
                 "High priority messages retrieved successfully"
         ));
     }
@@ -138,7 +141,7 @@ public class InboxController {
      * Mark all messages as read for current user
      */
     @PutMapping("/read-all")
-    public ResponseEntity<ApiResponse<Map<String, String>>> markAllAsRead(
+    public ResponseEntity<ApiResponse<StatusResponseDto>> markAllAsRead(
             @AuthenticationPrincipal EmployeeUserDetails principal) {
         
         String role = extractRole(principal);
@@ -146,7 +149,7 @@ public class InboxController {
         inboxService.markAllAsRead(role, employeeId);
         
         return ResponseEntity.ok(ApiResponse.success(
-                Map.of("status", "all-marked-as-read"),
+                new StatusResponseDto("all-marked-as-read"),
                 "All messages marked as read"
         ));
     }
@@ -156,19 +159,20 @@ public class InboxController {
      * Get archived messages for current user
      */
     @GetMapping("/archived")
-    public ResponseEntity<ApiResponse<List<InboxMessageResponse>>> getArchivedMessages(
-            @AuthenticationPrincipal EmployeeUserDetails principal) {
-
+    public ResponseEntity<ApiResponse<PaginatedResponse<InboxMessageResponse>>> getArchivedMessages(
+            @AuthenticationPrincipal EmployeeUserDetails principal,
+            @PageableDefault(size = 20) Pageable pageable) {
+ 
         String role = extractRole(principal);
         Long employeeId = principal.getEmployeeId();
-
-        List<InboxMessage> messages = inboxService.getArchivedMessagesForUser(role, employeeId);
-        List<InboxMessageResponse> responses = messages.stream()
+ 
+        Page<InboxMessage> page = inboxService.getArchivedMessagesForUser(role, employeeId, pageable);
+        List<InboxMessageResponse> responses = page.getContent().stream()
                 .map(InboxMessageResponse::from)
                 .toList();
-
+ 
         return ResponseEntity.ok(ApiResponse.success(
-                responses,
+                PaginatedResponse.of(responses, page.getTotalElements(), page.getNumber(), page.getSize()),
                 "Archived messages retrieved successfully"
         ));
     }
@@ -178,7 +182,7 @@ public class InboxController {
      * Archive a message
      */
     @PutMapping("/{messageId}/archive")
-    public ResponseEntity<ApiResponse<Map<String, String>>> archiveMessage(
+    public ResponseEntity<ApiResponse<InboxActionResponseDto>> archiveMessage(
             @PathVariable Long messageId,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
         
@@ -188,7 +192,7 @@ public class InboxController {
         }
         
         return ResponseEntity.ok(ApiResponse.success(
-                Map.of("status", "archived", "messageId", messageId.toString()),
+                new InboxActionResponseDto("archived", messageId),
                 "Message archived successfully"
         ));
     }
@@ -238,14 +242,14 @@ public class InboxController {
      * Delete a message permanently (any authenticated user can delete their own messages)
      */
     @DeleteMapping("/{messageId}")
-    public ResponseEntity<ApiResponse<Map<String, String>>> deleteMessage(
+    public ResponseEntity<ApiResponse<InboxActionResponseDto>> deleteMessage(
             @PathVariable Long messageId,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
 
         inboxService.deleteMessage(messageId);
 
         return ResponseEntity.ok(ApiResponse.success(
-                Map.of("status", "deleted", "messageId", messageId.toString()),
+                new InboxActionResponseDto("deleted", messageId),
                 "Message deleted successfully"
         ));
     }

@@ -1,13 +1,11 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
-  TrendingDown,
   Wallet,
   ChevronLeft,
   DollarSign,
   RefreshCcw,
   AlertCircle,
-  Download,
   Search,
   Users,
   Clock,

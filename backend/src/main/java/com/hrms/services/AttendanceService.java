@@ -7,12 +7,12 @@ import com.hrms.core.repositories.AttendanceRecordRepository;
 import com.hrms.core.repositories.NFCCardRepository;
 import com.hrms.security.EmployeeUserDetails;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.math.BigDecimal;
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -111,12 +111,12 @@ public class AttendanceService {
         return "Checked In Successfully at " + newRecord.getCheckIn();
     }
 
-    public java.util.List<AttendanceRecord> getMyRecords(Long employeeId) {
-        return attendanceRepository.findAllByEmployee_EmployeeIdOrderByCheckInDesc(employeeId);
+    public Page<AttendanceRecord> getMyRecords(Long employeeId, Pageable pageable) {
+        return attendanceRepository.findAllByEmployee_EmployeeIdOrderByCheckInDesc(employeeId, pageable);
     }
 
-    public java.util.List<AttendanceRecord> getTodayRecordsForManager(Long managerId) {
-        return attendanceRepository.findTodayRecordsForManager(managerId);
+    public Page<AttendanceRecord> getTodayRecordsForManager(Long managerId, Pageable pageable) {
+        return attendanceRepository.findTodayRecordsForManager(managerId, pageable);
     }
 
     @Transactional
@@ -140,7 +140,7 @@ public class AttendanceService {
         return Optional.of(attendanceRepository.save(record));
     }
 
-    public List<AttendanceRecord> getCompanyMonthlyAttendance(int month, int year, EmployeeUserDetails actor) {
-        return attendanceRepository.findAllMonthlyRecords(month, year);
+    public Page<AttendanceRecord> getCompanyMonthlyAttendance(int month, int year, Pageable pageable, EmployeeUserDetails actor) {
+        return attendanceRepository.findAllMonthlyRecords(month, year, pageable);
     }
 }

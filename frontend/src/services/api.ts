@@ -94,6 +94,15 @@ export interface NfcDevice {
   systemLoad: string;
 }
 
+interface PaginatedResponse<T> {
+  items: T[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  hasNext: boolean;
+}
+
 export interface SystemMetrics {
   cpu: string;
   storage: string;
@@ -193,12 +202,20 @@ export const listEmployees = () => api.get<EmployeeSummary[]>('/employees');
 
 export const listMyTeam = () => api.get<EmployeeSummary[]>('/employees/team');
 
+const getPaginatedItems = async <T>(path: string) => {
+  const response = await api.get<PaginatedResponse<T>>(path);
+  return {
+    ...response,
+    data: response.data.items,
+  };
+};
+
 // Attendance API
 export const getMyAttendance = () =>
-  api.get<AttendanceRecord[]>('/attendance/my-records');
+  getPaginatedItems<AttendanceRecord>('/attendance/my-records');
 
 export const getManagerTodayAttendance = () =>
-  api.get<AttendanceRecord[]>('/attendance/manager/today');
+  getPaginatedItems<AttendanceRecord>('/attendance/manager/today');
 
 export const verifyAttendance = (recordId: number, note?: string) =>
   api.put(`/attendance/verify/${recordId}`, { note });
@@ -217,7 +234,7 @@ export const clearSystemLogs = () => api.delete('/admin/logs');
 export const addNfcDevice = (device: Partial<NfcDevice>) => api.post('/admin/devices', device);
 export const triggerBackup = () => api.post('/admin/backup', {});
 export const getHrMonthlyAttendance = (month: number, year: number) => 
-  api.get<AttendanceRecord[]>(`/attendance/hr/monthly?month=${month}&year=${year}`);
+  getPaginatedItems<AttendanceRecord>(`/attendance/hr/monthly?month=${month}&year=${year}`);
 
 export const calculatePayroll = (month: number, year: number, employeeId?: number) => {
   const params = new URLSearchParams({
@@ -236,16 +253,16 @@ export const submitRecruitmentRequest = (data: RecruitmentRequest) =>
 
 export const getPendingRecruitmentRequests = (department?: string) =>
   department
-    ? api.get<RecruitmentRequest[]>(`/recruitment/pending?department=${encodeURIComponent(department)}`)
-    : api.get<RecruitmentRequest[]>('/recruitment/pending');
+    ? getPaginatedItems<RecruitmentRequest>(`/recruitment/pending?department=${encodeURIComponent(department)}`)
+    : getPaginatedItems<RecruitmentRequest>('/recruitment/pending');
 
 export const getMyRecruitmentRequests = () =>
-  api.get<RecruitmentRequest[]>('/recruitment/my-requests');
+  getPaginatedItems<RecruitmentRequest>('/recruitment/my-requests');
 
 export const getAllRecruitmentRequests = (status?: string) =>
   status
-    ? api.get<RecruitmentRequest[]>(`/recruitment/all?status=${encodeURIComponent(status)}`)
-    : api.get<RecruitmentRequest[]>('/recruitment/all');
+    ? getPaginatedItems<RecruitmentRequest>(`/recruitment/all?status=${encodeURIComponent(status)}`)
+    : getPaginatedItems<RecruitmentRequest>('/recruitment/all');
 
 export const processRecruitmentRequest = (requestId: number, status: string, note?: string, salary?: number) =>
   api.put(`/recruitment/process/${requestId}`, { status, note, salary });
@@ -258,15 +275,15 @@ export const submitAdvanceRequest = (data: { amount: number; reason?: string }) 
   api.post('/advances/request', data);
 
 export const getPendingAdvanceRequests = () =>
-  api.get<AdvanceRequest[]>('/advances/pending');
+  getPaginatedItems<AdvanceRequest>('/advances/pending');
 
 export const getMyAdvanceRequests = () =>
-  api.get<AdvanceRequest[]>('/advances/my-requests');
+  getPaginatedItems<AdvanceRequest>('/advances/my-requests');
 
 export const getAllAdvanceRequests = (status?: string) =>
   status
-    ? api.get<AdvanceRequest[]>(`/advances/all?status=${encodeURIComponent(status)}`)
-    : api.get<AdvanceRequest[]>('/advances/all');
+    ? getPaginatedItems<AdvanceRequest>(`/advances/all?status=${encodeURIComponent(status)}`)
+    : getPaginatedItems<AdvanceRequest>('/advances/all');
 
 export const processAdvanceRequest = (advanceId: number, status: string, note?: string) =>
   api.put(`/advances/process/${advanceId}`, { status, note });
@@ -275,7 +292,7 @@ export const deliverAdvanceRequest = (advanceId: number) =>
   api.put(`/advances/deliver/${advanceId}`);
 
 export const getPaidAdvanceRequests = () =>
-  api.get<AdvanceRequest[]>('/advances/all?status=Delivered');
+  getPaginatedItems<AdvanceRequest>('/advances/all?status=Delivered');
 
 export const getAdvanceRequest = (advanceId: number) =>
   api.get<AdvanceRequest>(`/advances/${advanceId}`);
@@ -305,13 +322,13 @@ export const submitLeaveRequest = (data: { leaveType: string; startDate: string;
   api.post('/leaves/request', data);
 
 export const getMyLeaveRequests = () =>
-  api.get<LeaveRequest[]>('/leaves/my-requests');
+  getPaginatedItems<LeaveRequest>('/leaves/my-requests');
 
 export const getPendingLeavesForManager = (managerId: number) =>
-  api.get<LeaveRequest[]>(`/leaves/manager/pending?managerId=${managerId}`);
+  getPaginatedItems<LeaveRequest>(`/leaves/manager/pending?managerId=${managerId}`);
 
 export const getPendingLeavesForHr = () =>
-  api.get<LeaveRequest[]>('/leaves/hr/pending');
+  getPaginatedItems<LeaveRequest>('/leaves/hr/pending');
 
 export const processLeaveRequest = (requestId: number, status: string, note?: string) =>
   api.put(`/leaves/process/${requestId}`, { status, note });
@@ -330,16 +347,16 @@ export interface InboxMessage {
 }
 
 export const getInbox = () =>
-  api.get<InboxMessage[]>('/inbox');
+  getPaginatedItems<InboxMessage>('/inbox');
 
 export const getUnreadMessages = () =>
-  api.get<InboxMessage[]>('/inbox/unread');
+  getPaginatedItems<InboxMessage>('/inbox/unread');
 
 export const getUnreadCount = () =>
   api.get<{ count: number }>('/inbox/unread-count');
 
 export const getHighPriorityMessages = () =>
-  api.get<InboxMessage[]>('/inbox/high-priority');
+  getPaginatedItems<InboxMessage>('/inbox/high-priority');
 
 export const markMessageAsRead = (messageId: number) =>
   api.put(`/inbox/${messageId}/read`);
@@ -351,7 +368,7 @@ export const archiveMessage = (messageId: number) =>
   api.put(`/inbox/${messageId}/archive`);
 
 export const getArchivedMessages = () =>
-  api.get<InboxMessage[]>('/inbox/archived');
+  getPaginatedItems<InboxMessage>('/inbox/archived');
 
 export const deleteMessage = (messageId: number) =>
   api.delete(`/inbox/${messageId}`);

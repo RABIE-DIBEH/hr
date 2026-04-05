@@ -3,16 +3,19 @@ package com.hrms.api;
 import com.hrms.api.dto.FraudReportRequest;
 import com.hrms.api.dto.NfcClockRequest;
 import com.hrms.api.dto.ApiResponse;
+import com.hrms.api.dto.IdResponseDto;
+import com.hrms.api.dto.StatusResponseDto;
+import com.hrms.api.dto.PaginatedResponse;
+import com.hrms.core.models.AttendanceRecord;
 import com.hrms.security.EmployeeUserDetails;
 import com.hrms.services.AttendanceService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
-import com.hrms.core.models.AttendanceRecord;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/attendance")
@@ -36,41 +39,47 @@ public class AttendanceController {
             return ResponseEntity.status(400).body(ApiResponse.error(400, result));
         }
 
-        return ResponseEntity.ok(ApiResponse.success(Map.of("result", result), result));
+        return ResponseEntity.ok(ApiResponse.success(new StatusResponseDto(result), result));
     }
 
     @PutMapping("/report-fraud/{recordId}")
-    public ResponseEntity<ApiResponse<Map<String, String>>> reportFraud(
+    public ResponseEntity<ApiResponse<StatusResponseDto>> reportFraud(
             @PathVariable Long recordId,
             @RequestBody FraudReportRequest request,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
 
         return attendanceService.reportFraud(recordId, request.noteOrDefault(), principal)
                 .map(record -> ResponseEntity.ok(ApiResponse.success(
-                        Map.of("message", "Fraud reported successfully for record: " + recordId),
+                        new StatusResponseDto("Fraud reported successfully for record: " + recordId),
                         "Fraud reported successfully"
                 )))
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/my-records")
-    public ResponseEntity<ApiResponse<List<AttendanceRecord>>> getMyRecords(@AuthenticationPrincipal EmployeeUserDetails principal) {
+    public ResponseEntity<ApiResponse<PaginatedResponse<AttendanceRecord>>> getMyRecords(
+            @AuthenticationPrincipal EmployeeUserDetails principal,
+            @PageableDefault(size = 20) Pageable pageable) {
+        Page<AttendanceRecord> page = attendanceService.getMyRecords(principal.getEmployeeId(), pageable);
         return ResponseEntity.ok(ApiResponse.success(
-                attendanceService.getMyRecords(principal.getEmployeeId()),
+                PaginatedResponse.of(page.getContent(), page.getTotalElements(), page.getNumber(), page.getSize()),
                 "Your attendance records retrieved successfully"
         ));
     }
 
     @GetMapping("/manager/today")
-    public ResponseEntity<ApiResponse<List<AttendanceRecord>>> getManagerTodayRecords(@AuthenticationPrincipal EmployeeUserDetails principal) {
+    public ResponseEntity<ApiResponse<PaginatedResponse<AttendanceRecord>>> getManagerTodayRecords(
+            @AuthenticationPrincipal EmployeeUserDetails principal,
+            @PageableDefault(size = 20) Pageable pageable) {
+        Page<AttendanceRecord> page = attendanceService.getTodayRecordsForManager(principal.getEmployeeId(), pageable);
         return ResponseEntity.ok(ApiResponse.success(
-                attendanceService.getTodayRecordsForManager(principal.getEmployeeId()),
+                PaginatedResponse.of(page.getContent(), page.getTotalElements(), page.getNumber(), page.getSize()),
                 "Today's team attendance retrieved successfully"
         ));
     }
 
     @PutMapping("/verify/{recordId}")
-    public ResponseEntity<ApiResponse<Map<String, String>>> verifyRecord(
+    public ResponseEntity<ApiResponse<StatusResponseDto>> verifyRecord(
             @PathVariable Long recordId,
             @RequestBody(required = false) FraudReportRequest request,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
@@ -78,20 +87,22 @@ public class AttendanceController {
         String note = (request != null && request.noteOrDefault() != null) ? request.noteOrDefault() : "Verified via Dashboard";
         return attendanceService.verifyRecord(recordId, note, principal)
                 .map(record -> ResponseEntity.ok(ApiResponse.success(
-                        Map.of("message", "Attendance record verified successfully."),
+                        new StatusResponseDto("Attendance record verified successfully."),
                         "Attendance verified successfully"
                 )))
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/hr/monthly")
-    public ResponseEntity<ApiResponse<List<AttendanceRecord>>> getCompanyMonthlyAttendance(
+    public ResponseEntity<ApiResponse<PaginatedResponse<AttendanceRecord>>> getCompanyMonthlyAttendance(
             @RequestParam int month,
             @RequestParam int year,
-            @AuthenticationPrincipal EmployeeUserDetails principal) {
+            @AuthenticationPrincipal EmployeeUserDetails principal,
+            @PageableDefault(size = 20) Pageable pageable) {
         
+        Page<AttendanceRecord> page = attendanceService.getCompanyMonthlyAttendance(month, year, pageable, principal);
         return ResponseEntity.ok(ApiResponse.success(
-                attendanceService.getCompanyMonthlyAttendance(month, year, principal),
+                PaginatedResponse.of(page.getContent(), page.getTotalElements(), page.getNumber(), page.getSize()),
                 "Company monthly attendance retrieved successfully"
         ));
     }

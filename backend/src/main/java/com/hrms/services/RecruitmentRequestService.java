@@ -9,6 +9,8 @@ import com.hrms.core.repositories.RecruitmentRequestRepository;
 import com.hrms.core.repositories.RoleRepository;
 import com.hrms.core.repositories.TeamRepository;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -183,50 +184,50 @@ public class RecruitmentRequestService {
     /**
      * Get pending requests for the current user based on their role
      */
-    public List<RecruitmentRequest> getPendingRequestsForRole(String roleName, String department) {
+    public Page<RecruitmentRequest> getPendingRequestsForRole(String roleName, String department, Pageable pageable) {
         if ("MANAGER".equals(roleName)) {
             // Managers see ALL requests pending manager review (not filtered by department)
-            return recruitmentRequestRepository.findByStatus(RecruitmentRequest.STATUS_PENDING_MANAGER);
+            return recruitmentRequestRepository.findByStatus(RecruitmentRequest.STATUS_PENDING_MANAGER, pageable);
         } else if ("PAYROLL".equals(roleName)) {
             // Payroll sees all requests pending payroll review
-            return recruitmentRequestRepository.findByStatus(RecruitmentRequest.STATUS_PENDING_PAYROLL);
+            return recruitmentRequestRepository.findByStatus(RecruitmentRequest.STATUS_PENDING_PAYROLL, pageable);
         } else if ("HR".equals(roleName) || "ADMIN".equals(roleName) || "SUPER_ADMIN".equals(roleName)) {
             // HR/Admin see everything pending
             return recruitmentRequestRepository.findAllByStatuses(Arrays.asList(
                     RecruitmentRequest.STATUS_PENDING_MANAGER,
                     RecruitmentRequest.STATUS_PENDING_PAYROLL
-            ));
+            ), pageable);
         }
-        return List.of();
+        return Page.empty();
     }
 
-    public List<RecruitmentRequest> getPendingRequests() {
+    public Page<RecruitmentRequest> getPendingRequests(Pageable pageable) {
         return recruitmentRequestRepository.findAllByStatuses(Arrays.asList(
                 RecruitmentRequest.STATUS_PENDING_MANAGER,
                 RecruitmentRequest.STATUS_PENDING_PAYROLL
-        ));
+        ), pageable);
     }
 
-    public List<RecruitmentRequest> getPendingRequestsByDepartment(String department) {
+    public Page<RecruitmentRequest> getPendingRequestsByDepartment(String department, Pageable pageable) {
         return recruitmentRequestRepository.findByDepartmentAndStatuses(department, Arrays.asList(
                 RecruitmentRequest.STATUS_PENDING_MANAGER,
                 RecruitmentRequest.STATUS_PENDING_PAYROLL
-        ));
+        ), pageable);
     }
 
-    public List<RecruitmentRequest> getUserRequests(Long userId) {
-        return recruitmentRequestRepository.findByRequestedBy(userId);
+    public Page<RecruitmentRequest> getUserRequests(Long userId, Pageable pageable) {
+        return recruitmentRequestRepository.findByRequestedBy(userId, pageable);
     }
 
-    public List<RecruitmentRequest> getRequestsByStatus(String status) {
-        return recruitmentRequestRepository.findByStatus(status);
+    public Page<RecruitmentRequest> getRequestsByStatus(String status, Pageable pageable) {
+        return recruitmentRequestRepository.findByStatus(status, pageable);
     }
 
     /**
      * Get all recruitment requests regardless of status
      */
-    public List<RecruitmentRequest> getAllRequests() {
-        return recruitmentRequestRepository.findAllRequests();
+    public Page<RecruitmentRequest> getAllRequests(Pageable pageable) {
+        return recruitmentRequestRepository.findAllRequests(pageable);
     }
 
     public Optional<RecruitmentRequest> getRequestById(Long requestId) {

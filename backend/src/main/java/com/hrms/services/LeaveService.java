@@ -6,11 +6,12 @@ import com.hrms.core.repositories.EmployeeRepository;
 import com.hrms.core.repositories.LeaveRequestRepository;
 import com.hrms.security.EmployeeUserDetails;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -139,15 +140,15 @@ public class LeaveService {
         return false;
     }
 
-    public List<LeaveRequest> getEmployeeRequests(Long employeeId) {
-        return leaveRequestRepository.findAllByEmployeeId(employeeId);
+    public Page<LeaveRequest> getEmployeeRequests(Long employeeId, Pageable pageable) {
+        return leaveRequestRepository.findAllByEmployeeId(employeeId, pageable);
     }
 
-    public List<LeaveRequest> getPendingRequestsForManager(Long managerId) {
-        return leaveRequestRepository.findPendingRequestsForManager(managerId);
+    public Page<LeaveRequest> getPendingRequestsForManager(Long managerId, Pageable pageable) {
+        return leaveRequestRepository.findPendingRequestsForManager(managerId, pageable);
     }
 
-    public List<LeaveRequest> getPendingRequestsForHr() {
-        return leaveRequestRepository.findPendingRequestsForHr();
+    public Page<LeaveRequest> getPendingRequestsForHr(Pageable pageable) {
+        return leaveRequestRepository.findPendingRequestsForHr(pageable);
     }
 }

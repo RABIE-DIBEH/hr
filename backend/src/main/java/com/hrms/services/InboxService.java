@@ -2,12 +2,13 @@ package com.hrms.services;
 
 import com.hrms.core.models.InboxMessage;
 import com.hrms.core.repositories.InboxMessageRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
+import java.time.LocalDateTime;
 
 /**
  * Service for managing inbox messages across all roles
@@ -24,15 +25,15 @@ public class InboxService {
     /**
      * Get all inbox messages for a specific role and employee
      */
-    public List<InboxMessage> getInboxForUser(String role, Long employeeId) {
-        return inboxMessageRepository.findByTargetRoleOrEmployee(role, employeeId);
+    public Page<InboxMessage> getInboxForUser(String role, Long employeeId, Pageable pageable) {
+        return inboxMessageRepository.findByTargetRoleOrEmployee(role, employeeId, pageable);
     }
     
     /**
      * Get unread messages for a specific role and employee
      */
-    public List<InboxMessage> getUnreadMessagesForUser(String role, Long employeeId) {
-        return inboxMessageRepository.findUnreadByTargetRoleOrEmployee(role, employeeId);
+    public Page<InboxMessage> getUnreadMessagesForUser(String role, Long employeeId, Pageable pageable) {
+        return inboxMessageRepository.findUnreadByTargetRoleOrEmployee(role, employeeId, pageable);
     }
     
     /**
@@ -45,8 +46,8 @@ public class InboxService {
     /**
      * Get high priority messages for a specific role and employee
      */
-    public List<InboxMessage> getHighPriorityMessages(String role, Long employeeId) {
-        return inboxMessageRepository.findHighPriorityByTargetRoleOrEmployee(role, employeeId);
+    public Page<InboxMessage> getHighPriorityMessages(String role, Long employeeId, Pageable pageable) {
+        return inboxMessageRepository.findHighPriorityByTargetRoleOrEmployee(role, employeeId, pageable);
     }
     
     /**
@@ -92,13 +93,10 @@ public class InboxService {
      */
     @Transactional
     public InboxMessage markAsRead(Long messageId) {
-        Optional<InboxMessage> msg = inboxMessageRepository.findById(messageId);
-        if (msg.isPresent()) {
-            InboxMessage message = msg.get();
-            message.setReadAt(LocalDateTime.now());
-            return inboxMessageRepository.save(message);
-        }
-        return null;
+        InboxMessage message = inboxMessageRepository.findById(messageId)
+                .orElseThrow(() -> new IllegalArgumentException("Message not found"));
+        message.setReadAt(LocalDateTime.now());
+        return inboxMessageRepository.save(message);
     }
     
     /**
@@ -106,16 +104,18 @@ public class InboxService {
      */
     @Transactional
     public void markAllAsRead(String role, Long employeeId) {
-        List<InboxMessage> unread = inboxMessageRepository.findUnreadByTargetRoleOrEmployee(role, employeeId);
-        unread.forEach(msg -> msg.setReadAt(LocalDateTime.now()));
-        inboxMessageRepository.saveAll(unread);
+        // We fetch a large number of unread messages to mark them all as read. 
+        // In a real production system, this should probably be a bulk update query in the repository.
+        Page<InboxMessage> unreadPage = inboxMessageRepository.findUnreadByTargetRoleOrEmployee(role, employeeId, Pageable.ofSize(1000));
+        unreadPage.getContent().forEach(msg -> msg.setReadAt(LocalDateTime.now()));
+        inboxMessageRepository.saveAll(unreadPage.getContent());
     }
     
     /**
      * Get archived messages for a specific role and employee
      */
-    public List<InboxMessage> getArchivedMessagesForUser(String role, Long employeeId) {
-        return inboxMessageRepository.findArchivedByTargetRoleOrEmployee(role, employeeId);
+    public Page<InboxMessage> getArchivedMessagesForUser(String role, Long employeeId, Pageable pageable) {
+        return inboxMessageRepository.findArchivedByTargetRoleOrEmployee(role, employeeId, pageable);
     }
 
     /**
@@ -123,13 +123,10 @@ public class InboxService {
      */
     @Transactional
     public InboxMessage archiveMessage(Long messageId) {
-        Optional<InboxMessage> msg = inboxMessageRepository.findById(messageId);
-        if (msg.isPresent()) {
-            InboxMessage message = msg.get();
-            message.setArchived(true);
-            return inboxMessageRepository.save(message);
-        }
-        return null;
+        InboxMessage message = inboxMessageRepository.findById(messageId)
+                .orElseThrow(() -> new IllegalArgumentException("Message not found"));
+        message.setArchived(true);
+        return inboxMessageRepository.save(message);
     }
     
     /**

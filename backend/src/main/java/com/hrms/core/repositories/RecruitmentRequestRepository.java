@@ -1,6 +1,8 @@
 package com.hrms.core.repositories;
 
 import com.hrms.core.models.RecruitmentRequest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,31 +17,31 @@ public interface RecruitmentRequestRepository extends JpaRepository<RecruitmentR
      * Find all pending recruitment requests by multiple statuses
      */
     @Query("SELECT r FROM RecruitmentRequest r WHERE r.status IN :statuses ORDER BY r.requestedAt DESC")
-    List<RecruitmentRequest> findAllByStatuses(@Param("statuses") List<String> statuses);
+    Page<RecruitmentRequest> findAllByStatuses(@Param("statuses") List<String> statuses, Pageable pageable);
 
     /**
      * Find all requests created by a specific HR user
      */
     @Query("SELECT r FROM RecruitmentRequest r WHERE r.requestedBy = :requestedBy ORDER BY r.requestedAt DESC")
-    List<RecruitmentRequest> findByRequestedBy(@Param("requestedBy") Long requestedBy);
+    Page<RecruitmentRequest> findByRequestedBy(@Param("requestedBy") Long requestedBy, Pageable pageable);
 
     /**
      * Find all recruitment requests regardless of status
      */
     @Query("SELECT r FROM RecruitmentRequest r ORDER BY r.requestedAt DESC")
-    List<RecruitmentRequest> findAllRequests();
+    Page<RecruitmentRequest> findAllRequests(Pageable pageable);
 
     /**
      * Find all requests with a specific status
      */
     @Query("SELECT r FROM RecruitmentRequest r WHERE r.status = :status ORDER BY r.requestedAt DESC")
-    List<RecruitmentRequest> findByStatus(@Param("status") String status);
+    Page<RecruitmentRequest> findByStatus(@Param("status") String status, Pageable pageable);
 
     /**
      * Find requests by department and status
      */
     @Query("SELECT r FROM RecruitmentRequest r WHERE r.department = :department AND r.status IN :statuses ORDER BY r.requestedAt DESC")
-    List<RecruitmentRequest> findByDepartmentAndStatuses(@Param("department") String department, @Param("statuses") List<String> statuses);
+    Page<RecruitmentRequest> findByDepartmentAndStatuses(@Param("department") String department, @Param("statuses") List<String> statuses, Pageable pageable);
 
     /**
      * Check if a national ID already exists in non-rejected requests

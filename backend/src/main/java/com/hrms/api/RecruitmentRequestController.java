@@ -1,16 +1,15 @@
 package com.hrms.api;
 
+import com.hrms.api.dto.*;
 import com.hrms.core.models.Employee;
 import com.hrms.core.models.RecruitmentRequest;
 import com.hrms.core.repositories.EmployeeRepository;
-import com.hrms.core.repositories.RoleRepository;
-import com.hrms.api.dto.RecruitmentRequestDto;
-import com.hrms.api.dto.ProcessRecruitmentRequestDto;
-import com.hrms.api.dto.RecruitmentRequestResponse;
-import com.hrms.api.dto.ApiResponse;
 import com.hrms.security.EmployeeUserDetails;
 import com.hrms.services.RecruitmentRequestService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -18,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -67,7 +65,7 @@ public class RecruitmentRequestController {
             RecruitmentRequest saved = recruitmentRequestService.submitRequest(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(
                     ApiResponse.success(
-                            Map.of("requestId", saved.getRequestId()),
+                            new IdResponseDto(saved.getRequestId()),
                             "Recruitment request submitted successfully"
                     )
             );
@@ -81,21 +79,26 @@ public class RecruitmentRequestController {
      * Get pending recruitment requests relevant to the current user's role
      */
     @GetMapping("/pending")
-    public ResponseEntity<ApiResponse<List<RecruitmentRequestResponse>>> getPendingRequests(
+    public ResponseEntity<ApiResponse<PaginatedResponse<RecruitmentRequestResponse>>> getPendingRequests(
             @RequestParam(required = false) String department,
-            @AuthenticationPrincipal EmployeeUserDetails principal) {
+            @AuthenticationPrincipal EmployeeUserDetails principal,
+            @PageableDefault(size = 20) Pageable pageable) {
         
         if (!hasAnyRole(principal, "MANAGER", "HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         }
 
         String dept = department != null ? department : principal.getTeamName();
-        List<RecruitmentRequest> requests = recruitmentRequestService.getPendingRequestsForRole(principal.getRoleName(), dept);
+        Page<RecruitmentRequest> page = recruitmentRequestService.getPendingRequestsForRole(principal.getRoleName(), dept, pageable);
 
-        List<RecruitmentRequestResponse> responses = requests.stream()
+        List<RecruitmentRequestResponse> responses = page.getContent().stream()
                 .map(this::toResponse)
                 .toList();
-        return ResponseEntity.ok(ApiResponse.success(responses, "Pending recruitment requests retrieved successfully"));
+        
+        return ResponseEntity.ok(ApiResponse.success(
+                PaginatedResponse.of(responses, page.getTotalElements(), page.getNumber(), page.getSize()),
+                "Pending recruitment requests retrieved successfully"
+        ));
     }
 
     /**
@@ -103,14 +106,19 @@ public class RecruitmentRequestController {
      * Get all requests created by the current user
      */
     @GetMapping("/my-requests")
-    public ResponseEntity<ApiResponse<List<RecruitmentRequestResponse>>> getMyRequests(
-            @AuthenticationPrincipal EmployeeUserDetails principal) {
+    public ResponseEntity<ApiResponse<PaginatedResponse<RecruitmentRequestResponse>>> getMyRequests(
+            @AuthenticationPrincipal EmployeeUserDetails principal,
+            @PageableDefault(size = 20) Pageable pageable) {
         
-        List<RecruitmentRequest> requests = recruitmentRequestService.getUserRequests(principal.getEmployeeId());
-        List<RecruitmentRequestResponse> responses = requests.stream()
+        Page<RecruitmentRequest> page = recruitmentRequestService.getUserRequests(principal.getEmployeeId(), pageable);
+        List<RecruitmentRequestResponse> responses = page.getContent().stream()
                 .map(this::toResponse)
                 .toList();
-        return ResponseEntity.ok(ApiResponse.success(responses, "Your recruitment requests retrieved successfully"));
+        
+        return ResponseEntity.ok(ApiResponse.success(
+                PaginatedResponse.of(responses, page.getTotalElements(), page.getNumber(), page.getSize()),
+                "Your recruitment requests retrieved successfully"
+        ));
     }
 
     /**
@@ -118,25 +126,30 @@ public class RecruitmentRequestController {
      * Get all recruitment requests (HR/ADMIN/PAYROLL only)
      */
     @GetMapping("/all")
-    public ResponseEntity<ApiResponse<List<RecruitmentRequestResponse>>> getAllRequests(
+    public ResponseEntity<ApiResponse<PaginatedResponse<RecruitmentRequestResponse>>> getAllRequests(
             @RequestParam(required = false) String status,
-            @AuthenticationPrincipal EmployeeUserDetails principal) {
+            @AuthenticationPrincipal EmployeeUserDetails principal,
+            @PageableDefault(size = 20) Pageable pageable) {
         
         if (!hasAnyRole(principal, "HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         }
 
-        List<RecruitmentRequest> requests;
+        Page<RecruitmentRequest> page;
         if (status != null && !status.trim().isEmpty()) {
-            requests = recruitmentRequestService.getRequestsByStatus(status);
+            page = recruitmentRequestService.getRequestsByStatus(status, pageable);
         } else {
-            requests = recruitmentRequestService.getAllRequests();
+            page = recruitmentRequestService.getAllRequests(pageable);
         }
 
-        List<RecruitmentRequestResponse> responses = requests.stream()
+        List<RecruitmentRequestResponse> responses = page.getContent().stream()
                 .map(this::toResponse)
                 .toList();
-        return ResponseEntity.ok(ApiResponse.success(responses, "All recruitment requests retrieved successfully"));
+        
+        return ResponseEntity.ok(ApiResponse.success(
+                PaginatedResponse.of(responses, page.getTotalElements(), page.getNumber(), page.getSize()),
+                "All recruitment requests retrieved successfully"
+        ));
     }
 
     /**
@@ -155,7 +168,7 @@ public class RecruitmentRequestController {
             RecruitmentRequest processed = recruitmentRequestService.processRequest(
                     requestId, dto.status(), dto.note(), dto.salary(), principal.getEmployeeId(), principal.getRoleName());
             return ResponseEntity.ok(ApiResponse.success(
-                    Map.of("status", processed.getStatus()),
+                    new StatusResponseDto(processed.getStatus()),
                     "Request processed successfully"
             ));
         } catch (IllegalArgumentException e) {

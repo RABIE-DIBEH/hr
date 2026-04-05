@@ -1,24 +1,22 @@
 package com.hrms.api;
 
-import com.hrms.api.dto.AdvanceRequestDto;
-import com.hrms.api.dto.ProcessAdvanceRequestDto;
-import com.hrms.api.dto.AdvanceRequestResponse;
-import com.hrms.api.dto.ApiResponse;
+import com.hrms.api.dto.*;
 import com.hrms.core.models.AdvanceRequest;
 import com.hrms.core.models.Employee;
 import com.hrms.core.repositories.EmployeeRepository;
 import com.hrms.security.EmployeeUserDetails;
 import com.hrms.services.AdvanceRequestService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -53,7 +51,7 @@ public class AdvanceRequestController {
             AdvanceRequest saved = advanceRequestService.submitRequest(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(
                     ApiResponse.success(
-                            Map.of("advanceId", saved.getAdvanceId()),
+                            new IdResponseDto(saved.getAdvanceId()),
                             "Advance request submitted successfully"
                     )
             );
@@ -67,18 +65,23 @@ public class AdvanceRequestController {
      * Get all pending advance requests (HR/ADMIN only)
      */
     @GetMapping("/pending")
-    public ResponseEntity<ApiResponse<List<AdvanceRequestResponse>>> getPendingRequests(
-            @AuthenticationPrincipal EmployeeUserDetails principal) {
+    public ResponseEntity<ApiResponse<PaginatedResponse<AdvanceRequestResponse>>> getPendingRequests(
+            @AuthenticationPrincipal EmployeeUserDetails principal,
+            @PageableDefault(size = 20) Pageable pageable) {
         
         if (!hasAnyRole(principal, "HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         }
 
-        List<AdvanceRequest> requests = advanceRequestService.getPendingRequests();
-        List<AdvanceRequestResponse> responses = requests.stream()
+        Page<AdvanceRequest> page = advanceRequestService.getPendingRequests(pageable);
+        List<AdvanceRequestResponse> responses = page.getContent().stream()
                 .map(this::toResponse)
                 .toList();
-        return ResponseEntity.ok(ApiResponse.success(responses, "Pending advance requests retrieved successfully"));
+        
+        return ResponseEntity.ok(ApiResponse.success(
+                PaginatedResponse.of(responses, page.getTotalElements(), page.getNumber(), page.getSize()),
+                "Pending advance requests retrieved successfully"
+        ));
     }
 
     /**
@@ -86,14 +89,19 @@ public class AdvanceRequestController {
      * Get all advance requests for current employee
      */
     @GetMapping("/my-requests")
-    public ResponseEntity<ApiResponse<List<AdvanceRequestResponse>>> getMyRequests(
-            @AuthenticationPrincipal EmployeeUserDetails principal) {
+    public ResponseEntity<ApiResponse<PaginatedResponse<AdvanceRequestResponse>>> getMyRequests(
+            @AuthenticationPrincipal EmployeeUserDetails principal,
+            @PageableDefault(size = 20) Pageable pageable) {
         
-        List<AdvanceRequest> requests = advanceRequestService.getEmployeeRequests(principal.getEmployeeId());
-        List<AdvanceRequestResponse> responses = requests.stream()
+        Page<AdvanceRequest> page = advanceRequestService.getEmployeeRequests(principal.getEmployeeId(), pageable);
+        List<AdvanceRequestResponse> responses = page.getContent().stream()
                 .map(this::toResponse)
                 .toList();
-        return ResponseEntity.ok(ApiResponse.success(responses, "Your advance requests retrieved successfully"));
+        
+        return ResponseEntity.ok(ApiResponse.success(
+                PaginatedResponse.of(responses, page.getTotalElements(), page.getNumber(), page.getSize()),
+                "Your advance requests retrieved successfully"
+        ));
     }
 
     /**
@@ -101,25 +109,30 @@ public class AdvanceRequestController {
      * Get all advance requests (HR/ADMIN only)
      */
     @GetMapping("/all")
-    public ResponseEntity<ApiResponse<List<AdvanceRequestResponse>>> getAllRequests(
+    public ResponseEntity<ApiResponse<PaginatedResponse<AdvanceRequestResponse>>> getAllRequests(
             @RequestParam(required = false) String status,
-            @AuthenticationPrincipal EmployeeUserDetails principal) {
+            @AuthenticationPrincipal EmployeeUserDetails principal,
+            @PageableDefault(size = 20) Pageable pageable) {
         
         if (!hasAnyRole(principal, "HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         }
 
-        List<AdvanceRequest> requests;
+        Page<AdvanceRequest> page;
         if (status != null && !status.trim().isEmpty()) {
-            requests = advanceRequestService.getRequestsByStatus(status);
+            page = advanceRequestService.getRequestsByStatus(status, pageable);
         } else {
-            requests = advanceRequestService.getAllRequests();
+            page = advanceRequestService.getAllRequests(pageable);
         }
 
-        List<AdvanceRequestResponse> responses = requests.stream()
+        List<AdvanceRequestResponse> responses = page.getContent().stream()
                 .map(this::toResponse)
                 .toList();
-        return ResponseEntity.ok(ApiResponse.success(responses, "All advance requests retrieved successfully"));
+        
+        return ResponseEntity.ok(ApiResponse.success(
+                PaginatedResponse.of(responses, page.getTotalElements(), page.getNumber(), page.getSize()),
+                "All advance requests retrieved successfully"
+        ));
     }
 
     /**
@@ -139,7 +152,7 @@ public class AdvanceRequestController {
             AdvanceRequest processed = advanceRequestService.processRequest(
                     advanceId, dto.status(), dto.note(), principal.getEmployeeId());
             return ResponseEntity.ok(ApiResponse.success(
-                    Map.of("status", processed.getStatus()),
+                    new StatusResponseDto(processed.getStatus()),
                     "Advance request processed successfully"
             ));
         } catch (IllegalArgumentException e) {
@@ -163,7 +176,10 @@ public class AdvanceRequestController {
         try {
             AdvanceRequest delivered = advanceRequestService.deliverAdvanceRequest(advanceId, principal.getEmployeeId());
             return ResponseEntity.ok(ApiResponse.success(
-                    Map.of("status", delivered.getStatus(), "paidAt", delivered.getPaidAt() != null ? delivered.getPaidAt().toString() : null),
+                    new AdvanceDeliveryResponseDto(
+                            delivered.getStatus(),
+                            delivered.getPaidAt() != null ? delivered.getPaidAt().toString() : null
+                    ),
                     "Advance request marked as delivered successfully"
             ));
         } catch (IllegalArgumentException e) {

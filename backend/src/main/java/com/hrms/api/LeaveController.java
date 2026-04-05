@@ -3,19 +3,21 @@ package com.hrms.api;
 import com.hrms.api.dto.LeaveDecisionRequest;
 import com.hrms.api.dto.LeaveRequestDto;
 import com.hrms.api.dto.ApiResponse;
+import com.hrms.api.dto.PaginatedResponse;
 import com.hrms.core.models.Employee;
 import com.hrms.core.models.LeaveRequest;
 import com.hrms.core.repositories.EmployeeRepository;
 import com.hrms.security.EmployeeUserDetails;
 import com.hrms.services.LeaveService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/leaves")
@@ -52,9 +54,10 @@ public class LeaveController {
     }
 
     @GetMapping("/my-requests")
-    public ResponseEntity<ApiResponse<List<LeaveRequest>>> getMyRequests(
+    public ResponseEntity<ApiResponse<PaginatedResponse<LeaveRequest>>> getMyRequests(
             @RequestParam(required = false) Long employeeId,
-            @AuthenticationPrincipal EmployeeUserDetails principal) {
+            @AuthenticationPrincipal EmployeeUserDetails principal,
+            @PageableDefault(size = 20) Pageable pageable) {
 
         Long targetEmployeeId = employeeId != null ? employeeId : principal.getEmployeeId();
         if (employeeId != null
@@ -62,45 +65,56 @@ public class LeaveController {
                 && !hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot view another employee's requests");
         }
+        
+        Page<LeaveRequest> page = leaveService.getEmployeeRequests(targetEmployeeId, pageable);
         return ResponseEntity.ok(ApiResponse.success(
-                leaveService.getEmployeeRequests(targetEmployeeId),
+                PaginatedResponse.of(page.getContent(), page.getTotalElements(), page.getNumber(), page.getSize()),
                 "Leave requests retrieved successfully"
         ));
     }
 
     @GetMapping("/manager/pending")
-    public ResponseEntity<ApiResponse<List<LeaveRequest>>> getPendingForManager(
+    public ResponseEntity<ApiResponse<PaginatedResponse<LeaveRequest>>> getPendingForManager(
             @RequestParam Long managerId,
-            @AuthenticationPrincipal EmployeeUserDetails principal) {
+            @AuthenticationPrincipal EmployeeUserDetails principal,
+            @PageableDefault(size = 20) Pageable pageable) {
 
         if (!principal.getEmployeeId().equals(managerId)
                 && !hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot view pending requests for another manager");
         }
+        
+        Page<LeaveRequest> page = leaveService.getPendingRequestsForManager(managerId, pageable);
         return ResponseEntity.ok(ApiResponse.success(
-                leaveService.getPendingRequestsForManager(managerId),
+                PaginatedResponse.of(page.getContent(), page.getTotalElements(), page.getNumber(), page.getSize()),
                 "Pending leave requests retrieved successfully"
         ));
     }
 
     @GetMapping("/hr/pending")
-    public ResponseEntity<List<LeaveRequest>> getPendingForHr(
-            @AuthenticationPrincipal EmployeeUserDetails principal) {
+    public ResponseEntity<ApiResponse<PaginatedResponse<LeaveRequest>>> getPendingForHr(
+            @AuthenticationPrincipal EmployeeUserDetails principal,
+            @PageableDefault(size = 20) Pageable pageable) {
 
         if (!hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         }
-        return ResponseEntity.ok(leaveService.getPendingRequestsForHr());
+        
+        Page<LeaveRequest> page = leaveService.getPendingRequestsForHr(pageable);
+        return ResponseEntity.ok(ApiResponse.success(
+                PaginatedResponse.of(page.getContent(), page.getTotalElements(), page.getNumber(), page.getSize()),
+                "Pending leave requests for HR retrieved successfully"
+        ));
     }
 
     @PutMapping("/process/{requestId}")
-    public ResponseEntity<LeaveRequest> processRequest(
+    public ResponseEntity<ApiResponse<LeaveRequest>> processRequest(
             @PathVariable Long requestId,
             @Valid @RequestBody LeaveDecisionRequest decision,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
 
         return leaveService.processRequest(requestId, decision.status(), decision.note(), principal)
-                .map(ResponseEntity::ok)
+                .map(request -> ResponseEntity.ok(ApiResponse.success(request, "Leave request processed successfully")))
                 .orElse(ResponseEntity.notFound().build());
     }
 
