@@ -41,6 +41,10 @@ const PayrollDashboard = () => {
       .catch(() => setMe(null));
   }, []);
 
+  const canManageAdvances = me?.roleName === 'HR'
+    || me?.roleName === 'ADMIN'
+    || me?.roleName === 'SUPER_ADMIN';
+
   const fetchPendingAdvances = () => {
     getPendingAdvanceRequestsPage({ page: pendingPage, size: 10 })
       .then((res) => {
@@ -62,16 +66,16 @@ const PayrollDashboard = () => {
   };
 
   useEffect(() => {
-    if (me?.roleName === 'HR' || me?.roleName === 'ADMIN') {
+    if (canManageAdvances) {
       fetchPendingAdvances();
     }
-  }, [me?.roleName, pendingPage]);
+  }, [canManageAdvances, pendingPage]);
 
   useEffect(() => {
-    if (me?.roleName === 'HR' || me?.roleName === 'ADMIN') {
+    if (canManageAdvances) {
       fetchAllAdvances();
     }
-  }, [me?.roleName, allPage]);
+  }, [canManageAdvances, allPage]);
 
   const handleProcessAdvance = async (advanceId: number, status: 'Approved' | 'Rejected') => {
     setProcessingAdvance(advanceId);

@@ -62,7 +62,7 @@ public class LeaveController {
         Long targetEmployeeId = employeeId != null ? employeeId : principal.getEmployeeId();
         if (employeeId != null
                 && !employeeId.equals(principal.getEmployeeId())
-                && !hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN")) {
+                && !hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot view another employee's requests");
         }
         
@@ -80,7 +80,7 @@ public class LeaveController {
             @PageableDefault(size = 20) Pageable pageable) {
 
         if (!principal.getEmployeeId().equals(managerId)
-                && !hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN")) {
+                && !hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot view pending requests for another manager");
         }
         

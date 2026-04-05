@@ -16,10 +16,12 @@ import PaginationControls from '../components/PaginationControls';
 import Sidebar from '../components/Sidebar';
 import {
   getCurrentEmployee,
+  listEmployeesPage,
   listMyTeamPage,
   getPendingRecruitmentRequestsPage,
   processRecruitmentRequest,
   getPendingLeavesForManagerPage,
+  getPendingLeavesForHrPage,
   processLeaveRequest,
   getManagerTodayAttendancePage,
   verifyAttendance,
@@ -68,8 +70,15 @@ const ManagerDashboard = () => {
       .catch(() => setMe(null));
   }, []);
 
+  const canReviewCompanyRequests = me?.roleName === 'MANAGER'
+    || me?.roleName === 'HR'
+    || me?.roleName === 'ADMIN'
+    || me?.roleName === 'SUPER_ADMIN';
+  const canViewCompanyWideTeam = me?.roleName === 'SUPER_ADMIN';
+  const canViewManagerScopedTeam = me?.roleName === 'MANAGER';
+
   useEffect(() => {
-    if (me?.roleName === 'MANAGER' || me?.roleName === 'HR' || me?.roleName === 'ADMIN') {
+    if (canReviewCompanyRequests) {
       getPendingRecruitmentRequestsPage({ page: requestPage, size: 10 })
         .then((res) => {
           setPendingRequests(res.data.items);
@@ -86,14 +95,19 @@ const ManagerDashboard = () => {
         })
         .catch(() => console.error('Failed to load attendance for today'));
     }
-  }, [me?.roleName, requestPage, attendancePage]);
+  }, [canReviewCompanyRequests, requestPage, attendancePage]);
 
   useEffect(() => {
-    if (me?.roleName !== 'MANAGER') {
+    if (!canViewManagerScopedTeam && !canViewCompanyWideTeam) {
       setTeam([]);
       return;
     }
-    listMyTeamPage({ page: teamPage, size: 10 })
+
+    const teamRequest = canViewCompanyWideTeam
+      ? listEmployeesPage({ page: teamPage, size: 10 })
+      : listMyTeamPage({ page: teamPage, size: 10 });
+
+    teamRequest
       .then((res) => {
         setTeam(res.data.items);
         setTeamTotalPages(res.data.totalPages);
@@ -102,8 +116,15 @@ const ManagerDashboard = () => {
       })
       .catch(() => setError('تعذر تحميل فريقك. تحقق من أن حسابك بصلاحية مدير.'));
 
-    // Fetch leaves
-    if (me?.employeeId) {
+    if (canViewCompanyWideTeam) {
+      getPendingLeavesForHrPage({ page: leavePage, size: 10 })
+        .then((res) => {
+          setPendingLeaves(res.data.items);
+          setLeaveTotalPages(res.data.totalPages);
+          setLeaveTotalCount(res.data.totalCount);
+        })
+        .catch(() => console.error('Failed to load HR leaves'));
+    } else if (me?.employeeId) {
       getPendingLeavesForManagerPage(me.employeeId, { page: leavePage, size: 10 })
         .then((res) => {
           setPendingLeaves(res.data.items);
@@ -112,7 +133,7 @@ const ManagerDashboard = () => {
         })
         .catch(() => console.error('Failed to load leaves'));
     }
-  }, [me?.roleName, me?.employeeId, leavePage, teamPage]);
+  }, [canViewCompanyWideTeam, canViewManagerScopedTeam, me?.employeeId, leavePage, teamPage]);
 
   const stats = [
     {
@@ -223,7 +244,7 @@ const ManagerDashboard = () => {
             </button>
           </header>
 
-          {me?.roleName !== 'MANAGER' && (
+          {!canViewManagerScopedTeam && !canViewCompanyWideTeam && (
             <div className="mb-6 p-4 rounded-xl bg-amber-500/10 text-amber-200 text-sm">
               عرض القائمة مخصص لحسابات <strong>MANAGER</strong>. حسابك الحالي: {me?.roleName ?? '—'}.
             </div>
@@ -252,7 +273,7 @@ const ManagerDashboard = () => {
           </div>
 
           {/* Pending Recruitment Requests Section */}
-          {(me?.roleName === 'MANAGER' || me?.roleName === 'HR' || me?.roleName === 'ADMIN') && (
+          {canReviewCompanyRequests && (
             <div className="bg-luxury-surface rounded-[2.5rem] shadow-sm border border-white/5 overflow-hidden mb-10">
               <div className="p-8 border-b border-white/5 flex items-center gap-3">
                 <div className="bg-orange-500/10 w-12 h-12 rounded-2xl flex items-center justify-center text-orange-400">
@@ -467,7 +488,7 @@ const ManagerDashboard = () => {
           </div>
 
           {/* Pending Leave Requests Section */}
-          {(me?.roleName === 'MANAGER' || me?.roleName === 'SUPER_ADMIN') && (
+          {(canViewManagerScopedTeam || canViewCompanyWideTeam) && (
             <div className="bg-luxury-surface rounded-[2.5rem] shadow-sm border border-white/5 overflow-hidden mb-10">
               <div className="p-8 border-b border-white/5 flex items-center gap-3">
                 <div className="bg-blue-500/10 w-12 h-12 rounded-2xl flex items-center justify-center text-blue-400">
@@ -605,7 +626,9 @@ const ManagerDashboard = () => {
                   {team.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="p-8 text-center text-slate-500 text-sm">
-                        {me?.roleName === 'MANAGER'
+                        {canViewCompanyWideTeam
+                          ? 'لا توجد سجلات موظفين متاحة حالياً.'
+                          : me?.roleName === 'MANAGER'
                           ? 'لا يوجد مرؤوسون مسجّلون لك (managerId) في قاعدة البيانات.'
                           : '—'}
                       </td>

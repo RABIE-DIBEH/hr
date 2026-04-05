@@ -36,7 +36,7 @@ public class PayrollController {
             @RequestParam int year,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
 
-        boolean privileged = hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN");
+        boolean privileged = hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN", "ROLE_PAYROLL");
         Long targetId;
         if (privileged) {
             if (employeeId == null) {

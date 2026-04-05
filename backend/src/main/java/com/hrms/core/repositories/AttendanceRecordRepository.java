@@ -25,6 +25,12 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
            "AND EXTRACT(DAY FROM a.checkIn) = EXTRACT(DAY FROM CURRENT_DATE)")
     Page<AttendanceRecord> findTodayRecordsForManager(Long managerId, Pageable pageable);
 
+    @Query("SELECT a FROM AttendanceRecord a " +
+           "WHERE EXTRACT(YEAR FROM a.checkIn) = EXTRACT(YEAR FROM CURRENT_DATE) " +
+           "AND EXTRACT(MONTH FROM a.checkIn) = EXTRACT(MONTH FROM CURRENT_DATE) " +
+           "AND EXTRACT(DAY FROM a.checkIn) = EXTRACT(DAY FROM CURRENT_DATE)")
+    Page<AttendanceRecord> findTodayRecords(Pageable pageable);
+
     @Query("SELECT a FROM AttendanceRecord a WHERE a.employee.employeeId = :employeeId " +
            "AND EXTRACT(MONTH FROM a.checkIn) = :month " +
            "AND EXTRACT(YEAR FROM a.checkIn) = :year")

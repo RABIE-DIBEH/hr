@@ -71,7 +71,7 @@ public class AttendanceController {
     public ResponseEntity<ApiResponse<PaginatedResponse<AttendanceRecord>>> getManagerTodayRecords(
             @AuthenticationPrincipal EmployeeUserDetails principal,
             @PageableDefault(size = 20) Pageable pageable) {
-        Page<AttendanceRecord> page = attendanceService.getTodayRecordsForManager(principal.getEmployeeId(), pageable);
+        Page<AttendanceRecord> page = attendanceService.getTodayRecordsForManager(principal.getEmployeeId(), pageable, principal);
         return ResponseEntity.ok(ApiResponse.success(
                 PaginatedResponse.of(page.getContent(), page.getTotalElements(), page.getNumber(), page.getSize()),
                 "Today's team attendance retrieved successfully"

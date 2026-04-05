@@ -115,7 +115,14 @@ public class AttendanceService {
         return attendanceRepository.findAllByEmployee_EmployeeIdOrderByCheckInDesc(employeeId, pageable);
     }
 
-    public Page<AttendanceRecord> getTodayRecordsForManager(Long managerId, Pageable pageable) {
+    public Page<AttendanceRecord> getTodayRecordsForManager(Long managerId, Pageable pageable, EmployeeUserDetails principal) {
+        boolean privileged = principal.getAuthorities().stream().anyMatch(a ->
+                "ROLE_HR".equals(a.getAuthority()) ||
+                "ROLE_ADMIN".equals(a.getAuthority()) ||
+                "ROLE_SUPER_ADMIN".equals(a.getAuthority()));
+        if (privileged) {
+            return attendanceRepository.findTodayRecords(pageable);
+        }
         return attendanceRepository.findTodayRecordsForManager(managerId, pageable);
     }
 
