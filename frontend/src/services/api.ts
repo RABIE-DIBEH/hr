@@ -202,11 +202,29 @@ export const listEmployees = () => api.get<EmployeeSummary[]>('/employees');
 
 export const listMyTeam = () => api.get<EmployeeSummary[]>('/employees/team');
 
-const getPaginatedItems = async <T>(path: string) => {
-  const response = await api.get<PaginatedResponse<T>>(path);
+const buildPaginatedPath = (path: string, page: number, pageSize: number) => {
+  const separator = path.includes('?') ? '&' : '?';
+  return `${path}${separator}page=${page}&size=${pageSize}`;
+};
+
+const getPaginatedItems = async <T>(path: string, pageSize = 100) => {
+  let page = 0;
+  let hasNext = true;
+  let items: T[] = [];
+
+  while (hasNext) {
+    const response = await api.get<PaginatedResponse<T>>(buildPaginatedPath(path, page, pageSize));
+    items = items.concat(response.data.items);
+    hasNext = response.data.hasNext;
+    page += 1;
+
+    if (page > 100) {
+      throw new Error(`Exceeded pagination safety limit for ${path}`);
+    }
+  }
+
   return {
-    ...response,
-    data: response.data.items,
+    data: items,
   };
 };
 
@@ -353,7 +371,7 @@ export const getUnreadMessages = () =>
   getPaginatedItems<InboxMessage>('/inbox/unread');
 
 export const getUnreadCount = () =>
-  api.get<{ count: number }>('/inbox/unread-count');
+  api.get<{ unreadCount: number }>('/inbox/unread-count');
 
 export const getHighPriorityMessages = () =>
   getPaginatedItems<InboxMessage>('/inbox/high-priority');

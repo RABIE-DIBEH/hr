@@ -4,11 +4,12 @@ import com.hrms.core.models.InboxMessage;
 import com.hrms.core.repositories.InboxMessageRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
  * Service for managing inbox messages across all roles
@@ -92,9 +93,8 @@ public class InboxService {
      * Mark a message as read
      */
     @Transactional
-    public InboxMessage markAsRead(Long messageId) {
-        InboxMessage message = inboxMessageRepository.findById(messageId)
-                .orElseThrow(() -> new IllegalArgumentException("Message not found"));
+    public InboxMessage markAsRead(Long messageId, String role, Long employeeId) {
+        InboxMessage message = getAccessibleMessage(messageId, role, employeeId);
         message.setReadAt(LocalDateTime.now());
         return inboxMessageRepository.save(message);
     }
@@ -122,9 +122,8 @@ public class InboxService {
      * Archive a message
      */
     @Transactional
-    public InboxMessage archiveMessage(Long messageId) {
-        InboxMessage message = inboxMessageRepository.findById(messageId)
-                .orElseThrow(() -> new IllegalArgumentException("Message not found"));
+    public InboxMessage archiveMessage(Long messageId, String role, Long employeeId) {
+        InboxMessage message = getAccessibleMessage(messageId, role, employeeId);
         message.setArchived(true);
         return inboxMessageRepository.save(message);
     }
@@ -133,7 +132,23 @@ public class InboxService {
      * Delete a message (admin only)
      */
     @Transactional
-    public void deleteMessage(Long messageId) {
-        inboxMessageRepository.deleteById(messageId);
+    public void deleteMessage(Long messageId, String role, Long employeeId) {
+        InboxMessage message = getAccessibleMessage(messageId, role, employeeId);
+        inboxMessageRepository.delete(message);
+    }
+
+    private InboxMessage getAccessibleMessage(Long messageId, String role, Long employeeId) {
+        InboxMessage message = inboxMessageRepository.findById(Objects.requireNonNull(messageId))
+                .orElseThrow(() -> new IllegalArgumentException("Message not found"));
+
+        boolean visibleToEmployee = message.getTargetEmployeeId() != null && message.getTargetEmployeeId().equals(employeeId);
+        boolean visibleToRole = role != null && role.equals(message.getTargetRole());
+        boolean visibleToAll = "ALL".equals(message.getTargetRole());
+
+        if (!visibleToEmployee && !visibleToRole && !visibleToAll) {
+            throw new AccessDeniedException("Access denied");
+        }
+
+        return message;
     }
 }

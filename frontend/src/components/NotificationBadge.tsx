@@ -9,7 +9,7 @@ const NotificationBadge = () => {
     const fetchUnreadCount = async () => {
       try {
         const response = await getUnreadCount();
-        setUnreadCount(response.data.count);
+        setUnreadCount(response.data.unreadCount);
       } catch (err) {
         // Silently fail - don't break the entire UI if inbox endpoint is unavailable
         console.debug('Inbox check failed (this is OK):', (err as Error)?.message);

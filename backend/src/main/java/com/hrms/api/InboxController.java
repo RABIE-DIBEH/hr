@@ -124,10 +124,14 @@ public class InboxController {
     public ResponseEntity<ApiResponse<InboxMessageResponse>> markAsRead(
             @PathVariable Long messageId,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
-        
-        InboxMessage message = inboxService.markAsRead(messageId);
-        if (message == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Message not found");
+        String role = extractRole(principal);
+        Long employeeId = principal.getEmployeeId();
+
+        InboxMessage message;
+        try {
+            message = inboxService.markAsRead(messageId, role, employeeId);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
         }
         
         return ResponseEntity.ok(ApiResponse.success(
@@ -185,10 +189,13 @@ public class InboxController {
     public ResponseEntity<ApiResponse<InboxActionResponseDto>> archiveMessage(
             @PathVariable Long messageId,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
-        
-        InboxMessage message = inboxService.archiveMessage(messageId);
-        if (message == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Message not found");
+        String role = extractRole(principal);
+        Long employeeId = principal.getEmployeeId();
+
+        try {
+            inboxService.archiveMessage(messageId, role, employeeId);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
         }
         
         return ResponseEntity.ok(ApiResponse.success(
@@ -245,8 +252,14 @@ public class InboxController {
     public ResponseEntity<ApiResponse<InboxActionResponseDto>> deleteMessage(
             @PathVariable Long messageId,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
+        String role = extractRole(principal);
+        Long employeeId = principal.getEmployeeId();
 
-        inboxService.deleteMessage(messageId);
+        try {
+            inboxService.deleteMessage(messageId, role, employeeId);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+        }
 
         return ResponseEntity.ok(ApiResponse.success(
                 new InboxActionResponseDto("deleted", messageId),
