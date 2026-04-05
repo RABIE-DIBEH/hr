@@ -78,6 +78,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/advances/my-requests").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/advances/**").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")
                         .requestMatchers(HttpMethod.PUT, "/api/advances/process/**").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")
+
+                        // NFC card management - HR/Admin only
+                        .requestMatchers(HttpMethod.GET, "/api/nfc-cards/**").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/nfc-cards/**").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/nfc-cards/**").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/nfc-cards/**").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
                         
                         // Recruitment request endpoints - HR/ADMIN can request, managers can view, HR/ADMIN process
                         .requestMatchers(HttpMethod.POST, "/api/recruitment/request").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")

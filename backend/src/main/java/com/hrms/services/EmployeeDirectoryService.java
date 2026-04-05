@@ -1,6 +1,7 @@
 package com.hrms.services;
 
 import com.hrms.api.dto.EmployeeProfileResponse;
+import com.hrms.api.dto.EmployeeProfileUpdate;
 import com.hrms.api.dto.EmployeeSummaryResponse;
 import com.hrms.core.models.Employee;
 import com.hrms.core.models.Team;
@@ -13,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
@@ -53,7 +55,10 @@ public class EmployeeDirectoryService {
                 roleName,
                 employee.getManagerId(),
                 employee.getBaseSalary(),
-                employee.getStatus()
+                employee.getStatus(),
+                employee.getMobileNumber(),
+                employee.getAddress(),
+                employee.getNationalId()
         );
     }
 
@@ -66,6 +71,35 @@ public class EmployeeDirectoryService {
         return employeeRepository.findAllByManagerId(managerEmployeeId, pageable)
                 .map(this::toSummary)
                 ;
+    }
+
+    @Transactional
+    public EmployeeProfileResponse updateProfile(Long employeeId, EmployeeProfileUpdate update) {
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
+
+        // Ensure email uniqueness (exclude current employee)
+        employeeRepository.findByEmailIgnoreCase(update.email())
+                .filter(existing -> !existing.getEmployeeId().equals(employeeId))
+                .ifPresent(existing -> {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "البريد الإلكتروني مستخدم بالفعل");
+                });
+
+        employee.setFullName(update.fullName());
+        employee.setEmail(update.email());
+
+        if (update.mobileNumber() != null && !update.mobileNumber().isBlank()) {
+            employee.setMobileNumber(update.mobileNumber());
+        }
+        if (update.address() != null && !update.address().isBlank()) {
+            employee.setAddress(update.address());
+        }
+        if (update.nationalId() != null && !update.nationalId().isBlank()) {
+            employee.setNationalId(update.nationalId());
+        }
+
+        employeeRepository.save(employee);
+        return getProfile(employeeId);
     }
 
     private EmployeeSummaryResponse toSummary(Employee employee) {

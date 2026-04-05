@@ -37,6 +37,15 @@ public class Employee {
     @Column(name = "overtime_balance_hours")
     private Double overtimeBalanceHours = 0.0;
 
+    @Column(name = "mobile_number")
+    private String mobileNumber;
+
+    @Column(name = "address")
+    private String address;
+
+    @Column(name = "national_id")
+    private String nationalId;
+
     public Employee() {}
 
     public Employee(Long employeeId, String fullName, String email, String passwordHash, Long teamId, Long roleId, Long managerId, BigDecimal baseSalary, String status) {
@@ -84,6 +93,12 @@ public class Employee {
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
     public LocalDateTime getCreatedAt() { return createdAt; }
+    public String getMobileNumber() { return mobileNumber; }
+    public void setMobileNumber(String mobileNumber) { this.mobileNumber = mobileNumber; }
+    public String getAddress() { return address; }
+    public void setAddress(String address) { this.address = address; }
+    public String getNationalId() { return nationalId; }
+    public void setNationalId(String nationalId) { this.nationalId = nationalId; }
 
     // Full builder for compatibility
     public static class EmployeeBuilder {

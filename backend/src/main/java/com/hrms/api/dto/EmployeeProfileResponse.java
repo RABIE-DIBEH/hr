@@ -12,5 +12,8 @@ public record EmployeeProfileResponse(
         String roleName,
         Long managerId,
         BigDecimal baseSalary,
-        String status
+        String status,
+        String mobileNumber,
+        String address,
+        String nationalId
 ) {}

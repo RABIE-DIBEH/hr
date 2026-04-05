@@ -1,34 +1,46 @@
 import { useEffect, useState } from 'react';
+import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  IdCard,
-  CreditCard,
-  RefreshCcw,
   CheckCircle2,
+  CreditCard,
+  IdCard,
   Link as LinkIcon,
+  Power,
+  RefreshCcw,
   Search,
+  Trash2,
   UserPlus,
 } from 'lucide-react';
 import PaginationControls from '../components/PaginationControls';
 import Sidebar from '../components/Sidebar';
 import RecruitmentRequestForm from '../components/RecruitmentRequestForm';
 import {
-  listEmployees,
+  assignEmployeeNfcCard,
+  getEmployeeNfcCard,
   getPendingLeavesForHrPage,
-  processLeaveRequest,
   getPendingRecruitmentRequestsPage,
+  listEmployees,
+  processLeaveRequest,
   processRecruitmentRequest,
+  replaceEmployeeNfcCard,
+  unassignEmployeeNfcCard,
+  updateEmployeeNfcCardStatus,
   type EmployeeSummary,
   type LeaveRequest,
+  type NfcCard,
   type RecruitmentRequest,
 } from '../services/api';
 
 const HRDashboard = () => {
-  const [bindingStatus, setBindingStatus] = useState<'Idle' | 'Reading' | 'Success'>('Idle');
   const [employees, setEmployees] = useState<EmployeeSummary[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | ''>('');
+  const [selectedCard, setSelectedCard] = useState<NfcCard | null>(null);
+  const [cardUidInput, setCardUidInput] = useState('');
+  const [cardActionLoading, setCardActionLoading] = useState(false);
+  const [cardFeedback, setCardFeedback] = useState<string | null>(null);
   const [showRecruitmentForm, setShowRecruitmentForm] = useState(false);
 
   // Leave Requests state
@@ -50,12 +62,41 @@ const HRDashboard = () => {
   const [leaveTotalPages, setLeaveTotalPages] = useState(0);
   const [leaveTotalCount, setLeaveTotalCount] = useState(0);
 
+  const selectedEmployee = selectedEmployeeId === ''
+    ? null
+    : employees.find((employee) => employee.employeeId === selectedEmployeeId) ?? null;
+
+  const getErrorMessage = (error: unknown, fallback: string) => {
+    if (axios.isAxiosError(error)) {
+      const message = typeof error.response?.data?.message === 'string'
+        ? error.response.data.message
+        : null;
+      return message ?? fallback;
+    }
+    return fallback;
+  };
+
+  const loadEmployees = async () => {
+    const res = await listEmployees();
+    setEmployees(res.data);
+  };
+
+  const loadSelectedCard = async (employeeId: number) => {
+    try {
+      const res = await getEmployeeNfcCard(employeeId);
+      setSelectedCard(res.data);
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        setSelectedCard(null);
+        return;
+      }
+      throw error;
+    }
+  };
+
   useEffect(() => {
-    listEmployees()
-      .then((res) => {
-        setEmployees(res.data);
-        setLoadError(null);
-      })
+    loadEmployees()
+      .then(() => setLoadError(null))
       .catch(() => setLoadError('تعذر تحميل قائمة الموظفين. تأكد من صلاحيات HR والاتصال بالخادم.'));
 
     getPendingLeavesForHrPage({ page: leavePage, size: 10 })
@@ -75,19 +116,91 @@ const HRDashboard = () => {
       .catch(() => console.error('Failed to load pending recruitment requests'));
   }, [leavePage, recruitmentPage]);
 
-  const handleBind = () => {
-    setBindingStatus('Reading');
-    setTimeout(() => {
-      setBindingStatus('Success');
-      setTimeout(() => setBindingStatus('Idle'), 3000);
-    }, 2000);
+  useEffect(() => {
+    if (selectedEmployeeId === '') {
+      setSelectedCard(null);
+      setCardUidInput('');
+      setCardFeedback(null);
+      return;
+    }
+
+    loadSelectedCard(selectedEmployeeId)
+      .then(() => setCardFeedback(null))
+      .catch(() => setCardFeedback('تعذر تحميل بيانات البطاقة الحالية.'));
+  }, [selectedEmployeeId]);
+
+  const refreshEmployeesAndCard = async (employeeId: number) => {
+    await loadEmployees();
+    await loadSelectedCard(employeeId);
   };
 
+  const handleAssignOrReplace = async () => {
+    if (selectedEmployeeId === '' || !cardUidInput.trim()) {
+      setCardFeedback('اختر موظفاً وأدخل UID صالحاً أولاً.');
+      return;
+    }
 
+    setCardActionLoading(true);
+    try {
+      if (selectedCard) {
+        await replaceEmployeeNfcCard(selectedEmployeeId, cardUidInput.trim());
+        setCardFeedback('تم استبدال البطاقة وربط UID جديد بنجاح.');
+      } else {
+        await assignEmployeeNfcCard(selectedEmployeeId, cardUidInput.trim());
+        setCardFeedback('تم ربط البطاقة الجديدة بالموظف بنجاح.');
+      }
+      setCardUidInput('');
+      await refreshEmployeesAndCard(selectedEmployeeId);
+      setLoadError(null);
+    } catch (error: unknown) {
+      setCardFeedback(getErrorMessage(error, 'فشل حفظ بيانات البطاقة.'));
+    } finally {
+      setCardActionLoading(false);
+    }
+  };
+
+  const handleStatusUpdate = async (status: 'ACTIVE' | 'INACTIVE' | 'BLOCKED') => {
+    if (selectedEmployeeId === '') {
+      setCardFeedback('اختر موظفاً أولاً.');
+      return;
+    }
+
+    setCardActionLoading(true);
+    try {
+      await updateEmployeeNfcCardStatus(selectedEmployeeId, status);
+      await refreshEmployeesAndCard(selectedEmployeeId);
+      setCardFeedback('تم تحديث حالة البطاقة بنجاح.');
+      setLoadError(null);
+    } catch (error: unknown) {
+      setCardFeedback(getErrorMessage(error, 'فشل تحديث حالة البطاقة.'));
+    } finally {
+      setCardActionLoading(false);
+    }
+  };
+
+  const handleUnassign = async () => {
+    if (selectedEmployeeId === '') {
+      setCardFeedback('اختر موظفاً أولاً.');
+      return;
+    }
+
+    setCardActionLoading(true);
+    try {
+      await unassignEmployeeNfcCard(selectedEmployeeId);
+      await loadEmployees();
+      setSelectedCard(null);
+      setCardUidInput('');
+      setCardFeedback('تم فك ربط البطاقة من الموظف.');
+      setLoadError(null);
+    } catch (error: unknown) {
+      setCardFeedback(getErrorMessage(error, 'فشل فك ربط البطاقة.'));
+    } finally {
+      setCardActionLoading(false);
+    }
+  };
 
   const handleRecruitmentSuccess = () => {
     setShowRecruitmentForm(false);
-    // Refresh the pending list after submitting a new request
     getPendingRecruitmentRequestsPage({ page: recruitmentPage, size: 10 })
       .then((res) => {
         setPendingRecruitment(res.data.items);
@@ -126,6 +239,14 @@ const HRDashboard = () => {
       setProcessingLeave(null);
     }
   };
+
+  const cardStatusBadge = selectedCard
+    ? selectedCard.status === 'Active'
+      ? 'bg-green-500/10 text-green-400'
+      : selectedCard.status === 'Blocked'
+        ? 'bg-red-500/10 text-red-400'
+        : 'bg-amber-500/10 text-amber-300'
+    : 'bg-slate-500/10 text-slate-400';
 
   return (
     <div className="flex min-h-screen bg-black font-sans" dir="rtl">
@@ -168,85 +289,157 @@ const HRDashboard = () => {
             <motion.div
               initial={{ opacity: 1, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="bg-luxury-surface rounded-[2.5rem] p-8 shadow-sm border border-white/5 flex flex-col justify-between"
+              className="bg-luxury-surface rounded-[2.5rem] p-8 shadow-sm border border-white/5"
             >
-              <div>
-                <div className="flex justify-between items-start mb-6">
-                  <div className="bg-blue-600 w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-900/20">
+              <div className="flex justify-between items-start mb-6 gap-4 flex-wrap">
+                <div>
+                  <div className="bg-blue-600 w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-900/20 mb-4">
                     <CreditCard size={24} />
                   </div>
-                  <span className="bg-blue-500/10 text-blue-400 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-widest">
-                    NFC Pairing
-                  </span>
+                  <h2 className="text-xl font-bold mb-2 text-white">إدارة بطاقات NFC</h2>
+                  <p className="text-slate-400 text-sm leading-relaxed">
+                    اختر موظفاً ثم اربط بطاقة جديدة، استبدل UID، غيّر الحالة، أو فك الارتباط بالكامل.
+                  </p>
                 </div>
-                <h2 className="text-xl font-bold mb-2 text-white">ربط بطاقة NFC بموظف</h2>
-                <p className="text-slate-400 text-sm mb-8 leading-relaxed">
-                  اختر موظفاً من القائمة المستوردة من الخادم، ثم أكمل عملية الربط عند توفر واجهة القارئ.
-                </p>
+                <span className="bg-blue-500/10 text-blue-400 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-widest">
+                  Live Card Control
+                </span>
+              </div>
 
-                <div className="space-y-4 mb-8">
+              <div className="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-6">
+                <div className="space-y-4">
                   <div className="relative">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
                     <select
-                      className="w-full bg-white/5 border-white/5 rounded-xl py-4 pl-12 pr-4 text-sm text-white focus:ring-2 focus:ring-blue-500/20 appearance-none"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-sm text-white focus:ring-2 focus:ring-blue-500/20 appearance-none"
                       value={selectedEmployeeId === '' ? '' : String(selectedEmployeeId)}
-                      onChange={(e) =>
-                        setSelectedEmployeeId(e.target.value ? Number(e.target.value) : '')
-                      }
+                      onChange={(e) => {
+                        setSelectedEmployeeId(e.target.value ? Number(e.target.value) : '');
+                        setCardFeedback(null);
+                        setCardUidInput('');
+                      }}
                     >
                       <option value="" className="bg-slate-900">اختر الموظف من القائمة...</option>
-                      {employees.map((e) => (
-                        <option key={e.employeeId} value={e.employeeId} className="bg-slate-900">
-                          {e.fullName} ({e.teamName ?? '—'})
+                      {employees.map((employee) => (
+                        <option key={employee.employeeId} value={employee.employeeId} className="bg-slate-900">
+                          {employee.fullName} ({employee.teamName ?? '—'})
                         </option>
                       ))}
                     </select>
                   </div>
 
-                  <div
-                    className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center gap-4 transition-all duration-300 ${
-                      bindingStatus === 'Reading'
-                        ? 'border-blue-500 bg-blue-500/5'
-                        : bindingStatus === 'Success'
-                          ? 'border-green-500 bg-green-500/5'
-                          : 'border-white/5'
-                    }`}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                      <p className="text-slate-500 text-xs mb-1">الموظف</p>
+                      <p className="text-white font-bold">{selectedEmployee?.fullName ?? '—'}</p>
+                    </div>
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                      <p className="text-slate-500 text-xs mb-1">UID الحالي</p>
+                      <p className="text-slate-200 font-mono text-sm break-all">{selectedCard?.uid ?? '—'}</p>
+                    </div>
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                      <p className="text-slate-500 text-xs mb-1">الحالة</p>
+                      <span className={`inline-flex px-3 py-1 rounded-lg text-[11px] font-black uppercase ${cardStatusBadge}`}>
+                        {selectedCard?.status ?? 'No Card'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4">
+                    <div className="flex items-center gap-2 text-white font-bold">
+                      <IdCard size={18} />
+                      <span>{selectedCard ? 'استبدال أو إعادة إصدار البطاقة' : 'ربط بطاقة جديدة'}</span>
+                    </div>
+                    <input
+                      type="text"
+                      value={cardUidInput}
+                      onChange={(e) => setCardUidInput(e.target.value)}
+                      placeholder={selectedCard ? 'أدخل UID جديداً للاستبدال' : 'أدخل UID البطاقة الجديدة'}
+                      className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-sm text-white placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/20"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAssignOrReplace}
+                      disabled={cardActionLoading || selectedEmployeeId === ''}
+                      className="w-full bg-white text-black py-3 rounded-xl font-bold hover:bg-slate-200 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {cardActionLoading ? <RefreshCcw className="animate-spin" size={18} /> : <LinkIcon size={18} />}
+                      <span>{selectedCard ? 'استبدال البطاقة الحالية' : 'ربط البطاقة الجديدة'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-white/5 border border-white/10 rounded-[2rem] p-6 space-y-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-white font-bold">إجراءات الحالة</p>
+                      <p className="text-slate-500 text-xs mt-1">تفعيل، إيقاف، حظر، أو فك الارتباط</p>
+                    </div>
+                    <span className="text-xs text-slate-500">{selectedEmployee?.fullName ?? ''}</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleStatusUpdate('ACTIVE')}
+                    disabled={cardActionLoading || !selectedCard}
+                    className="w-full bg-green-500/10 text-green-300 border border-green-500/20 py-3 rounded-xl font-bold hover:bg-green-500/15 transition-all disabled:opacity-40"
                   >
-                    {bindingStatus === 'Reading' ? (
-                      <>
-                        <RefreshCcw className="text-blue-400 animate-spin" size={32} />
-                        <p className="text-blue-400 font-bold text-sm">جاري القراءة...</p>
-                      </>
-                    ) : bindingStatus === 'Success' ? (
-                      <>
-                        <CheckCircle2 className="text-green-400" size={32} />
-                        <p className="text-green-400 font-bold text-sm">محاكاة: تم الربط (لا يوجد API قارئ بعد)</p>
-                      </>
+                    تفعيل البطاقة
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleStatusUpdate('INACTIVE')}
+                    disabled={cardActionLoading || !selectedCard}
+                    className="w-full bg-amber-500/10 text-amber-200 border border-amber-500/20 py-3 rounded-xl font-bold hover:bg-amber-500/15 transition-all disabled:opacity-40"
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <Power size={16} />
+                      إيقاف البطاقة
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleStatusUpdate('BLOCKED')}
+                    disabled={cardActionLoading || !selectedCard}
+                    className="w-full bg-red-500/10 text-red-300 border border-red-500/20 py-3 rounded-xl font-bold hover:bg-red-500/15 transition-all disabled:opacity-40"
+                  >
+                    حظر البطاقة
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleUnassign}
+                    disabled={cardActionLoading || !selectedCard}
+                    className="w-full bg-white/5 text-slate-300 border border-white/10 py-3 rounded-xl font-bold hover:bg-white/10 transition-all disabled:opacity-40"
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <Trash2 size={16} />
+                      فك الارتباط نهائياً
+                    </span>
+                  </button>
+
+                  <div className="rounded-2xl border border-white/10 bg-black/20 p-4 min-h-28">
+                    <p className="text-slate-500 text-xs mb-2">ملخص البطاقة</p>
+                    {selectedCard ? (
+                      <div className="space-y-2 text-sm">
+                        <p className="text-slate-200">UID: <span className="font-mono">{selectedCard.uid}</span></p>
+                        <p className="text-slate-200">الحالة الحالية: {selectedCard.status}</p>
+                        <p className="text-slate-400 text-xs">تاريخ الإصدار: {selectedCard.issuedDate ? new Date(selectedCard.issuedDate).toLocaleString('ar-SA') : '—'}</p>
+                      </div>
                     ) : (
-                      <>
-                        <IdCard className="text-slate-600" size={40} />
-                        <p className="text-slate-500 font-medium text-sm">جاهز لقراءة البطاقة</p>
-                      </>
+                      <p className="text-slate-500 text-sm">لا توجد بطاقة مرتبطة بالموظف المحدد حالياً.</p>
                     )}
                   </div>
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={handleBind}
-                disabled={bindingStatus !== 'Idle'}
-                className="w-full bg-white text-black py-4 rounded-2xl font-bold hover:bg-slate-200 transition-all flex items-center justify-center gap-2"
-              >
-                <LinkIcon size={18} />
-                <span>تأكيد عملية الربط (واجهة تجريبية)</span>
-              </button>
+              {cardFeedback && (
+                <div className="mt-6 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-200 text-sm font-medium">
+                  {cardFeedback}
+                </div>
+              )}
             </motion.div>
-
-
           </div>
 
-          {/* Pending Recruitment Requests Section */}
           <div className="bg-luxury-surface rounded-[2.5rem] shadow-sm border border-white/5 overflow-hidden mb-10">
             <div className="p-8 border-b border-white/5 flex items-center gap-3">
               <div className="bg-orange-500/10 w-12 h-12 rounded-2xl flex items-center justify-center text-orange-400">
@@ -369,7 +562,6 @@ const HRDashboard = () => {
             />
           </div>
 
-          {/* Pending Leave Requests Section */}
           <div className="bg-luxury-surface rounded-[2.5rem] shadow-sm border border-white/5 overflow-hidden mb-10">
             <div className="p-8 border-b border-white/5 flex items-center gap-3">
               <div className="bg-blue-500/10 w-12 h-12 rounded-2xl flex items-center justify-center text-blue-400">
@@ -479,7 +671,7 @@ const HRDashboard = () => {
           <section className="bg-luxury-surface rounded-[2.5rem] shadow-sm border border-white/5 overflow-hidden">
             <div className="p-8 border-b border-white/5 flex justify-between items-center flex-wrap gap-4">
               <h3 className="font-bold text-xl text-white">قائمة الموظفين (قاعدة البيانات)</h3>
-              <span className="text-sm text-slate-500">{employees.length} موظ</span>
+              <span className="text-sm text-slate-500">{employees.length} موظف</span>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-right border-collapse">
@@ -489,13 +681,14 @@ const HRDashboard = () => {
                     <th className="p-6">البريد</th>
                     <th className="p-6">الفريق</th>
                     <th className="p-6">معرف البطاقة UID</th>
-                    <th className="p-6">حالة الربط</th>
+                    <th className="p-6">حالة البطاقة</th>
+                    <th className="p-6">إدارة</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
                   {employees.length === 0 && !loadError ? (
                     <tr>
-                      <td colSpan={5} className="p-8 text-center text-slate-500 text-sm">
+                      <td colSpan={6} className="p-8 text-center text-slate-500 text-sm">
                         لا يوجد موظفون في النظام. أضف موظفين عبر قاعدة البيانات أو أداة الإدارة.
                       </td>
                     </tr>
@@ -509,11 +702,30 @@ const HRDashboard = () => {
                         <td className="p-6">
                           <span
                             className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase ${
-                              emp.nfcLinked ? 'bg-green-500/10 text-green-400' : 'bg-orange-500/10 text-orange-400'
+                              emp.nfcLinked
+                                ? emp.nfcStatus === 'Blocked'
+                                  ? 'bg-red-500/10 text-red-400'
+                                  : emp.nfcStatus === 'Inactive'
+                                    ? 'bg-amber-500/10 text-amber-300'
+                                    : 'bg-green-500/10 text-green-400'
+                                : 'bg-orange-500/10 text-orange-400'
                             }`}
                           >
-                            {emp.nfcLinked ? 'مرتبط' : 'بدون بطاقة'}
+                            {emp.nfcLinked ? (emp.nfcStatus ?? 'مرتبط') : 'بدون بطاقة'}
                           </span>
+                        </td>
+                        <td className="p-6">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedEmployeeId(emp.employeeId);
+                              setCardFeedback(null);
+                              setCardUidInput('');
+                            }}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                          >
+                            إدارة البطاقة
+                          </button>
                         </td>
                       </tr>
                     ))
@@ -525,7 +737,6 @@ const HRDashboard = () => {
         </div>
       </main>
 
-      {/* Recruitment Request Modal */}
       {showRecruitmentForm && (
         <RecruitmentRequestForm
           onClose={() => setShowRecruitmentForm(false)}

@@ -52,6 +52,17 @@ export interface EmployeeProfile {
   managerId: number | null;
   baseSalary: string;
   status: string;
+  mobileNumber?: string;
+  address?: string;
+  nationalId?: string;
+}
+
+export interface EmployeeProfileUpdatePayload {
+  fullName: string;
+  email: string;
+  mobileNumber?: string;
+  address?: string;
+  nationalId?: string;
 }
 
 export interface EmployeeSummary {
@@ -92,6 +103,15 @@ export interface NfcDevice {
   name: string;
   status: string;
   systemLoad: string;
+}
+
+export interface NfcCard {
+  cardId?: number;
+  uid: string;
+  employeeId: number;
+  employeeName: string;
+  status: 'Active' | 'Inactive' | 'Blocked';
+  issuedDate?: string | null;
 }
 
 interface PaginatedResponse<T> {
@@ -205,6 +225,9 @@ export const logout = () => {
 
 export const getCurrentEmployee = () => api.get<EmployeeProfile>('/employees/me');
 
+export const updateProfileMe = (data: EmployeeProfileUpdatePayload) =>
+  api.put<EmployeeProfile>('/employees/me', data);
+
 export const listEmployees = () => getPaginatedItems<EmployeeSummary>('/employees');
 export const listEmployeesPage = (params?: PaginationParams) =>
   getPaginatedPage<EmployeeSummary>('/employees', params);
@@ -287,6 +310,24 @@ export const getHrMonthlyAttendance = (month: number, year: number) =>
 
 export const getHrMonthlyAttendancePage = (month: number, year: number, params?: PaginationParams) =>
   getPaginatedPage<AttendanceRecord>(`/attendance/hr/monthly?month=${month}&year=${year}`, params);
+
+// NFC card management API
+export const getEmployeeNfcCard = (employeeId: number) =>
+  api.get<NfcCard>(`/nfc-cards/employees/${employeeId}`);
+
+export const assignEmployeeNfcCard = (employeeId: number, uid: string) =>
+  api.post<NfcCard>(`/nfc-cards/employees/${employeeId}`, { uid });
+
+export const replaceEmployeeNfcCard = (employeeId: number, newUid: string) =>
+  api.put<NfcCard>(`/nfc-cards/employees/${employeeId}/replace`, { newUid });
+
+export const updateEmployeeNfcCardStatus = (
+  employeeId: number,
+  status: 'ACTIVE' | 'INACTIVE' | 'BLOCKED',
+) => api.put<NfcCard>(`/nfc-cards/employees/${employeeId}/status`, { status });
+
+export const unassignEmployeeNfcCard = (employeeId: number) =>
+  api.delete<{ status: string }>(`/nfc-cards/employees/${employeeId}`);
 
 export const calculatePayroll = (month: number, year: number, employeeId?: number) => {
   const params = new URLSearchParams({

@@ -1,11 +1,13 @@
 package com.hrms.api;
 
 import com.hrms.api.dto.EmployeeProfileResponse;
+import com.hrms.api.dto.EmployeeProfileUpdate;
 import com.hrms.api.dto.EmployeeSummaryResponse;
 import com.hrms.api.dto.ApiResponse;
 import com.hrms.api.dto.PaginatedResponse;
 import com.hrms.security.EmployeeUserDetails;
 import com.hrms.services.EmployeeDirectoryService;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -13,6 +15,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
@@ -32,6 +36,17 @@ public class EmployeeController {
         return ResponseEntity.ok(ApiResponse.success(
                 employeeDirectoryService.getProfile(principal.getEmployeeId()),
                 "Your profile retrieved successfully"
+        ));
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<ApiResponse<EmployeeProfileResponse>> updateProfile(
+            @AuthenticationPrincipal EmployeeUserDetails principal,
+            @Valid @RequestBody EmployeeProfileUpdate update) {
+        EmployeeProfileResponse updated = employeeDirectoryService.updateProfile(principal.getEmployeeId(), update);
+        return ResponseEntity.ok(ApiResponse.success(
+                updated,
+                "تم تحديث الملف الشخصي بنجاح"
         ));
     }
 
