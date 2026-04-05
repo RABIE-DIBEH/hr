@@ -17,10 +17,17 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
           cache: maven
-      - name: Build and Test Backend
+      - name: Build and Test with Maven
         run: |
           cd backend
-          mvn -B test
+          mvn verify
+      - name: Upload Backend Coverage Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-coverage-report
+          path: backend/target/site/jacoco/
+          retention-days: 7
 
   frontend-build:
     runs-on: ubuntu-latest
@@ -29,14 +36,24 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '20'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
       - name: Install dependencies
         run: |
           cd frontend
           npm ci
+      - name: Lint Frontend
+        run: |
+          cd frontend
+          npm run lint
       - name: Build Frontend
         run: |
           cd frontend
           npm run build
+      - name: Upload Frontend Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+          retention-days: 7

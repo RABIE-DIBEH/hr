@@ -10,10 +10,13 @@ public record InboxMessageResponse(
         String title,
         String message,
         String senderName,
+        Long senderEmployeeId,
         String priority,
         Boolean isRead,
         LocalDateTime createdAt,
-        LocalDateTime readAt
+        LocalDateTime readAt,
+        Long replyTo,
+        Integer replyCount
 ) {
     public static InboxMessageResponse from(com.hrms.core.models.InboxMessage msg) {
         return new InboxMessageResponse(
@@ -21,10 +24,29 @@ public record InboxMessageResponse(
                 msg.getTitle(),
                 msg.getMessage(),
                 msg.getSenderName(),
+                msg.getSenderEmployeeId(),
                 msg.getPriority(),
                 msg.getReadAt() != null,
                 msg.getCreatedAt(),
-                msg.getReadAt()
+                msg.getReadAt(),
+                msg.getReplyTo(),
+                0 // replyCount is populated separately when loading threads
+        );
+    }
+
+    public static InboxMessageResponse from(com.hrms.core.models.InboxMessage msg, int replyCount) {
+        return new InboxMessageResponse(
+                msg.getMessageId(),
+                msg.getTitle(),
+                msg.getMessage(),
+                msg.getSenderName(),
+                msg.getSenderEmployeeId(),
+                msg.getPriority(),
+                msg.getReadAt() != null,
+                msg.getCreatedAt(),
+                msg.getReadAt(),
+                msg.getReplyTo(),
+                replyCount
         );
     }
 }

@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Navigate } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import Layout from './components/Layout';
 
 const Home = lazy(() => import('./pages/Home'));
 const EmployeeDashboard = lazy(() => import('./pages/EmployeeDashboard'));
@@ -37,49 +38,49 @@ function App() {
             {/* Role-specific dashboards */}
             <Route path="/dashboard" element={
               <ProtectedRoute allowedRoles={['EMPLOYEE']}>
-                <EmployeeDashboard />
+                <Layout><EmployeeDashboard /></Layout>
               </ProtectedRoute>
             } />
             <Route path="/manager" element={
               <ProtectedRoute allowedRoles={['MANAGER']}>
-                <ManagerDashboard />
+                <Layout><ManagerDashboard /></Layout>
               </ProtectedRoute>
             } />
             <Route path="/hr" element={
               <ProtectedRoute allowedRoles={['HR']}>
-                <HRDashboard />
+                <Layout><HRDashboard /></Layout>
               </ProtectedRoute>
             } />
             <Route path="/hr/grid" element={
               <ProtectedRoute allowedRoles={['HR']}>
-                <HRAttendanceGrid />
+                <Layout><HRAttendanceGrid /></Layout>
               </ProtectedRoute>
             } />
             <Route path="/payroll" element={
               <ProtectedRoute allowedRoles={['HR', 'ADMIN']}>
-                <PayrollDashboard />
+                <Layout><PayrollDashboard /></Layout>
               </ProtectedRoute>
             } />
             <Route path="/admin" element={
               <ProtectedRoute allowedRoles={['ADMIN']}>
-                <AdminDashboard />
+                <Layout><AdminDashboard /></Layout>
               </ProtectedRoute>
             } />
             <Route path="/leave-calendar" element={
               <ProtectedRoute allowedRoles={['HR', 'MANAGER', 'ADMIN', 'SUPER_ADMIN']}>
-                <LeaveCalendar />
+                <Layout><LeaveCalendar /></Layout>
               </ProtectedRoute>
             } />
 
             {/* Shared protected pages (any authenticated user) */}
             <Route path="/attendance" element={
               <ProtectedRoute>
-                <AttendanceLogs />
+                <Layout><AttendanceLogs /></Layout>
               </ProtectedRoute>
             } />
             <Route path="/clock" element={
               <ProtectedRoute>
-                <NFCClock />
+                <Layout><NFCClock /></Layout>
               </ProtectedRoute>
             } />
             <Route path="/finance" element={
@@ -89,12 +90,12 @@ function App() {
             } />
             <Route path="/goals" element={
               <ProtectedRoute>
-                <Goals />
+                <Layout><Goals /></Layout>
               </ProtectedRoute>
             } />
             <Route path="/inbox" element={
               <ProtectedRoute>
-                <Inbox />
+                <Layout><Inbox /></Layout>
               </ProtectedRoute>
             } />
           </Routes>

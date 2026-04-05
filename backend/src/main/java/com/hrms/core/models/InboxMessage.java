@@ -41,17 +41,31 @@ public class InboxMessage {
     
     @Column(nullable = false)
     private String senderName; // "System", "HR Department", etc.
-    
+
+    /**
+     * The employee ID of the sender (for user-to-user messaging).
+     * Null for system-generated messages.
+     */
+    @Column(name = "sender_employee_id")
+    private Long senderEmployeeId;
+
     @Column(nullable = false)
     private String priority; // LOW, MEDIUM, HIGH
-    
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
-    
+
     private LocalDateTime readAt; // null if unread
-    
+
     @Column(nullable = false)
     private Boolean archived = false;
+
+    /**
+     * Parent message ID for reply/threading support.
+     * Null for top-level messages.
+     */
+    @Column(name = "reply_to")
+    private Long replyTo;
 
     // Constructors
     public InboxMessage() {}
@@ -94,6 +108,9 @@ public class InboxMessage {
     public String getSenderName() { return senderName; }
     public void setSenderName(String senderName) { this.senderName = senderName; }
 
+    public Long getSenderEmployeeId() { return senderEmployeeId; }
+    public void setSenderEmployeeId(Long senderEmployeeId) { this.senderEmployeeId = senderEmployeeId; }
+
     public String getPriority() { return priority; }
     public void setPriority(String priority) { this.priority = priority; }
 
@@ -106,6 +123,9 @@ public class InboxMessage {
     public Boolean getArchived() { return archived; }
     public void setArchived(Boolean archived) { this.archived = archived; }
 
+    public Long getReplyTo() { return replyTo; }
+    public void setReplyTo(Long replyTo) { this.replyTo = replyTo; }
+
     // Builder pattern
     public static class InboxMessageBuilder {
         private String title;
@@ -113,7 +133,9 @@ public class InboxMessage {
         private String targetRole = "NONE";
         private Long targetEmployeeId;
         private String senderName;
+        private Long senderEmployeeId;
         private String priority = "MEDIUM";
+        private Long replyTo;
 
         public InboxMessageBuilder title(String title) {
             this.title = title;
@@ -140,8 +162,18 @@ public class InboxMessage {
             return this;
         }
 
+        public InboxMessageBuilder senderEmployeeId(Long senderEmployeeId) {
+            this.senderEmployeeId = senderEmployeeId;
+            return this;
+        }
+
         public InboxMessageBuilder priority(String priority) {
             this.priority = priority;
+            return this;
+        }
+
+        public InboxMessageBuilder replyTo(Long replyTo) {
+            this.replyTo = replyTo;
             return this;
         }
 
@@ -152,7 +184,9 @@ public class InboxMessage {
             msg.targetRole = this.targetRole;
             msg.targetEmployeeId = this.targetEmployeeId;
             msg.senderName = this.senderName;
+            msg.senderEmployeeId = this.senderEmployeeId;
             msg.priority = this.priority;
+            msg.replyTo = this.replyTo;
             msg.createdAt = LocalDateTime.now();
             return msg;
         }

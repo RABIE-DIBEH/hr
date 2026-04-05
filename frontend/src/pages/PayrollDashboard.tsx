@@ -13,7 +13,6 @@ import {
   History,
 } from 'lucide-react';
 import PaginationControls from '../components/PaginationControls';
-import Sidebar from '../components/Sidebar';
 import {
   getCurrentEmployee,
   getPendingAdvanceRequestsPage,
@@ -198,25 +197,21 @@ const PayrollDashboard = () => {
   ];
 
   return (
-    <div className="flex min-h-screen bg-black" dir="rtl">
-      <Sidebar />
-
-      <main className="mr-64 flex-1 p-8">
-        <div className="max-w-7xl mx-auto">
-          <header className="mb-10 flex justify-between items-end">
-            <div>
-              <h1 className="text-3xl font-black text-white tracking-tight arabic-text">
-                إدارة الرواتب
-              </h1>
-              <p className="text-slate-400 mt-2">
-                إدارة شاملة للسلف المالية، احتساب الرواتب، وسجلات الصرف
-              </p>
-            </div>
-            <div className="flex items-center gap-3 bg-purple-500/10 px-6 py-3 rounded-2xl border border-purple-500/20">
-              <DollarSign size={24} className="text-purple-400" />
-              <span className="text-purple-100 font-black text-lg">Payroll Management Department</span>
-            </div>
-          </header>
+    <>
+      <header className="mb-10 flex justify-between items-end">
+        <div>
+          <h1 className="text-3xl font-black text-white tracking-tight arabic-text">
+            إدارة الرواتب
+          </h1>
+          <p className="text-slate-400 mt-2">
+            إدارة شاملة للسلف المالية، احتساب الرواتب، وسجلات الصرف
+          </p>
+        </div>
+        <div className="flex items-center gap-3 bg-purple-500/10 px-6 py-3 rounded-2xl border border-purple-500/20">
+          <DollarSign size={24} className="text-purple-400" />
+          <span className="text-purple-100 font-black text-lg">Payroll Management Department</span>
+        </div>
+      </header>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
             {stats.map((stat, idx) => (
@@ -572,9 +567,7 @@ const PayrollDashboard = () => {
               </div>
             )}
           </motion.div>
-        </div>
-      </main>
-    </div>
+    </>
   );
 };
 

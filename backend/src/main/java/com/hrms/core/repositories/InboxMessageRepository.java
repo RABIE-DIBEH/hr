@@ -45,5 +45,26 @@ public interface InboxMessageRepository extends JpaRepository<InboxMessage, Long
     @Query("SELECT m FROM InboxMessage m WHERE (m.targetRole = :role OR m.targetRole = 'ALL' OR m.targetEmployeeId = :employeeId) " +
            "AND m.archived = true ORDER BY m.createdAt DESC")
     Page<InboxMessage> findArchivedByTargetRoleOrEmployee(@Param("role") String role, @Param("employeeId") Long employeeId, Pageable pageable);
+
+    /**
+     * Find all replies to a specific message (ordered by creation time)
+     */
+    @Query("SELECT m FROM InboxMessage m WHERE m.replyTo = :parentMessageId ORDER BY m.createdAt ASC")
+    java.util.List<InboxMessage> findRepliesToMessage(@Param("parentMessageId") Long parentMessageId);
+
+    /**
+     * Find top-level messages (not replies) sent between two employees
+     */
+    @Query("SELECT m FROM InboxMessage m WHERE m.replyTo IS NULL AND m.archived = false " +
+           "AND ((m.senderEmployeeId = :emp1 AND m.targetEmployeeId = :emp2) " +
+           "OR (m.senderEmployeeId = :emp2 AND m.targetEmployeeId = :emp1)) " +
+           "ORDER BY m.createdAt DESC")
+    Page<InboxMessage> findConversationBetweenEmployees(@Param("emp1") Long emp1, @Param("emp2") Long emp2, Pageable pageable);
+
+    /**
+     * Find all messages sent by a specific employee (for "Sent" folder)
+     */
+    @Query("SELECT m FROM InboxMessage m WHERE m.senderEmployeeId = :employeeId AND m.archived = false ORDER BY m.createdAt DESC")
+    Page<InboxMessage> findBySenderEmployeeId(@Param("employeeId") Long employeeId, Pageable pageable);
 }
 

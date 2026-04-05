@@ -5,6 +5,8 @@ import com.hrms.api.dto.EmployeeProfileUpdate;
 import com.hrms.api.dto.EmployeeSummaryResponse;
 import com.hrms.api.dto.ApiResponse;
 import com.hrms.api.dto.PaginatedResponse;
+import com.hrms.core.models.Employee;
+import com.hrms.core.repositories.EmployeeRepository;
 import com.hrms.security.EmployeeUserDetails;
 import com.hrms.services.EmployeeDirectoryService;
 import jakarta.validation.Valid;
@@ -18,17 +20,23 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/employees")
 public class EmployeeController {
 
     private final EmployeeDirectoryService employeeDirectoryService;
+    private final EmployeeRepository employeeRepository;
 
-    public EmployeeController(EmployeeDirectoryService employeeDirectoryService) {
+    public EmployeeController(EmployeeDirectoryService employeeDirectoryService,
+                              EmployeeRepository employeeRepository) {
         this.employeeDirectoryService = employeeDirectoryService;
+        this.employeeRepository = employeeRepository;
     }
 
     @GetMapping("/me")
@@ -77,6 +85,42 @@ public class EmployeeController {
                 "All employees retrieved successfully"
         ));
     }
+
+    /**
+     * GET /api/employees/search?q=...
+     * Search employees by name or email (any authenticated user)
+     */
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<List<EmployeeSearchResult>>> searchEmployees(
+            @RequestParam String q,
+            @AuthenticationPrincipal EmployeeUserDetails principal) {
+
+        if (q == null || q.trim().length() < 2) {
+            return ResponseEntity.ok(ApiResponse.success(List.of(), "Query too short"));
+        }
+
+        List<Employee> results = employeeRepository.searchByQuery(q.trim());
+        List<EmployeeSearchResult> response = results.stream()
+                .map(e -> new EmployeeSearchResult(
+                        e.getEmployeeId(),
+                        e.getFullName(),
+                        e.getEmail(),
+                        e.getStatus()
+                ))
+                .toList();
+
+        return ResponseEntity.ok(ApiResponse.success(response, "Search completed"));
+    }
+
+    /**
+     * Simple DTO for employee search results
+     */
+    public record EmployeeSearchResult(
+            Long employeeId,
+            String fullName,
+            String email,
+            String status
+    ) {}
 
     private static boolean hasAnyRole(EmployeeUserDetails principal, String... roles) {
         for (String role : roles) {

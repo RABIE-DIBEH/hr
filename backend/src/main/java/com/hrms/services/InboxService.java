@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -135,6 +136,73 @@ public class InboxService {
     public void deleteMessage(Long messageId, String role, Long employeeId) {
         InboxMessage message = getAccessibleMessage(messageId, role, employeeId);
         inboxMessageRepository.delete(message);
+    }
+
+    /**
+     * Reply to an existing message (creates a threaded reply)
+     */
+    @Transactional
+    public InboxMessage replyToMessage(Long parentMessageId, String message,
+                                       Long senderEmployeeId, String senderName) {
+        InboxMessage parent = inboxMessageRepository.findById(parentMessageId)
+                .orElseThrow(() -> new IllegalArgumentException("Parent message not found"));
+
+        InboxMessage reply = new InboxMessage.InboxMessageBuilder()
+                .title("Re: " + parent.getTitle())
+                .message(message)
+                .targetRole("NONE")
+                .targetEmployeeId(parent.getTargetEmployeeId() != null
+                        ? parent.getTargetEmployeeId()
+                        : parent.getSenderEmployeeId())
+                .senderName(senderName)
+                .senderEmployeeId(senderEmployeeId)
+                .priority(parent.getPriority())
+                .replyTo(parentMessageId)
+                .build();
+
+        return inboxMessageRepository.save(reply);
+    }
+
+    /**
+     * Send a message from one employee to another (user-to-user messaging)
+     */
+    @Transactional
+    public InboxMessage sendToEmployee(String title, String message, Long targetEmployeeId,
+                                       Long senderEmployeeId, String senderName, String priority) {
+        String finalPriority = (priority != null && !priority.isBlank()) ? priority : "MEDIUM";
+
+        InboxMessage msg = new InboxMessage.InboxMessageBuilder()
+                .title(title)
+                .message(message)
+                .targetRole("NONE")
+                .targetEmployeeId(targetEmployeeId)
+                .senderName(senderName)
+                .senderEmployeeId(senderEmployeeId)
+                .priority(finalPriority)
+                .build();
+
+        return inboxMessageRepository.save(msg);
+    }
+
+    /**
+     * Get all replies to a specific message
+     */
+    public List<InboxMessage> getReplies(Long parentMessageId) {
+        return inboxMessageRepository.findRepliesToMessage(parentMessageId);
+    }
+
+    /**
+     * Get sent messages for a specific employee
+     */
+    public Page<InboxMessage> getSentMessages(Long employeeId, Pageable pageable) {
+        return inboxMessageRepository.findBySenderEmployeeId(employeeId, pageable);
+    }
+
+    /**
+     * Get conversation between two employees
+     */
+    public Page<InboxMessage> getConversation(Long employeeId1, Long employeeId2, Pageable pageable) {
+        return inboxMessageRepository.findConversationBetweenEmployees(employeeId1, employeeId2, pageable);
     }
 
     private InboxMessage getAccessibleMessage(Long messageId, String role, Long employeeId) {

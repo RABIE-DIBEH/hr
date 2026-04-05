@@ -40,7 +40,7 @@ const NFCClock = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-6 text-white font-sans">
+    <div className="flex items-center justify-center p-6 text-white font-sans w-full min-h-[70vh]">
       <div className="max-w-md w-full bg-luxury-surface rounded-[2.5rem] p-10 shadow-2xl border border-white/5 text-center relative overflow-hidden">
         {/* Connection Indicator */}
         <div className="absolute top-6 right-8 flex items-center gap-1 text-green-500 text-xs">

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.hrms.api.dto.EmployeeProfileUpdate;
 import com.hrms.core.models.Employee;
+import com.hrms.core.repositories.EmployeeRepository;
 import com.hrms.security.EmployeeUserDetails;
 import com.hrms.services.EmployeeDirectoryService;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,6 +43,9 @@ class EmployeeControllerTest {
     @org.mockito.Mock
     private EmployeeDirectoryService employeeDirectoryService;
 
+    @org.mockito.Mock
+    private EmployeeRepository employeeRepository;
+
     @BeforeEach
     void setUp() {
         Employee employee = Employee.builder()
@@ -54,7 +58,7 @@ class EmployeeControllerTest {
         principal = new EmployeeUserDetails(employee, "EMPLOYEE", "General");
         objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
-        mockMvc = MockMvcBuilders.standaloneSetup(new EmployeeController(employeeDirectoryService))
+        mockMvc = MockMvcBuilders.standaloneSetup(new EmployeeController(employeeDirectoryService, employeeRepository))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(new AuthenticationPrincipalResolver(principal))
                 .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))

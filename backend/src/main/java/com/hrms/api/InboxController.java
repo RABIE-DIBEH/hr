@@ -266,7 +266,123 @@ public class InboxController {
                 "Message deleted successfully"
         ));
     }
-    
+
+    /**
+     * POST /api/inbox/{messageId}/reply
+     * Reply to an existing message (threaded reply)
+     */
+    @PostMapping("/{messageId}/reply")
+    public ResponseEntity<ApiResponse<InboxMessageResponse>> replyToMessage(
+            @PathVariable Long messageId,
+            @Valid @RequestBody ReplyMessageDto dto,
+            @AuthenticationPrincipal EmployeeUserDetails principal) {
+
+        Long employeeId = principal.getEmployeeId();
+        String senderName = principal.getEmployee().getFullName();
+
+        InboxMessage reply = inboxService.replyToMessage(
+                messageId, dto.message(), employeeId, senderName
+        );
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(
+                InboxMessageResponse.from(reply),
+                "Reply sent successfully"
+        ));
+    }
+
+    /**
+     * GET /api/inbox/{messageId}/thread
+     * Get all replies to a message (thread view)
+     */
+    @GetMapping("/{messageId}/thread")
+    public ResponseEntity<ApiResponse<List<InboxMessageResponse>>> getThread(
+            @PathVariable Long messageId,
+            @AuthenticationPrincipal EmployeeUserDetails principal) {
+
+        String role = extractRole(principal);
+        Long employeeId = principal.getEmployeeId();
+
+        // Verify user has access to the parent message
+        try {
+            inboxService.markAsRead(messageId, role, employeeId);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+        }
+
+        List<InboxMessage> replies = inboxService.getReplies(messageId);
+        List<InboxMessageResponse> responses = replies.stream()
+                .map(InboxMessageResponse::from)
+                .toList();
+
+        return ResponseEntity.ok(ApiResponse.success(responses, "Thread retrieved successfully"));
+    }
+
+    /**
+     * POST /api/inbox/send-to-employee
+     * Send a message from one employee to another
+     */
+    @PostMapping("/send-to-employee")
+    public ResponseEntity<ApiResponse<InboxMessageResponse>> sendToEmployee(
+            @Valid @RequestBody SendToEmployeeDto dto,
+            @AuthenticationPrincipal EmployeeUserDetails principal) {
+
+        Long employeeId = principal.getEmployeeId();
+        String senderName = principal.getEmployee().getFullName();
+
+        InboxMessage message = inboxService.sendToEmployee(
+                dto.title(), dto.message(), dto.targetEmployeeId(),
+                employeeId, senderName, dto.priority()
+        );
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(
+                InboxMessageResponse.from(message),
+                "Message sent successfully"
+        ));
+    }
+
+    /**
+     * GET /api/inbox/sent
+     * Get sent messages for current user
+     */
+    @GetMapping("/sent")
+    public ResponseEntity<ApiResponse<PaginatedResponse<InboxMessageResponse>>> getSentMessages(
+            @AuthenticationPrincipal EmployeeUserDetails principal,
+            @PageableDefault(size = 20) Pageable pageable) {
+
+        Long employeeId = principal.getEmployeeId();
+        Page<InboxMessage> page = inboxService.getSentMessages(employeeId, pageable);
+        List<InboxMessageResponse> responses = page.getContent().stream()
+                .map(InboxMessageResponse::from)
+                .toList();
+
+        return ResponseEntity.ok(ApiResponse.success(
+                PaginatedResponse.of(responses, page.getTotalElements(), page.getNumber(), page.getSize()),
+                "Sent messages retrieved successfully"
+        ));
+    }
+
+    /**
+     * GET /api/inbox/conversation/{employeeId}
+     * Get conversation with a specific employee
+     */
+    @GetMapping("/conversation/{employeeId}")
+    public ResponseEntity<ApiResponse<PaginatedResponse<InboxMessageResponse>>> getConversation(
+            @PathVariable Long employeeId,
+            @AuthenticationPrincipal EmployeeUserDetails principal,
+            @PageableDefault(size = 20) Pageable pageable) {
+
+        Long currentEmployeeId = principal.getEmployeeId();
+        Page<InboxMessage> page = inboxService.getConversation(currentEmployeeId, employeeId, pageable);
+        List<InboxMessageResponse> responses = page.getContent().stream()
+                .map(InboxMessageResponse::from)
+                .toList();
+
+        return ResponseEntity.ok(ApiResponse.success(
+                PaginatedResponse.of(responses, page.getTotalElements(), page.getNumber(), page.getSize()),
+                "Conversation retrieved successfully"
+        ));
+    }
+
     // Helper methods
     
     private String extractRole(EmployeeUserDetails principal) {

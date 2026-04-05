@@ -13,7 +13,6 @@ import {
   X,
 } from 'lucide-react';
 import PaginationControls from '../components/PaginationControls';
-import Sidebar from '../components/Sidebar';
 import {
   getHrMonthlyAttendancePage,
   listEmployees,
@@ -237,216 +236,211 @@ const HRAttendanceGrid = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-black font-sans" dir="rtl">
-      <Sidebar />
-      <main className="mr-64 flex-1 p-8 overflow-hidden">
-        <div className="w-full">
-          <header className="mb-10 flex justify-between items-center bg-luxury-surface p-6 rounded-3xl border border-white/5">
-            <div>
-              <h1 className="text-3xl font-black text-white tracking-tight arabic-text flex items-center gap-3">
-                <Calendar className="text-blue-500" size={32} />
-                شاشة الحضور والانصراف المركزية
-              </h1>
-              <p className="text-slate-400 mt-2">عرض جدولي يضم جميع الموظفين وسجلات حضورهم</p>
-            </div>
-            <div className="flex gap-4 items-center">
-              <div className="flex items-center gap-4 bg-white/5 px-6 py-3 rounded-xl">
-                <button onClick={handlePrevMonth} className="hover:text-blue-400 transition-colors">
-                  <ChevronRight size={24} />
-                </button>
-                <span className="text-white font-bold text-lg min-w-[120px] text-center">
-                  {currentDate.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' })}
-                </span>
-                <button 
-                  onClick={handleNextMonth} 
-                  disabled={currentDate >= new Date()} 
-                  className="hover:text-blue-400 disabled:opacity-30 transition-colors"
-                >
-                  <ChevronLeft size={24} />
-                </button>
-              </div>
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => handleDownloadAttendance('pdf')}
-                  disabled={isDownloading}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-blue-500/20 transition-all"
-                >
-                  <FileText size={18} />
-                  {isDownloading ? 'جارٍ التحميل...' : 'تصدير PDF'}
-                </button>
-                <button 
-                  onClick={() => handleDownloadAttendance('excel')}
-                  disabled={isDownloading}
-                  className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-800 text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition-all"
-                >
-                  <FileSpreadsheet size={18} />
-                  {isDownloading ? 'جارٍ التحميل...' : 'تصدير Excel'}
-                </button>
-              </div>
-            </div>
-          </header>
-
-          {loadError && (
-            <div className="mb-6 p-4 rounded-xl bg-red-500/10 text-red-200 text-sm font-medium border border-red-500/20">
-              {loadError}
-            </div>
-          )}
-
-          <div className="flex gap-4 mb-6">
-            <span className="flex items-center gap-2 text-xs font-bold text-slate-400"><div className="w-3 h-3 rounded bg-green-500/80"></div> حضور كامل</span>
-            <span className="flex items-center gap-2 text-xs font-bold text-slate-400"><div className="w-3 h-3 rounded bg-red-500/80"></div> غياب</span>
-            <span className="flex items-center gap-2 text-xs font-bold text-slate-400"><div className="w-3 h-3 rounded bg-yellow-500/80"></div> نقص بساعات العمل</span>
-            <span className="flex items-center gap-2 text-xs font-bold text-slate-400"><div className="w-3 h-3 rounded bg-purple-500/80"></div> نشاط مشبوه (تحذير تلقائي)</span>
-            <span className="flex items-center gap-2 text-xs font-bold text-slate-400"><div className="w-3 h-3 rounded bg-orange-500/80"></div> مخالفة / احتيال</span>
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-luxury-surface rounded-3xl shadow-sm border border-white/5"
-          >
-            <div className="overflow-x-auto custom-scrollbar p-1">
-              <table className="w-full text-center border-collapse text-[10px] whitespace-nowrap">
-                <thead className="bg-white/5 border-b border-white/10">
-                  <tr>
-                    <th className="p-4 text-right sticky right-0 bg-[#0f0a1a] z-30 shadow-[inset_-1px_0_0_rgba(255,255,255,0.05)] w-48 min-w-[180px]">
-                      <div className="flex items-center gap-2 text-slate-300 font-bold">
-                        <Users size={14} /> اسم الموظف
-                      </div>
-                    </th>
-                    {daysArray.map((day) => (
-                      <th key={day} className="p-2 text-slate-400 font-bold min-w-[35px] border-l border-white/5">
-                        {day}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {employees.map((emp) => (
-                    <tr key={emp.employeeId} className="hover:bg-white/[0.02]">
-                      <td className="p-4 text-right font-bold text-slate-200 sticky right-0 bg-[#0f0a1a] z-20 shadow-[inset_-1px_0_0_rgba(255,255,255,0.05)] border-l border-white/5">
-                        {emp.fullName}
-                      </td>
-                      {daysArray.map((day) => {
-                        const status = getDailyStatus(emp.employeeId, day);
-                        const colorClass = getStatusColor(status);
-                        return (
-                          <td key={day} className="p-0.5 border-l border-white/5">
-                            <div 
-                              title={`${emp.fullName} - اليوم ${day} - ${getStatusLabel(status)}`}
-                              className={`w-full h-7 rounded flex items-center justify-center cursor-default transition-all hover:brightness-125 border ${colorClass}`}
-                            >
-                              {status === 'neutral' ? '-' : ''}
-                            </div>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {employees.length === 0 && !loadError && (
-                 <div className="p-12 text-center text-slate-500">لا يوجد موظفين مسجلين حالياً.</div>
-              )}
-            </div>
-          </motion.div>
-          <PaginationControls
-            page={page}
-            totalPages={totalPages}
-            totalCount={totalCount}
-            onPageChange={setPage}
-          />
-
-          <section className="mt-8 overflow-hidden rounded-3xl border border-white/5 bg-luxury-surface">
-            <div className="flex items-center justify-between border-b border-white/5 p-6">
-              <div>
-                <h2 className="text-xl font-bold text-white">سجلات الشهر الحالية</h2>
-                <p className="mt-1 text-sm text-slate-400">
-                  تعرض هذه القائمة حالة المراجعة والرواتب بشكل صريح مع إمكانية التصحيح اليدوي.
-                </p>
-              </div>
-              <div className="rounded-2xl bg-white/5 px-4 py-3 text-xs font-bold text-slate-300">
-                {totalCount} سجل في الصفحة الحالية
-              </div>
-            </div>
-
-            {records.length === 0 ? (
-              <div className="p-10 text-center text-slate-500">لا توجد سجلات حضور لهذا الشهر.</div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-right">
-                  <thead className="bg-white/5 text-[11px] font-black uppercase tracking-[0.15em] text-slate-400">
-                    <tr>
-                      <th className="p-5">الموظف</th>
-                      <th className="p-5">التاريخ</th>
-                      <th className="p-5">الحضور</th>
-                      <th className="p-5">المراجعة</th>
-                      <th className="p-5">الرواتب</th>
-                      <th className="p-5">الإجراء</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5">
-                    {records.map((record) => {
-                      const reviewMeta = getReviewStatusMeta(record.reviewStatus);
-                      const payrollMeta = getPayrollStatusMeta(record.payrollStatus);
-
-                      return (
-                        <tr key={record.recordId} className="hover:bg-white/5">
-                          <td className="p-5">
-                            <p className="font-bold text-slate-100">{record.employeeName}</p>
-                            <p className="mt-1 text-xs text-slate-500">#{record.recordId}</p>
-                          </td>
-                          <td className="p-5 text-sm text-slate-300">
-                            {new Date(record.checkIn).toLocaleDateString('ar-SA', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric',
-                            })}
-                          </td>
-                          <td className="p-5 text-sm text-slate-300">
-                            <div>{new Date(record.checkIn).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}</div>
-                            <div className="mt-1 text-xs text-slate-500">
-                              خروج: {record.checkOut ? new Date(record.checkOut).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }) : '—'}
-                            </div>
-                            <div className="mt-1 text-xs text-slate-500">
-                              الساعات: {record.workHours ?? '—'}
-                            </div>
-                          </td>
-                          <td className="p-5">
-                            <span className={`inline-flex rounded-lg px-3 py-1 text-xs font-bold ${reviewMeta.className}`}>
-                              {reviewMeta.label}
-                            </span>
-                          </td>
-                          <td className="p-5">
-                            <span className={`inline-flex rounded-lg px-3 py-1 text-xs font-bold ${payrollMeta.className}`}>
-                              {payrollMeta.label}
-                            </span>
-                          </td>
-                          <td className="p-5">
-                            <button
-                              type="button"
-                              onClick={() => openCorrectionModal(record)}
-                              className="inline-flex items-center gap-2 rounded-xl border border-sky-500/20 bg-sky-500/10 px-4 py-2 text-sm font-bold text-sky-300 transition-all hover:bg-sky-500/20"
-                            >
-                              <PencilLine size={16} />
-                              تصحيح يدوي
-                            </button>
-                            {record.manualAdjustmentReason && (
-                              <p className="mt-2 max-w-xs text-xs text-slate-500">
-                                السبب الأخير: {record.manualAdjustmentReason}
-                              </p>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
+    <div className="w-full">
+      <header className="mb-10 flex justify-between items-center bg-luxury-surface p-6 rounded-3xl border border-white/5">
+        <div>
+          <h1 className="text-3xl font-black text-white tracking-tight arabic-text flex items-center gap-3">
+            <Calendar className="text-blue-500" size={32} />
+            شاشة الحضور والانصراف المركزية
+          </h1>
+          <p className="text-slate-400 mt-2">عرض جدولي يضم جميع الموظفين وسجلات حضورهم</p>
         </div>
-      </main>
+        <div className="flex gap-4 items-center">
+          <div className="flex items-center gap-4 bg-white/5 px-6 py-3 rounded-xl">
+            <button onClick={handlePrevMonth} className="hover:text-blue-400 transition-colors">
+              <ChevronRight size={24} />
+            </button>
+            <span className="text-white font-bold text-lg min-w-[120px] text-center">
+              {currentDate.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' })}
+            </span>
+            <button 
+              onClick={handleNextMonth} 
+              disabled={currentDate >= new Date()} 
+              className="hover:text-blue-400 disabled:opacity-30 transition-colors"
+            >
+              <ChevronLeft size={24} />
+            </button>
+          </div>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => handleDownloadAttendance('pdf')}
+              disabled={isDownloading}
+              className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-blue-500/20 transition-all"
+            >
+              <FileText size={18} />
+              {isDownloading ? 'جارٍ التحميل...' : 'تصدير PDF'}
+            </button>
+            <button 
+              onClick={() => handleDownloadAttendance('excel')}
+              disabled={isDownloading}
+              className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-800 text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition-all"
+            >
+              <FileSpreadsheet size={18} />
+              {isDownloading ? 'جارٍ التحميل...' : 'تصدير Excel'}
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {loadError && (
+        <div className="mb-6 p-4 rounded-xl bg-red-500/10 text-red-200 text-sm font-medium border border-red-500/20">
+          {loadError}
+        </div>
+      )}
+
+      <div className="flex gap-4 mb-6">
+        <span className="flex items-center gap-2 text-xs font-bold text-slate-400"><div className="w-3 h-3 rounded bg-green-500/80"></div> حضور كامل</span>
+        <span className="flex items-center gap-2 text-xs font-bold text-slate-400"><div className="w-3 h-3 rounded bg-red-500/80"></div> غياب</span>
+        <span className="flex items-center gap-2 text-xs font-bold text-slate-400"><div className="w-3 h-3 rounded bg-yellow-500/80"></div> نقص بساعات العمل</span>
+        <span className="flex items-center gap-2 text-xs font-bold text-slate-400"><div className="w-3 h-3 rounded bg-purple-500/80"></div> نشاط مشبوه (تحذير تلقائي)</span>
+        <span className="flex items-center gap-2 text-xs font-bold text-slate-400"><div className="w-3 h-3 rounded bg-orange-500/80"></div> مخالفة / احتيال</span>
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-luxury-surface rounded-3xl shadow-sm border border-white/5"
+      >
+        <div className="overflow-x-auto custom-scrollbar p-1">
+          <table className="w-full text-center border-collapse text-[10px] whitespace-nowrap">
+            <thead className="bg-white/5 border-b border-white/10">
+              <tr>
+                <th className="p-4 text-right sticky right-0 bg-[#0f0a1a] z-30 shadow-[inset_-1px_0_0_rgba(255,255,255,0.05)] w-48 min-w-[180px]">
+                  <div className="flex items-center gap-2 text-slate-300 font-bold">
+                    <Users size={14} /> اسم الموظف
+                  </div>
+                </th>
+                {daysArray.map((day) => (
+                  <th key={day} className="p-2 text-slate-400 font-bold min-w-[35px] border-l border-white/5">
+                    {day}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {employees.map((emp) => (
+                <tr key={emp.employeeId} className="hover:bg-white/[0.02]">
+                  <td className="p-4 text-right font-bold text-slate-200 sticky right-0 bg-[#0f0a1a] z-20 shadow-[inset_-1px_0_0_rgba(255,255,255,0.05)] border-l border-white/5">
+                    {emp.fullName}
+                  </td>
+                  {daysArray.map((day) => {
+                    const status = getDailyStatus(emp.employeeId, day);
+                    const colorClass = getStatusColor(status);
+                    return (
+                      <td key={day} className="p-0.5 border-l border-white/5">
+                        <div 
+                          title={`${emp.fullName} - اليوم ${day} - ${getStatusLabel(status)}`}
+                          className={`w-full h-7 rounded flex items-center justify-center cursor-default transition-all hover:brightness-125 border ${colorClass}`}
+                        >
+                          {status === 'neutral' ? '-' : ''}
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {employees.length === 0 && !loadError && (
+             <div className="p-12 text-center text-slate-500">لا يوجد موظفين مسجلين حالياً.</div>
+          )}
+        </div>
+      </motion.div>
+      <PaginationControls
+        page={page}
+        totalPages={totalPages}
+        totalCount={totalCount}
+        onPageChange={setPage}
+      />
+
+      <section className="mt-8 overflow-hidden rounded-3xl border border-white/5 bg-luxury-surface">
+        <div className="flex items-center justify-between border-b border-white/5 p-6">
+          <div>
+            <h2 className="text-xl font-bold text-white">سجلات الشهر الحالية</h2>
+            <p className="mt-1 text-sm text-slate-400">
+              تعرض هذه القائمة حالة المراجعة والرواتب بشكل صريح مع إمكانية التصحيح اليدوي.
+            </p>
+          </div>
+          <div className="rounded-2xl bg-white/5 px-4 py-3 text-xs font-bold text-slate-300">
+            {totalCount} سجل في الصفحة الحالية
+          </div>
+        </div>
+
+        {records.length === 0 ? (
+          <div className="p-10 text-center text-slate-500">لا توجد سجلات حضور لهذا الشهر.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-right">
+              <thead className="bg-white/5 text-[11px] font-black uppercase tracking-[0.15em] text-slate-400">
+                <tr>
+                  <th className="p-5">الموظف</th>
+                  <th className="p-5">التاريخ</th>
+                  <th className="p-5">الحضور</th>
+                  <th className="p-5">المراجعة</th>
+                  <th className="p-5">الرواتب</th>
+                  <th className="p-5">الإجراء</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {records.map((record) => {
+                  const reviewMeta = getReviewStatusMeta(record.reviewStatus);
+                  const payrollMeta = getPayrollStatusMeta(record.payrollStatus);
+
+                  return (
+                    <tr key={record.recordId} className="hover:bg-white/5">
+                      <td className="p-5">
+                        <p className="font-bold text-slate-100">{record.employeeName}</p>
+                        <p className="mt-1 text-xs text-slate-500">#{record.recordId}</p>
+                      </td>
+                      <td className="p-5 text-sm text-slate-300">
+                        {new Date(record.checkIn).toLocaleDateString('ar-SA', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </td>
+                      <td className="p-5 text-sm text-slate-300">
+                        <div>{new Date(record.checkIn).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}</div>
+                        <div className="mt-1 text-xs text-slate-500">
+                          خروج: {record.checkOut ? new Date(record.checkOut).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }) : '—'}
+                        </div>
+                        <div className="mt-1 text-xs text-slate-500">
+                          الساعات: {record.workHours ?? '—'}
+                        </div>
+                      </td>
+                      <td className="p-5">
+                        <span className={`inline-flex rounded-lg px-3 py-1 text-xs font-bold ${reviewMeta.className}`}>
+                          {reviewMeta.label}
+                        </span>
+                      </td>
+                      <td className="p-5">
+                        <span className={`inline-flex rounded-lg px-3 py-1 text-xs font-bold ${payrollMeta.className}`}>
+                          {payrollMeta.label}
+                        </span>
+                      </td>
+                      <td className="p-5">
+                        <button
+                          type="button"
+                          onClick={() => openCorrectionModal(record)}
+                          className="inline-flex items-center gap-2 rounded-xl border border-sky-500/20 bg-sky-500/10 px-4 py-2 text-sm font-bold text-sky-300 transition-all hover:bg-sky-500/20"
+                        >
+                          <PencilLine size={16} />
+                          تصحيح يدوي
+                        </button>
+                        {record.manualAdjustmentReason && (
+                          <p className="mt-2 max-w-xs text-xs text-slate-500">
+                            السبب الأخير: {record.manualAdjustmentReason}
+                          </p>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
       {selectedRecord && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">

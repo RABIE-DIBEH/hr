@@ -244,6 +244,9 @@ export const logout = () => {
 
 export const getCurrentEmployee = () => api.get<EmployeeProfile>('/employees/me');
 
+export const searchEmployees = (query: string) =>
+  api.get<{ employeeId: number; fullName: string; email: string; status: string }[]>(`/employees/search?q=${encodeURIComponent(query)}`);
+
 export const updateProfileMe = (data: EmployeeProfileUpdatePayload) =>
   api.put<EmployeeProfile>('/employees/me', data);
 
@@ -510,10 +513,14 @@ export interface InboxMessage {
   message: string;
   targetRole: string;
   senderName: string;
+  senderEmployeeId?: number;
   priority: 'LOW' | 'MEDIUM' | 'HIGH';
   createdAt: string;
   readAt?: string;
   archived: boolean;
+  isRead?: boolean;
+  replyTo?: number;
+  replyCount?: number;
 }
 
 export const getInbox = () =>
@@ -557,5 +564,27 @@ export const deleteMessage = (messageId: number) =>
 
 export const sendMessage = (data: { title: string; message: string; targetRole: string; senderName?: string; priority?: string }) =>
   api.post('/inbox/send', data);
+
+// New messaging APIs
+export const replyToMessage = (messageId: number, message: string) =>
+  api.post<InboxMessage>(`/inbox/${messageId}/reply`, { message });
+
+export const getMessageThread = (messageId: number) =>
+  api.get<InboxMessage[]>(`/inbox/${messageId}/thread`);
+
+export const sendToEmployee = (data: { targetEmployeeId: number; title: string; message: string; priority?: string }) =>
+  api.post<InboxMessage>('/inbox/send-to-employee', data);
+
+export const getSentMessages = () =>
+  getPaginatedItems<InboxMessage>('/inbox/sent');
+
+export const getSentMessagesPage = (params?: PaginationParams) =>
+  getPaginatedPage<InboxMessage>('/inbox/sent', params);
+
+export const getConversation = (employeeId: number) =>
+  getPaginatedItems<InboxMessage>(`/inbox/conversation/${employeeId}`);
+
+export const getConversationPage = (employeeId: number, params?: PaginationParams) =>
+  getPaginatedPage<InboxMessage>(`/inbox/conversation/${employeeId}`, params);
 
 export default api;

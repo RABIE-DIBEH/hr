@@ -1,0 +1,257 @@
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { User, X, Save, Upload, AlertCircle } from 'lucide-react';
+import { updateProfileMe, getCurrentEmployee, type EmployeeProfile, type EmployeeProfileUpdatePayload } from '../services/api';
+
+interface ProfileEditModalProps {
+  me: EmployeeProfile;
+  onClose: () => void;
+  onSuccess: (updatedMe: EmployeeProfile) => void;
+}
+
+const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ me, onClose, onSuccess }) => {
+  const [profileForm, setProfileForm] = useState<EmployeeProfileUpdatePayload>({
+    fullName: me.fullName,
+    email: me.email,
+    mobileNumber: me.mobileNumber ?? '',
+    address: me.address ?? '',
+    nationalId: me.nationalId ?? '',
+    avatarUrl: me.avatarUrl ?? '',
+  });
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(me.avatarUrl ?? null);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [profileSuccess, setProfileSuccess] = useState(false);
+
+  const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setProfileForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 1024 * 1024) {
+        setProfileError('حجم الصورة يجب أن لا يتجاوز 1 ميجابايت');
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setAvatarPreview(base64String);
+        setProfileForm(prev => ({ ...prev, avatarUrl: base64String }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleProfileSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setProfileError(null);
+    setProfileSuccess(false);
+    setProfileSaving(true);
+
+    try {
+      await updateProfileMe(profileForm);
+      setProfileSuccess(true);
+      const refreshed = await getCurrentEmployee();
+      onSuccess(refreshed.data);
+      setTimeout(() => onClose(), 1500);
+    } catch (err: any) {
+      setProfileError(err.response?.data?.message || 'فشل تحديث الملف الشخصي');
+    } finally {
+      setProfileSaving(false);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="bg-[#110d18] rounded-[2.5rem] shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto border border-white/10"
+        onClick={(e) => e.stopPropagation()}
+        dir="rtl"
+      >
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-8 flex justify-between items-center relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="bg-white/20 p-2.5 rounded-xl">
+              <User size={24} />
+            </div>
+            <div>
+              <h2 className="text-2xl font-black tracking-tight">تعديل البروفايل</h2>
+              <p className="text-blue-100/70 text-sm">تحديث بياناتك الشخصية وصورتك</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="bg-white/10 hover:bg-white/20 p-2 rounded-xl transition-all relative z-10"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleProfileSubmit} className="p-8 space-y-6">
+          {profileError && (
+            <motion.div 
+              initial={{ opacity: 0, x: -10 }} 
+              animate={{ opacity: 1, x: 0 }}
+              className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-2xl text-sm flex items-center gap-3"
+            >
+              <AlertCircle size={18} />
+              {profileError}
+            </motion.div>
+          )}
+          
+          {profileSuccess && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }} 
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-green-500/10 border border-green-500/20 text-green-400 p-4 rounded-2xl text-sm font-bold flex items-center gap-3"
+            >
+              ✓ تم التحديث بنجاح! جاري الإغلاق...
+            </motion.div>
+          )}
+
+          {/* Avatar Upload Polish */}
+          <div className="flex flex-col items-center gap-6 mb-4">
+            <div className="relative group">
+              <div className="w-32 h-32 rounded-[2.5rem] border-4 border-blue-500/30 overflow-hidden bg-white/5 flex items-center justify-center text-slate-500 shadow-2xl transition-all group-hover:border-blue-500">
+                {avatarPreview ? (
+                  <img src={avatarPreview} alt="Preview" className="w-full h-full object-cover" />
+                ) : (
+                  <User size={48} className="opacity-20" />
+                )}
+              </div>
+              <label className="absolute -bottom-2 -right-2 cursor-pointer bg-blue-600 text-white w-10 h-10 rounded-xl flex items-center justify-center shadow-lg hover:bg-blue-700 transition-all hover:scale-110 active:scale-95 border-2 border-[#110d18]">
+                <Upload size={18} />
+                <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+              </label>
+            </div>
+            <div className="text-center">
+              <p className="text-white font-bold text-sm">الصورة الشخصية</p>
+              <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-widest font-black">PNG, JPG up to 1MB</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Full Name */}
+            <div className="md:col-span-2">
+              <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 px-1">
+                الاسم الكامل <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="fullName"
+                value={profileForm.fullName}
+                onChange={handleProfileChange}
+                required
+                className="w-full px-5 py-3.5 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all outline-none"
+              />
+            </div>
+
+            {/* Email */}
+            <div className="md:col-span-2">
+              <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 px-1">
+                البريد الإلكتروني <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={profileForm.email}
+                onChange={handleProfileChange}
+                required
+                className="w-full px-5 py-3.5 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all outline-none"
+              />
+            </div>
+
+            {/* Mobile Number */}
+            <div>
+              <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 px-1">
+                رقم الجوال
+              </label>
+              <input
+                type="text"
+                name="mobileNumber"
+                value={profileForm.mobileNumber ?? ''}
+                onChange={handleProfileChange}
+                placeholder="05XXXXXXXX"
+                maxLength={10}
+                className="w-full px-5 py-3.5 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all outline-none font-mono"
+              />
+            </div>
+
+            {/* National ID */}
+            <div>
+              <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 px-1">
+                رقم الهوية
+              </label>
+              <input
+                type="text"
+                name="nationalId"
+                value={profileForm.nationalId ?? ''}
+                onChange={handleProfileChange}
+                placeholder="10 أرقام"
+                maxLength={10}
+                className="w-full px-5 py-3.5 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all outline-none font-mono"
+              />
+            </div>
+
+            {/* Address */}
+            <div className="md:col-span-2">
+              <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 px-1">
+                العنوان
+              </label>
+              <input
+                type="text"
+                name="address"
+                value={profileForm.address ?? ''}
+                onChange={handleProfileChange}
+                placeholder="المدينة، الحي"
+                className="w-full px-5 py-3.5 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all outline-none"
+              />
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-4 pt-4 border-t border-white/5">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-6 py-4 border border-white/10 text-slate-400 rounded-2xl font-bold hover:bg-white/5 transition-all disabled:opacity-50"
+              disabled={profileSaving}
+            >
+              إلغاء
+            </button>
+            <button
+              type="submit"
+              className="flex-[2] px-6 py-4 bg-white text-black rounded-2xl font-black hover:bg-slate-200 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-xl shadow-white/5"
+              disabled={profileSaving}
+            >
+              {profileSaving ? (
+                <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+              ) : (
+                <>
+                  <Save size={20} />
+                  <span>حفظ التغييرات</span>
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+export default ProfileEditModal;
