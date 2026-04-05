@@ -32,7 +32,12 @@ public class PayrollService {
 
     @Transactional
     public Payroll calculateMonthlyPayroll(Employee employee, int month, int year) {
-        List<AttendanceRecord> records = attendanceRepository.findMonthlyRecords(employee.getEmployeeId(), month, year);
+        List<AttendanceRecord> records = attendanceRepository.findMonthlyRecordsByPayrollStatuses(
+                employee.getEmployeeId(),
+                month,
+                year,
+                List.of("APPROVED_FOR_PAYROLL", "PROCESSED")
+        );
 
         BigDecimal totalHours = records.stream()
                 .filter(r -> r.getWorkHours() != null)
@@ -63,6 +68,7 @@ public class PayrollService {
         payroll.setNetSalary(netSalaryWithDeductions);
 
         Payroll saved = payrollRepository.save(payroll);
+        records.forEach(record -> record.setPayrollStatus("PROCESSED"));
         advanceRequestService.markDeliveredAdvancesAsDeducted(employee.getEmployeeId());
         return saved;
     }

@@ -19,4 +19,17 @@ public record EmployeeProfileUpdate(
 
         @Pattern(regexp = "^\\d{10}$", message = "رقم الهوية يجب أن يكون 10 أرقام")
         String nationalId
-) {}
+) {
+    public EmployeeProfileUpdate {
+        // Normalize blank optional strings to null so @Pattern skips them
+        if (mobileNumber != null && mobileNumber.isBlank()) {
+            mobileNumber = null;
+        }
+        if (address != null && address.isBlank()) {
+            address = null;
+        }
+        if (nationalId != null && nationalId.isBlank()) {
+            nationalId = null;
+        }
+    }
+}

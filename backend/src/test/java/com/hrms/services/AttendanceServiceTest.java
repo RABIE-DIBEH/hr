@@ -75,6 +75,8 @@ public class AttendanceServiceTest {
         // Assert
         assertTrue(result.isPresent());
         assertEquals("Fraud", result.get().getStatus());
+        assertEquals("FRAUD", result.get().getReviewStatus());
+        assertEquals("EXCLUDED_FROM_PAYROLL", result.get().getPayrollStatus());
         assertTrue(result.get().getIsVerifiedByManager());
         assertEquals("Caught suspicious activity", result.get().getManagerNotes());
         verify(attendanceRepository).save(any(AttendanceRecord.class));
@@ -120,5 +122,34 @@ public class AttendanceServiceTest {
         assertNotNull(record.getCheckOut());
         assertNotNull(record.getWorkHours());
         verify(attendanceRepository).save(record);
+    }
+
+    @Test
+    void manuallyCorrectRecord_ByHr_ApprovesForPayroll() {
+        EmployeeUserDetails hrPrincipal = mock(EmployeeUserDetails.class);
+        doReturn(Collections.singletonList(new SimpleGrantedAuthority("ROLE_HR")))
+                .when(hrPrincipal).getAuthorities();
+        when(hrPrincipal.getEmployeeId()).thenReturn(20L);
+        when(attendanceRepository.findById(100L)).thenReturn(Optional.of(record));
+        when(attendanceRepository.save(any(AttendanceRecord.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        LocalDateTime checkIn = LocalDateTime.of(2026, 4, 5, 8, 0);
+        LocalDateTime checkOut = LocalDateTime.of(2026, 4, 5, 16, 30);
+
+        Optional<AttendanceRecord> corrected = attendanceService.manuallyCorrectRecord(
+                100L,
+                checkIn,
+                checkOut,
+                "Manual correction after missed badge",
+                true,
+                hrPrincipal
+        );
+
+        assertTrue(corrected.isPresent());
+        assertEquals("MANUALLY_CORRECTED", corrected.get().getReviewStatus());
+        assertEquals("APPROVED_FOR_PAYROLL", corrected.get().getPayrollStatus());
+        assertTrue(corrected.get().getManuallyAdjusted());
+        assertEquals(20L, corrected.get().getManuallyAdjustedBy());
+        assertNotNull(corrected.get().getWorkHours());
     }
 }

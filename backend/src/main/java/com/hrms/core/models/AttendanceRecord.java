@@ -28,16 +28,24 @@ public class AttendanceRecord {
 
     private LocalDateTime verifiedAt;
     private String managerNotes;
+    private String reviewStatus = "PENDING_REVIEW";
+    private String payrollStatus = "PENDING_APPROVAL";
+    private Boolean manuallyAdjusted = false;
+    private LocalDateTime manuallyAdjustedAt;
+    private Long manuallyAdjustedBy;
+    private String manualAdjustmentReason;
 
     public AttendanceRecord() {}
 
-    public AttendanceRecord(Long recordId, Employee employee, LocalDateTime checkIn, LocalDateTime checkOut, String status, Boolean isVerifiedByManager) {
+    public AttendanceRecord(Long recordId, Employee employee, LocalDateTime checkIn, LocalDateTime checkOut, String status, Boolean isVerifiedByManager, String reviewStatus, String payrollStatus) {
         this.recordId = recordId;
         this.employee = employee;
         this.checkIn = checkIn;
         this.checkOut = checkOut;
         this.status = status;
         this.isVerifiedByManager = isVerifiedByManager;
+        this.reviewStatus = reviewStatus;
+        this.payrollStatus = payrollStatus;
     }
 
     public static AttendanceRecordBuilder builder() {
@@ -71,6 +79,18 @@ public class AttendanceRecord {
     public void setVerifiedAt(LocalDateTime verifiedAt) { this.verifiedAt = verifiedAt; }
     public String getManagerNotes() { return managerNotes; }
     public void setManagerNotes(String managerNotes) { this.managerNotes = managerNotes; }
+    public String getReviewStatus() { return reviewStatus; }
+    public void setReviewStatus(String reviewStatus) { this.reviewStatus = reviewStatus; }
+    public String getPayrollStatus() { return payrollStatus; }
+    public void setPayrollStatus(String payrollStatus) { this.payrollStatus = payrollStatus; }
+    public Boolean getManuallyAdjusted() { return manuallyAdjusted; }
+    public void setManuallyAdjusted(Boolean manuallyAdjusted) { this.manuallyAdjusted = manuallyAdjusted; }
+    public LocalDateTime getManuallyAdjustedAt() { return manuallyAdjustedAt; }
+    public void setManuallyAdjustedAt(LocalDateTime manuallyAdjustedAt) { this.manuallyAdjustedAt = manuallyAdjustedAt; }
+    public Long getManuallyAdjustedBy() { return manuallyAdjustedBy; }
+    public void setManuallyAdjustedBy(Long manuallyAdjustedBy) { this.manuallyAdjustedBy = manuallyAdjustedBy; }
+    public String getManualAdjustmentReason() { return manualAdjustmentReason; }
+    public void setManualAdjustmentReason(String manualAdjustmentReason) { this.manualAdjustmentReason = manualAdjustmentReason; }
 
     public static class AttendanceRecordBuilder {
         private Long recordId;
@@ -79,13 +99,17 @@ public class AttendanceRecord {
         private LocalDateTime checkOut;
         private String status = "Normal";
         private Boolean isVerifiedByManager = false;
+        private String reviewStatus = "PENDING_REVIEW";
+        private String payrollStatus = "PENDING_APPROVAL";
 
         public AttendanceRecordBuilder employee(Employee emp) { this.employee = emp; return this; }
         public AttendanceRecordBuilder checkIn(LocalDateTime in) { this.checkIn = in; return this; }
         public AttendanceRecordBuilder status(String s) { this.status = s; return this; }
         public AttendanceRecordBuilder isVerifiedByManager(Boolean v) { this.isVerifiedByManager = v; return this; }
+        public AttendanceRecordBuilder reviewStatus(String reviewStatus) { this.reviewStatus = reviewStatus; return this; }
+        public AttendanceRecordBuilder payrollStatus(String payrollStatus) { this.payrollStatus = payrollStatus; return this; }
         public AttendanceRecord build() {
-            return new AttendanceRecord(recordId, employee, checkIn, checkOut, status, isVerifiedByManager);
+            return new AttendanceRecord(recordId, employee, checkIn, checkOut, status, isVerifiedByManager, reviewStatus, payrollStatus);
         }
     }
 }

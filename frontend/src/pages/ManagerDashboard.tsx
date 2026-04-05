@@ -32,6 +32,11 @@ import {
   type LeaveRequest,
   type AttendanceRecord,
 } from '../services/api';
+import {
+  getLegacyAttendanceStatusMeta,
+  getPayrollStatusMeta,
+  getReviewStatusMeta,
+} from '../components/attendanceStatus';
 
 const ManagerDashboard = () => {
   const [me, setMe] = useState<EmployeeProfile | null>(null);
@@ -196,7 +201,19 @@ const ManagerDashboard = () => {
     try {
       await verifyAttendance(recordId);
       setTodayAttendance(prev => 
-        prev.map(r => r.recordId === recordId ? { ...r, status: 'Verified', isVerifiedByManager: true } : r)
+        prev.map((r) => (
+          r.recordId === recordId
+            ? {
+                ...r,
+                status: 'Verified',
+                isVerifiedByManager: true,
+                reviewStatus: 'VERIFIED',
+                payrollStatus: 'APPROVED_FOR_PAYROLL',
+                verifiedAt: new Date().toISOString(),
+                managerNotes: 'Verified via Dashboard',
+              }
+            : r
+        ))
       );
     } catch {
       alert("فشل تأكيد الدوام");
@@ -213,7 +230,20 @@ const ManagerDashboard = () => {
     try {
       await reportFraud(recordId, note);
       setTodayAttendance(prev => 
-        prev.map(r => r.recordId === recordId ? { ...r, status: 'Fraud', isVerifiedByManager: true, managerNotes: note } : r)
+        prev.map((r) => (
+          r.recordId === recordId
+            ? {
+                ...r,
+                status: 'Fraud',
+                isVerifiedByManager: true,
+                reviewStatus: 'FRAUD',
+                payrollStatus: 'EXCLUDED_FROM_PAYROLL',
+                verifiedAt: new Date().toISOString(),
+                managerNotes: note,
+                workHours: 0,
+              }
+            : r
+        ))
       );
     } catch {
       alert("فشل الإبلاغ عن تلاعب");
@@ -427,28 +457,37 @@ const ManagerDashboard = () => {
                       <th className="p-6">الموظف</th>
                       <th className="p-6">وقت الدخول</th>
                       <th className="p-6">وقت الخروج</th>
-                      <th className="p-6">حالة التأكيد</th>
+                      <th className="p-6">الحالة العامة</th>
+                      <th className="p-6">المراجعة</th>
+                      <th className="p-6">الرواتب</th>
                       <th className="p-6">إجراءات المراجعة</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
-                    {todayAttendance.map((record) => (
+                    {todayAttendance.map((record) => {
+                      const summaryMeta = getLegacyAttendanceStatusMeta(record);
+                      const reviewMeta = getReviewStatusMeta(record.reviewStatus);
+                      const payrollMeta = getPayrollStatusMeta(record.payrollStatus);
+
+                      return (
                       <tr key={record.recordId} className="hover:bg-white/5 transition-all">
                         <td className="p-6 font-bold text-slate-100">{record.employee.fullName}</td>
                         <td className="p-6 font-mono text-slate-400 text-sm">{new Date(record.checkIn).toLocaleTimeString('ar-EG', {hour: '2-digit', minute: '2-digit'})}</td>
                         <td className="p-6 font-mono text-slate-400 text-sm">{record.checkOut ? new Date(record.checkOut).toLocaleTimeString('ar-EG', {hour: '2-digit', minute: '2-digit'}) : '—'}</td>
                         <td className="p-6">
-                          {record.isVerifiedByManager ? (
-                            <span className={`px-3 py-1 rounded-lg text-xs font-bold ${
-                              record.status === 'Fraud' ? 'bg-red-500/10 text-red-500' : 'bg-green-500/10 text-green-500'
-                            }`}>
-                              {record.status === 'Fraud' ? 'مبلغ كتلاعب' : 'تم التأكيد'}
-                            </span>
-                          ) : (
-                            <span className="bg-orange-500/10 text-orange-400 px-3 py-1 rounded-lg text-xs font-bold">
-                              بانتظار مراجعتك
-                            </span>
-                          )}
+                          <span className={`inline-flex rounded-lg px-3 py-1 text-xs font-bold ${summaryMeta.className}`}>
+                            {summaryMeta.label}
+                          </span>
+                        </td>
+                        <td className="p-6">
+                          <span className={`inline-flex rounded-lg px-3 py-1 text-xs font-bold ${reviewMeta.className}`}>
+                            {reviewMeta.label}
+                          </span>
+                        </td>
+                        <td className="p-6">
+                          <span className={`inline-flex rounded-lg px-3 py-1 text-xs font-bold ${payrollMeta.className}`}>
+                            {payrollMeta.label}
+                          </span>
                         </td>
                         <td className="p-6">
                           {!record.isVerifiedByManager && (
@@ -472,9 +511,14 @@ const ManagerDashboard = () => {
                           {record.managerNotes && (
                             <p className="text-xs text-slate-500 mt-2">ملاحظتك: {record.managerNotes}</p>
                           )}
+                          {record.verifiedAt && (
+                            <p className="mt-1 text-xs text-slate-500">
+                              آخر إجراء: {new Date(record.verifiedAt).toLocaleString('ar-SA')}
+                            </p>
+                          )}
                         </td>
                       </tr>
-                    ))}
+                    )})}
                   </tbody>
                 </table>
               </div>

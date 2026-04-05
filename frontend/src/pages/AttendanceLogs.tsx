@@ -4,6 +4,11 @@ import { Clock, Download, ChevronRight, RefreshCcw } from 'lucide-react';
 import PaginationControls from '../components/PaginationControls';
 import Sidebar from '../components/Sidebar';
 import { getMyAttendancePage, type AttendanceRecord } from '../services/api';
+import {
+  getLegacyAttendanceStatusMeta,
+  getPayrollStatusMeta,
+  getReviewStatusMeta,
+} from '../components/attendanceStatus';
 
 const AttendanceLogs = () => {
   const [logs, setLogs] = useState<AttendanceRecord[]>([]);
@@ -70,48 +75,56 @@ const AttendanceLogs = () => {
                   <p>لا يوجد سجل دوام متاح بعد</p>
                 </div>
               ) : (
-                logs.map((log, idx) => (
-                  <motion.div
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: idx * 0.05 }}
-                    key={log.recordId} 
-                    className="p-6 flex items-center justify-between hover:bg-white/5 transition-all group"
-                  >
-                    <div className="flex items-center gap-6">
-                      <div className="bg-white/5 p-3 rounded-2xl text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
-                        <Clock size={24} />
-                      </div>
-                      <div>
-                        <p className="font-bold text-slate-100 text-lg">{formatDate(log.checkIn)}</p>
-                        <p className="text-sm text-slate-500 font-medium">ساعات العمل: {log.workHours ? `${log.workHours} ساعة` : 'جاري العمل...'}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-12">
-                      <div className="flex gap-8 text-center">
-                        <div>
-                          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">دخول</p>
-                          <p className="font-mono font-bold text-slate-200">{formatTime(log.checkIn)}</p>
+                logs.map((log, idx) => {
+                  const summaryMeta = getLegacyAttendanceStatusMeta(log);
+                  const reviewMeta = getReviewStatusMeta(log.reviewStatus);
+                  const payrollMeta = getPayrollStatusMeta(log.payrollStatus);
+
+                  return (
+                    <motion.div
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      key={log.recordId}
+                      className="p-6 flex items-center justify-between hover:bg-white/5 transition-all group"
+                    >
+                      <div className="flex items-center gap-6">
+                        <div className="bg-white/5 p-3 rounded-2xl text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                          <Clock size={24} />
                         </div>
                         <div>
-                          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">خروج</p>
-                          <p className="font-mono font-bold text-slate-200">{log.checkOut ? formatTime(log.checkOut) : '—'}</p>
+                          <p className="font-bold text-slate-100 text-lg">{formatDate(log.checkIn)}</p>
+                          <p className="text-sm text-slate-500 font-medium">ساعات العمل: {log.workHours ? `${log.workHours} ساعة` : 'جاري العمل...'}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase ${
-                          log.status === 'Verified' ? 'bg-green-500/10 text-green-400' :
-                          log.status === 'Fraud' ? 'bg-red-500/10 text-red-400' :
-                          'bg-orange-500/10 text-orange-400'
-                        }`}>
-                          {log.status === 'Verified' ? 'معتمد' : log.status === 'Fraud' ? 'تلاعب' : 'قيد المراجعة'}
-                        </span>
-                        <ChevronRight className="text-slate-600 group-hover:text-slate-300 transition-all" size={20} />
+
+                      <div className="flex items-center gap-8">
+                        <div className="flex gap-8 text-center">
+                          <div>
+                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">دخول</p>
+                            <p className="font-mono font-bold text-slate-200">{formatTime(log.checkIn)}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">خروج</p>
+                            <p className="font-mono font-bold text-slate-200">{log.checkOut ? formatTime(log.checkOut) : '—'}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className={`rounded-lg px-3 py-1 text-[10px] font-black ${summaryMeta.className}`}>
+                            {summaryMeta.label}
+                          </span>
+                          <span className={`rounded-lg px-3 py-1 text-[10px] font-black ${reviewMeta.className}`}>
+                            {reviewMeta.label}
+                          </span>
+                          <span className={`rounded-lg px-3 py-1 text-[10px] font-black ${payrollMeta.className}`}>
+                            {payrollMeta.label}
+                          </span>
+                          <ChevronRight className="text-slate-600 group-hover:text-slate-300 transition-all" size={20} />
+                        </div>
                       </div>
-                    </div>
-                  </motion.div>
-                ))
+                    </motion.div>
+                  );
+                })
               )}
             </div>
             <PaginationControls

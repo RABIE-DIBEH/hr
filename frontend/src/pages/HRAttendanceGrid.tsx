@@ -1,9 +1,26 @@
 import { useEffect, useState } from 'react';
+import axios from 'axios';
 import { motion } from 'framer-motion';
-import { Calendar, ChevronLeft, ChevronRight, Download, Users } from 'lucide-react';
+import {
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  PencilLine,
+  ShieldCheck,
+  Users,
+  X,
+} from 'lucide-react';
 import PaginationControls from '../components/PaginationControls';
 import Sidebar from '../components/Sidebar';
-import { listEmployees, getHrMonthlyAttendancePage, type EmployeeSummary, type AttendanceRecord } from '../services/api';
+import {
+  getHrMonthlyAttendancePage,
+  listEmployees,
+  manuallyCorrectAttendance,
+  type AttendanceRecord,
+  type EmployeeSummary,
+} from '../services/api';
+import { getPayrollStatusMeta, getReviewStatusMeta } from '../components/attendanceStatus';
 
 const HRAttendanceGrid = () => {
   const [employees, setEmployees] = useState<EmployeeSummary[]>([]);
@@ -12,6 +29,13 @@ const HRAttendanceGrid = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [selectedRecord, setSelectedRecord] = useState<AttendanceRecord | null>(null);
+  const [correctionCheckIn, setCorrectionCheckIn] = useState('');
+  const [correctionCheckOut, setCorrectionCheckOut] = useState('');
+  const [correctionReason, setCorrectionReason] = useState('');
+  const [approveForPayroll, setApproveForPayroll] = useState(true);
+  const [submittingCorrection, setSubmittingCorrection] = useState(false);
+  const [correctionFeedback, setCorrectionFeedback] = useState<string | null>(null);
 
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -22,7 +46,7 @@ const HRAttendanceGrid = () => {
   const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const loadData = async () => {
       try {
         const empRes = await listEmployees();
         setEmployees(empRes.data);
@@ -35,7 +59,8 @@ const HRAttendanceGrid = () => {
         setLoadError('تعذر تحميل البيانات المركزية للحضور. تأكد من صلاحيات HR.');
       }
     };
-    fetchData();
+
+    void loadData();
   }, [month, year, page]);
 
   const handlePrevMonth = () => {
@@ -101,6 +126,78 @@ const HRAttendanceGrid = () => {
       case 'weekend': return 'عطلة';
       case 'neutral': return '—';
       default: return '—';
+    }
+  };
+
+  const toLocalInputValue = (value?: string) => {
+    if (!value) {
+      return '';
+    }
+    const date = new Date(value);
+    const offset = date.getTimezoneOffset();
+    const localDate = new Date(date.getTime() - offset * 60_000);
+    return localDate.toISOString().slice(0, 16);
+  };
+
+  const toApiDateTime = (value: string) => {
+    if (!value) {
+      return undefined;
+    }
+    return `${value}:00`;
+  };
+
+  const openCorrectionModal = (record: AttendanceRecord) => {
+    setSelectedRecord(record);
+    setCorrectionCheckIn(toLocalInputValue(record.checkIn));
+    setCorrectionCheckOut(toLocalInputValue(record.checkOut));
+    setCorrectionReason(record.manualAdjustmentReason ?? record.managerNotes ?? '');
+    setApproveForPayroll(record.payrollStatus !== 'EXCLUDED_FROM_PAYROLL');
+    setCorrectionFeedback(null);
+  };
+
+  const closeCorrectionModal = () => {
+    setSelectedRecord(null);
+    setCorrectionCheckIn('');
+    setCorrectionCheckOut('');
+    setCorrectionReason('');
+    setApproveForPayroll(true);
+    setCorrectionFeedback(null);
+  };
+
+  const handleSubmitCorrection = async () => {
+    if (!selectedRecord) {
+      return;
+    }
+    if (!correctionReason.trim()) {
+      setCorrectionFeedback('سبب التصحيح مطلوب.');
+      return;
+    }
+
+    setSubmittingCorrection(true);
+    try {
+      await manuallyCorrectAttendance(selectedRecord.recordId, {
+        checkIn: toApiDateTime(correctionCheckIn),
+        checkOut: toApiDateTime(correctionCheckOut),
+        reason: correctionReason.trim(),
+        approveForPayroll,
+      });
+
+      const empRes = await listEmployees();
+      setEmployees(empRes.data);
+      const recordRes = await getHrMonthlyAttendancePage(month, year, { page, size: 100 });
+      setRecords(recordRes.data.items);
+      setTotalPages(recordRes.data.totalPages);
+      setTotalCount(recordRes.data.totalCount);
+      setLoadError(null);
+      closeCorrectionModal();
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error) && typeof error.response?.data?.message === 'string') {
+        setCorrectionFeedback(error.response.data.message);
+      } else {
+        setCorrectionFeedback('فشل حفظ التصحيح اليدوي.');
+      }
+    } finally {
+      setSubmittingCorrection(false);
     }
   };
 
@@ -209,8 +306,190 @@ const HRAttendanceGrid = () => {
             totalCount={totalCount}
             onPageChange={setPage}
           />
+
+          <section className="mt-8 overflow-hidden rounded-3xl border border-white/5 bg-luxury-surface">
+            <div className="flex items-center justify-between border-b border-white/5 p-6">
+              <div>
+                <h2 className="text-xl font-bold text-white">سجلات الشهر الحالية</h2>
+                <p className="mt-1 text-sm text-slate-400">
+                  تعرض هذه القائمة حالة المراجعة والرواتب بشكل صريح مع إمكانية التصحيح اليدوي.
+                </p>
+              </div>
+              <div className="rounded-2xl bg-white/5 px-4 py-3 text-xs font-bold text-slate-300">
+                {totalCount} سجل في الصفحة الحالية
+              </div>
+            </div>
+
+            {records.length === 0 ? (
+              <div className="p-10 text-center text-slate-500">لا توجد سجلات حضور لهذا الشهر.</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-right">
+                  <thead className="bg-white/5 text-[11px] font-black uppercase tracking-[0.15em] text-slate-400">
+                    <tr>
+                      <th className="p-5">الموظف</th>
+                      <th className="p-5">التاريخ</th>
+                      <th className="p-5">الحضور</th>
+                      <th className="p-5">المراجعة</th>
+                      <th className="p-5">الرواتب</th>
+                      <th className="p-5">الإجراء</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {records.map((record) => {
+                      const reviewMeta = getReviewStatusMeta(record.reviewStatus);
+                      const payrollMeta = getPayrollStatusMeta(record.payrollStatus);
+
+                      return (
+                        <tr key={record.recordId} className="hover:bg-white/5">
+                          <td className="p-5">
+                            <p className="font-bold text-slate-100">{record.employee.fullName}</p>
+                            <p className="mt-1 text-xs text-slate-500">#{record.recordId}</p>
+                          </td>
+                          <td className="p-5 text-sm text-slate-300">
+                            {new Date(record.checkIn).toLocaleDateString('ar-SA', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                            })}
+                          </td>
+                          <td className="p-5 text-sm text-slate-300">
+                            <div>{new Date(record.checkIn).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}</div>
+                            <div className="mt-1 text-xs text-slate-500">
+                              خروج: {record.checkOut ? new Date(record.checkOut).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }) : '—'}
+                            </div>
+                            <div className="mt-1 text-xs text-slate-500">
+                              الساعات: {record.workHours ?? '—'}
+                            </div>
+                          </td>
+                          <td className="p-5">
+                            <span className={`inline-flex rounded-lg px-3 py-1 text-xs font-bold ${reviewMeta.className}`}>
+                              {reviewMeta.label}
+                            </span>
+                          </td>
+                          <td className="p-5">
+                            <span className={`inline-flex rounded-lg px-3 py-1 text-xs font-bold ${payrollMeta.className}`}>
+                              {payrollMeta.label}
+                            </span>
+                          </td>
+                          <td className="p-5">
+                            <button
+                              type="button"
+                              onClick={() => openCorrectionModal(record)}
+                              className="inline-flex items-center gap-2 rounded-xl border border-sky-500/20 bg-sky-500/10 px-4 py-2 text-sm font-bold text-sky-300 transition-all hover:bg-sky-500/20"
+                            >
+                              <PencilLine size={16} />
+                              تصحيح يدوي
+                            </button>
+                            {record.manualAdjustmentReason && (
+                              <p className="mt-2 max-w-xs text-xs text-slate-500">
+                                السبب الأخير: {record.manualAdjustmentReason}
+                              </p>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
         </div>
       </main>
+
+      {selectedRecord && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-2xl rounded-[2rem] border border-white/10 bg-[#110d18] p-8 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-black text-white">تصحيح سجل حضور</h2>
+                <p className="mt-2 text-sm text-slate-400">
+                  {selectedRecord.employee.fullName} • سجل رقم {selectedRecord.recordId}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeCorrectionModal}
+                disabled={submittingCorrection}
+                className="rounded-xl border border-white/10 p-2 text-slate-400 transition-all hover:bg-white/5 hover:text-white disabled:opacity-50"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="mt-6 grid gap-5 md:grid-cols-2">
+              <label className="block">
+                <span className="mb-2 block text-sm font-bold text-slate-300">وقت الدخول</span>
+                <input
+                  type="datetime-local"
+                  value={correctionCheckIn}
+                  onChange={(event) => setCorrectionCheckIn(event.target.value)}
+                  className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition-all focus:border-sky-500/50"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-2 block text-sm font-bold text-slate-300">وقت الخروج</span>
+                <input
+                  type="datetime-local"
+                  value={correctionCheckOut}
+                  onChange={(event) => setCorrectionCheckOut(event.target.value)}
+                  className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition-all focus:border-sky-500/50"
+                />
+              </label>
+            </div>
+
+            <label className="mt-5 block">
+              <span className="mb-2 block text-sm font-bold text-slate-300">سبب التصحيح</span>
+              <textarea
+                value={correctionReason}
+                onChange={(event) => setCorrectionReason(event.target.value)}
+                rows={4}
+                className="w-full resize-none rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition-all focus:border-sky-500/50"
+                placeholder="مثال: نسي الموظف تسجيل الخروج وتمت المراجعة مع المشرف"
+              />
+            </label>
+
+            <label className="mt-5 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-sm text-slate-200">
+              <input
+                type="checkbox"
+                checked={approveForPayroll}
+                onChange={(event) => setApproveForPayroll(event.target.checked)}
+                className="h-4 w-4 rounded border-white/20 bg-transparent text-sky-500"
+              />
+              <span className="flex items-center gap-2">
+                <ShieldCheck size={16} className="text-sky-300" />
+                اعتماد السجل مباشرة للرواتب
+              </span>
+            </label>
+
+            {correctionFeedback && (
+              <div className="mt-5 rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                {correctionFeedback}
+              </div>
+            )}
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeCorrectionModal}
+                disabled={submittingCorrection}
+                className="rounded-2xl border border-white/10 px-5 py-3 text-sm font-bold text-slate-300 transition-all hover:bg-white/5 disabled:opacity-50"
+              >
+                إلغاء
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmitCorrection}
+                disabled={submittingCorrection}
+                className="rounded-2xl bg-sky-600 px-5 py-3 text-sm font-bold text-white transition-all hover:bg-sky-700 disabled:opacity-50"
+              >
+                {submittingCorrection ? 'جارٍ الحفظ...' : 'حفظ التصحيح'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

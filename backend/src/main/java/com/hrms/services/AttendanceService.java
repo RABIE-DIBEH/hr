@@ -9,8 +9,10 @@ import com.hrms.security.EmployeeUserDetails;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -73,6 +75,8 @@ public class AttendanceService {
         record.setIsVerifiedByManager(true);
         record.setVerifiedAt(LocalDateTime.now());
         record.setWorkHours(java.math.BigDecimal.ZERO);
+        record.setReviewStatus("FRAUD");
+        record.setPayrollStatus("EXCLUDED_FROM_PAYROLL");
         return Optional.of(attendanceRepository.save(record));
     }
 
@@ -106,6 +110,8 @@ public class AttendanceService {
                 .checkIn(LocalDateTime.now())
                 .status("Normal")
                 .isVerifiedByManager(false)
+                .reviewStatus("PENDING_REVIEW")
+                .payrollStatus("PENDING_APPROVAL")
                 .build();
         attendanceRepository.save(newRecord);
         return "Checked In Successfully at " + newRecord.getCheckIn();
@@ -143,11 +149,71 @@ public class AttendanceService {
         record.setManagerNotes(note);
         record.setIsVerifiedByManager(true);
         record.setVerifiedAt(LocalDateTime.now());
+        record.setReviewStatus("VERIFIED");
+        record.setPayrollStatus("APPROVED_FOR_PAYROLL");
         
+        return Optional.of(attendanceRepository.save(record));
+    }
+
+    @Transactional
+    public Optional<AttendanceRecord> manuallyCorrectRecord(
+            Long recordId,
+            LocalDateTime checkIn,
+            LocalDateTime checkOut,
+            String reason,
+            boolean approveForPayroll,
+            EmployeeUserDetails principal) {
+        if (!hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN")) {
+            throw new AccessDeniedException("You cannot manually correct attendance records");
+        }
+
+        Optional<AttendanceRecord> found = attendanceRepository.findById(recordId);
+        if (found.isEmpty()) {
+            return Optional.empty();
+        }
+
+        AttendanceRecord record = found.get();
+        LocalDateTime effectiveCheckIn = checkIn != null ? checkIn : record.getCheckIn();
+        LocalDateTime effectiveCheckOut = checkOut != null ? checkOut : record.getCheckOut();
+
+        if (effectiveCheckIn == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "checkIn is required for manual correction");
+        }
+        if (effectiveCheckOut != null && effectiveCheckOut.isBefore(effectiveCheckIn)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "checkOut must be after checkIn");
+        }
+
+        record.setCheckIn(effectiveCheckIn);
+        record.setCheckOut(effectiveCheckOut);
+        if (effectiveCheckOut != null) {
+            record.calculateWorkHours();
+        } else {
+            record.setWorkHours(null);
+        }
+        record.setStatus("Manually Corrected");
+        record.setReviewStatus("MANUALLY_CORRECTED");
+        record.setPayrollStatus(approveForPayroll ? "APPROVED_FOR_PAYROLL" : "PENDING_APPROVAL");
+        record.setIsVerifiedByManager(true);
+        record.setVerifiedAt(LocalDateTime.now());
+        record.setManuallyAdjusted(true);
+        record.setManuallyAdjustedAt(LocalDateTime.now());
+        record.setManuallyAdjustedBy(principal.getEmployeeId());
+        record.setManualAdjustmentReason(reason);
+        record.setManagerNotes(reason);
+
         return Optional.of(attendanceRepository.save(record));
     }
 
     public Page<AttendanceRecord> getCompanyMonthlyAttendance(int month, int year, Pageable pageable, EmployeeUserDetails actor) {
         return attendanceRepository.findAllMonthlyRecords(month, year, pageable);
+    }
+
+    private boolean hasAnyRole(EmployeeUserDetails principal, String... roles) {
+        for (String role : roles) {
+            if (principal.getAuthorities().stream().anyMatch(a -> role.equals(a.getAuthority()))) {
+                return true;
+            }
+        }
+        return false;
     }
 }

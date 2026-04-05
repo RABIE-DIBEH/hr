@@ -88,6 +88,19 @@ export interface AttendanceRecord {
   isVerifiedByManager: boolean;
   verifiedAt?: string;
   managerNotes?: string;
+  reviewStatus?: string;
+  payrollStatus?: string;
+  manuallyAdjusted?: boolean;
+  manuallyAdjustedAt?: string;
+  manuallyAdjustedBy?: number;
+  manualAdjustmentReason?: string;
+}
+
+export interface ManualAttendanceCorrectionPayload {
+  checkIn?: string;
+  checkOut?: string;
+  reason: string;
+  approveForPayroll?: boolean;
 }
 
 export interface SystemLog {
@@ -289,6 +302,11 @@ export const verifyAttendance = (recordId: number, note?: string) =>
 
 export const reportFraud = (recordId: number, note?: string) =>
   api.put(`/attendance/report-fraud/${recordId}`, { note });
+
+export const manuallyCorrectAttendance = (
+  recordId: number,
+  data: ManualAttendanceCorrectionPayload,
+) => api.put(`/attendance/manual-correct/${recordId}`, data);
 
 export const clockByNfc = (cardUid: string) =>
   api.post('/attendance/nfc-clock', { cardUid });

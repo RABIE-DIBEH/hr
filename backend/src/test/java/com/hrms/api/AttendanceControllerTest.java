@@ -27,12 +27,14 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -98,6 +100,50 @@ class AttendanceControllerTest {
                 ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
         verify(attendanceService).getTodayRecordsForManager(eq(1L), pageableCaptor.capture(), eq(principal));
         assertEquals(20, pageableCaptor.getValue().getPageSize());
+    }
+
+    @Test
+    void manuallyCorrectRecord_ReturnsSuccess() throws Exception {
+        Employee employee = Employee.builder()
+                .employeeId(55L)
+                .fullName("Attendance User")
+                .email("attendance@example.com")
+                .passwordHash("secret")
+                .status("Active")
+                .build();
+
+        AttendanceRecord record = AttendanceRecord.builder()
+                .employee(employee)
+                .checkIn(LocalDateTime.of(2026, 4, 5, 8, 0))
+                .status("Manually Corrected")
+                .isVerifiedByManager(true)
+                .reviewStatus("MANUALLY_CORRECTED")
+                .payrollStatus("APPROVED_FOR_PAYROLL")
+                .build();
+        record.setRecordId(99L);
+
+        when(attendanceService.manuallyCorrectRecord(
+                eq(99L),
+                eq(LocalDateTime.of(2026, 4, 5, 8, 0)),
+                eq(LocalDateTime.of(2026, 4, 5, 16, 0)),
+                eq("Badge issue at gate"),
+                eq(true),
+                eq(principal)
+        )).thenReturn(Optional.of(record));
+
+        mockMvc.perform(put("/api/attendance/manual-correct/99")
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "checkIn": "2026-04-05T08:00:00",
+                                  "checkOut": "2026-04-05T16:00:00",
+                                  "reason": "Badge issue at gate",
+                                  "approveForPayroll": true
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Attendance corrected successfully"))
+                .andExpect(jsonPath("$.data.status").value("Attendance corrected successfully."));
     }
 
     private static final class AuthenticationPrincipalResolver implements HandlerMethodArgumentResolver {

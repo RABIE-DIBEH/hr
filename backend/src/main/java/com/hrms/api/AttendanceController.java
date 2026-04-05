@@ -1,6 +1,7 @@
 package com.hrms.api;
 
 import com.hrms.api.dto.FraudReportRequest;
+import com.hrms.api.dto.ManualAttendanceCorrectionRequest;
 import com.hrms.api.dto.NfcClockRequest;
 import com.hrms.api.dto.ApiResponse;
 import com.hrms.api.dto.IdResponseDto;
@@ -89,6 +90,26 @@ public class AttendanceController {
                 .map(record -> ResponseEntity.ok(ApiResponse.success(
                         new StatusResponseDto("Attendance record verified successfully."),
                         "Attendance verified successfully"
+                )))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/manual-correct/{recordId}")
+    public ResponseEntity<ApiResponse<StatusResponseDto>> manuallyCorrectRecord(
+            @PathVariable Long recordId,
+            @Valid @RequestBody ManualAttendanceCorrectionRequest request,
+            @AuthenticationPrincipal EmployeeUserDetails principal) {
+        boolean approveForPayroll = request.approveForPayroll() == null || request.approveForPayroll();
+        return attendanceService.manuallyCorrectRecord(
+                        recordId,
+                        request.checkIn(),
+                        request.checkOut(),
+                        request.reason(),
+                        approveForPayroll,
+                        principal)
+                .map(record -> ResponseEntity.ok(ApiResponse.success(
+                        new StatusResponseDto("Attendance corrected successfully."),
+                        "Attendance corrected successfully"
                 )))
                 .orElse(ResponseEntity.notFound().build());
     }

@@ -72,6 +72,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/attendance/logs").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/attendance/report-fraud/**").hasAnyRole("MANAGER", "HR", "ADMIN", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/attendance/verify/**").hasAnyRole("MANAGER", "HR", "ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/attendance/manual-correct/**").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
                         
                         // Advance request endpoints - employees can request/view own, HR/ADMIN process
                         .requestMatchers(HttpMethod.POST, "/api/advances/request").authenticated()

@@ -88,15 +88,10 @@ public class EmployeeDirectoryService {
         employee.setFullName(update.fullName());
         employee.setEmail(update.email());
 
-        if (update.mobileNumber() != null && !update.mobileNumber().isBlank()) {
-            employee.setMobileNumber(update.mobileNumber());
-        }
-        if (update.address() != null && !update.address().isBlank()) {
-            employee.setAddress(update.address());
-        }
-        if (update.nationalId() != null && !update.nationalId().isBlank()) {
-            employee.setNationalId(update.nationalId());
-        }
+        // Optional fields: null means "clear the value", non-null means "set it"
+        employee.setMobileNumber(update.mobileNumber());
+        employee.setAddress(update.address());
+        employee.setNationalId(update.nationalId());
 
         employeeRepository.save(employee);
         return getProfile(employeeId);
