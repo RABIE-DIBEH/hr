@@ -31,7 +31,9 @@ public class AttendanceController {
 
         String result = attendanceService.clockByNfcUid(request.cardUid(), principal);
         if (result.startsWith("Error")) {
-            return ResponseEntity.status(401).body(ApiResponse.error(401, result));
+            // Use 400 (Bad Request) for NFC business errors, NOT 401.
+            // 401 means "unauthenticated" and triggers the frontend to redirect to /login.
+            return ResponseEntity.status(400).body(ApiResponse.error(400, result));
         }
 
         return ResponseEntity.ok(ApiResponse.success(Map.of("result", result), result));

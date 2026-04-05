@@ -64,10 +64,14 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/leaves/process/**").hasAnyRole("MANAGER", "HR", "ADMIN", "SUPER_ADMIN")
                         
                         // Attendance endpoints
+                        .requestMatchers(HttpMethod.POST, "/api/attendance/nfc-clock").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/attendance/clock").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/attendance/my-records").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/attendance/manager/today").hasAnyRole("MANAGER", "HR", "ADMIN", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/attendance/**").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/attendance/logs").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/attendance/report-fraud/**").hasAnyRole("MANAGER", "HR", "ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/attendance/verify/**").hasAnyRole("MANAGER", "HR", "ADMIN", "SUPER_ADMIN")
                         
                         // Advance request endpoints - employees can request/view own, HR/ADMIN process
                         .requestMatchers(HttpMethod.POST, "/api/advances/request").authenticated()

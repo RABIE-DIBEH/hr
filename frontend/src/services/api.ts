@@ -28,9 +28,14 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
+    // Only redirect to login on actual 401 Unauthorized (token expired/invalid)
+    // Do NOT redirect on 403 Forbidden (permission denied) or 500 (server error)
     if (error.response?.status === 401) {
       localStorage.removeItem(AUTH_TOKEN_KEY);
-      window.location.href = '/login';
+      // Only redirect if not already on the login page
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

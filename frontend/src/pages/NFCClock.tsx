@@ -17,16 +17,20 @@ const NFCClock = () => {
       const response = await clockByNfc("04:23:1A:FF"); // Simulated Card UID
       setLoading(false);
       setSuccess(true);
-      setMessage(response.data.message);
-      
+      // After interceptor auto-unwrap, response.data is the inner Map: { result: "..." }
+      setMessage(response.data.result || response.data.message || 'تم التسجيل بنجاح');
+
       setTimeout(() => {
         setSuccess(false);
         setMessage('اقرب بطاقة NFC من القارئ');
       }, 5000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setLoading(false);
       setError(true);
-      setMessage(err.response?.data?.message || 'خطأ في الاتصال بالخادم');
+      const msg = (typeof err === 'object' && err !== null && 'response' in err)
+        ? ((err as { response?: { data?: { message?: string } } }).response?.data?.message || 'خطأ في الاتصال بالخادم')
+        : 'خطأ في الاتصال بالخادم';
+      setMessage(msg);
       
       setTimeout(() => {
         setError(false);
