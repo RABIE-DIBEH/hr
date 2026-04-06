@@ -105,9 +105,27 @@ public class AdminService {
         // Simple default handling for new devices being registered
         if (device.getStatus() == null) device.setStatus("Offline");
         if (device.getSystemLoad() == null) device.setSystemLoad("0%");
-        
+
         logSystemEvent("Add NFC Device " + device.getDeviceId(), "Admin", "Success");
         return deviceRepository.save(device);
+    }
+
+    public NfcDevice updateDeviceStatus(String deviceId, String status) {
+        NfcDevice device = deviceRepository.findById(deviceId)
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.NOT_FOUND, "Device not found"));
+        device.setStatus(status);
+        logSystemEvent("Update NFC Device " + deviceId + " -> " + status, "Admin", "Success");
+        return deviceRepository.save(device);
+    }
+
+    public void deleteDevice(String deviceId) {
+        if (!deviceRepository.existsById(deviceId)) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.NOT_FOUND, "Device not found");
+        }
+        deviceRepository.deleteById(deviceId);
+        logSystemEvent("Delete NFC Device " + deviceId, "Admin", "Success");
     }
 
     public String triggerBackup(String requester) {

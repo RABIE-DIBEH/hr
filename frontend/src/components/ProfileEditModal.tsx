@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { User, X, Save, Upload, AlertCircle, Lock } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { User, X, Save, Upload, AlertCircle, Lock, Key } from 'lucide-react';
 import { updateProfileMe, getCurrentEmployee, type EmployeeProfile, type EmployeeProfileUpdatePayload } from '../services/api';
 import { getRole } from '../services/auth';
+import ChangePasswordModal from './ChangePasswordModal';
 
 interface ProfileEditModalProps {
   me: EmployeeProfile;
@@ -27,6 +28,7 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ me, onClose, onSucc
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [profileSuccess, setProfileSuccess] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
 
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -63,14 +65,20 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ me, onClose, onSucc
       const refreshed = await getCurrentEmployee();
       onSuccess(refreshed.data);
       setTimeout(() => onClose(), 1500);
-    } catch (err: any) {
-      setProfileError(err.response?.data?.message || 'فشل تحديث الملف الشخصي');
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'response' in err) {
+        const response = (err as any).response;
+        setProfileError(response?.data?.message || 'فشل تحديث الملف الشخصي');
+      } else {
+        setProfileError('فشل تحديث الملف الشخصي');
+      }
     } finally {
       setProfileSaving(false);
     }
   };
 
   return (
+    <>
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -107,6 +115,21 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ me, onClose, onSucc
 
         {/* Form */}
         <form onSubmit={handleProfileSubmit} className="p-8 space-y-6">
+          <div className="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/10 mb-2">
+            <div>
+              <p className="text-white font-bold text-sm">كلمة المرور</p>
+              <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black">أمن الحساب</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowChangePassword(true)}
+              className="bg-purple-600/10 hover:bg-purple-600 text-purple-400 hover:text-white px-4 py-2 rounded-xl text-xs font-bold transition-all border border-purple-500/20 flex items-center gap-2"
+            >
+              <Key size={14} />
+              تغيير كلمة المرور
+            </button>
+          </div>
+
           {profileError && (
             <motion.div 
               initial={{ opacity: 0, x: -10 }} 
@@ -278,6 +301,13 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ me, onClose, onSucc
         </form>
       </motion.div>
     </motion.div>
+
+    <AnimatePresence>
+      {showChangePassword && (
+        <ChangePasswordModal onClose={() => setShowChangePassword(false)} />
+      )}
+    </AnimatePresence>
+    </>
   );
 };
 

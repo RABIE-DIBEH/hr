@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Settings, 
@@ -36,6 +37,7 @@ import {
 } from '../services/api';
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
   const [logs, setLogs] = useState<SystemLog[]>([]);
   const [devices, setDevices] = useState<NfcDevice[]>([]);
@@ -262,8 +264,8 @@ const AdminDashboard = () => {
               </div>
             ))}
           </div>
-          <button onClick={handleAddDevice} className="w-full mt-6 py-3 rounded-xl border border-white/10 text-slate-400 font-bold text-sm hover:bg-white/5 hover:text-white transition-all">
-            Add New Device
+          <button onClick={() => navigate('/admin/devices')} className="w-full mt-6 py-3 rounded-xl border border-white/10 text-slate-400 font-bold text-sm hover:bg-white/5 hover:text-white transition-all">
+            إدارة جميع الأجهزة ←
           </button>
           <PaginationControls
             page={devicesPage}

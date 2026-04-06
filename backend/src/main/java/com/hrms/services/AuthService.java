@@ -98,6 +98,29 @@ public class AuthService {
         return Optional.empty();
     }
 
+    /**
+     * Updates an employee's password.
+     * @param employeeId The ID of the employee changing their password.
+     * @param currentPassword The current plain-text password to verify.
+     * @param newPassword The new plain-text password to set.
+     * @return true if updated successfully, false if current password doesn't match.
+     */
+    @Transactional
+    public boolean changePassword(Long employeeId, String currentPassword, String newPassword) {
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.NOT_FOUND, "Employee not found"));
+
+        if (!passwordEncoder.matches(currentPassword, employee.getPasswordHash())) {
+            return false;
+        }
+
+        employee.setPasswordHash(passwordEncoder.encode(newPassword));
+        employeeRepository.save(employee);
+        log.info("Password updated successfully for employeeId={}", employeeId);
+        return true;
+    }
+
     private boolean isLoginAllowed(Employee employee) {
         return employee.getRoleId() != null
                 && employee.getStatus() != null

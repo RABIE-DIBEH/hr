@@ -16,6 +16,8 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/admin")
 public class AdminController {
@@ -70,6 +72,31 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success(
                 NfcDeviceResponseDto.from(adminService.addNfcDevice(device)),
                 "NFC device added successfully"
+        ));
+    }
+
+    @PutMapping("/devices/{deviceId}/status")
+    public ResponseEntity<ApiResponse<NfcDeviceResponseDto>> updateDeviceStatus(
+            @PathVariable String deviceId,
+            @RequestBody Map<String, String> body) {
+        String status = body.get("status");
+        if (status == null || status.isBlank()) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.BAD_REQUEST, "Status is required");
+        }
+        NfcDevice updated = adminService.updateDeviceStatus(deviceId, status);
+        return ResponseEntity.ok(ApiResponse.success(
+                NfcDeviceResponseDto.from(updated),
+                "Device status updated successfully"
+        ));
+    }
+
+    @DeleteMapping("/devices/{deviceId}")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> deleteDevice(@PathVariable String deviceId) {
+        adminService.deleteDevice(deviceId);
+        return ResponseEntity.ok(ApiResponse.success(
+                Map.of("deviceId", deviceId, "message", "Device removed successfully"),
+                "Device deleted successfully"
         ));
     }
 

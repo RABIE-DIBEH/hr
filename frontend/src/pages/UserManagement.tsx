@@ -14,10 +14,10 @@ import {
 } from 'lucide-react';
 import {
   listEmployees,
-  updateProfileMe,
+  updateEmployee,
   type EmployeeSummary,
   type EmployeeProfile,
-  type EmployeeProfileUpdatePayload,
+  type EmployeeAdminUpdatePayload,
 } from '../services/api';
 import { getRole, getPayload } from '../services/auth';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -86,12 +86,17 @@ const UserManagement = () => {
   const [resetPasswordResult, setResetPasswordResult] = useState<{ password: string; name: string } | null>(null);
 
   // Edit form state
-  const [editForm, setEditForm] = useState<EmployeeProfileUpdatePayload>({
+  const [editForm, setEditForm] = useState<EmployeeAdminUpdatePayload>({
     fullName: '',
     email: '',
     mobileNumber: '',
     address: '',
     nationalId: '',
+    teamId: null,
+    roleId: null,
+    managerId: null,
+    baseSalary: null,
+    employmentStatus: null,
   });
 
   const loadEmployees = async () => {
@@ -136,6 +141,11 @@ const UserManagement = () => {
       mobileNumber: '',
       address: '',
       nationalId: '',
+      teamId: emp.teamId,
+      roleId: null, // Will be populated if we fetch full profile
+      managerId: null,
+      baseSalary: emp.baseSalary,
+      employmentStatus: emp.employmentStatus,
     });
     setShowEditModal(true);
   };
@@ -144,7 +154,7 @@ const UserManagement = () => {
     if (!selectedEmployee) return;
     setActionLoading(true);
     try {
-      await updateProfileMe(editForm);
+      await updateEmployee(selectedEmployee.employeeId, editForm);
       setSuccessMessage('تم تحديث بيانات الموظف بنجاح');
       setShowEditModal(false);
       await loadEmployees();
@@ -359,6 +369,15 @@ const UserManagement = () => {
                           >
                             <Eye size={16} />
                           </button>
+                          {isHighRole && (
+                            <button
+                              onClick={() => handleEdit(emp)}
+                              className="p-2 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 hover:text-blue-300 transition-colors"
+                              title="تعديل"
+                            >
+                              <Edit size={16} />
+                            </button>
+                          )}
                           {canManagePasswords && (
                             <button
                               onClick={() => { setSelectedEmployee(emp); setResetPasswordResult(null); setShowResetPassword(true); }}
@@ -474,7 +493,7 @@ const UserManagement = () => {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl max-w-lg w-full p-6"
+              className="bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               <h2 className="text-xl font-bold text-white mb-6">تعديل بيانات: {selectedEmployee.fullName}</h2>
@@ -501,7 +520,7 @@ const UserManagement = () => {
                   <label className="block text-sm font-bold text-slate-300 mb-2">رقم الهاتف</label>
                   <input
                     type="text"
-                    value={editForm.mobileNumber}
+                    value={editForm.mobileNumber || ''}
                     onChange={(e) => setEditForm({ ...editForm, mobileNumber: e.target.value })}
                     className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500"
                   />
@@ -510,7 +529,7 @@ const UserManagement = () => {
                   <label className="block text-sm font-bold text-slate-300 mb-2">العنوان</label>
                   <input
                     type="text"
-                    value={editForm.address}
+                    value={editForm.address || ''}
                     onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
                     className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500"
                   />
@@ -519,10 +538,39 @@ const UserManagement = () => {
                   <label className="block text-sm font-bold text-slate-300 mb-2">رقم الهوية</label>
                   <input
                     type="text"
-                    value={editForm.nationalId}
+                    value={editForm.nationalId || ''}
                     onChange={(e) => setEditForm({ ...editForm, nationalId: e.target.value })}
                     className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500"
                   />
+                </div>
+
+                {/* Admin-only fields */}
+                <div className="border-t border-white/10 pt-4 mt-6">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">حقول الإدارة المتقدمة</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-bold text-slate-300 mb-2">الحالة</label>
+                      <select
+                        value={editForm.employmentStatus || 'Active'}
+                        onChange={(e) => setEditForm({ ...editForm, employmentStatus: e.target.value })}
+                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="Active">نشط</option>
+                        <option value="Inactive">غير نشط</option>
+                        <option value="Terminated">مُنهى</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-300 mb-2">الراتب الأساسي (ل.س)</label>
+                      <input
+                        type="number"
+                        value={editForm.baseSalary || ''}
+                        onChange={(e) => setEditForm({ ...editForm, baseSalary: e.target.value || null })}
+                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500"
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
               <div className="flex gap-3 mt-6">

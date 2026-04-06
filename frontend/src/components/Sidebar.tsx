@@ -12,6 +12,8 @@ import {
   Bell,
   DollarSign,
   Calendar,
+  UserCheck,
+  Server,
 } from 'lucide-react';
 import { AUTH_TOKEN_KEY, getCurrentEmployee, logout, type EmployeeProfile } from '../services/api';
 import { getRole, isSuperAdmin } from '../services/auth';
@@ -33,8 +35,10 @@ const allMenuItems: MenuItem[] = [
   { path: '/users',     icon: Users,           label: 'إدارة الموظفين',  roles: ['HR', 'ADMIN', 'SUPER_ADMIN'] },
   { path: '/goals',     icon: Star,            label: 'النقاط' },
   { path: '/manager',   icon: Users,           label: 'إدارة الفريق',    roles: ['MANAGER', 'SUPER_ADMIN'] },
+  { path: '/manager/team-attendance', icon: UserCheck, label: 'دوام الفريق اليوم', roles: ['MANAGER', 'SUPER_ADMIN'] },
   { path: '/hr',        icon: ShieldCheck,     label: 'الموارد البشرية',  roles: ['HR', 'SUPER_ADMIN'] },
   { path: '/admin',     icon: Settings,        label: 'مدير النظام',     roles: ['ADMIN', 'SUPER_ADMIN'] },
+  { path: '/admin/devices', icon: Server,      label: 'أجهزة NFC',       roles: ['ADMIN', 'SUPER_ADMIN'] },
   { path: '/clock',     icon: CreditCard,      label: 'جهاز البصمة' },
   { path: '/attendance', icon: Clock,           label: 'سجل حضوري' },
   { path: '/inbox',     icon: Bell,            label: 'صندوق الرسائل' },
@@ -96,7 +100,7 @@ const Sidebar = () => {
           <NavLink
             key={item.path}
             to={item.path}
-            end={item.path === '/payroll'}
+            end
             className={({ isActive }) => `
               flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
               ${

@@ -1,5 +1,6 @@
 package com.hrms.api;
 
+import com.hrms.api.dto.EmployeeAdminUpdate;
 import com.hrms.api.dto.EmployeeProfileResponse;
 import com.hrms.api.dto.EmployeeProfileUpdate;
 import com.hrms.api.dto.EmployeeSummaryResponse;
@@ -59,6 +60,27 @@ public class EmployeeController {
         return ResponseEntity.ok(ApiResponse.success(
                 updated,
                 "تم تحديث الملف الشخصي بنجاح"
+        ));
+    }
+
+    /**
+     * PUT /api/employees/{employeeId}
+     * Update another employee's profile (HR/ADMIN/SUPER_ADMIN only).
+     * Allows modification of basic fields plus role, department, salary, and status.
+     */
+    @PutMapping("/{employeeId}")
+    public ResponseEntity<ApiResponse<EmployeeProfileResponse>> updateEmployee(
+            @AuthenticationPrincipal EmployeeUserDetails principal,
+            @PathVariable Long employeeId,
+            @Valid @RequestBody EmployeeAdminUpdate update) {
+        if (!hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only HR/Admin can update other employees");
+        }
+
+        EmployeeProfileResponse updated = employeeDirectoryService.updateEmployeeByAdmin(employeeId, update, principal.getEmployeeId());
+        return ResponseEntity.ok(ApiResponse.success(
+                updated,
+                "تم تحديث بيانات الموظف بنجاح"
         ));
     }
 

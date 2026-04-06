@@ -67,6 +67,20 @@ export interface EmployeeProfileUpdatePayload {
   avatarUrl?: string;
 }
 
+export interface EmployeeAdminUpdatePayload {
+  fullName: string;
+  email: string;
+  mobileNumber?: string;
+  address?: string;
+  nationalId?: string;
+  avatarUrl?: string;
+  teamId?: number | null;
+  roleId?: number | null;
+  managerId?: number | null;
+  baseSalary?: string | null;
+  employmentStatus?: string | null;
+}
+
 export interface EmployeeSummary {
   employeeId: number;
   fullName: string;
@@ -243,6 +257,9 @@ export const logout = () => {
   localStorage.removeItem(AUTH_TOKEN_KEY);
 };
 
+export const changePassword = (data: { currentPassword: string; newPassword: string }) =>
+  api.post('/auth/change-password', data);
+
 export const getCurrentEmployee = () => api.get<EmployeeProfile>('/employees/me');
 
 export const searchEmployees = (query: string) =>
@@ -250,6 +267,9 @@ export const searchEmployees = (query: string) =>
 
 export const updateProfileMe = (data: EmployeeProfileUpdatePayload) =>
   api.put<EmployeeProfile>('/employees/me', data);
+
+export const updateEmployee = (employeeId: number, data: EmployeeAdminUpdatePayload) =>
+  api.put<EmployeeProfile>(`/employees/${employeeId}`, data);
 
 export const listEmployees = () => getPaginatedItems<EmployeeSummary>('/employees');
 export const listEmployeesPage = (params?: PaginationParams) =>
@@ -332,6 +352,12 @@ export const getNfcDevicesPage = (params?: PaginationParams) =>
 export const clearSystemLogs = () => api.delete('/admin/logs');
 export const addNfcDevice = (device: Pick<NfcDevice, 'deviceId' | 'name' | 'status' | 'systemLoad'>) =>
   api.post<NfcDevice>('/admin/devices', device);
+
+export const updateNfcDeviceStatus = (deviceId: string, status: string) =>
+  api.put<NfcDevice>(`/admin/devices/${deviceId}/status`, { status });
+
+export const deleteNfcDevice = (deviceId: string) =>
+  api.delete(`/admin/devices/${deviceId}`);
 export const triggerBackup = () => api.post<{ status: string }>('/admin/backup', {});
 export const getHrMonthlyAttendance = (month: number, year: number) => 
   getPaginatedItems<AttendanceRecord>(`/attendance/hr/monthly?month=${month}&year=${year}`);

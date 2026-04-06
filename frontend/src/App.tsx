@@ -1,37 +1,45 @@
-import { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { Navigate } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 import Layout from './components/Layout';
 
-const Home = lazy(() => import('./pages/Home'));
-const EmployeeDashboard = lazy(() => import('./pages/EmployeeDashboard'));
-const ManagerDashboard = lazy(() => import('./pages/ManagerDashboard'));
-const HRDashboard = lazy(() => import('./pages/HRDashboard'));
-const HRAttendanceGrid = lazy(() => import('./pages/HRAttendanceGrid'));
-const PayrollDashboard = lazy(() => import('./pages/PayrollDashboard'));
-const UserManagement = lazy(() => import('./pages/UserManagement'));
-const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
-const LeaveCalendar = lazy(() => import('./pages/LeaveCalendar'));
-const AttendanceLogs = lazy(() => import('./pages/AttendanceLogs'));
-const NFCClock = lazy(() => import('./pages/NFCClock'));
-const Login = lazy(() => import('./pages/Login'));
-const Goals = lazy(() => import('./pages/Goals'));
-const Inbox = lazy(() => import('./pages/Inbox'));
+import Home from './pages/Home';
+import EmployeeDashboard from './pages/EmployeeDashboard';
+import ManagerDashboard from './pages/ManagerDashboard';
+import TeamAttendance from './pages/TeamAttendance';
+import HRDashboard from './pages/HRDashboard';
+import HRAttendanceGrid from './pages/HRAttendanceGrid';
+import PayrollDashboard from './pages/PayrollDashboard';
+import UserManagement from './pages/UserManagement';
+import AdminDashboard from './pages/AdminDashboard';
+import DeviceManagement from './pages/DeviceManagement';
+import LeaveCalendar from './pages/LeaveCalendar';
+import AttendanceLogs from './pages/AttendanceLogs';
+import NFCClock from './pages/NFCClock';
+import Login from './pages/Login';
+import Goals from './pages/Goals';
+import Inbox from './pages/Inbox';
 
-const RouteFallback = () => (
-  <div className="flex min-h-screen items-center justify-center bg-black text-sm font-medium text-slate-400">
-    جاري تحميل الصفحة...
-  </div>
-);
+/**
+ * Scrolls to top on every route change.
+ * Must be rendered inside <Router> to access useLocation().
+ */
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
+  }, [pathname]);
+  return null;
+};
 
 function App() {
   return (
     <ErrorBoundary>
-      <Suspense fallback={<RouteFallback />}>
-        <Router>
-          <Routes>
+      <Router>
+        <ScrollToTop />
+        <Routes>
             {/* Public */}
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
@@ -45,6 +53,11 @@ function App() {
             <Route path="/manager" element={
               <ProtectedRoute allowedRoles={['MANAGER']}>
                 <Layout><ManagerDashboard /></Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/manager/team-attendance" element={
+              <ProtectedRoute allowedRoles={['MANAGER']}>
+                <Layout><TeamAttendance /></Layout>
               </ProtectedRoute>
             } />
             <Route path="/hr" element={
@@ -70,6 +83,11 @@ function App() {
             <Route path="/admin" element={
               <ProtectedRoute allowedRoles={['ADMIN']}>
                 <Layout><AdminDashboard /></Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/devices" element={
+              <ProtectedRoute allowedRoles={['ADMIN', 'SUPER_ADMIN']}>
+                <Layout><DeviceManagement /></Layout>
               </ProtectedRoute>
             } />
             <Route path="/leave-calendar" element={
@@ -105,8 +123,7 @@ function App() {
               </ProtectedRoute>
             } />
           </Routes>
-        </Router>
-      </Suspense>
+      </Router>
     </ErrorBoundary>
   );
 }

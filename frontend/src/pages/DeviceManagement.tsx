@@ -1,0 +1,369 @@
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Server,
+  Plus,
+  Trash2,
+  Power,
+  RefreshCw,
+  Search,
+  Wifi,
+  WifiOff,
+} from 'lucide-react';
+import {
+  getNfcDevicesPage,
+  addNfcDevice,
+  updateNfcDeviceStatus,
+  deleteNfcDevice,
+  type NfcDevice,
+} from '../services/api';
+import PaginationControls from '../components/PaginationControls';
+
+const DeviceManagement = () => {
+  const [devices, setDevices] = useState<NfcDevice[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+
+  // Modal state
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addForm, setAddForm] = useState({ name: '', deviceId: '' });
+  const [actionLoading, setActionLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadDevices = () => {
+    setLoading(true);
+    setError(null);
+    getNfcDevicesPage({ page, size: 10 })
+      .then((res) => {
+        setDevices(res.data.items);
+        setTotalPages(res.data.totalPages);
+        setTotalCount(res.data.totalCount);
+      })
+      .catch((err: unknown) => {
+        const msg = err instanceof Error ? err.message : 'فشل في تحميل الأجهزة';
+        setError(msg);
+      })
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadDevices();
+  }, [page]);
+
+  const filtered = devices.filter(
+    (d) =>
+      d.name.toLowerCase().includes(search.toLowerCase()) ||
+      d.deviceId.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const handleAddDevice = async () => {
+    if (!addForm.name.trim() || !addForm.deviceId.trim()) {
+      setError('يرجى ملء جميع الحقول');
+      return;
+    }
+    setActionLoading(true);
+    setError(null);
+    try {
+      await addNfcDevice({
+        name: addForm.name.trim(),
+        deviceId: addForm.deviceId.trim(),
+        status: 'Offline',
+        systemLoad: '0%',
+      });
+      setSuccessMessage('تم إضافة الجهاز بنجاح');
+      setShowAddModal(false);
+      setAddForm({ name: '', deviceId: '' });
+      loadDevices();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'فشل في إضافة الجهاز';
+      setError(msg);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleToggleStatus = async (device: NfcDevice) => {
+    const newStatus = device.status === 'Online' ? 'Offline' : 'Online';
+    setActionLoading(true);
+    setError(null);
+    try {
+      await updateNfcDeviceStatus(device.deviceId, newStatus);
+      setSuccessMessage(`تم تحديث حالة ${device.name} إلى ${newStatus}`);
+      loadDevices();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'فشل في تحديث الحالة';
+      setError(msg);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteDevice = async (device: NfcDevice) => {
+    if (!window.confirm(`هل أنت متأكد من حذف الجهاز "${device.name}"؟`)) return;
+    setActionLoading(true);
+    setError(null);
+    try {
+      await deleteNfcDevice(device.deviceId);
+      setSuccessMessage('تم حذف الجهاز بنجاح');
+      loadDevices();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'فشل في حذف الجهاز';
+      setError(msg);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const clearMessages = () => {
+    setSuccessMessage(null);
+    setError(null);
+  };
+
+  return (
+    <div className="min-h-screen bg-zinc-950 text-white" dir="rtl">
+      {/* Success/Error Toasts */}
+      <AnimatePresence>
+        {successMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white px-6 py-3 rounded-xl shadow-lg max-w-md"
+          >
+            <p className="font-bold">{successMessage}</p>
+            <button onClick={clearMessages} className="text-green-200 text-sm mt-1 hover:text-white">
+              إغلاق
+            </button>
+          </motion.div>
+        )}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: -20 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-red-600 text-white px-6 py-3 rounded-xl shadow-lg max-w-md"
+          >
+            <p className="font-bold">{error}</p>
+            <button onClick={clearMessages} className="text-red-200 text-sm mt-1 hover:text-white">
+              إغلاق
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Header */}
+      <div className="bg-gradient-to-l from-blue-900 via-indigo-900 to-zinc-950 border-b border-white/5">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="bg-blue-500/10 p-3 rounded-xl">
+                <Server size={28} className="text-blue-400" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold">إدارة أجهزة NFC</h1>
+                <p className="text-slate-400 mt-1">مراقبة وإدارة أجهزة القراءة NFC المتصلة</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={loadDevices}
+                className="bg-white/5 hover:bg-white/10 px-4 py-3 rounded-xl font-bold flex items-center gap-2 border border-white/10 transition-all"
+              >
+                <RefreshCw size={18} />
+                <span>تحديث</span>
+              </button>
+              <button
+                onClick={() => {
+                  setAddForm({ name: '', deviceId: `NFC_${Math.floor(1000 + Math.random() * 9000)}-NEW` });
+                  setShowAddModal(true);
+                }}
+                className="bg-blue-600 hover:bg-blue-700 px-5 py-3 rounded-xl font-bold flex items-center gap-2 transition-all"
+              >
+                <Plus size={18} />
+                <span>إضافة جهاز</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Search */}
+        <div className="relative mb-6">
+          <Search size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="بحث باسم الجهاز أو المعرف..."
+            className="w-full pr-10 pl-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder:text-slate-600"
+          />
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="bg-zinc-900 border border-white/5 rounded-2xl p-4">
+            <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">إجمالي الأجهزة</p>
+            <p className="text-3xl font-black text-white">{totalCount}</p>
+          </div>
+          <div className="bg-zinc-900 border border-green-500/20 rounded-2xl p-4">
+            <p className="text-green-500 text-xs font-bold uppercase tracking-wider mb-1">متصل (Online)</p>
+            <p className="text-3xl font-black text-green-400">
+              {devices.filter((d) => d.status === 'Online').length}
+            </p>
+          </div>
+          <div className="bg-zinc-900 border border-red-500/20 rounded-2xl p-4">
+            <p className="text-red-500 text-xs font-bold uppercase tracking-wider mb-1">غير متصل (Offline)</p>
+            <p className="text-3xl font-black text-red-400">
+              {devices.filter((d) => d.status !== 'Online').length}
+            </p>
+          </div>
+        </div>
+
+        {/* Device List */}
+        {loading ? (
+          <div className="text-center py-12 text-slate-500">جارِ التحميل...</div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-12 text-slate-500">لا توجد أجهزة</div>
+        ) : (
+          <div className="bg-zinc-900 border border-white/5 rounded-2xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-white/5 text-slate-400">
+                  <tr>
+                    <th className="px-6 py-4 text-right font-bold">الحالة</th>
+                    <th className="px-6 py-4 text-right font-bold">اسم الجهاز</th>
+                    <th className="px-6 py-4 text-right font-bold">المعرف (ID)</th>
+                    <th className="px-6 py-4 text-right font-bold">الحمل</th>
+                    <th className="px-6 py-4 text-right font-bold">إجراءات</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((device) => (
+                    <tr
+                      key={device.deviceId}
+                      className="border-t border-white/5 hover:bg-white/[0.02] transition-colors"
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          {device.status === 'Online' ? (
+                            <Wifi size={16} className="text-green-400" />
+                          ) : (
+                            <WifiOff size={16} className="text-red-400 animate-pulse" />
+                          )}
+                          <span
+                            className={`text-xs font-bold ${
+                              device.status === 'Online' ? 'text-green-400' : 'text-red-400'
+                            }`}
+                          >
+                            {device.status === 'Online' ? 'متصل' : 'غير متصل'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 font-bold text-slate-100">{device.name}</td>
+                      <td className="px-6 py-4 font-mono text-xs text-slate-400">{device.deviceId}</td>
+                      <td className="px-6 py-4 text-slate-300">{device.systemLoad}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleToggleStatus(device)}
+                            disabled={actionLoading}
+                            className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors disabled:opacity-50"
+                            title={device.status === 'Online' ? 'إيقاف' : 'تشغيل'}
+                          >
+                            <Power size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteDevice(device)}
+                            disabled={actionLoading}
+                            className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-colors disabled:opacity-50"
+                            title="حذف"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <PaginationControls
+              page={page}
+              totalPages={totalPages}
+              totalCount={totalCount}
+              onPageChange={setPage}
+              className="p-4"
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Add Device Modal */}
+      <AnimatePresence>
+        {showAddModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={() => setShowAddModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl max-w-md w-full p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="text-xl font-bold text-white mb-6">إضافة جهاز NFC جديد</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-slate-300 mb-2">اسم الجهاز</label>
+                  <input
+                    type="text"
+                    value={addForm.name}
+                    onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
+                    placeholder="مثال: Floor 2 Gate C"
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500 placeholder:text-slate-600"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-300 mb-2">المعرف الفريد (UID)</label>
+                  <input
+                    type="text"
+                    value={addForm.deviceId}
+                    onChange={(e) => setAddForm({ ...addForm, deviceId: e.target.value })}
+                    placeholder="NFC_XXXX-NEW"
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white font-mono focus:ring-2 focus:ring-blue-500 placeholder:text-slate-600"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setShowAddModal(false)}
+                  className="flex-1 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-slate-300 transition-colors"
+                >
+                  إلغاء
+                </button>
+                <button
+                  onClick={handleAddDevice}
+                  disabled={actionLoading}
+                  className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold text-white transition-colors disabled:opacity-50"
+                >
+                  {actionLoading ? 'جارِ الإضافة...' : 'إضافة الجهاز'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+export default DeviceManagement;

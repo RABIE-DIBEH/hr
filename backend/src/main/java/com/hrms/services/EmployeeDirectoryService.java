@@ -1,5 +1,6 @@
 package com.hrms.services;
 
+import com.hrms.api.dto.EmployeeAdminUpdate;
 import com.hrms.api.dto.EmployeeProfileResponse;
 import com.hrms.api.dto.EmployeeProfileUpdate;
 import com.hrms.api.dto.EmployeeSummaryResponse;
@@ -145,6 +146,51 @@ public class EmployeeDirectoryService {
             return null;
         }
         return teamRepository.findById(teamId).map(Team::getName).orElse(null);
+    }
+
+    /**
+     * Update an employee's profile by an admin/HR user.
+     * Allows modification of basic profile fields plus admin-only fields (role, team, salary, status).
+     */
+    @Transactional
+    public EmployeeProfileResponse updateEmployeeByAdmin(Long employeeId, EmployeeAdminUpdate update, Long updatedBy) {
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
+
+        // Ensure email uniqueness (exclude current employee)
+        employeeRepository.findByEmailIgnoreCase(update.email())
+                .filter(existing -> !existing.getEmployeeId().equals(employeeId))
+                .ifPresent(existing -> {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "البريد الإلكتروني مستخدم بالفعل");
+                });
+
+        // Basic profile fields
+        employee.setFullName(update.fullName());
+        employee.setEmail(update.email());
+        employee.setMobileNumber(update.mobileNumber());
+        employee.setAddress(update.address());
+        employee.setNationalId(update.nationalId());
+        employee.setAvatarUrl(update.avatarUrl());
+
+        // Admin-only fields
+        if (update.teamId() != null) {
+            employee.setTeamId(update.teamId());
+        }
+        if (update.roleId() != null) {
+            employee.setRoleId(update.roleId());
+        }
+        if (update.managerId() != null) {
+            employee.setManagerId(update.managerId());
+        }
+        if (update.baseSalary() != null) {
+            employee.setBaseSalary(update.baseSalary());
+        }
+        if (update.employmentStatus() != null && !update.employmentStatus().isBlank()) {
+            employee.setStatus(update.employmentStatus());
+        }
+
+        employeeRepository.save(employee);
+        return getProfile(employeeId);
     }
 
     /**
