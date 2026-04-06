@@ -489,8 +489,14 @@ export const getAllAdvanceRequestsPage = (params?: PaginationParams, status?: st
     ? getPaginatedPage<AdvanceRequest>(`/advances/all?status=${encodeURIComponent(status)}`, params)
     : getPaginatedPage<AdvanceRequest>('/advances/all', params);
 
-export const processAdvanceRequest = (advanceId: number, status: string, note?: string) =>
-  api.put(`/advances/process/${advanceId}`, { status, note });
+export const processAdvanceRequest = (
+  advanceId: number,
+  status: string,
+  note?: string,
+  amount?: number,
+  reason?: string,
+) =>
+  api.put(`/advances/process/${advanceId}`, { status, note, amount, reason });
 
 export const deliverAdvanceRequest = (advanceId: number) =>
   api.put(`/advances/deliver/${advanceId}`);
@@ -513,7 +519,7 @@ export const getPaidAdvanceRequests = () =>
   getPaginatedItems<AdvanceRequest>('/advances/all?status=DELIVERED');
 
 export const getAdvanceRequest = (advanceId: number) =>
-  api.get<AdvanceRequest>(`/advances/${advanceId}`);
+  api.get<AdvanceRequest>(`/advances/id/${advanceId}`);
 
 // Payroll slip API
 export const getMyPayrollSlips = () =>
@@ -537,7 +543,29 @@ export interface PayrollSlip {
   deductions: number;
   netSalary: number;
   generatedAt: string;
+  paid?: boolean;
+  paidAt?: string | null;
 }
+
+export interface PayrollMonthlySummaryResponse {
+  month: number;
+  year: number;
+  totalSlips: number;
+  paidSlips: number;
+  totalNetSalary: number;
+}
+
+export const getMonthlyPayrollPage = (month: number, year: number, params?: PaginationParams) =>
+  getPaginatedPage<PayrollSlip>(`/payroll/monthly?month=${month}&year=${year}`, params);
+
+export const getPayrollMonthlySummary = (month: number, year: number) =>
+  api.get<PayrollMonthlySummaryResponse>(`/payroll/summary?month=${month}&year=${year}`);
+
+export const markPayrollPaid = (month: number, year: number, employeeId: number) =>
+  api.put(`/payroll/pay?employeeId=${employeeId}&month=${month}&year=${year}`);
+
+export const markAllPayrollPaid = (month: number, year: number) =>
+  api.put(`/payroll/pay-all?month=${month}&year=${year}`);
 
 export interface PayrollBulkResult {
   month: number;

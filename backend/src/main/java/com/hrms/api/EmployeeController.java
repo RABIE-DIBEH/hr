@@ -104,7 +104,8 @@ public class EmployeeController {
     public ResponseEntity<ApiResponse<PaginatedResponse<EmployeeSummaryResponse>>> listEmployees(
             @AuthenticationPrincipal EmployeeUserDetails principal,
             @PageableDefault(size = 20) Pageable pageable) {
-        if (!hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN")) {
+        // Payroll needs employee list for monthly calculations and advance processing.
+        if (!hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN", "ROLE_PAYROLL")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Insufficient permissions");
         }
         Page<EmployeeSummaryResponse> page = employeeDirectoryService.listAllSummaries(pageable);

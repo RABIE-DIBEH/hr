@@ -23,6 +23,8 @@ import {
   listMyTeamPage,
   getPendingRecruitmentRequestsPage,
   processRecruitmentRequest,
+  getPendingAdvanceRequestsPage,
+  processAdvanceRequest,
   getPendingLeavesForManagerPage,
   getPendingLeavesForHrPage,
   processLeaveRequest,
@@ -33,6 +35,7 @@ import {
   downloadAttendanceExcel,
   type EmployeeSummary,
   type RecruitmentRequest,
+  type AdvanceRequest,
   type LeaveRequest,
   type AttendanceRecord,
 } from '../services/api';
@@ -63,6 +66,12 @@ const ManagerDashboard = () => {
   const [verifyingRecord, setVerifyingRecord] = useState<number | null>(null);
   const [leaveNote, setLeaveNote] = useState<string>('');
   const [selectedLeaveId, setSelectedLeaveId] = useState<number | null>(null);
+  const [advancePage, setAdvancePage] = useState(0);
+  const [processingAdvance, setProcessingAdvance] = useState<number | null>(null);
+  const [advanceNote, setAdvanceNote] = useState<string>('');
+  const [selectedAdvanceId, setSelectedAdvanceId] = useState<number | null>(null);
+  const [adjustedAdvanceAmount, setAdjustedAdvanceAmount] = useState<string>('');
+  const [adjustedAdvanceReason, setAdjustedAdvanceReason] = useState<string>('');
   const [requestPage, setRequestPage] = useState(0);
   const [attendancePage, setAttendancePage] = useState(0);
   const [leavePage, setLeavePage] = useState(0);
@@ -100,6 +109,12 @@ const ManagerDashboard = () => {
     enabled: canReviewCompanyRequests,
   });
 
+  const advancesQuery = useQuery({
+    queryKey: queryKeys.manager.advances(advancePage),
+    queryFn: async () => (await getPendingAdvanceRequestsPage({ page: advancePage, size: 10 })).data,
+    enabled: canViewManagerScopedTeam,
+  });
+
   const attendanceQuery = useQuery({
     queryKey: queryKeys.manager.todayAttendance(attendancePage),
     queryFn: async () => (await getManagerTodayAttendancePage({ page: attendancePage, size: 10 })).data,
@@ -133,12 +148,16 @@ const ManagerDashboard = () => {
   const attendanceTotalPages = attendanceQuery.data?.totalPages ?? 0;
   const attendanceTotalCount = attendanceQuery.data?.totalCount ?? 0;
 
+  const pendingAdvances: AdvanceRequest[] = advancesQuery.data?.items ?? [];
+  const advancesTotalPages = advancesQuery.data?.totalPages ?? 0;
+  const advancesTotalCount = advancesQuery.data?.totalCount ?? 0;
+
   const pendingLeaves: LeaveRequest[] = leavesQuery.data?.items ?? [];
   const leaveTotalPages = leavesQuery.data?.totalPages ?? 0;
   const leaveTotalCount = leavesQuery.data?.totalCount ?? 0;
 
   const queryError =
-    teamQuery.error || recruitmentQuery.error || attendanceQuery.error || leavesQuery.error;
+    teamQuery.error || recruitmentQuery.error || advancesQuery.error || attendanceQuery.error || leavesQuery.error;
   const queryErrorMessage = queryError ? extractApiError(queryError).message : null;
   const pageError = error || queryErrorMessage;
 
@@ -163,6 +182,13 @@ const ManagerDashboard = () => {
       icon: AlertTriangle,
       color: 'text-orange-400',
       bg: 'bg-orange-500/10',
+    },
+    {
+      label: 'طلبات سلف معلقة',
+      value: String(advancesTotalCount),
+      icon: ClipboardList,
+      color: 'text-purple-400',
+      bg: 'bg-purple-500/10',
     },
   ];
 
@@ -195,6 +221,29 @@ const ManagerDashboard = () => {
       setError(extractApiError(err).message || 'فشل معالجة طلب الإجازة');
     } finally {
       setProcessingLeave(null);
+    }
+  };
+
+  const handleProcessAdvance = async (advanceId: number, status: 'Approved' | 'Rejected') => {
+    setProcessingAdvance(advanceId);
+    try {
+      const amountNum = adjustedAdvanceAmount.trim() ? Number(adjustedAdvanceAmount) : undefined;
+      await processAdvanceRequest(
+        advanceId,
+        status,
+        advanceNote || undefined,
+        Number.isFinite(amountNum) ? amountNum : undefined,
+        adjustedAdvanceReason || undefined,
+      );
+      await queryClient.invalidateQueries({ queryKey: queryKeys.manager.advancesRoot });
+      setAdvanceNote('');
+      setAdjustedAdvanceAmount('');
+      setAdjustedAdvanceReason('');
+      setSelectedAdvanceId(null);
+    } catch (err: unknown) {
+      setError(extractApiError(err).message || 'فشل معالجة طلب السلفة');
+    } finally {
+      setProcessingAdvance(null);
     }
   };
 
@@ -309,7 +358,7 @@ const ManagerDashboard = () => {
         <div className="mb-6 p-4 rounded-xl bg-red-500/10 text-red-200 text-sm font-medium">{pageError}</div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
         {stats.map((stat, idx) => (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -722,6 +771,116 @@ const ManagerDashboard = () => {
             totalPages={leaveTotalPages}
             totalCount={leaveTotalCount}
             onPageChange={setLeavePage}
+          />
+        </div>
+      )}
+
+      {/* Pending Advance Requests Section (Manager Stage) */}
+      {canViewManagerScopedTeam && (
+        <div className="bg-luxury-surface rounded-[2.5rem] shadow-sm border border-white/5 overflow-hidden mb-10">
+          <div className="p-8 border-b border-white/5 flex items-center gap-3">
+            <div className="bg-purple-500/10 w-12 h-12 rounded-2xl flex items-center justify-center text-purple-400">
+              <ClipboardList size={24} />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-white">طلبات السلف (مرحلة المدير)</h2>
+              <p className="text-slate-400 text-sm">
+                {pendingAdvances.length} طلب بانتظار مراجعتك
+              </p>
+            </div>
+          </div>
+
+          {pendingAdvances.length === 0 ? (
+            <div className="p-12 text-center text-slate-500">
+              <ClipboardList size={48} className="mx-auto mb-4 opacity-50" />
+              <p>لا توجد طلبات سلف معلقة حالياً</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-white/5">
+              {pendingAdvances.map((adv) => (
+                <div key={adv.advanceId} className="p-6 hover:bg-white/5 transition-all">
+                  <div className="flex justify-between items-start gap-6">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-3">
+                        <h3 className="text-lg font-bold text-white">{adv.employeeName ?? `الموظف #${adv.employeeId}`}</h3>
+                        <span className="bg-purple-500/10 text-purple-300 px-3 py-1 rounded-lg text-xs font-bold">
+                          {adv.amount} ر.س
+                        </span>
+                      </div>
+                      {adv.reason && (
+                        <p className="text-slate-400 text-xs">{adv.reason}</p>
+                      )}
+                      <p className="text-slate-500 text-xs mt-2">
+                        {adv.requestedAt ? new Date(adv.requestedAt).toLocaleString('ar-SA') : ''}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col gap-2 min-w-[260px]">
+                      {selectedAdvanceId === adv.advanceId ? (
+                        <div className="space-y-2">
+                          <input
+                            type="number"
+                            inputMode="decimal"
+                            placeholder="تعديل المبلغ (اختياري)"
+                            value={adjustedAdvanceAmount}
+                            onChange={(e) => setAdjustedAdvanceAmount(e.target.value)}
+                            className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-slate-500 focus:ring-2 focus:ring-purple-500/20"
+                          />
+                          <input
+                            type="text"
+                            placeholder="تعديل السبب (اختياري)"
+                            value={adjustedAdvanceReason}
+                            onChange={(e) => setAdjustedAdvanceReason(e.target.value)}
+                            className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-slate-500 focus:ring-2 focus:ring-purple-500/20"
+                          />
+                          <input
+                            type="text"
+                            placeholder="ملاحظة (اختياري)"
+                            value={advanceNote}
+                            onChange={(e) => setAdvanceNote(e.target.value)}
+                            className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-slate-500 focus:ring-2 focus:ring-purple-500/20"
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleProcessAdvance(adv.advanceId!, 'Approved')}
+                              disabled={processingAdvance === adv.advanceId}
+                              className="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-1 disabled:opacity-50"
+                            >
+                              <Check size={14} /> اعتماد
+                            </button>
+                            <button
+                              onClick={() => handleProcessAdvance(adv.advanceId!, 'Rejected')}
+                              disabled={processingAdvance === adv.advanceId}
+                              className="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-1 disabled:opacity-50"
+                            >
+                              <X size={14} /> رفض
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setSelectedAdvanceId(adv.advanceId!);
+                            setAdvanceNote('');
+                            setAdjustedAdvanceAmount(String(adv.amount ?? ''));
+                            setAdjustedAdvanceReason(adv.reason ?? '');
+                          }}
+                          className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                        >
+                          مراجعة الطلب
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          <PaginationControls
+            page={advancePage}
+            totalPages={advancesTotalPages}
+            totalCount={advancesTotalCount}
+            onPageChange={setAdvancePage}
           />
         </div>
       )}

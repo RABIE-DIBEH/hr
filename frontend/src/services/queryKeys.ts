@@ -30,6 +30,8 @@ export const queryKeys = {
     team: (scope: 'all' | 'mine', page: number) => ['manager', 'team', scope, page] as const,
     recruitmentRoot: ['manager', 'recruitment'] as const,
     recruitment: (page: number) => ['manager', 'recruitment', page] as const,
+    advancesRoot: ['manager', 'advances'] as const,
+    advances: (page: number) => ['manager', 'advances', page] as const,
     leavesRoot: ['manager', 'leaves'] as const,
     leaves: (scope: 'hr' | 'manager', scopeId: number | null, page: number) =>
       ['manager', 'leaves', scope, scopeId, page] as const,

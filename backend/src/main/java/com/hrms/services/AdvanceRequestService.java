@@ -9,6 +9,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Objects;
@@ -76,7 +78,9 @@ public class AdvanceRequestService {
         }
 
         String current = request.getStatus();
-        boolean isManagerStage = AdvanceRequest.STATUS_PENDING_MANAGER.equals(current);
+        // Backward compatible: older rows may still have legacy status "PENDING"/"Pending".
+        boolean isLegacyPending = current != null && "PENDING".equalsIgnoreCase(current);
+        boolean isManagerStage = AdvanceRequest.STATUS_PENDING_MANAGER.equals(current) || isLegacyPending;
         boolean isPayrollStage = AdvanceRequest.STATUS_PENDING_PAYROLL.equals(current);
 
         if (!isManagerStage && !isPayrollStage) {
@@ -91,8 +95,9 @@ public class AdvanceRequestService {
             throw new IllegalStateException("Only PAYROLL can process requests in PENDING_PAYROLL stage");
         }
 
-        if (isManagerStage) {
-            // Manager can modify amount/reason before sending to payroll.
+        if (isManagerStage || isPayrollStage) {
+            // Manager and Payroll can modify amount/reason before advancing to the next stage.
+            // After payroll final approval (APPROVED) no edits are allowed since it becomes a new state.
             if (adjustedAmount != null) {
                 if (adjustedAmount.compareTo(BigDecimal.ZERO) <= 0) {
                     throw new IllegalArgumentException("Amount must be greater than zero");
@@ -102,6 +107,13 @@ public class AdvanceRequestService {
             if (adjustedReason != null && !adjustedReason.isBlank()) {
                 request.setReason(adjustedReason);
             }
+        }
+
+        // Ensure month/year bucket is always present for downstream payroll reporting.
+        if (request.getSalaryMonth() == null || request.getSalaryYear() == null) {
+            LocalDateTime ts = request.getRequestedAt() != null ? request.getRequestedAt() : LocalDateTime.now();
+            request.setSalaryMonth(ts.getMonthValue());
+            request.setSalaryYear(ts.getYear());
         }
 
         if ("Rejected".equalsIgnoreCase(action)) {
@@ -164,6 +176,11 @@ public class AdvanceRequestService {
             throw new IllegalStateException("Advance request has already been marked as delivered");
         }
 
+        if (request.getSalaryMonth() == null || request.getSalaryYear() == null) {
+            LocalDateTime ts = request.getRequestedAt() != null ? request.getRequestedAt() : LocalDateTime.now();
+            request.setSalaryMonth(ts.getMonthValue());
+            request.setSalaryYear(ts.getYear());
+        }
         request.setPaid(true);
         request.setPaidAt(LocalDateTime.now());
         request.setStatus(AdvanceRequest.STATUS_DELIVERED);
@@ -192,6 +209,10 @@ public class AdvanceRequestService {
         if ("PAYROLL".equalsIgnoreCase(roleName)) {
             return advanceRequestRepository.findAllPendingPayrollRequests(pageable);
         }
+        // SUPER_ADMIN is allowed to access both dashboards; default pending view is payroll stage.
+        if ("SUPER_ADMIN".equalsIgnoreCase(roleName)) {
+            return advanceRequestRepository.findAllPendingPayrollRequests(pageable);
+        }
         return Page.empty();
     }
 
@@ -204,15 +225,31 @@ public class AdvanceRequestService {
     }
 
     public List<AdvanceRequest> getApprovedAwaitingDeliveryForMonth(int month, int year) {
-        return advanceRequestRepository.findAllApprovedAwaitingDeliveryForMonth(month, year);
+        YearMonth ym = YearMonth.of(year, month);
+        LocalDateTime start = ym.atDay(1).atStartOfDay();
+        LocalDateTime end = ym.plusMonths(1).atDay(1).atStartOfDay();
+        List<AdvanceRequest> combined = new ArrayList<>();
+        combined.addAll(advanceRequestRepository.findAllApprovedAwaitingDeliveryForMonth(month, year));
+        combined.addAll(advanceRequestRepository.findAllApprovedAwaitingDeliveryForRequestedAtRange(start, end));
+        return combined;
     }
 
     @Transactional
     public int deliverAllApprovedAwaitingDelivery(int month, int year, Long processorId) {
-        List<AdvanceRequest> toDeliver = advanceRequestRepository.findAllApprovedAwaitingDeliveryForMonth(month, year);
+        YearMonth ym = YearMonth.of(year, month);
+        LocalDateTime start = ym.atDay(1).atStartOfDay();
+        LocalDateTime end = ym.plusMonths(1).atDay(1).atStartOfDay();
+
+        List<AdvanceRequest> toDeliver = new ArrayList<>();
+        toDeliver.addAll(advanceRequestRepository.findAllApprovedAwaitingDeliveryForMonth(month, year));
+        toDeliver.addAll(advanceRequestRepository.findAllApprovedAwaitingDeliveryForRequestedAtRange(start, end));
         int delivered = 0;
         for (AdvanceRequest req : toDeliver) {
             if (req.isPaid()) continue;
+            if (req.getSalaryMonth() == null || req.getSalaryYear() == null) {
+                req.setSalaryMonth(month);
+                req.setSalaryYear(year);
+            }
             req.setPaid(true);
             req.setPaidAt(LocalDateTime.now());
             req.setStatus(AdvanceRequest.STATUS_DELIVERED);
@@ -271,7 +308,13 @@ public class AdvanceRequestService {
      * Get total paid advances available for payroll deduction
      */
     public BigDecimal getUndeductedDeliveredAmountForEmployee(Long employeeId, int month, int year) {
-        return advanceRequestRepository.sumUndeductedDeliveredAmountByEmployeeForMonth(employeeId, month, year);
+        YearMonth ym = YearMonth.of(year, month);
+        LocalDateTime start = ym.atDay(1).atStartOfDay();
+        LocalDateTime end = ym.plusMonths(1).atDay(1).atStartOfDay();
+
+        BigDecimal byBucket = advanceRequestRepository.sumUndeductedDeliveredAmountByEmployeeForMonth(employeeId, month, year);
+        BigDecimal byLegacyRange = advanceRequestRepository.sumUndeductedDeliveredAmountByEmployeeForRequestedAtRange(employeeId, start, end);
+        return (byBucket != null ? byBucket : BigDecimal.ZERO).add(byLegacyRange != null ? byLegacyRange : BigDecimal.ZERO);
     }
 
     /**
@@ -279,7 +322,19 @@ public class AdvanceRequestService {
      */
     @Transactional
     public void markDeliveredAdvancesAsDeducted(Long employeeId, int month, int year) {
-        List<AdvanceRequest> advances = advanceRequestRepository.findUndeductedDeliveredAdvancesByEmployeeForMonth(employeeId, month, year);
+        YearMonth ym = YearMonth.of(year, month);
+        LocalDateTime start = ym.atDay(1).atStartOfDay();
+        LocalDateTime end = ym.plusMonths(1).atDay(1).atStartOfDay();
+
+        List<AdvanceRequest> advances = new ArrayList<>();
+        advances.addAll(advanceRequestRepository.findUndeductedDeliveredAdvancesByEmployeeForMonth(employeeId, month, year));
+        advances.addAll(advanceRequestRepository.findUndeductedDeliveredAdvancesByEmployeeForRequestedAtRange(employeeId, start, end));
+        advances.forEach(req -> {
+            if (req.getSalaryMonth() == null || req.getSalaryYear() == null) {
+                req.setSalaryMonth(month);
+                req.setSalaryYear(year);
+            }
+        });
         advances.forEach(request -> request.setDeducted(true));
         advanceRequestRepository.saveAll(advances);
     }

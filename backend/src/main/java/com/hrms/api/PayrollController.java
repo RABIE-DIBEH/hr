@@ -3,6 +3,7 @@ package com.hrms.api;
 import com.hrms.api.dto.ApiResponse;
 import com.hrms.api.dto.PaginatedResponse;
 import com.hrms.api.dto.PayrollBulkResult;
+import com.hrms.api.dto.PayrollMonthlySummaryResponse;
 import com.hrms.api.dto.PayrollResponse;
 import com.hrms.core.models.Employee;
 import com.hrms.core.models.Payroll;
@@ -18,6 +19,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
+
 @RestController
 @RequestMapping("/api/payroll")
 public class PayrollController {
@@ -31,31 +34,29 @@ public class PayrollController {
     }
 
     @PostMapping("/calculate")
-    public ResponseEntity<ApiResponse<Payroll>> calculatePayroll(
+    public ResponseEntity<ApiResponse<PayrollResponse>> calculatePayroll(
             @RequestParam(required = false) Long employeeId,
             @RequestParam int month,
             @RequestParam int year,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
 
-        boolean privileged = hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN", "ROLE_PAYROLL");
-        Long targetId;
-        if (privileged) {
-            if (employeeId == null) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "employeeId is required");
-            }
-            targetId = employeeId;
-        } else {
-            if (employeeId != null && !employeeId.equals(principal.getEmployeeId())) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot calculate payroll for another employee");
-            }
-            targetId = principal.getEmployeeId();
+        // Payroll owns salary calculation (SUPER_ADMIN override).
+        boolean privileged = hasAnyRole(principal, "ROLE_SUPER_ADMIN", "ROLE_PAYROLL");
+        if (!privileged) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only PAYROLL can calculate payroll");
         }
+        Long targetId;
+        if (employeeId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "employeeId is required");
+        }
+        targetId = employeeId;
 
         Employee employee = employeeRepository.findById(targetId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
 
+        Payroll payroll = payrollService.calculateMonthlyPayroll(employee, month, year);
         return ResponseEntity.ok(ApiResponse.success(
-                payrollService.calculateMonthlyPayroll(employee, month, year),
+                toPayrollResponse(payroll),
                 "Payroll calculated successfully"
         ));
     }
@@ -63,7 +64,7 @@ public class PayrollController {
     /**
      * POST /api/payroll/calculate-all
      * Calculate payroll for ALL active employees for the given month/year.
-     * HR/ADMIN/SUPER_ADMIN only.
+     * PAYROLL/SUPER_ADMIN only.
      */
     @PostMapping("/calculate-all")
     public ResponseEntity<ApiResponse<PayrollBulkResult>> calculateAllPayroll(
@@ -71,8 +72,8 @@ public class PayrollController {
             @RequestParam int year,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
 
-        if (!hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN")) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only HR/Admin can calculate payroll for all employees");
+        if (!hasAnyRole(principal, "ROLE_PAYROLL", "ROLE_SUPER_ADMIN")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only PAYROLL can calculate payroll for all employees");
         }
 
         PayrollBulkResult result = payrollService.calculateAllMonthlyPayroll(month, year, principal.getUsername());
@@ -110,7 +111,9 @@ public class PayrollController {
                 payroll.getOvertimeHours(),
                 payroll.getDeductions(),
                 payroll.getNetSalary(),
-                payroll.getGeneratedAt() != null ? payroll.getGeneratedAt().toString() : null
+                payroll.getGeneratedAt() != null ? payroll.getGeneratedAt().toString() : null,
+                payroll.isPaid(),
+                payroll.getPaidAt() != null ? payroll.getPaidAt().toString() : null
         );
     }
 
@@ -123,7 +126,7 @@ public class PayrollController {
             @AuthenticationPrincipal EmployeeUserDetails principal,
             @PageableDefault(size = 20) Pageable pageable) {
 
-        if (!hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN")) {
+        if (!hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN", "ROLE_PAYROLL")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         }
 
@@ -136,6 +139,86 @@ public class PayrollController {
                 PaginatedResponse.of(slips, page.getTotalElements(), page.getNumber(), page.getSize()),
                 "All payroll history retrieved successfully"
         ));
+    }
+
+    /**
+     * GET /api/payroll/monthly?month=&year=
+     * Payroll monthly slips for delivery workflows.
+     */
+    @GetMapping("/monthly")
+    public ResponseEntity<ApiResponse<PaginatedResponse<PayrollResponse>>> getMonthlyPayroll(
+            @RequestParam int month,
+            @RequestParam int year,
+            @AuthenticationPrincipal EmployeeUserDetails principal,
+            @PageableDefault(size = 50) Pageable pageable) {
+
+        if (!hasAnyRole(principal, "ROLE_PAYROLL", "ROLE_SUPER_ADMIN")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+        }
+
+        Page<Payroll> page = payrollService.getMonthlyPayroll(month, year, pageable);
+        var slips = page.getContent().stream().map(this::toPayrollResponse).toList();
+
+        return ResponseEntity.ok(ApiResponse.success(
+                PaginatedResponse.of(slips, page.getTotalElements(), page.getNumber(), page.getSize()),
+                "Monthly payroll retrieved successfully"
+        ));
+    }
+
+    /**
+     * GET /api/payroll/summary?month=&year=
+     */
+    @GetMapping("/summary")
+    public ResponseEntity<ApiResponse<PayrollMonthlySummaryResponse>> getMonthlySummary(
+            @RequestParam int month,
+            @RequestParam int year,
+            @AuthenticationPrincipal EmployeeUserDetails principal) {
+
+        if (!hasAnyRole(principal, "ROLE_PAYROLL", "ROLE_SUPER_ADMIN")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+        }
+
+        BigDecimal total = payrollService.getTotalNetSalaryForMonth(month, year);
+        long totalSlips = payrollService.getPayrollCountForMonth(month, year);
+        long paidSlips = payrollService.getPaidPayrollCountForMonth(month, year);
+        PayrollMonthlySummaryResponse res = new PayrollMonthlySummaryResponse(month, year, totalSlips, paidSlips, total);
+        return ResponseEntity.ok(ApiResponse.success(res, "Payroll summary retrieved successfully"));
+    }
+
+    /**
+     * PUT /api/payroll/pay?employeeId=&month=&year=
+     */
+    @PutMapping("/pay")
+    public ResponseEntity<ApiResponse<PayrollResponse>> markPaid(
+            @RequestParam Long employeeId,
+            @RequestParam int month,
+            @RequestParam int year,
+            @AuthenticationPrincipal EmployeeUserDetails principal) {
+
+        if (!hasAnyRole(principal, "ROLE_PAYROLL", "ROLE_SUPER_ADMIN")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+        }
+
+        Payroll payroll = payrollService.markPayrollAsPaid(employeeId, month, year);
+        return ResponseEntity.ok(ApiResponse.success(toPayrollResponse(payroll), "Payroll marked as paid"));
+    }
+
+    /**
+     * PUT /api/payroll/pay-all?month=&year=
+     */
+    @PutMapping("/pay-all")
+    public ResponseEntity<ApiResponse<PayrollBulkResult>> markPaidAll(
+            @RequestParam int month,
+            @RequestParam int year,
+            @AuthenticationPrincipal EmployeeUserDetails principal) {
+
+        if (!hasAnyRole(principal, "ROLE_PAYROLL", "ROLE_SUPER_ADMIN")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+        }
+
+        int updated = payrollService.markAllPayrollAsPaid(month, year);
+        PayrollBulkResult result = new PayrollBulkResult(month, year, updated, updated, 0, principal.getUsername());
+        return ResponseEntity.ok(ApiResponse.success(result, "Payroll marked as paid for " + updated + " employees"));
     }
 
     private static boolean hasAnyRole(EmployeeUserDetails principal, String... roles) {

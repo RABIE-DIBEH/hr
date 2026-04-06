@@ -42,7 +42,7 @@ public class ReportController {
     }
 
     @GetMapping("/payroll/pdf")
-    @PreAuthorize("hasAnyRole('HR', 'ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('PAYROLL', 'SUPER_ADMIN')")
     public ResponseEntity<byte[]> downloadPayrollPdf(
             @RequestParam int month,
             @RequestParam int year) {
@@ -54,7 +54,7 @@ public class ReportController {
     }
 
     @GetMapping("/payroll/excel")
-    @PreAuthorize("hasAnyRole('HR', 'ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('PAYROLL', 'SUPER_ADMIN')")
     public ResponseEntity<byte[]> downloadPayrollExcel(
             @RequestParam int month,
             @RequestParam int year) {

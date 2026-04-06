@@ -62,7 +62,9 @@ export function dashboardForRole(role: UserRole): string {
     case 'ADMIN':       return '/admin';
     case 'HR':          return '/hr';
     case 'MANAGER':     return '/manager';
-    case 'PAYROLL':     return '/payroll'; // Added missing Payroll dashboard
+    // Payroll users are still employees: land on the normal dashboard,
+    // with payroll tools accessible from the sidebar.
+    case 'PAYROLL':     return '/dashboard';
     case 'EMPLOYEE':    return '/dashboard';
   }
 }

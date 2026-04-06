@@ -107,7 +107,8 @@ class PayrollControllerTest {
                         .param("year", "2026"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.payrollId").value(12))
-                .andExpect(jsonPath("$.data.employee.employeeId").value(99));
+                .andExpect(jsonPath("$.data.employeeId").value(99))
+                .andExpect(jsonPath("$.data.employeeName").value("Target Employee"));
 
         verify(payrollService).calculateMonthlyPayroll(employee, 4, 2026);
     }

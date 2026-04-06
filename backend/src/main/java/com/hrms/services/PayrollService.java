@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -61,6 +62,8 @@ public class PayrollService {
                         .month(month)
                         .year(year)
                         .build());
+        // Ensure we keep the fully-loaded Employee instance (avoid serializing a lazy proxy later).
+        payroll.setEmployee(employee);
 
         BigDecimal advanceDeductions = advanceRequestService.getUndeductedDeliveredAmountForEmployee(employee.getEmployeeId(), month, year);
         BigDecimal payrollDeductions = advanceDeductions.max(BigDecimal.ZERO);
@@ -124,5 +127,50 @@ public class PayrollService {
                 errorCount,
                 requester
         );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Payroll> getMonthlyPayroll(int month, int year, Pageable pageable) {
+        return payrollRepository.findMonthlyPayrollPage(month, year, pageable);
+    }
+
+    @Transactional
+    public Payroll markPayrollAsPaid(Long employeeId, int month, int year) {
+        // Join-fetch employee to avoid LazyInitializationException when controller maps to DTO after tx closes.
+        Payroll payroll = payrollRepository.findByEmployeeIdAndMonthAndYearFetchEmployee(employeeId, month, year)
+                .orElseThrow(() -> new IllegalArgumentException("Payroll not found"));
+        payroll.setPaid(true);
+        payroll.setPaidAt(LocalDateTime.now());
+        return payrollRepository.save(payroll);
+    }
+
+    @Transactional
+    public int markAllPayrollAsPaid(int month, int year) {
+        List<Payroll> slips = payrollRepository.findAllMonthlyPayroll(month, year);
+        int updated = 0;
+        for (Payroll p : slips) {
+            if (!p.isPaid()) {
+                p.setPaid(true);
+                p.setPaidAt(LocalDateTime.now());
+                updated++;
+            }
+        }
+        payrollRepository.saveAll(slips);
+        return updated;
+    }
+
+    @Transactional(readOnly = true)
+    public java.math.BigDecimal getTotalNetSalaryForMonth(int month, int year) {
+        return payrollRepository.sumNetSalaryForMonth(month, year);
+    }
+
+    @Transactional(readOnly = true)
+    public long getPayrollCountForMonth(int month, int year) {
+        return payrollRepository.countForMonth(month, year);
+    }
+
+    @Transactional(readOnly = true)
+    public long getPaidPayrollCountForMonth(int month, int year) {
+        return payrollRepository.countPaidForMonth(month, year);
     }
 }

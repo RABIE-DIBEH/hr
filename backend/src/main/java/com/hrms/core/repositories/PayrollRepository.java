@@ -15,18 +15,45 @@ import java.util.Optional;
 public interface PayrollRepository extends JpaRepository<Payroll, Long> {
     Optional<Payroll> findByEmployeeEmployeeIdAndMonthAndYear(Long employeeId, int month, int year);
 
+    @Query("""
+            SELECT p FROM Payroll p
+            JOIN FETCH p.employee
+            WHERE p.employee.employeeId = :employeeId
+              AND p.month = :month
+              AND p.year = :year
+            """)
+    Optional<Payroll> findByEmployeeIdAndMonthAndYearFetchEmployee(
+            @Param("employeeId") Long employeeId,
+            @Param("month") int month,
+            @Param("year") int year
+    );
+
     /**
      * Get all payroll records for a specific employee, ordered by month/year descending
      */
-    @Query("SELECT p FROM Payroll p WHERE p.employee.employeeId = :employeeId ORDER BY p.year DESC, p.month DESC")
+    // Join-fetch employee to avoid LazyInitializationException when controller maps to DTOs after tx closes.
+    @Query("SELECT p FROM Payroll p JOIN FETCH p.employee WHERE p.employee.employeeId = :employeeId ORDER BY p.year DESC, p.month DESC")
     Page<Payroll> findByEmployeeId(@Param("employeeId") Long employeeId, Pageable pageable);
 
     /**
      * Get all payroll records across all employees, ordered by month/year descending
      */
-    @Query("SELECT p FROM Payroll p ORDER BY p.year DESC, p.month DESC, p.employee.fullName ASC")
+    // Join-fetch employee to avoid LazyInitializationException when controller maps to DTOs after tx closes.
+    @Query("SELECT p FROM Payroll p JOIN FETCH p.employee ORDER BY p.year DESC, p.month DESC, p.employee.fullName ASC")
     Page<Payroll> findAllPayrollRecords(Pageable pageable);
 
     @Query("SELECT p FROM Payroll p WHERE p.month = :month AND p.year = :year ORDER BY p.employee.fullName ASC")
     List<Payroll> findAllMonthlyPayroll(@Param("month") int month, @Param("year") int year);
+
+    @Query("SELECT p FROM Payroll p JOIN FETCH p.employee WHERE p.month = :month AND p.year = :year ORDER BY p.employee.fullName ASC")
+    Page<Payroll> findMonthlyPayrollPage(@Param("month") int month, @Param("year") int year, Pageable pageable);
+
+    @Query("SELECT COALESCE(SUM(p.netSalary), 0) FROM Payroll p WHERE p.month = :month AND p.year = :year")
+    java.math.BigDecimal sumNetSalaryForMonth(@Param("month") int month, @Param("year") int year);
+
+    @Query("SELECT COUNT(p) FROM Payroll p WHERE p.month = :month AND p.year = :year")
+    long countForMonth(@Param("month") int month, @Param("year") int year);
+
+    @Query("SELECT COUNT(p) FROM Payroll p WHERE p.month = :month AND p.year = :year AND p.paid = true")
+    long countPaidForMonth(@Param("month") int month, @Param("year") int year);
 }

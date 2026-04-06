@@ -41,12 +41,12 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
 
-          {/* Role-specific dashboards */}
-          <Route path="/dashboard" element={
-            <ProtectedRoute allowedRoles={['EMPLOYEE']}>
-              <Layout><EmployeeDashboard /></Layout>
-            </ProtectedRoute>
-          } />
+	          {/* Role-specific dashboards */}
+	          <Route path="/dashboard" element={
+	            <ProtectedRoute allowedRoles={['EMPLOYEE', 'PAYROLL', 'SUPER_ADMIN']}>
+	              <Layout><EmployeeDashboard /></Layout>
+	            </ProtectedRoute>
+	          } />
           <Route path="/manager" element={
             <ProtectedRoute allowedRoles={['MANAGER']}>
               <Layout><ManagerDashboard /></Layout>
@@ -67,11 +67,11 @@ function App() {
               <Layout><HRAttendanceGrid /></Layout>
             </ProtectedRoute>
           } />
-          <Route path="/payroll" element={
-            <ProtectedRoute allowedRoles={['PAYROLL']}>
-              <Layout><PayrollDashboard /></Layout>
-            </ProtectedRoute>
-          } />
+	          <Route path="/payroll" element={
+	            <ProtectedRoute allowedRoles={['PAYROLL', 'SUPER_ADMIN']}>
+	              <Layout><PayrollDashboard /></Layout>
+	            </ProtectedRoute>
+	          } />
           <Route path="/users" element={
             <ProtectedRoute allowedRoles={['HR', 'ADMIN', 'SUPER_ADMIN']}>
               <Layout><UserManagement /></Layout>
@@ -105,7 +105,7 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/finance" element={
-            <ProtectedRoute allowedRoles={['HR', 'ADMIN']}>
+            <ProtectedRoute allowedRoles={['PAYROLL', 'SUPER_ADMIN']}>
               <Navigate to="/payroll" replace />
             </ProtectedRoute>
           } />

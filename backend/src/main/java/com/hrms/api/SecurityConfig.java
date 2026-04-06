@@ -57,7 +57,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/employees/me").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/employees/team").hasAnyRole("MANAGER", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/employees/search").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/employees").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/employees").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")
                         .requestMatchers(HttpMethod.DELETE, "/api/employees/**").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/employees/*/reset-password").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN", "EMPLOYEE", "MANAGER")
                         
@@ -81,11 +81,23 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/attendance/verify/**").hasAnyRole("MANAGER", "HR", "ADMIN", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/attendance/manual-correct/**").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
                         
-                        // Advance request endpoints - employees can request/view own, HR/ADMIN process
+                        // Advance request endpoints
+                        // Stage 1: EMPLOYEE submits
+                        // Stage 2: MANAGER approves/rejects (can adjust)
+                        // Stage 3: PAYROLL final approval + delivery actions
                         .requestMatchers(HttpMethod.POST, "/api/advances/request").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/advances/my-requests").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/advances/**").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")
-                        .requestMatchers(HttpMethod.PUT, "/api/advances/process/**").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")
+                        .requestMatchers(HttpMethod.GET, "/api/advances/pending").hasAnyRole("MANAGER", "PAYROLL", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/advances/process/**").hasAnyRole("MANAGER", "PAYROLL", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/advances/approved-awaiting-delivery").hasAnyRole("PAYROLL", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/advances/delivered").hasAnyRole("PAYROLL", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/advances/report").hasAnyRole("PAYROLL", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/advances/deliver/**").hasAnyRole("PAYROLL", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/advances/deliver-all").hasAnyRole("PAYROLL", "SUPER_ADMIN")
+                        // Admin/HR/Payroll can view all advance requests (read-only). Note: processing is still restricted above.
+                        .requestMatchers(HttpMethod.GET, "/api/advances/all").hasAnyRole("HR", "ADMIN", "PAYROLL", "SUPER_ADMIN")
+                        // Specific advance details: allow any authenticated user; controller enforces data-level access.
+                        .requestMatchers(HttpMethod.GET, "/api/advances/**").authenticated()
 
                         // NFC card management - HR/Admin only
                         .requestMatchers(HttpMethod.GET, "/api/nfc-cards/**").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
@@ -102,8 +114,13 @@ public class SecurityConfig {
                         // Payroll endpoints
                         .requestMatchers(HttpMethod.GET, "/api/payroll/my-slips").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/payroll/history").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")
+                        .requestMatchers(HttpMethod.GET, "/api/payroll/monthly").hasAnyRole("PAYROLL", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/payroll/summary").hasAnyRole("PAYROLL", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/payroll").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")
-                        .requestMatchers(HttpMethod.POST, "/api/payroll/calculate").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")
+                        .requestMatchers(HttpMethod.POST, "/api/payroll/calculate").hasAnyRole("PAYROLL", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/payroll/calculate-all").hasAnyRole("PAYROLL", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/payroll/pay").hasAnyRole("PAYROLL", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/payroll/pay-all").hasAnyRole("PAYROLL", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/payroll/**").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")
                         
                         // Admin endpoints - ADMIN/SUPER_ADMIN only
@@ -116,6 +133,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/inbox/high-priority").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/inbox/archived").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/inbox/*/read").authenticated()
+
+                        // Reports (controller methods enforce role checks via @PreAuthorize)
+                        .requestMatchers(HttpMethod.GET, "/api/reports/**").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/inbox/read-all").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/inbox/*/archive").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/inbox/**").authenticated()

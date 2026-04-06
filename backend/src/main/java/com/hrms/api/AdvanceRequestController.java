@@ -144,7 +144,7 @@ public class AdvanceRequestController {
      * Stage 3: PAYROLL
      * Uses @Valid to validate ProcessAdvanceRequestDto fields
      */
-    @PutMapping("/process/{advanceId}")
+    @PutMapping("/process/{advanceId:\\d+}")
     public ResponseEntity<?> processRequest(@PathVariable Long advanceId,
                                             @Valid @RequestBody ProcessAdvanceRequestDto dto,
                                             @AuthenticationPrincipal EmployeeUserDetails principal) {
@@ -176,7 +176,7 @@ public class AdvanceRequestController {
      * PUT /api/advances/deliver/{advanceId}
      * Mark a payroll-approved advance request as delivered / paid (PAYROLL only)
      */
-    @PutMapping("/deliver/{advanceId}")
+    @PutMapping("/deliver/{advanceId:\\d+}")
     public ResponseEntity<?> deliverRequest(@PathVariable Long advanceId,
                                             @AuthenticationPrincipal EmployeeUserDetails principal) {
         if (!hasAnyRole(principal, "PAYROLL", "SUPER_ADMIN")) {
@@ -299,10 +299,14 @@ public class AdvanceRequestController {
     }
 
     /**
-     * GET /api/advances/{advanceId}
-     * Get a specific advance request
+     * GET /api/advances/id/{advanceId}
+     * Get a specific advance request.
+     *
+     * NOTE: we intentionally do NOT use GET /api/advances/{advanceId} because it can
+     * conflict with other fixed sub-routes like /report and lead to "report" being
+     * parsed as an ID.
      */
-    @GetMapping("/{advanceId}")
+    @GetMapping("/id/{advanceId}")
     public ResponseEntity<ApiResponse<AdvanceRequestResponse>> getRequest(
             @PathVariable Long advanceId,
             @AuthenticationPrincipal EmployeeUserDetails principal) {

@@ -16,5 +16,7 @@ public record PayrollResponse(
         BigDecimal overtimeHours,
         BigDecimal deductions,
         BigDecimal netSalary,
-        String generatedAt
+        String generatedAt,
+        boolean paid,
+        String paidAt
 ) {}

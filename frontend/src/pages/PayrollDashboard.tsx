@@ -24,7 +24,6 @@ import {
   getPendingAdvanceRequestsPage,
   processAdvanceRequest,
   deliverAdvanceRequest,
-  getApprovedAdvancesAwaitingDeliveryPage,
   getDeliveredAdvancesPage,
   deliverAllApprovedAdvances,
   getAdvanceApprovalReport,
@@ -34,6 +33,10 @@ import {
   getAllPayrollHistoryPage,
   calculatePayroll,
   calculateAllPayroll,
+  getMonthlyPayrollPage,
+  getPayrollMonthlySummary,
+  markPayrollPaid,
+  markAllPayrollPaid,
   listEmployeesPage,
   getPendingRecruitmentRequestsPage,
   processRecruitmentRequest,
@@ -43,12 +46,14 @@ import {
   type EmployeeSummary,
   type RecruitmentRequest,
   type ProcessRecruitmentResponse,
+  type PayrollMonthlySummaryResponse,
 } from '../services/api';
+import { extractApiError } from '../utils/errorHandler';
 
 const PayrollDashboard = () => {
   const [me, setMe] = useState<EmployeeProfile | null>(null);
   const [activeTab, setActiveTab] = useState<'advances' | 'recruitment' | 'history' | 'calculate'>('advances');
-  const [, setLoadError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -60,6 +65,8 @@ const PayrollDashboard = () => {
   const [processingAdvance, setProcessingAdvance] = useState<number | null>(null);
   const [advanceNote, setAdvanceNote] = useState<string>('');
   const [selectedAdvanceId, setSelectedAdvanceId] = useState<number | null>(null);
+  const [adjustedAdvanceAmount, setAdjustedAdvanceAmount] = useState<string>('');
+  const [adjustedAdvanceReason, setAdjustedAdvanceReason] = useState<string>('');
   const [advancesSubTab, setAdvancesSubTab] = useState<'pending' | 'approved' | 'delivered' | 'all'>('pending');
   const [pendingPage, setPendingPage] = useState(0);
   const [pendingTotalPages, setPendingTotalPages] = useState(0);
@@ -67,6 +74,7 @@ const PayrollDashboard = () => {
   const [approvedPage, setApprovedPage] = useState(0);
   const [approvedTotalPages, setApprovedTotalPages] = useState(0);
   const [approvedTotalCount, setApprovedTotalCount] = useState(0);
+  const [approvedTotalAmount, setApprovedTotalAmount] = useState('0');
   const [deliveredPage, setDeliveredPage] = useState(0);
   const [deliveredTotalPages, setDeliveredTotalPages] = useState(0);
   const [deliveredTotalCount, setDeliveredTotalCount] = useState(0);
@@ -84,9 +92,12 @@ const PayrollDashboard = () => {
 
   // Calculate State
   const [employees, setEmployees] = useState<EmployeeSummary[]>([]);
+  const [monthlyPayrollMap, setMonthlyPayrollMap] = useState<Record<number, PayrollSlip>>({});
+  const [monthlySummary, setMonthlySummary] = useState<PayrollMonthlySummaryResponse | null>(null);
   const [calculatingId, setCalculatingId] = useState<number | null>(null);
   const [calcFeedback, setCalcFeedback] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const [showConfirmCalc, setShowConfirmCalc] = useState<{ id?: number; name: string } | null>(null);
+  const [payingId, setPayingId] = useState<number | null>(null);
 
   // Recruitment approvals (Stage 3: PENDING_PAYROLL)
   const [pendingRecruitment, setPendingRecruitment] = useState<RecruitmentRequest[]>([]);
@@ -113,35 +124,37 @@ const PayrollDashboard = () => {
       .catch(() => setMe(null));
   }, []);
 
-  const canManagePayroll = me?.roleName === 'HR'
-    || me?.roleName === 'PAYROLL'
-    || me?.roleName === 'ADMIN'
+  const canManagePayroll = me?.roleName === 'PAYROLL'
     || me?.roleName === 'SUPER_ADMIN';
 
   // Load Advances
   const loadAdvancesData = async () => {
     if (!canManagePayroll) return;
     try {
-      const [pendingRes, approvedRes, deliveredRes, allRes] = await Promise.all([
+      const [pendingRes, reportRes, deliveredRes, allRes] = await Promise.all([
         getPendingAdvanceRequestsPage({ page: pendingPage, size: 10 }),
-        getApprovedAdvancesAwaitingDeliveryPage({ page: approvedPage, size: 10 }),
+        getAdvanceApprovalReport(reportMonth, reportYear),
         getDeliveredAdvancesPage(reportMonth, reportYear, { page: deliveredPage, size: 10 }),
         getAllAdvanceRequestsPage({ page: allPage, size: 10 }),
       ]);
       setPendingAdvances(pendingRes.data.items);
       setPendingTotalPages(pendingRes.data.totalPages);
       setPendingTotalCount(pendingRes.data.totalCount);
-      setApprovedAdvances(approvedRes.data.items);
-      setApprovedTotalPages(approvedRes.data.totalPages);
-      setApprovedTotalCount(approvedRes.data.totalCount);
+      const report = reportRes.data;
+      setApprovedAdvances(report.items);
+      setApprovedTotalCount(report.totalCount);
+      setApprovedTotalAmount(String(report.totalAmount ?? 0));
+      const pages = Math.max(1, Math.ceil(report.items.length / 10));
+      setApprovedTotalPages(pages);
+      if (approvedPage >= pages) setApprovedPage(0);
       setDeliveredAdvances(deliveredRes.data.items);
       setDeliveredTotalPages(deliveredRes.data.totalPages);
       setDeliveredTotalCount(deliveredRes.data.totalCount);
       setAllAdvances(allRes.data.items);
       setAllTotalPages(allRes.data.totalPages);
       setAllTotalCount(allRes.data.totalCount);
-    } catch {
-      setLoadError('تعذر تحميل بيانات السلف');
+    } catch (err: unknown) {
+      setLoadError(extractApiError(err).message || 'تعذر تحميل بيانات السلف');
     }
   };
 
@@ -153,8 +166,8 @@ const PayrollDashboard = () => {
       setSlips(res.data.items);
       setHistoryTotalPages(res.data.totalPages);
       setHistoryTotalCount(res.data.totalCount);
-    } catch {
-      setLoadError('تعذر تحميل سجل الرواتب');
+    } catch (err: unknown) {
+      setLoadError(extractApiError(err).message || 'تعذر تحميل سجل الرواتب');
     }
   };
 
@@ -164,8 +177,27 @@ const PayrollDashboard = () => {
     try {
       const res = await listEmployeesPage({ page: 0, size: 100 });
       setEmployees(res.data.items);
-    } catch {
-      setLoadError('تعذر تحميل قائمة الموظفين');
+    } catch (err: unknown) {
+      setLoadError(extractApiError(err).message || 'تعذر تحميل قائمة الموظفين');
+    }
+  };
+
+  const loadMonthlyPayrollForCalc = async () => {
+    if (!canManagePayroll) return;
+    try {
+      const [slipsRes, summaryRes] = await Promise.all([
+        getMonthlyPayrollPage(reportMonth, reportYear, { page: 0, size: 250 }),
+        getPayrollMonthlySummary(reportMonth, reportYear),
+      ]);
+      const map: Record<number, PayrollSlip> = {};
+      for (const slip of slipsRes.data.items) {
+        map[slip.employeeId] = slip;
+      }
+      setMonthlyPayrollMap(map);
+      setMonthlySummary(summaryRes.data);
+    } catch (err: unknown) {
+      // Not fatal to calculation UI; user can still calculate.
+      setLoadError(extractApiError(err).message || 'تعذر تحميل بيانات الرواتب للشهر المحدد');
     }
   };
 
@@ -176,8 +208,8 @@ const PayrollDashboard = () => {
       setPendingRecruitment(res.data.items);
       setRecruitmentTotalPages(res.data.totalPages);
       setRecruitmentTotalCount(res.data.totalCount);
-    } catch {
-      setLoadError('تعذر تحميل طلبات التوظيف');
+    } catch (err: unknown) {
+      setLoadError(extractApiError(err).message || 'تعذر تحميل طلبات التوظيف');
     }
   };
 
@@ -185,7 +217,10 @@ const PayrollDashboard = () => {
     if (activeTab === 'advances') void loadAdvancesData();
     if (activeTab === 'recruitment') void loadRecruitmentData();
     if (activeTab === 'history') void loadHistoryData();
-    if (activeTab === 'calculate') void loadEmployeesForCalc();
+    if (activeTab === 'calculate') {
+      void loadEmployeesForCalc();
+      void loadMonthlyPayrollForCalc();
+    }
   }, [activeTab, pendingPage, approvedPage, deliveredPage, allPage, historyPage, recruitmentPage, canManagePayroll, reportMonth, reportYear]);
 
   const handleProcessRecruitment = async (requestId: number, status: 'Approved' | 'Rejected') => {
@@ -252,12 +287,21 @@ const PayrollDashboard = () => {
   const handleProcessAdvance = async (advanceId: number, status: 'Approved' | 'Rejected') => {
     setProcessingAdvance(advanceId);
     try {
-      await processAdvanceRequest(advanceId, status, advanceNote || undefined);
+      const amountNum = adjustedAdvanceAmount.trim() ? Number(adjustedAdvanceAmount) : undefined;
+      await processAdvanceRequest(
+        advanceId,
+        status,
+        advanceNote || undefined,
+        Number.isFinite(amountNum) ? amountNum : undefined,
+        adjustedAdvanceReason || undefined,
+      );
       setAdvanceNote('');
       setSelectedAdvanceId(null);
+      setAdjustedAdvanceAmount('');
+      setAdjustedAdvanceReason('');
       void loadAdvancesData();
-    } catch {
-      setLoadError('فشل معالجة طلب السلفة');
+    } catch (err: unknown) {
+      setLoadError(extractApiError(err).message || 'فشل معالجة طلب السلفة');
     } finally {
       setProcessingAdvance(null);
     }
@@ -268,8 +312,8 @@ const PayrollDashboard = () => {
     try {
       await deliverAdvanceRequest(advanceId);
       void loadAdvancesData();
-    } catch {
-      setLoadError('فشل تعليم طلب السلفة كـ تم التسليم');
+    } catch (err: unknown) {
+      setLoadError(extractApiError(err).message || 'فشل تعليم طلب السلفة كـ تم التسليم');
     } finally {
       setProcessingAdvance(null);
     }
@@ -281,8 +325,8 @@ const PayrollDashboard = () => {
     try {
       await deliverAllApprovedAdvances(reportMonth, reportYear);
       void loadAdvancesData();
-    } catch {
-      setLoadError('فشل تسليم جميع السلف المعتمدة');
+    } catch (err: unknown) {
+      setLoadError(extractApiError(err).message || 'فشل تسليم جميع السلف المعتمدة');
     } finally {
       setProcessingAdvance(null);
     }
@@ -328,8 +372,8 @@ const PayrollDashboard = () => {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-    } catch {
-      alert('فشل تحميل تقرير السلف');
+    } catch (err: unknown) {
+      alert(extractApiError(err).message || 'فشل تحميل تقرير السلف');
     }
   };
 
@@ -352,12 +396,40 @@ const PayrollDashboard = () => {
         await calculatePayroll(reportMonth, reportYear, empId);
         setCalcFeedback({ msg: 'تم احتساب الراتب بنجاح', type: 'success' });
       }
+      void loadMonthlyPayrollForCalc();
       if (activeTab === 'history') void loadHistoryData();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'فشل احتساب الراتب';
+      const msg = extractApiError(err).message || 'فشل احتساب الراتب';
       setCalcFeedback({ msg, type: 'error' });
     } finally {
       setCalculatingId(null);
+    }
+  };
+
+  const handlePayPayroll = async (employeeId: number) => {
+    setPayingId(employeeId);
+    try {
+      await markPayrollPaid(reportMonth, reportYear, employeeId);
+      void loadMonthlyPayrollForCalc();
+      if (activeTab === 'history') void loadHistoryData();
+    } catch (err: unknown) {
+      setLoadError(extractApiError(err).message || 'فشل تسليم الراتب');
+    } finally {
+      setPayingId(null);
+    }
+  };
+
+  const handlePayAllPayroll = async () => {
+    if (!window.confirm(`تأكيد: تسليم جميع الرواتب لشهر ${reportMonth}/${reportYear}؟`)) return;
+    setPayingId(-1);
+    try {
+      await markAllPayrollPaid(reportMonth, reportYear);
+      void loadMonthlyPayrollForCalc();
+      if (activeTab === 'history') void loadHistoryData();
+    } catch (err: unknown) {
+      setLoadError(extractApiError(err).message || 'فشل تسليم الرواتب للكل');
+    } finally {
+      setPayingId(null);
     }
   };
 
@@ -366,7 +438,7 @@ const PayrollDashboard = () => {
 
   const stats = [
     { label: 'سلف معلقة', value: String(pendingTotalCount), icon: Clock, color: 'text-orange-400', bg: 'bg-orange-500/10' },
-    { label: 'إجمالي السلف', value: totalApprovedAmount.toLocaleString() + ' ر.س', icon: HandCoins, color: 'text-purple-400', bg: 'bg-purple-500/10' },
+    { label: 'إجمالي السلف', value: (Number(approvedTotalAmount) || totalApprovedAmount).toLocaleString() + ' ر.س', icon: HandCoins, color: 'text-purple-400', bg: 'bg-purple-500/10' },
     { label: 'سجلات الرواتب', value: String(historyTotalCount), icon: History, color: 'text-green-400', bg: 'bg-green-500/10' },
   ];
 
@@ -386,6 +458,19 @@ const PayrollDashboard = () => {
           <span className="text-purple-100 font-black text-lg">Payroll Management Department</span>
         </div>
       </header>
+
+      {loadError && (
+        <div className="mb-6 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-200 text-sm font-bold flex items-start justify-between gap-4">
+          <div className="flex-1">{loadError}</div>
+          <button
+            type="button"
+            onClick={() => setLoadError(null)}
+            className="text-red-200/70 hover:text-red-200"
+          >
+            <X size={18} />
+          </button>
+        </div>
+      )}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
             {stats.map((stat, idx) => (
@@ -559,13 +644,28 @@ const PayrollDashboard = () => {
 	                                  </div>
 	                                </div>
 	                              </div>
-	                              <div className="min-w-[250px]">
-	                                {selectedAdvanceId === advance.advanceId ? (
-	                                  <div className="space-y-3 p-4 bg-white/5 rounded-2xl border border-white/5">
-	                                    <textarea
-	                                      placeholder="ملاحظة الاعتماد/الرفض..."
-	                                      value={advanceNote}
-	                                      onChange={(e) => setAdvanceNote(e.target.value)}
+		                              <div className="min-w-[250px]">
+		                                {selectedAdvanceId === advance.advanceId ? (
+		                                  <div className="space-y-3 p-4 bg-white/5 rounded-2xl border border-white/5">
+		                                    <input
+		                                      type="number"
+		                                      inputMode="decimal"
+		                                      placeholder="تعديل المبلغ (اختياري)"
+		                                      value={adjustedAdvanceAmount}
+		                                      onChange={(e) => setAdjustedAdvanceAmount(e.target.value)}
+		                                      className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white"
+		                                    />
+		                                    <input
+		                                      type="text"
+		                                      placeholder="تعديل السبب (اختياري)"
+		                                      value={adjustedAdvanceReason}
+		                                      onChange={(e) => setAdjustedAdvanceReason(e.target.value)}
+		                                      className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white"
+		                                    />
+		                                    <textarea
+		                                      placeholder="ملاحظة الاعتماد/الرفض..."
+		                                      value={advanceNote}
+		                                      onChange={(e) => setAdvanceNote(e.target.value)}
 	                                      className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm text-white resize-none h-20"
 	                                    />
 	                                    <div className="flex gap-2">
@@ -585,13 +685,18 @@ const PayrollDashboard = () => {
 	                                      </button>
 	                                    </div>
 	                                  </div>
-	                                ) : (
-	                                  <button
-	                                    onClick={() => setSelectedAdvanceId(advance.advanceId!)}
-	                                    className="w-full bg-white/5 hover:bg-white/10 text-white font-bold py-4 rounded-2xl border border-white/5 transition-all"
-	                                  >
-	                                    اتخاذ قرار
-	                                  </button>
+		                                ) : (
+		                                  <button
+		                                    onClick={() => {
+		                                      setSelectedAdvanceId(advance.advanceId!);
+		                                      setAdvanceNote('');
+		                                      setAdjustedAdvanceAmount(String(advance.amount ?? ''));
+		                                      setAdjustedAdvanceReason(advance.reason ?? '');
+		                                    }}
+		                                    className="w-full bg-white/5 hover:bg-white/10 text-white font-bold py-4 rounded-2xl border border-white/5 transition-all"
+		                                  >
+		                                    اتخاذ قرار
+		                                  </button>
 	                                )}
 	                              </div>
 	                            </div>
@@ -623,16 +728,16 @@ const PayrollDashboard = () => {
 	                        </div>
 	                      </div>
 
-	                      {approvedAdvances.length === 0 ? (
-	                        <div className="p-20 text-center text-slate-500">لا توجد سلف معتمدة بانتظار التسليم.</div>
-	                      ) : (
-	                        <div className="divide-y divide-white/5">
-	                          {approvedAdvances.map((adv) => (
-	                            <div key={adv.advanceId} className="p-8 hover:bg-white/[0.02] transition-all flex flex-col md:flex-row md:items-center justify-between gap-6">
-	                              <div className="flex items-start gap-4">
-	                                <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-300 font-black text-xl">
-	                                  {adv.employeeName?.[0] || '؟'}
-	                                </div>
+                      {approvedAdvances.length === 0 ? (
+		                        <div className="p-20 text-center text-slate-500">لا توجد سلف معتمدة بانتظار التسليم.</div>
+		                      ) : (
+		                        <div className="divide-y divide-white/5">
+		                          {approvedAdvances.slice(approvedPage * 10, approvedPage * 10 + 10).map((adv) => (
+		                            <div key={adv.advanceId} className="p-8 hover:bg-white/[0.02] transition-all flex flex-col md:flex-row md:items-center justify-between gap-6">
+		                              <div className="flex items-start gap-4">
+		                                <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-300 font-black text-xl">
+		                                  {adv.employeeName?.[0] || '؟'}
+		                                </div>
 	                                <div>
 	                                  <p className="text-white font-black text-lg">{adv.employeeName}</p>
 	                                  <p className="text-slate-500 text-sm">{adv.reason || '—'}</p>
@@ -880,6 +985,39 @@ const PayrollDashboard = () => {
                   </button>
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-luxury-surface rounded-3xl border border-white/5 p-6">
+                    <p className="text-slate-400 text-xs font-black uppercase">إجمالي الرواتب (أساسي)</p>
+                    <p className="text-white font-black text-2xl mt-2">
+                      {employees.reduce((sum, e) => sum + Number(e.baseSalary ?? 0), 0).toLocaleString()} ر.س
+                    </p>
+                    <p className="text-slate-500 text-xs mt-2">مجموع الرواتب الأساسية للموظفين النشطين.</p>
+                  </div>
+                  <div className="bg-luxury-surface rounded-3xl border border-white/5 p-6">
+                    <p className="text-slate-400 text-xs font-black uppercase">إجمالي الرواتب المحتسبة (الصافي)</p>
+                    <p className="text-emerald-200 font-black text-2xl mt-2">
+                      {(monthlySummary?.totalNetSalary ?? 0).toLocaleString()} ر.س
+                    </p>
+                    <p className="text-slate-500 text-xs mt-2">يعتمد على الرواتب التي تم احتسابها لهذا الشهر.</p>
+                  </div>
+                  <div className="bg-luxury-surface rounded-3xl border border-white/5 p-6 flex flex-col justify-between">
+                    <div>
+                      <p className="text-slate-400 text-xs font-black uppercase">تسليم الرواتب</p>
+                      <p className="text-white font-black text-2xl mt-2">
+                        {monthlySummary ? `${monthlySummary.paidSlips}/${monthlySummary.totalSlips}` : '—'}
+                      </p>
+                      <p className="text-slate-500 text-xs mt-2">عدد الرواتب التي تم تعليمها كـ تم التسليم.</p>
+                    </div>
+                    <button
+                      onClick={handlePayAllPayroll}
+                      disabled={payingId !== null || !monthlySummary || monthlySummary.totalSlips === 0 || monthlySummary.paidSlips === monthlySummary.totalSlips}
+                      className="mt-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-900 text-white font-black py-3 rounded-2xl"
+                    >
+                      {payingId === -1 ? '...' : `تسليم الرواتب للكل (${reportMonth}/${reportYear})`}
+                    </button>
+                  </div>
+                </div>
+
                 {calcFeedback && (
                   <div className={`p-4 rounded-2xl font-bold text-sm ${calcFeedback.type === 'success' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
                     {calcFeedback.msg}
@@ -920,18 +1058,43 @@ const PayrollDashboard = () => {
                             <td className="p-6">
                               <span className="bg-green-500/10 text-green-400 px-2 py-1 rounded-md text-[10px] font-bold">نشط</span>
                             </td>
-                            <td className="p-6">
-                              <button
-                                onClick={() => setShowConfirmCalc({ id: emp.employeeId, name: emp.fullName })}
-                                disabled={calculatingId !== null}
-                                className="text-purple-400 hover:text-purple-300 font-bold text-sm flex items-center gap-2 disabled:opacity-50"
-                              >
-                                {calculatingId === emp.employeeId ? <Clock size={16} className="animate-spin" /> : <Calculator size={16} />}
-                                احتساب الآن
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
+	                            <td className="p-6">
+	                              <div className="flex items-center gap-4">
+	                                <button
+	                                  onClick={() => setShowConfirmCalc({ id: emp.employeeId, name: emp.fullName })}
+	                                  disabled={calculatingId !== null}
+	                                  className="text-purple-400 hover:text-purple-300 font-bold text-sm flex items-center gap-2 disabled:opacity-50"
+	                                >
+	                                  {calculatingId === emp.employeeId ? <Clock size={16} className="animate-spin" /> : <Calculator size={16} />}
+	                                  احتساب
+	                                </button>
+		                                {(() => {
+		                                  const slip = monthlyPayrollMap[emp.employeeId];
+		                                  if (!slip) {
+		                                    return (
+		                                      <span className="text-slate-600 text-xs font-bold">
+		                                        غير محتسب
+		                                      </span>
+		                                    );
+		                                  }
+		                                  if (slip.paid) {
+		                                    return <span className="text-emerald-400 text-xs font-black">تم التسليم</span>;
+		                                  }
+		                                  return (
+		                                    <button
+		                                      type="button"
+		                                      onClick={() => handlePayPayroll(emp.employeeId)}
+		                                      disabled={payingId !== null}
+		                                      className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-900 text-white font-black px-4 py-2 rounded-xl text-xs shadow-lg shadow-emerald-500/10 disabled:opacity-60"
+		                                    >
+		                                      {payingId === emp.employeeId ? '...' : 'تسليم الراتب'}
+		                                    </button>
+		                                  );
+		                                })()}
+		                              </div>
+		                            </td>
+	                          </tr>
+	                        ))}
                       </tbody>
                     </table>
                   </div>
