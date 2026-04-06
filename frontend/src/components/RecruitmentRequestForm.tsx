@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { submitRecruitmentRequest, getNextEmployeeId, type RecruitmentRequest } from '../services/api';
 import { motion } from 'framer-motion';
+import { extractApiError } from '../utils/errorHandler';
 
 interface RecruitmentRequestFormProps {
   onClose: () => void;
@@ -224,14 +225,8 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
         onSuccess();
       }, 1500);
     } catch (err: unknown) {
-      let errorMessage = 'حدث خطأ أثناء إرسال الطلب';
-      if (typeof err === 'object' && err !== null && 'response' in err) {
-        const axiosError = err as { response?: { data?: { message?: string } } };
-        if (axiosError.response?.data?.message) {
-          errorMessage = axiosError.response.data.message;
-        }
-      }
-      setError(errorMessage);
+      const { message } = extractApiError(err);
+      setError(message || 'حدث خطأ أثناء إرسال الطلب');
     } finally {
       setLoading(false);
     }

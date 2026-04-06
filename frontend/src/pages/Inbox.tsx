@@ -23,6 +23,7 @@ import {
   getCurrentEmployee,
   searchEmployees
 } from '../services/api';
+import { queryKeys } from '../services/queryKeys';
 
 type FilterType = 'all' | 'unread' | 'high-priority' | 'archived' | 'sent';
 
@@ -57,12 +58,12 @@ const Inbox = () => {
 
   // Queries
   const { data: me } = useQuery({
-    queryKey: ['me'],
+    queryKey: queryKeys.me,
     queryFn: async () => (await getCurrentEmployee()).data,
   });
 
   const { data: inboxData, isLoading: loading, isError } = useQuery({
-    queryKey: ['inbox', filter, page],
+    queryKey: queryKeys.inbox.list(filter, page),
     queryFn: async () => {
       let response;
       if (filter === 'unread') {
@@ -81,7 +82,7 @@ const Inbox = () => {
   });
 
   const { data: threadReplies = [] } = useQuery({
-    queryKey: ['thread', expandedMessage],
+    queryKey: queryKeys.inbox.thread(expandedMessage),
     queryFn: async () => (await getMessageThread(expandedMessage!)).data,
     enabled: !!expandedMessage,
   });
@@ -94,31 +95,31 @@ const Inbox = () => {
   const markReadMutation = useMutation({
     mutationFn: (id: number) => markMessageAsRead(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inbox'] });
-      queryClient.invalidateQueries({ queryKey: ['unreadCount'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.inbox.root });
+      queryClient.invalidateQueries({ queryKey: queryKeys.inbox.unreadCount });
     },
   });
 
   const markAllReadMutation = useMutation({
     mutationFn: markAllAsRead,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inbox'] });
-      queryClient.invalidateQueries({ queryKey: ['unreadCount'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.inbox.root });
+      queryClient.invalidateQueries({ queryKey: queryKeys.inbox.unreadCount });
     },
   });
 
   const archiveMutation = useMutation({
     mutationFn: (id: number) => archiveMessage(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inbox'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.inbox.root });
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => deleteMessage(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inbox'] });
-      queryClient.invalidateQueries({ queryKey: ['unreadCount'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.inbox.root });
+      queryClient.invalidateQueries({ queryKey: queryKeys.inbox.unreadCount });
     },
   });
 
@@ -126,8 +127,8 @@ const Inbox = () => {
     mutationFn: ({ id, text }: { id: number; text: string }) => replyToMessage(id, text),
     onSuccess: (_, variables) => {
       setReplyText('');
-      queryClient.invalidateQueries({ queryKey: ['thread', variables.id] });
-      queryClient.invalidateQueries({ queryKey: ['inbox'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.inbox.thread(variables.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.inbox.root });
     },
   });
 
@@ -140,7 +141,7 @@ const Inbox = () => {
       setComposeTitle('');
       setComposeMessage('');
       setComposePriority('MEDIUM');
-      queryClient.invalidateQueries({ queryKey: ['inbox', 'sent'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.inbox.sent });
     },
   });
 
@@ -215,7 +216,7 @@ const Inbox = () => {
     try {
       await Promise.all(Array.from(selectedIds).map((id) => archiveMessage(id)));
       setSelectedIds(new Set());
-      queryClient.invalidateQueries({ queryKey: ['inbox'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.inbox.root });
     } catch {
       alert('فشل في أرشفة الرسائل المحددة.');
     }
@@ -227,8 +228,8 @@ const Inbox = () => {
     try {
       await Promise.all(Array.from(selectedIds).map((id) => deleteMessage(id)));
       setSelectedIds(new Set());
-      queryClient.invalidateQueries({ queryKey: ['inbox'] });
-      queryClient.invalidateQueries({ queryKey: ['unreadCount'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.inbox.root });
+      queryClient.invalidateQueries({ queryKey: queryKeys.inbox.unreadCount });
     } catch {
       alert('فشل في حذف الرسائل المحددة.');
     }

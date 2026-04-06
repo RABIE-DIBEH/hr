@@ -1,9 +1,11 @@
 package com.hrms.services;
 
 import com.hrms.api.dto.EmployeeAdminUpdate;
+import com.hrms.api.dto.EmployeeDeletionResponse;
 import com.hrms.api.dto.EmployeeProfileResponse;
 import com.hrms.api.dto.EmployeeProfileUpdate;
 import com.hrms.api.dto.EmployeeSummaryResponse;
+import com.hrms.api.dto.PasswordResetResponse;
 import com.hrms.core.models.Employee;
 import com.hrms.core.models.Team;
 import com.hrms.core.models.UsersRole;
@@ -20,7 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.security.SecureRandom;
-import java.util.Map;
 
 @Service
 public class EmployeeDirectoryService {
@@ -210,7 +211,7 @@ public class EmployeeDirectoryService {
      * Also deactivates any linked NFC cards.
      */
     @Transactional
-    public Map<String, Object> deleteEmployee(Long employeeId, Long deletedBy) {
+    public EmployeeDeletionResponse deleteEmployee(Long employeeId, Long deletedBy) {
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
 
@@ -234,15 +235,14 @@ public class EmployeeDirectoryService {
                     nfcCardRepository.save(card);
                 });
 
-        return Map.of(
-            "employeeId", employee.getEmployeeId(),
-            "fullName", employee.getFullName(),
-            "email", employee.getEmail(),
-            "previousStatus", previousStatus,
-            "newStatus", "Terminated",
-            "deletedBy", deletedBy,
-            "deletedByName", deletedByName,
-            "message", "Employee '" + employee.getFullName() + "' has been terminated successfully"
+        return new EmployeeDeletionResponse(
+                employee.getEmployeeId(),
+                employee.getFullName(),
+                employee.getEmail(),
+                previousStatus,
+                "Terminated",
+                deletedBy,
+                deletedByName
         );
     }
 
@@ -251,7 +251,7 @@ public class EmployeeDirectoryService {
      * Returns the plain-text password so HR/Admin can share it with the employee.
      */
     @Transactional
-    public Map<String, Object> resetEmployeePassword(Long employeeId, Long resetBy) {
+    public PasswordResetResponse resetEmployeePassword(Long employeeId, Long resetBy) {
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
 
@@ -266,14 +266,13 @@ public class EmployeeDirectoryService {
                 .map(Employee::getFullName)
                 .orElse("Unknown");
 
-        return Map.of(
-            "employeeId", employee.getEmployeeId(),
-            "fullName", employee.getFullName(),
-            "email", employee.getEmail(),
-            "newPassword", newPassword,
-            "resetBy", resetBy,
-            "resetByName", resetByName,
-            "message", "Password reset for '" + employee.getFullName() + "' — share the new password with the employee"
+        return new PasswordResetResponse(
+                employee.getEmployeeId(),
+                employee.getFullName(),
+                employee.getEmail(),
+                newPassword,
+                resetBy,
+                resetByName
         );
     }
 

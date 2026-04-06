@@ -20,13 +20,14 @@ import CurrentDateTimePanel from '../components/CurrentDateTimePanel';
 import AdvanceRequestForm from '../components/AdvanceRequestForm';
 import LeaveRequestForm from '../components/LeaveRequestForm';
 import ProfileEditModal from '../components/ProfileEditModal';
-import { 
+import {
   getCurrentEmployee, 
   getMyAdvanceRequests, 
   getMyPayrollSlipsPage, 
   getMyAttendancePage, 
   getMyLeaveRequests
 } from '../services/api';
+import { queryKeys } from '../services/queryKeys';
 
 const EmployeeDashboard = () => {
   const navigate = useNavigate();
@@ -39,36 +40,36 @@ const EmployeeDashboard = () => {
 
   // Queries
   const { data: me } = useQuery({
-    queryKey: ['me'],
+    queryKey: queryKeys.me,
     queryFn: async () => (await getCurrentEmployee()).data,
   });
 
   const { data: myAdvances = [], isLoading: loadingAdvances } = useQuery({
-    queryKey: ['myAdvances'],
+    queryKey: queryKeys.employee.myAdvances,
     queryFn: async () => (await getMyAdvanceRequests()).data,
     enabled: !!me,
   });
 
   const { data: myLeaves = [], isLoading: loadingLeaves } = useQuery({
-    queryKey: ['myLeaves'],
+    queryKey: queryKeys.employee.myLeaves,
     queryFn: async () => (await getMyLeaveRequests()).data,
     enabled: !!me,
   });
 
   const { data: payrollData, isLoading: loadingPayroll } = useQuery({
-    queryKey: ['myPayroll', payrollPage],
+    queryKey: queryKeys.employee.myPayroll(payrollPage),
     queryFn: async () => (await getMyPayrollSlipsPage({ page: payrollPage, size: 6 })).data,
     enabled: !!me,
   });
 
   const { data: attendanceData, isLoading: loadingAttendance } = useQuery({
-    queryKey: ['myAttendanceLatest'],
+    queryKey: queryKeys.employee.myAttendanceLatest,
     queryFn: async () => (await getMyAttendancePage({ page: 0, size: 3 })).data,
     enabled: !!me,
   });
 
   const { data: todayAttendance, isLoading: loadingDayDetails } = useQuery({
-    queryKey: ['myAttendanceToday'],
+    queryKey: queryKeys.employee.myAttendanceToday,
     queryFn: async () => (await getMyAttendancePage({ page: 0, size: 1 })).data,
     enabled: showDayDetails,
   });
@@ -81,17 +82,17 @@ const EmployeeDashboard = () => {
 
   const handleAdvanceSuccess = () => {
     setShowAdvanceForm(false);
-    queryClient.invalidateQueries({ queryKey: ['myAdvances'] });
+    queryClient.invalidateQueries({ queryKey: queryKeys.employee.myAdvances });
   };
 
   const handleLeaveSuccess = () => {
     setShowLeaveForm(false);
-    queryClient.invalidateQueries({ queryKey: ['myLeaves'] });
+    queryClient.invalidateQueries({ queryKey: queryKeys.employee.myLeaves });
   };
 
   const handleProfileUpdate = () => {
     setShowProfileEdit(false);
-    queryClient.invalidateQueries({ queryKey: ['me'] });
+    queryClient.invalidateQueries({ queryKey: queryKeys.me });
   };
 
   const container = {

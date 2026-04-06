@@ -1,13 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { Bell } from 'lucide-react';
 import { getUnreadCount } from '../services/api';
+import { queryKeys } from '../services/queryKeys';
 
 const NotificationBadge = () => {
   const { data } = useQuery({
-    queryKey: ['unreadCount'],
+    queryKey: queryKeys.inbox.unreadCount,
     queryFn: async () => (await getUnreadCount()).data,
     refetchInterval: 30000, // Still poll every 30s as fallback
-    staleTime: 5000,
   });
 
   const unreadCount = data?.unreadCount ?? 0;

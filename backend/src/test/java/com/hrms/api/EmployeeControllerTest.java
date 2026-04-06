@@ -28,6 +28,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -46,6 +47,8 @@ class EmployeeControllerTest {
     @org.mockito.Mock
     private EmployeeRepository employeeRepository;
 
+    private EmployeeUserDetails hrPrincipal;
+
     @BeforeEach
     void setUp() {
         Employee employee = Employee.builder()
@@ -56,6 +59,16 @@ class EmployeeControllerTest {
                 .status("Active")
                 .build();
         principal = new EmployeeUserDetails(employee, "EMPLOYEE", "General");
+
+        Employee hrEmployee = Employee.builder()
+                .employeeId(1L)
+                .fullName("HR Admin")
+                .email("hr@hrms.com")
+                .passwordHash("secret")
+                .status("Active")
+                .build();
+        hrPrincipal = new EmployeeUserDetails(hrEmployee, "HR", "General");
+
         objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
         mockMvc = MockMvcBuilders.standaloneSetup(new EmployeeController(employeeDirectoryService, employeeRepository))
@@ -152,6 +165,64 @@ class EmployeeControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void deleteEmployee_Allowed_ReturnsTypedResponse() throws Exception {
+        com.hrms.api.dto.EmployeeDeletionResponse response = new com.hrms.api.dto.EmployeeDeletionResponse(
+                2L, "Target Employee", "target@hrms.com", "Active", "Terminated", 1L, "HR Admin"
+        );
+
+        when(employeeDirectoryService.deleteEmployee(eq(2L), eq(1L))).thenReturn(response);
+
+        mockMvc = MockMvcBuilders.standaloneSetup(new EmployeeController(employeeDirectoryService, employeeRepository))
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .setCustomArgumentResolvers(new AuthenticationPrincipalResolver(hrPrincipal))
+                .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
+                .build();
+
+        mockMvc.perform(delete("/api/employees/2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.employeeId").value(2))
+                .andExpect(jsonPath("$.data.fullName").value("Target Employee"))
+                .andExpect(jsonPath("$.data.email").value("target@hrms.com"))
+                .andExpect(jsonPath("$.data.previousStatus").value("Active"))
+                .andExpect(jsonPath("$.data.newStatus").value("Terminated"));
+
+        verify(employeeDirectoryService).deleteEmployee(eq(2L), eq(1L));
+    }
+
+    @Test
+    void deleteEmployee_SelfDeletion_Returns400() throws Exception {
+        mockMvc = MockMvcBuilders.standaloneSetup(new EmployeeController(employeeDirectoryService, employeeRepository))
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .setCustomArgumentResolvers(new AuthenticationPrincipalResolver(hrPrincipal))
+                .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
+                .build();
+
+        mockMvc.perform(delete("/api/employees/1"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void deleteEmployee_NonAdmin_Returns403() throws Exception {
+        Employee regularEmployee = Employee.builder()
+                .employeeId(2L)
+                .fullName("Regular Employee")
+                .email("regular@hrms.com")
+                .passwordHash("secret")
+                .status("Active")
+                .build();
+        EmployeeUserDetails employeePrincipal = new EmployeeUserDetails(regularEmployee, "EMPLOYEE", "General");
+
+        mockMvc = MockMvcBuilders.standaloneSetup(new EmployeeController(employeeDirectoryService, employeeRepository))
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .setCustomArgumentResolvers(new AuthenticationPrincipalResolver(employeePrincipal))
+                .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
+                .build();
+
+        mockMvc.perform(delete("/api/employees/3"))
+                .andExpect(status().isForbidden());
     }
 
     private static final class AuthenticationPrincipalResolver implements HandlerMethodArgumentResolver {

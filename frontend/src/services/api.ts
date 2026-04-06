@@ -99,6 +99,25 @@ export interface EmployeeSummary {
   nationalId?: string;
 }
 
+export interface EmployeeDeletionResponse {
+  employeeId: number;
+  fullName: string;
+  email: string;
+  previousStatus: string;
+  newStatus: string;
+  deletedBy: number;
+  deletedByName: string;
+}
+
+export interface PasswordResetResponse {
+  employeeId: number;
+  fullName: string;
+  email: string;
+  newPassword: string;
+  resetBy: number;
+  resetByName: string;
+}
+
 export interface AttendanceRecord {
   recordId: number;
   employeeId: number;
@@ -201,6 +220,9 @@ export interface RecruitmentRequest {
   autoGenerateEmployeeId?: boolean;
 }
 
+// Backend returns a dedicated RecruitmentRequestResponse DTO. For now it matches the frontend shape.
+export type RecruitmentRequestResponse = RecruitmentRequest;
+
 export interface AdvanceRequest {
   advanceId?: number;
   employeeId?: number;
@@ -274,6 +296,12 @@ export const updateProfileMe = (data: EmployeeProfileUpdatePayload) =>
 
 export const updateEmployee = (employeeId: number, data: EmployeeAdminUpdatePayload) =>
   api.put<EmployeeProfile>(`/employees/${employeeId}`, data);
+
+export const deleteEmployee = (employeeId: number) =>
+  api.delete<EmployeeDeletionResponse>(`/employees/${employeeId}`);
+
+export const resetEmployeePassword = (employeeId: number) =>
+  api.post<PasswordResetResponse>(`/employees/${employeeId}/reset-password`);
 
 export const listEmployees = () => getPaginatedItems<EmployeeSummary>('/employees');
 export const listEmployeesPage = (params?: PaginationParams) =>
@@ -399,7 +427,7 @@ export const calculatePayroll = (month: number, year: number, employeeId?: numbe
 };
 
 export const calculateAllPayroll = (month: number, year: number) =>
-  api.post<CalculateAllPayrollResult>(`/payroll/calculate-all?month=${month}&year=${year}`);
+  api.post<PayrollBulkResult>(`/payroll/calculate-all?month=${month}&year=${year}`);
 
 // Recruitment Request APIs
 export const submitRecruitmentRequest = (data: RecruitmentRequest) =>
@@ -427,7 +455,7 @@ export const getAllRecruitmentRequests = (status?: string) =>
     : getPaginatedItems<RecruitmentRequest>('/recruitment/all');
 
 export const processRecruitmentRequest = (requestId: number, status: string, note?: string, salary?: number) =>
-  api.put(`/recruitment/process/${requestId}`, { status, note, salary });
+  api.put<ProcessRecruitmentResponse>(`/recruitment/process/${requestId}`, { status, note, salary });
 
 export const getRecruitmentRequest = (requestId: number) =>
   api.get<RecruitmentRequest>(`/recruitment/${requestId}`);
@@ -491,12 +519,23 @@ export interface PayrollSlip {
   generatedAt: string;
 }
 
-export interface CalculateAllPayrollResult {
+export interface PayrollBulkResult {
+  month: number;
+  year: number;
   successCount: number;
   errorCount: number;
-  totalEmployees?: number;
-  processedEmployeeIds?: number[];
-  failedEmployees?: { employeeId?: number; error: string }[];
+  totalProcessed: number;
+  requester: string;
+}
+
+export type CalculateAllPayrollResult = PayrollBulkResult;
+
+export interface ProcessRecruitmentResponse {
+  request: RecruitmentRequestResponse;
+  // When the request isn't at "final approval" yet, backend returns null (or may omit if configured to exclude nulls).
+  username?: string | null;
+  password?: string | null;
+  employeeId?: string | null;
 }
 
 // Leave Request APIs

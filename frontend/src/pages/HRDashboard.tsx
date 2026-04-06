@@ -1,5 +1,5 @@
-import { useEffect, useState, useRef } from 'react';
-import axios from 'axios';
+import { useState, useRef } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
   CheckCircle2,
@@ -40,13 +40,14 @@ import {
   type NfcCard,
   type RecruitmentRequest,
 } from '../services/api';
+import { queryKeys } from '../services/queryKeys';
+import { extractApiError } from '../utils/errorHandler';
 
 const HRDashboard = () => {
-  const [employees, setEmployees] = useState<EmployeeSummary[]>([]);
-  const [employeePage] = useState(0);
+  const queryClient = useQueryClient();
+  const employeePage = 0;
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | ''>('');
-  const [selectedCard, setSelectedCard] = useState<NfcCard | null>(null);
   const [cardUidInput, setCardUidInput] = useState('');
   const [cardActionLoading, setCardActionLoading] = useState(false);
   const [cardFeedback, setCardFeedback] = useState<string | null>(null);
@@ -58,81 +59,72 @@ const HRDashboard = () => {
   const reportYear = reportDate.getFullYear();
 
   // Leave Requests state
-  const [pendingLeaves, setPendingLeaves] = useState<LeaveRequest[]>([]);
   const [processingLeave, setProcessingLeave] = useState<number | null>(null);
   const [leaveNote, setLeaveNote] = useState<string>('');
   const [selectedLeaveId, setSelectedLeaveId] = useState<number | null>(null);
 
   // Recruitment Requests state
-  const [pendingRecruitment, setPendingRecruitment] = useState<RecruitmentRequest[]>([]);
   const [processingRecruitment, setProcessingRecruitment] = useState<number | null>(null);
   const [recruitmentNote, setRecruitmentNote] = useState<string>('');
   const [adjustedSalary, setAdjustedSalary] = useState<string>('');
   const [selectedRecruitmentId, setSelectedRecruitmentId] = useState<number | null>(null);
   const [recruitmentPage, setRecruitmentPage] = useState(0);
-  const [recruitmentTotalPages, setRecruitmentTotalPages] = useState(0);
-  const [recruitmentTotalCount, setRecruitmentTotalCount] = useState(0);
   const [leavePage, setLeavePage] = useState(0);
-  const [leaveTotalPages, setLeaveTotalPages] = useState(0);
-  const [leaveTotalCount, setLeaveTotalCount] = useState(0);
 
   const cardSectionRef = useRef<HTMLDivElement>(null);
+
+  const employeesQuery = useQuery({
+    queryKey: queryKeys.hr.employees(employeePage),
+    queryFn: async () => (await listEmployeesPage({ page: employeePage, size: 10 })).data,
+  });
+
+  const selectedCardQuery = useQuery<NfcCard | null>({
+    queryKey: queryKeys.hr.employeeCard(selectedEmployeeId),
+    queryFn: async () => {
+      if (selectedEmployeeId === '') return null;
+      try {
+        const res = await getEmployeeNfcCard(selectedEmployeeId);
+        return res.data;
+      } catch (error: unknown) {
+        const message = extractApiError(error).message;
+        if (message.includes('404') || message.includes('Not Found')) {
+          return null;
+        }
+        throw error;
+      }
+    },
+    enabled: selectedEmployeeId !== '',
+  });
+
+  const leavesQuery = useQuery({
+    queryKey: queryKeys.hr.leaves(leavePage),
+    queryFn: async () => (await getPendingLeavesForHrPage({ page: leavePage, size: 10 })).data,
+  });
+
+  const recruitmentQuery = useQuery({
+    queryKey: queryKeys.hr.recruitment(recruitmentPage),
+    queryFn: async () => (await getPendingRecruitmentRequestsPage({ page: recruitmentPage, size: 10 })).data,
+  });
+
+  const employees: EmployeeSummary[] = employeesQuery.data?.items ?? [];
+  const selectedCard = selectedCardQuery.data ?? null;
+  const pendingLeaves: LeaveRequest[] = leavesQuery.data?.items ?? [];
+  const leaveTotalPages = leavesQuery.data?.totalPages ?? 0;
+  const leaveTotalCount = leavesQuery.data?.totalCount ?? 0;
+  const pendingRecruitment: RecruitmentRequest[] = recruitmentQuery.data?.items ?? [];
+  const recruitmentTotalPages = recruitmentQuery.data?.totalPages ?? 0;
+  const recruitmentTotalCount = recruitmentQuery.data?.totalCount ?? 0;
 
   const selectedEmployee = selectedEmployeeId === ''
     ? null
     : employees.find((employee) => employee.employeeId === selectedEmployeeId) ?? null;
 
   const getErrorMessage = (error: unknown, fallback: string) => {
-    if (axios.isAxiosError(error)) {
-      const message = typeof error.response?.data?.message === 'string'
-        ? error.response.data.message
-        : null;
-      return message ?? fallback;
-    }
-    return fallback;
+    return extractApiError(error).message || fallback;
   };
 
-  const loadEmployees = async (page = 0) => {
-    const res = await listEmployeesPage({ page, size: 10 });
-    setEmployees(res.data.items);
-  };
-
-  const loadSelectedCard = async (employeeId: number) => {
-    try {
-      const res = await getEmployeeNfcCard(employeeId);
-      setSelectedCard(res.data);
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error) && error.response?.status === 404) {
-        setSelectedCard(null);
-        return;
-      }
-      throw error;
-    }
-  };
-
-  useEffect(() => {
-    loadEmployees(employeePage)
-      .then(() => setLoadError(null))
-      .catch(() => setLoadError('تعذر تحميل قائمة الموظفين. تأكد من صلاحيات HR والاتصال بالخادم.'));
-  }, [employeePage]);
-
-  useEffect(() => {
-    if (selectedEmployeeId === '') {
-      setSelectedCard(null);
-      setCardUidInput('');
-      setCardFeedback(null);
-      return;
-    }
-
-    loadSelectedCard(selectedEmployeeId)
-      .then(() => setCardFeedback(null))
-      .catch(() => setCardFeedback('تعذر تحميل بيانات البطاقة الحالية.'));
-  }, [selectedEmployeeId]);
-
-  const refreshEmployeesAndCard = async (employeeId: number) => {
-    await loadEmployees(employeePage);
-    await loadSelectedCard(employeeId);
-  };
+  const queryError = employeesQuery.error || leavesQuery.error || recruitmentQuery.error || selectedCardQuery.error;
+  const pageError = loadError || (queryError ? extractApiError(queryError).message : null);
 
   const handleAssignOrReplace = async () => {
     if (selectedEmployeeId === '' || !cardUidInput.trim()) {
@@ -150,7 +142,8 @@ const HRDashboard = () => {
         setCardFeedback('تم ربط البطاقة الجديدة بالموظف بنجاح.');
       }
       setCardUidInput('');
-      await refreshEmployeesAndCard(selectedEmployeeId);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.hr.employeesRoot });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.hr.employeeCardRoot });
       setLoadError(null);
     } catch (error: unknown) {
       setCardFeedback(getErrorMessage(error, 'فشل حفظ بيانات البطاقة.'));
@@ -168,7 +161,8 @@ const HRDashboard = () => {
     setCardActionLoading(true);
     try {
       await updateEmployeeNfcCardStatus(selectedEmployeeId, status);
-      await refreshEmployeesAndCard(selectedEmployeeId);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.hr.employeesRoot });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.hr.employeeCardRoot });
       setCardFeedback('تم تحديث حالة البطاقة بنجاح.');
       setLoadError(null);
     } catch (error: unknown) {
@@ -187,8 +181,8 @@ const HRDashboard = () => {
     setCardActionLoading(true);
     try {
       await unassignEmployeeNfcCard(selectedEmployeeId);
-      await loadEmployees(employeePage);
-      setSelectedCard(null);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.hr.employeesRoot });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.hr.employeeCardRoot });
       setCardUidInput('');
       setCardFeedback('تم فك ربط البطاقة من الموظف.');
       setLoadError(null);
@@ -207,33 +201,9 @@ const HRDashboard = () => {
         : 'bg-amber-500/10 text-amber-300'
     : 'bg-slate-500/10 text-slate-400';
 
-  useEffect(() => {
-    getPendingLeavesForHrPage({ page: leavePage, size: 10 })
-      .then((res) => {
-        setPendingLeaves(res.data.items);
-        setLeaveTotalPages(res.data.totalPages);
-        setLeaveTotalCount(res.data.totalCount);
-      })
-      .catch(() => console.error('Failed to load pending leaves for HR'));
-
-    getPendingRecruitmentRequestsPage({ page: recruitmentPage, size: 10 })
-      .then((res) => {
-        setPendingRecruitment(res.data.items);
-        setRecruitmentTotalPages(res.data.totalPages);
-        setRecruitmentTotalCount(res.data.totalCount);
-      })
-      .catch(() => console.error('Failed to load pending recruitment requests'));
-  }, [leavePage, recruitmentPage]);
-
   const handleRecruitmentSuccess = () => {
     setShowRecruitmentForm(false);
-    getPendingRecruitmentRequestsPage({ page: recruitmentPage, size: 10 })
-      .then((res) => {
-        setPendingRecruitment(res.data.items);
-        setRecruitmentTotalPages(res.data.totalPages);
-        setRecruitmentTotalCount(res.data.totalCount);
-      })
-      .catch(() => {});
+    void queryClient.invalidateQueries({ queryKey: queryKeys.hr.recruitmentRoot });
   };
 
   const handlePrevMonth = () => {
@@ -324,12 +294,12 @@ const HRDashboard = () => {
     try {
       const salaryNum = adjustedSalary ? parseFloat(adjustedSalary) : undefined;
       await processRecruitmentRequest(requestId, status, recruitmentNote || undefined, salaryNum);
-      setPendingRecruitment((prev) => prev.filter((r) => r.requestId !== requestId));
+      await queryClient.invalidateQueries({ queryKey: queryKeys.hr.recruitmentRoot });
       setRecruitmentNote('');
       setAdjustedSalary('');
       setSelectedRecruitmentId(null);
-    } catch {
-      setLoadError('فشل معالجة طلب التوظيف');
+    } catch (err: unknown) {
+      setLoadError(extractApiError(err).message || 'فشل معالجة طلب التوظيف');
     } finally {
       setProcessingRecruitment(null);
     }
@@ -339,11 +309,11 @@ const HRDashboard = () => {
     setProcessingLeave(requestId);
     try {
       await processLeaveRequest(requestId, status, leaveNote || undefined);
-      setPendingLeaves((prev) => prev.filter((r) => r.requestId !== requestId));
+      await queryClient.invalidateQueries({ queryKey: queryKeys.hr.leavesRoot });
       setLeaveNote('');
       setSelectedLeaveId(null);
-    } catch {
-      setLoadError('فشل معالجة طلب الإجازة');
+    } catch (err: unknown) {
+      setLoadError(extractApiError(err).message || 'فشل معالجة طلب الإجازة');
     } finally {
       setProcessingLeave(null);
     }
@@ -379,8 +349,8 @@ const HRDashboard = () => {
         </div>
       </header>
 
-      {loadError && (
-        <div className="mb-6 p-4 rounded-xl bg-red-500/10 text-red-200 text-sm font-medium">{loadError}</div>
+      {pageError && (
+        <div className="mb-6 p-4 rounded-xl bg-red-500/10 text-red-200 text-sm font-medium">{pageError}</div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
@@ -494,8 +464,8 @@ const HRDashboard = () => {
       </div>
 
       {/* NFC Card Management Section */}
-      {loadError && (
-        <div className="mb-6 p-4 rounded-xl bg-red-500/10 text-red-200 text-sm font-medium">{loadError}</div>
+      {pageError && (
+        <div className="mb-6 p-4 rounded-xl bg-red-500/10 text-red-200 text-sm font-medium">{pageError}</div>
       )}
 
       <div className="grid grid-cols-1 gap-8 mb-10">

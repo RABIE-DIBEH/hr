@@ -1,5 +1,6 @@
 package com.hrms.services;
 
+import com.hrms.api.dto.ProcessRecruitmentResult;
 import com.hrms.core.models.Employee;
 import com.hrms.core.models.RecruitmentRequest;
 import com.hrms.core.models.Team;
@@ -104,7 +105,7 @@ public class RecruitmentRequestService {
      * Returns a map with generated credentials when employee is created (status = Approved).
      */
     @Transactional
-    public Map<String, Object> processRequest(Long requestId, String action, String note, BigDecimal adjustedSalary, Long processorId, String processorRole) {
+    public ProcessRecruitmentResult processRequest(Long requestId, String action, String note, BigDecimal adjustedSalary, Long processorId, String processorRole) {
         Optional<RecruitmentRequest> optional = recruitmentRequestRepository.findById(requestId);
         if (optional.isEmpty()) {
             throw new IllegalArgumentException("Recruitment request not found");
@@ -137,7 +138,7 @@ public class RecruitmentRequestService {
                 );
             }
 
-            return Map.of("request", saved);
+            return ProcessRecruitmentResult.withoutCredentials(saved);
         }
 
         // Action is "Approved"
@@ -204,15 +205,15 @@ public class RecruitmentRequestService {
 
         // Return credentials when employee was created
         if (credentials != null) {
-            return Map.of(
-                "request", saved,
-                "username", credentials.get("username"),
-                "password", credentials.get("password"),
-                "employeeId", credentials.get("employeeId")
+            return ProcessRecruitmentResult.withCredentials(
+                    saved,
+                    credentials.get("username"),
+                    credentials.get("password"),
+                    credentials.get("employeeId")
             );
         }
 
-        return Map.of("request", saved);
+        return ProcessRecruitmentResult.withoutCredentials(saved);
     }
 
     /**

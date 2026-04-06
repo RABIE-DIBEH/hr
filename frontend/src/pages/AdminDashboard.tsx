@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
@@ -34,22 +35,17 @@ import {
   type SystemLog, 
   type NfcDevice 
 } from '../services/api';
+import { queryKeys } from '../services/queryKeys';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
-  const [logs, setLogs] = useState<SystemLog[]>([]);
-  const [devices, setDevices] = useState<NfcDevice[]>([]);
+  const queryClient = useQueryClient();
   const [showRawLogs, setShowRawLogs] = useState(false);
   const [logsPage, setLogsPage] = useState(0);
-  const [logsTotalPages, setLogsTotalPages] = useState(0);
-  const [logsTotalCount, setLogsTotalCount] = useState(0);
   const [devicesPage, setDevicesPage] = useState(0);
-  const [devicesTotalPages, setDevicesTotalPages] = useState(0);
-  const [devicesTotalCount, setDevicesTotalCount] = useState(0);
 
   // Mocked history data for the chart
-  const [cpuHistory, setCpuHistory] = useState([
+  const baseCpuHistory = [
     { time: '10:00', usage: 20 },
     { time: '10:05', usage: 25 },
     { time: '10:10', usage: 18 },
@@ -57,45 +53,45 @@ const AdminDashboard = () => {
     { time: '10:20', usage: 22 },
     { time: '10:25', usage: 28 },
     { time: '10:30', usage: 24 },
-  ]);
+  ];
 
-  useEffect(() => {
-    const loadData = () => {
-      getAdminMetrics().then(res => {
-        setMetrics(res.data);
-        // Update history with new data point
-        const newUsage = parseInt(res.data.cpu.replace('%', '')) || 0;
-        const now = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
-        setCpuHistory(prev => [...prev.slice(-6), { time: now, usage: newUsage }]);
-      }).catch(console.error);
-      
-      getSystemLogsPage({ page: logsPage, size: 10 }).then(res => {
-        setLogs(res.data.items);
-        setLogsTotalPages(res.data.totalPages);
-        setLogsTotalCount(res.data.totalCount);
-      }).catch(console.error);
-      
-      getNfcDevicesPage({ page: devicesPage, size: 8 }).then(res => {
-        setDevices(res.data.items);
-        setDevicesTotalPages(res.data.totalPages);
-        setDevicesTotalCount(res.data.totalCount);
-      }).catch(console.error);
-    };
+  const metricsQuery = useQuery({
+    queryKey: queryKeys.admin.metrics,
+    queryFn: async () => (await getAdminMetrics()).data,
+    refetchInterval: 30000,
+  });
 
-    loadData();
-    const interval = setInterval(loadData, 30000); // refresh every 30s
-    return () => clearInterval(interval);
-  }, [logsPage, devicesPage]);
+  const logsQuery = useQuery({
+    queryKey: queryKeys.admin.logs(logsPage),
+    queryFn: async () => (await getSystemLogsPage({ page: logsPage, size: 10 })).data,
+    refetchInterval: 30000,
+  });
+
+  const devicesQuery = useQuery({
+    queryKey: queryKeys.admin.devices(devicesPage),
+    queryFn: async () => (await getNfcDevicesPage({ page: devicesPage, size: 8 })).data,
+    refetchInterval: 30000,
+  });
+
+  const metrics: SystemMetrics | null = metricsQuery.data ?? null;
+  const logs: SystemLog[] = logsQuery.data?.items ?? [];
+  const logsTotalPages = logsQuery.data?.totalPages ?? 0;
+  const logsTotalCount = logsQuery.data?.totalCount ?? 0;
+  const devices: NfcDevice[] = devicesQuery.data?.items ?? [];
+  const devicesTotalPages = devicesQuery.data?.totalPages ?? 0;
+  const devicesTotalCount = devicesQuery.data?.totalCount ?? 0;
+
+  const cpuHistory = [
+    ...baseCpuHistory.slice(0, 6),
+    { time: 'الآن', usage: parseInt((metrics?.cpu ?? '24%').replace('%', '')) || 24 },
+  ];
 
   const handleBackup = async () => {
     try {
       const res = await triggerBackup();
       alert(res.data.status || 'Backup executed securely');
-      getSystemLogsPage({ page: logsPage, size: 10 }).then(r => {
-        setLogs(r.data.items);
-        setLogsTotalPages(r.data.totalPages);
-        setLogsTotalCount(r.data.totalCount);
-      });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.admin.metrics });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.admin.logsRoot });
     } catch {
       alert('Error triggering backup');
     }
@@ -105,13 +101,8 @@ const AdminDashboard = () => {
     if (!window.confirm('هل أنت متأكد من رغبتك بمسح السجلات السابقة كلياً؟')) return;
     try {
       await clearSystemLogs();
-      setLogs([]);
       alert('All previous logs cleared.');
-      getSystemLogsPage({ page: logsPage, size: 10 }).then(r => {
-        setLogs(r.data.items);
-        setLogsTotalPages(r.data.totalPages);
-        setLogsTotalCount(r.data.totalCount);
-      });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.admin.logsRoot });
     } catch {
       alert('Failed to clear logs.');
     }

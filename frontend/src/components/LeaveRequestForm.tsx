@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { submitLeaveRequest } from '../services/api';
 import { motion } from 'framer-motion';
 import { X, Calendar, Clock, FileText } from 'lucide-react';
+import { extractApiError } from '../utils/errorHandler';
 
 interface LeaveRequestFormProps {
   onClose: () => void;
@@ -56,14 +57,8 @@ const LeaveRequestForm = ({ onClose, onSuccess }: LeaveRequestFormProps) => {
         onSuccess();
       }, 1500);
     } catch (err: unknown) {
-      let errorMessage = 'حدث خطأ أثناء إرسال الطلب. تأكد من صحة البيانات وتوفر رصيد كافٍ.';
-      if (typeof err === 'object' && err !== null && 'response' in err) {
-        const axiosError = err as { response?: { data?: { message?: string } } };
-        if (axiosError.response?.data?.message) {
-          errorMessage = axiosError.response.data.message;
-        }
-      }
-      setError(errorMessage);
+      const { message } = extractApiError(err);
+      setError(message || 'حدث خطأ أثناء إرسال الطلب. تأكد من صحة البيانات وتوفر رصيد كافٍ.');
     } finally {
       setLoading(false);
     }

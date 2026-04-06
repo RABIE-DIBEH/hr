@@ -92,11 +92,11 @@ public class AdminController {
     }
 
     @DeleteMapping("/devices/{deviceId}")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> deleteDevice(@PathVariable String deviceId) {
+    public ResponseEntity<ApiResponse<StatusResponseDto>> deleteDevice(@PathVariable String deviceId) {
         adminService.deleteDevice(deviceId);
         return ResponseEntity.ok(ApiResponse.success(
-                Map.of("deviceId", deviceId, "message", "Device removed successfully"),
-                "Device deleted successfully"
+                new StatusResponseDto("deleted"),
+                "Device removed successfully"
         ));
     }
 

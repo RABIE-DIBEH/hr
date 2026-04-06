@@ -1,9 +1,12 @@
-import { useEffect, useEffectEvent, useState } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Clock, ChevronRight, RefreshCcw } from 'lucide-react';
 import PaginationControls from '../components/PaginationControls';
 import CurrentDateTimePanel from '../components/CurrentDateTimePanel';
 import { getMyAttendancePage, type AttendanceRecord } from '../services/api';
+import { queryKeys } from '../services/queryKeys';
+import { extractApiError } from '../utils/errorHandler';
 import {
   getLegacyAttendanceStatusMeta,
   getPayrollStatusMeta,
@@ -11,33 +14,16 @@ import {
 } from '../components/attendanceStatus';
 
 const AttendanceLogs = () => {
-  const [logs, setLogs] = useState<AttendanceRecord[]>([]);
   const [page, setPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalCount, setTotalCount] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchLogs = useEffectEvent(async () => {
-    setLoading(true);
-    try {
-      const res = await getMyAttendancePage({ page, size: 20 });
-      setLogs(res.data.items);
-      setTotalPages(res.data.totalPages);
-      setTotalCount(res.data.totalCount);
-      setError(null);
-    } catch (err: any) {
-      const msg = err.response?.data?.message || err.message || 'فشل في جلب سجل الدوام';
-      setError(`خطأ: ${msg}`);
-      console.error('Attendance fetch error:', err);
-    } finally {
-      setLoading(false);
-    }
+  const { data, isLoading: loading, error, refetch } = useQuery({
+    queryKey: queryKeys.attendance.logs(page),
+    queryFn: async () => (await getMyAttendancePage({ page, size: 20 })).data,
   });
 
-  useEffect(() => {
-    void fetchLogs();
-  }, [page]);
+  const logs: AttendanceRecord[] = data?.items ?? [];
+  const totalPages = data?.totalPages ?? 0;
+  const totalCount = data?.totalCount ?? 0;
+  const errorMessage = error ? extractApiError(error).message : null;
 
   const formatTime = (dateStr: string) => {
     return new Date(dateStr).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
@@ -65,9 +51,9 @@ const AttendanceLogs = () => {
             </div>
           ) : error ? (
             <div className="p-12 text-center">
-              <p className="text-red-400 mb-4">{error}</p>
+              <p className="text-red-400 mb-4">{errorMessage}</p>
               <button 
-                onClick={() => void fetchLogs()}
+                onClick={() => void refetch()}
                 className="bg-white/5 hover:bg-white/10 text-white px-6 py-2 rounded-xl border border-white/10 transition-all font-bold"
               >
                 إعادة المحاولة

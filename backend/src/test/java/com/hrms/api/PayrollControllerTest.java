@@ -139,6 +139,54 @@ class PayrollControllerTest {
         assertEquals(20, pageableCaptor.getValue().getPageSize());
     }
 
+    @Test
+    void calculateAllPayroll_Allowed_ReturnsTypedResponse() throws Exception {
+        com.hrms.api.dto.PayrollBulkResult result = new com.hrms.api.dto.PayrollBulkResult(
+                4, 2026, 50, 48, 2, "dev@hrms.com"
+        );
+
+        when(payrollService.calculateAllMonthlyPayroll(4, 2026, "dev@hrms.com")).thenReturn(result);
+
+        mockMvc.perform(post("/api/payroll/calculate-all")
+                        .param("month", "4")
+                        .param("year", "2026"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.month").value(4))
+                .andExpect(jsonPath("$.data.year").value(2026))
+                .andExpect(jsonPath("$.data.totalProcessed").value(50))
+                .andExpect(jsonPath("$.data.successCount").value(48))
+                .andExpect(jsonPath("$.data.errorCount").value(2))
+                .andExpect(jsonPath("$.data.requester").value("dev@hrms.com"));
+    }
+
+    @Test
+    void calculateAllPayroll_NonHr_Returns403() throws Exception {
+        Employee regularEmployee = Employee.builder()
+                .employeeId(2L)
+                .fullName("Regular Employee")
+                .email("employee@hrms.com")
+                .passwordHash("secret")
+                .status("Active")
+                .build();
+        EmployeeUserDetails employeePrincipal = new EmployeeUserDetails(regularEmployee, "EMPLOYEE", "General");
+
+        ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+
+        mockMvc = MockMvcBuilders.standaloneSetup(new PayrollController(payrollService, employeeRepository))
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .setCustomArgumentResolvers(
+                        new PageableHandlerMethodArgumentResolver(),
+                        new AuthenticationPrincipalResolver(employeePrincipal)
+                )
+                .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
+                .build();
+
+        mockMvc.perform(post("/api/payroll/calculate-all")
+                        .param("month", "4")
+                        .param("year", "2026"))
+                .andExpect(status().isForbidden());
+    }
+
     private static final class AuthenticationPrincipalResolver implements HandlerMethodArgumentResolver {
         private final EmployeeUserDetails principal;
 

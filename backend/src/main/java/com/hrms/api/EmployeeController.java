@@ -1,11 +1,13 @@
 package com.hrms.api;
 
 import com.hrms.api.dto.EmployeeAdminUpdate;
+import com.hrms.api.dto.EmployeeDeletionResponse;
 import com.hrms.api.dto.EmployeeProfileResponse;
 import com.hrms.api.dto.EmployeeProfileUpdate;
 import com.hrms.api.dto.EmployeeSummaryResponse;
 import com.hrms.api.dto.ApiResponse;
 import com.hrms.api.dto.PaginatedResponse;
+import com.hrms.api.dto.PasswordResetResponse;
 import com.hrms.core.models.Employee;
 import com.hrms.core.repositories.EmployeeRepository;
 import com.hrms.security.EmployeeUserDetails;
@@ -29,7 +31,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/employees")
@@ -155,7 +156,7 @@ public class EmployeeController {
      * Sets status to "Terminated" instead of removing the record for audit trail.
      */
     @DeleteMapping("/{employeeId}")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> deleteEmployee(
+    public ResponseEntity<ApiResponse<EmployeeDeletionResponse>> deleteEmployee(
             @PathVariable Long employeeId,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
 
@@ -168,8 +169,8 @@ public class EmployeeController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot delete your own account");
         }
 
-        Map<String, Object> result = employeeDirectoryService.deleteEmployee(employeeId, principal.getEmployeeId());
-        return ResponseEntity.ok(ApiResponse.success(result, result.get("message").toString()));
+        EmployeeDeletionResponse result = employeeDirectoryService.deleteEmployee(employeeId, principal.getEmployeeId());
+        return ResponseEntity.ok(ApiResponse.success(result, "Employee '" + result.fullName() + "' has been terminated successfully"));
     }
 
     /**
@@ -178,7 +179,7 @@ public class EmployeeController {
      * Allowed by: dev@hrms.com, HR, ADMIN, SUPER_ADMIN, MANAGER
      */
     @PostMapping("/{employeeId}/reset-password")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> resetPassword(
+    public ResponseEntity<ApiResponse<PasswordResetResponse>> resetPassword(
             @PathVariable Long employeeId,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
 
@@ -189,8 +190,8 @@ public class EmployeeController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only dev@hrms.com or HR/Admin/Manager can reset passwords");
         }
 
-        Map<String, Object> result = employeeDirectoryService.resetEmployeePassword(employeeId, principal.getEmployeeId());
-        return ResponseEntity.ok(ApiResponse.success(result, result.get("message").toString()));
+        PasswordResetResponse result = employeeDirectoryService.resetEmployeePassword(employeeId, principal.getEmployeeId());
+        return ResponseEntity.ok(ApiResponse.success(result, "Password reset for '" + result.fullName() + "' — share the new password with the employee"));
     }
 
     private static boolean hasAnyRole(EmployeeUserDetails principal, String... roles) {

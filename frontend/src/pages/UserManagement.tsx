@@ -15,11 +15,14 @@ import {
 import {
   listEmployees,
   updateEmployee,
+  deleteEmployee,
+  resetEmployeePassword,
   type EmployeeSummary,
   type EmployeeAdminUpdatePayload,
 } from '../services/api';
 import { getRole, getPayload } from '../services/auth';
 import { motion, AnimatePresence } from 'framer-motion';
+import { extractApiError } from '../utils/errorHandler';
 
 const roleLabel = (role: string) => {
   const map: Record<string, string> = {
@@ -169,24 +172,13 @@ const UserManagement = () => {
     if (!selectedEmployee) return;
     setActionLoading(true);
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
-      const token = localStorage.getItem('hrms_jwt');
-      const res = await fetch(`${API_BASE_URL}/employees/${selectedEmployee.employeeId}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => null);
-        throw new Error(body?.message || `خطأ ${res.status}`);
-      }
-      const json = await res.json();
-      setSuccessMessage(json.message || 'تم إنهاء الموظف بنجاح');
+      const res = await deleteEmployee(selectedEmployee.employeeId);
+      setSuccessMessage(res.data ? `تم إنهاء الموظف ${res.data.fullName} بنجاح` : 'تم إنهاء الموظف بنجاح');
       setShowDeleteConfirm(false);
       setSelectedEmployee(null);
       await loadEmployees();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'فشل في الحذف';
-      setError(msg);
+      setError(extractApiError(err).message || 'فشل في الحذف');
     } finally {
       setActionLoading(false);
     }
@@ -197,22 +189,11 @@ const UserManagement = () => {
     setActionLoading(true);
     setResetPasswordResult(null);
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
-      const token = localStorage.getItem('hrms_jwt');
-      const res = await fetch(`${API_BASE_URL}/employees/${selectedEmployee.employeeId}/reset-password`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => null);
-        throw new Error(body?.message || `خطأ ${res.status}`);
-      }
-      const json = await res.json();
-      setResetPasswordResult({ password: json.data.newPassword, name: json.data.fullName });
-      setSuccessMessage(json.message);
+      const res = await resetEmployeePassword(selectedEmployee.employeeId);
+      setResetPasswordResult({ password: res.data.newPassword, name: res.data.fullName });
+      setSuccessMessage(`تم إعادة تعيين كلمة المرور للموظف ${res.data.fullName}`);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'فشل في إعادة تعيين كلمة المرور';
-      setError(msg);
+      setError(extractApiError(err).message || 'فشل في إعادة تعيين كلمة المرور');
     } finally {
       setActionLoading(false);
     }

@@ -16,7 +16,9 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -89,5 +91,15 @@ public class AdminControllerTest {
                 .andExpect(jsonPath("$.data.name").value("Gate Reader"))
                 .andExpect(jsonPath("$.data.status").value("Online"))
                 .andExpect(jsonPath("$.data.systemLoad").value("5%"));
+    }
+
+    @Test
+    void deleteDevice_ReturnsTypedResponse() throws Exception {
+        doNothing().when(adminService).deleteDevice("NFC_1234");
+
+        mockMvc.perform(delete("/api/admin/devices/NFC_1234"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("deleted"))
+                .andExpect(jsonPath("$.message").value("Device removed successfully"));
     }
 }

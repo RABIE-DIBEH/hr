@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
   Users,
@@ -30,12 +31,13 @@ import {
   reportFraud,
   downloadAttendancePdf,
   downloadAttendanceExcel,
-  type EmployeeProfile,
   type EmployeeSummary,
   type RecruitmentRequest,
   type LeaveRequest,
   type AttendanceRecord,
 } from '../services/api';
+import { queryKeys } from '../services/queryKeys';
+import { extractApiError } from '../utils/errorHandler';
 import {
   getLegacyAttendanceStatusMeta,
   getPayrollStatusMeta,
@@ -43,10 +45,8 @@ import {
 } from '../components/attendanceStatus';
 
 const ManagerDashboard = () => {
-  const [me, setMe] = useState<EmployeeProfile | null>(null);
-  const [team, setTeam] = useState<EmployeeSummary[]>([]);
+  const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
-  const [pendingRequests, setPendingRequests] = useState<RecruitmentRequest[]>([]);
   const [processingRequest, setProcessingRequest] = useState<number | null>(null);
   const [processNote, setProcessNote] = useState<string>('');
   const [adjustedSalary, setAdjustedSalary] = useState<string>('');
@@ -59,33 +59,22 @@ const ManagerDashboard = () => {
   const reportYear = reportDate.getFullYear();
 
   // Leaves & Attendance State
-  const [pendingLeaves, setPendingLeaves] = useState<LeaveRequest[]>([]);
   const [processingLeave, setProcessingLeave] = useState<number | null>(null);
-  
-  const [todayAttendance, setTodayAttendance] = useState<AttendanceRecord[]>([]);
   const [verifyingRecord, setVerifyingRecord] = useState<number | null>(null);
   const [leaveNote, setLeaveNote] = useState<string>('');
   const [selectedLeaveId, setSelectedLeaveId] = useState<number | null>(null);
   const [requestPage, setRequestPage] = useState(0);
-  const [requestTotalPages, setRequestTotalPages] = useState(0);
-  const [requestTotalCount, setRequestTotalCount] = useState(0);
   const [attendancePage, setAttendancePage] = useState(0);
-  const [attendanceTotalPages, setAttendanceTotalPages] = useState(0);
-  const [attendanceTotalCount, setAttendanceTotalCount] = useState(0);
   const [leavePage, setLeavePage] = useState(0);
-  const [leaveTotalPages, setLeaveTotalPages] = useState(0);
-  const [leaveTotalCount, setLeaveTotalCount] = useState(0);
   const [teamPage, setTeamPage] = useState(0);
-  const [teamTotalPages, setTeamTotalPages] = useState(0);
-  const [teamTotalCount, setTeamTotalCount] = useState(0);
   const [teamSearch, setTeamSearch] = useState('');
   const [teamStatusFilter, setTeamStatusFilter] = useState<'ALL' | 'LINKED' | 'NOT_LINKED'>('ALL');
 
-  useEffect(() => {
-    getCurrentEmployee()
-      .then((res) => setMe(res.data))
-      .catch(() => setMe(null));
-  }, []);
+  const { data: meData } = useQuery({
+    queryKey: queryKeys.me,
+    queryFn: async () => (await getCurrentEmployee()).data,
+  });
+  const me = meData ?? null;
 
   const canReviewCompanyRequests = me?.roleName === 'MANAGER'
     || me?.roleName === 'HR'
@@ -94,63 +83,64 @@ const ManagerDashboard = () => {
   const canViewCompanyWideTeam = me?.roleName === 'SUPER_ADMIN';
   const canViewManagerScopedTeam = me?.roleName === 'MANAGER';
 
-  useEffect(() => {
-    if (canReviewCompanyRequests) {
-      getPendingRecruitmentRequestsPage({ page: requestPage, size: 10 })
-        .then((res) => {
-          setPendingRequests(res.data.items);
-          setRequestTotalPages(res.data.totalPages);
-          setRequestTotalCount(res.data.totalCount);
-        })
-        .catch(() => setError('تعذر تحميل طلبات التوظيف المعلقة'));
+  const teamQuery = useQuery({
+    queryKey: queryKeys.manager.team(canViewCompanyWideTeam ? 'all' : 'mine', teamPage),
+    queryFn: async () => {
+      const response = canViewCompanyWideTeam
+        ? await listEmployeesPage({ page: teamPage, size: 10 })
+        : await listMyTeamPage({ page: teamPage, size: 10 });
+      return response.data;
+    },
+    enabled: canViewManagerScopedTeam || canViewCompanyWideTeam,
+  });
 
-      getManagerTodayAttendancePage({ page: attendancePage, size: 10 })
-        .then((res) => {
-          setTodayAttendance(res.data.items);
-          setAttendanceTotalPages(res.data.totalPages);
-          setAttendanceTotalCount(res.data.totalCount);
-        })
-        .catch(() => console.error('Failed to load attendance for today'));
-    }
-  }, [canReviewCompanyRequests, requestPage, attendancePage]);
+  const recruitmentQuery = useQuery({
+    queryKey: queryKeys.manager.recruitment(requestPage),
+    queryFn: async () => (await getPendingRecruitmentRequestsPage({ page: requestPage, size: 10 })).data,
+    enabled: canReviewCompanyRequests,
+  });
 
-  useEffect(() => {
-    if (!canViewManagerScopedTeam && !canViewCompanyWideTeam) {
-      setTeam([]);
-      return;
-    }
+  const attendanceQuery = useQuery({
+    queryKey: queryKeys.manager.todayAttendance(attendancePage),
+    queryFn: async () => (await getManagerTodayAttendancePage({ page: attendancePage, size: 10 })).data,
+    enabled: canReviewCompanyRequests,
+  });
 
-    const teamRequest = canViewCompanyWideTeam
-      ? listEmployeesPage({ page: teamPage, size: 10 })
-      : listMyTeamPage({ page: teamPage, size: 10 });
+  const leavesQuery = useQuery({
+    queryKey: queryKeys.manager.leaves(
+      canViewCompanyWideTeam ? 'hr' : 'manager',
+      canViewCompanyWideTeam ? null : (me?.employeeId ?? null),
+      leavePage
+    ),
+    queryFn: async () => {
+      if (canViewCompanyWideTeam) {
+        return (await getPendingLeavesForHrPage({ page: leavePage, size: 10 })).data;
+      }
+      return (await getPendingLeavesForManagerPage(me!.employeeId, { page: leavePage, size: 10 })).data;
+    },
+    enabled: canViewCompanyWideTeam || (canViewManagerScopedTeam && !!me?.employeeId),
+  });
 
-    teamRequest
-      .then((res) => {
-        setTeam(res.data.items);
-        setTeamTotalPages(res.data.totalPages);
-        setTeamTotalCount(res.data.totalCount);
-        setError(null);
-      })
-      .catch(() => setError('تعذر تحميل فريقك. تحقق من أن حسابك بصلاحية مدير.'));
+  const team: EmployeeSummary[] = teamQuery.data?.items ?? [];
+  const teamTotalPages = teamQuery.data?.totalPages ?? 0;
+  const teamTotalCount = teamQuery.data?.totalCount ?? 0;
 
-    if (canViewCompanyWideTeam) {
-      getPendingLeavesForHrPage({ page: leavePage, size: 10 })
-        .then((res) => {
-          setPendingLeaves(res.data.items);
-          setLeaveTotalPages(res.data.totalPages);
-          setLeaveTotalCount(res.data.totalCount);
-        })
-        .catch(() => console.error('Failed to load HR leaves'));
-    } else if (me?.employeeId) {
-      getPendingLeavesForManagerPage(me.employeeId, { page: leavePage, size: 10 })
-        .then((res) => {
-          setPendingLeaves(res.data.items);
-          setLeaveTotalPages(res.data.totalPages);
-          setLeaveTotalCount(res.data.totalCount);
-        })
-        .catch(() => console.error('Failed to load leaves'));
-    }
-  }, [canViewCompanyWideTeam, canViewManagerScopedTeam, me?.employeeId, leavePage, teamPage]);
+  const pendingRequests: RecruitmentRequest[] = recruitmentQuery.data?.items ?? [];
+  const requestTotalPages = recruitmentQuery.data?.totalPages ?? 0;
+  const requestTotalCount = recruitmentQuery.data?.totalCount ?? 0;
+
+  const todayAttendance: AttendanceRecord[] = attendanceQuery.data?.items ?? [];
+  const attendanceTotalPages = attendanceQuery.data?.totalPages ?? 0;
+  const attendanceTotalCount = attendanceQuery.data?.totalCount ?? 0;
+
+  const pendingLeaves: LeaveRequest[] = leavesQuery.data?.items ?? [];
+  const leaveTotalPages = leavesQuery.data?.totalPages ?? 0;
+  const leaveTotalCount = leavesQuery.data?.totalCount ?? 0;
+
+  const queryError =
+    teamQuery.error || recruitmentQuery.error || attendanceQuery.error || leavesQuery.error;
+  const queryErrorMessage = queryError ? extractApiError(queryError).message : null;
+  const pageError = error || queryErrorMessage;
 
   const stats = [
     {
@@ -183,12 +173,12 @@ const ManagerDashboard = () => {
     try {
       const salaryNum = adjustedSalary ? parseFloat(adjustedSalary) : undefined;
       await processRecruitmentRequest(requestId, status, processNote || undefined, salaryNum);
-      setPendingRequests((prev) => prev.filter((r) => r.requestId !== requestId));
+      await queryClient.invalidateQueries({ queryKey: queryKeys.manager.recruitmentRoot });
       setProcessNote('');
       setAdjustedSalary('');
       setSelectedRequestId(null);
-    } catch {
-      setError('فشل معالجة الطلب');
+    } catch (err: unknown) {
+      setError(extractApiError(err).message || 'فشل معالجة الطلب');
     } finally {
       setProcessingRequest(null);
     }
@@ -198,11 +188,11 @@ const ManagerDashboard = () => {
     setProcessingLeave(requestId);
     try {
       await processLeaveRequest(requestId, status, leaveNote || undefined);
-      setPendingLeaves((prev) => prev.filter((r) => r.requestId !== requestId));
+      await queryClient.invalidateQueries({ queryKey: queryKeys.manager.leavesRoot });
       setLeaveNote('');
       setSelectedLeaveId(null);
-    } catch {
-      setError('فشل معالجة طلب الإجازة');
+    } catch (err: unknown) {
+      setError(extractApiError(err).message || 'فشل معالجة طلب الإجازة');
     } finally {
       setProcessingLeave(null);
     }
@@ -212,23 +202,9 @@ const ManagerDashboard = () => {
     setVerifyingRecord(recordId);
     try {
       await verifyAttendance(recordId);
-      setTodayAttendance(prev => 
-        prev.map((r) => (
-          r.recordId === recordId
-            ? {
-                ...r,
-                status: 'Verified',
-                isVerifiedByManager: true,
-                reviewStatus: 'VERIFIED',
-                payrollStatus: 'APPROVED_FOR_PAYROLL',
-                verifiedAt: new Date().toISOString(),
-                managerNotes: 'Verified via Dashboard',
-              }
-            : r
-        ))
-      );
-    } catch {
-      alert("فشل تأكيد الدوام");
+      await queryClient.invalidateQueries({ queryKey: queryKeys.manager.todayAttendanceRoot });
+    } catch (err: unknown) {
+      alert(extractApiError(err).message || "فشل تأكيد الدوام");
     } finally {
       setVerifyingRecord(null);
     }
@@ -241,24 +217,9 @@ const ManagerDashboard = () => {
     setVerifyingRecord(recordId);
     try {
       await reportFraud(recordId, note);
-      setTodayAttendance(prev => 
-        prev.map((r) => (
-          r.recordId === recordId
-            ? {
-                ...r,
-                status: 'Fraud',
-                isVerifiedByManager: true,
-                reviewStatus: 'FRAUD',
-                payrollStatus: 'EXCLUDED_FROM_PAYROLL',
-                verifiedAt: new Date().toISOString(),
-                managerNotes: note,
-                workHours: 0,
-              }
-            : r
-        ))
-      );
-    } catch {
-      alert("فشل الإبلاغ عن تلاعب");
+      await queryClient.invalidateQueries({ queryKey: queryKeys.manager.todayAttendanceRoot });
+    } catch (err: unknown) {
+      alert(extractApiError(err).message || "فشل الإبلاغ عن تلاعب");
     } finally {
       setVerifyingRecord(null);
     }
@@ -344,8 +305,8 @@ const ManagerDashboard = () => {
         </div>
       )}
 
-      {error && (
-        <div className="mb-6 p-4 rounded-xl bg-red-500/10 text-red-200 text-sm font-medium">{error}</div>
+      {pageError && (
+        <div className="mb-6 p-4 rounded-xl bg-red-500/10 text-red-200 text-sm font-medium">{pageError}</div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">

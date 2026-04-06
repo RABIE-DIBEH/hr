@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -163,25 +162,28 @@ public class RecruitmentRequestController {
      * Returns generated credentials when a new employee is created (final approval).
      */
     @PutMapping("/process/{requestId}")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> processRequest(@PathVariable Long requestId,
-                                            @Valid @RequestBody ProcessRecruitmentRequestDto dto,
-                                            @AuthenticationPrincipal EmployeeUserDetails principal) {
+    public ResponseEntity<ApiResponse<ProcessRecruitmentResponse>> processRequest(
+            @PathVariable Long requestId,
+            @Valid @RequestBody ProcessRecruitmentRequestDto dto,
+            @AuthenticationPrincipal EmployeeUserDetails principal) {
         if (!hasAnyRole(principal, "MANAGER", "HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         }
 
         try {
-            Map<String, Object> result = recruitmentRequestService.processRequest(
+            ProcessRecruitmentResult result = recruitmentRequestService.processRequest(
                     requestId, dto.status(), dto.note(), dto.salary(), principal.getEmployeeId(), principal.getRoleName());
 
-            String message = "Request processed successfully";
-            // If credentials were generated, update the message
-            if (result.containsKey("username")) {
-                message = String.format("Request approved! Employee credentials — Username: %s, Password: %s (Share with employee)",
-                        result.get("username"), result.get("password"));
-            }
+            RecruitmentRequestResponse responseDto = toResponse(result.request());
+            ProcessRecruitmentResponse responseBody = result.username() != null
+                    ? ProcessRecruitmentResponse.withCredentials(responseDto, result.username(), result.password(), result.employeeId())
+                    : ProcessRecruitmentResponse.withoutCredentials(responseDto);
 
-            return ResponseEntity.ok(ApiResponse.success(result, message));
+            String message = result.username() != null
+                    ? String.format("Request approved! Employee credentials — Username: %s, Password: %s (Share with employee)", result.username(), result.password())
+                    : "Request processed successfully";
+
+            return ResponseEntity.ok(ApiResponse.success(responseBody, message));
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
         } catch (IllegalStateException e) {

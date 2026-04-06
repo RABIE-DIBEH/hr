@@ -2,6 +2,7 @@ package com.hrms.api;
 
 import com.hrms.api.dto.ApiResponse;
 import com.hrms.api.dto.PaginatedResponse;
+import com.hrms.api.dto.PayrollBulkResult;
 import com.hrms.api.dto.PayrollResponse;
 import com.hrms.core.models.Employee;
 import com.hrms.core.models.Payroll;
@@ -16,8 +17,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/payroll")
@@ -67,7 +66,7 @@ public class PayrollController {
      * HR/ADMIN/SUPER_ADMIN only.
      */
     @PostMapping("/calculate-all")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> calculateAllPayroll(
+    public ResponseEntity<ApiResponse<PayrollBulkResult>> calculateAllPayroll(
             @RequestParam int month,
             @RequestParam int year,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
@@ -76,8 +75,8 @@ public class PayrollController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only HR/Admin can calculate payroll for all employees");
         }
 
-        Map<String, Object> result = payrollService.calculateAllMonthlyPayroll(month, year, principal.getUsername());
-        return ResponseEntity.ok(ApiResponse.success(result, "تم احتساب رواتب " + result.get("successCount") + " موظف بنجاح"));
+        PayrollBulkResult result = payrollService.calculateAllMonthlyPayroll(month, year, principal.getUsername());
+        return ResponseEntity.ok(ApiResponse.success(result, "تم احتساب رواتب " + result.successCount() + " موظف بنجاح"));
     }
 
     /**

@@ -1,0 +1,58 @@
+export const queryKeys = {
+  me: ['me'] as const,
+  employee: {
+    root: ['employee'] as const,
+    myAdvances: ['employee', 'my-advances'] as const,
+    myLeaves: ['employee', 'my-leaves'] as const,
+    myAttendanceLatest: ['employee', 'my-attendance', 'latest'] as const,
+    myAttendanceToday: ['employee', 'my-attendance', 'today'] as const,
+    myPayrollRoot: ['employee', 'my-payroll'] as const,
+    myPayroll: (page: number) => ['employee', 'my-payroll', page] as const,
+  },
+  inbox: {
+    root: ['inbox'] as const,
+    list: (filter: string, page: number) => ['inbox', 'list', filter, page] as const,
+    threadRoot: ['inbox', 'thread'] as const,
+    thread: (messageId: number | null) => ['inbox', 'thread', messageId] as const,
+    unreadCount: ['inbox', 'unread-count'] as const,
+    sent: ['inbox', 'sent'] as const,
+  },
+  leave: {
+    calendar: (start: string, end: string) => ['leave', 'calendar', start, end] as const,
+  },
+  attendance: {
+    root: ['attendance'] as const,
+    logs: (page: number) => ['attendance', 'logs', page] as const,
+  },
+  manager: {
+    root: ['manager'] as const,
+    teamRoot: ['manager', 'team'] as const,
+    team: (scope: 'all' | 'mine', page: number) => ['manager', 'team', scope, page] as const,
+    recruitmentRoot: ['manager', 'recruitment'] as const,
+    recruitment: (page: number) => ['manager', 'recruitment', page] as const,
+    leavesRoot: ['manager', 'leaves'] as const,
+    leaves: (scope: 'hr' | 'manager', scopeId: number | null, page: number) =>
+      ['manager', 'leaves', scope, scopeId, page] as const,
+    todayAttendanceRoot: ['manager', 'today-attendance'] as const,
+    todayAttendance: (page: number) => ['manager', 'today-attendance', page] as const,
+  },
+  hr: {
+    root: ['hr'] as const,
+    employeesRoot: ['hr', 'employees'] as const,
+    employees: (page: number) => ['hr', 'employees', page] as const,
+    employeeCardRoot: ['hr', 'employee-card'] as const,
+    employeeCard: (employeeId: number | '') => ['hr', 'employee-card', employeeId] as const,
+    leavesRoot: ['hr', 'leaves'] as const,
+    leaves: (page: number) => ['hr', 'leaves', page] as const,
+    recruitmentRoot: ['hr', 'recruitment'] as const,
+    recruitment: (page: number) => ['hr', 'recruitment', page] as const,
+  },
+  admin: {
+    root: ['admin'] as const,
+    metrics: ['admin', 'metrics'] as const,
+    logsRoot: ['admin', 'logs'] as const,
+    logs: (page: number) => ['admin', 'logs', page] as const,
+    devicesRoot: ['admin', 'devices'] as const,
+    devices: (page: number) => ['admin', 'devices', page] as const,
+  },
+};

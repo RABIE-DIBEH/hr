@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -16,15 +16,15 @@ import {
 } from 'lucide-react';
 import { getLeaveCalendar, downloadLeavePdf, downloadLeaveExcel, getCurrentEmployee, type LeaveRequest } from '../services/api';
 import { getRole } from '../services/auth';
+import { queryKeys } from '../services/queryKeys';
 
 const LeaveCalendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
   const [isDownloading, setIsDownloading] = useState(false);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
   useQuery({
-    queryKey: ['me'],
+    queryKey: queryKeys.me,
     queryFn: async () => (await getCurrentEmployee()).data,
   });
 
@@ -40,20 +40,13 @@ const LeaveCalendar = () => {
   const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const blanks = Array.from({ length: firstDayOfMonth }, (_, i) => i);
 
-  useEffect(() => {
-    const fetchLeaves = async () => {
-      try {
-        const start = new Date(year, month - 1, 1).toISOString().split('T')[0];
-        const end = new Date(year, month, 0).toISOString().split('T')[0];
-        const res = await getLeaveCalendar(start, end);
-        const data = (res.data as any).data || res.data;
-        setLeaves(Array.isArray(data) ? data : []);
-      } catch (error) {
-        console.error('Failed to fetch calendar leaves', error);
-      }
-    };
-    void fetchLeaves();
-  }, [month, year]);
+  const rangeStart = new Date(year, month - 1, 1).toISOString().split('T')[0];
+  const rangeEnd = new Date(year, month, 0).toISOString().split('T')[0];
+
+  const { data: leaves = [] } = useQuery<LeaveRequest[]>({
+    queryKey: queryKeys.leave.calendar(rangeStart, rangeEnd),
+    queryFn: async () => (await getLeaveCalendar(rangeStart, rangeEnd)).data,
+  });
 
   const handlePrevMonth = () => {
     setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
@@ -82,7 +75,7 @@ const LeaveCalendar = () => {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-    } catch (error) {
+    } catch {
       alert('فشل تحميل تقرير الإجازات.');
     } finally {
       setIsDownloading(false);

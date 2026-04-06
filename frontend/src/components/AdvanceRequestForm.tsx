@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { submitAdvanceRequest } from '../services/api';
 import { motion } from 'framer-motion';
+import { extractApiError } from '../utils/errorHandler';
 
 interface AdvanceRequestFormProps {
   onClose: () => void;
@@ -80,14 +81,8 @@ const AdvanceRequestForm = ({ onClose, onSuccess }: AdvanceRequestFormProps) => 
         onSuccess();
       }, 1500);
     } catch (err: unknown) {
-      let errorMessage = 'حدث خطأ أثناء إرسال الطلب';
-      if (typeof err === 'object' && err !== null && 'response' in err) {
-        const axiosError = err as { response?: { data?: { message?: string } } };
-        if (axiosError.response?.data?.message) {
-          errorMessage = axiosError.response.data.message;
-        }
-      }
-      setError(errorMessage);
+      const { message } = extractApiError(err);
+      setError(message || 'حدث خطأ أثناء إرسال الطلب');
     } finally {
       setLoading(false);
     }
