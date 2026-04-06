@@ -13,7 +13,6 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
-  // If the user was redirected here from a protected page, go back there after login
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname;
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -38,21 +37,24 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-luxury-bg flex items-center justify-center p-6 relative overflow-hidden">
-      {/* Background Gradients */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-luxury-primary/10 rounded-full blur-[120px] -mr-48 -mt-48" />
       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-luxury-accent/5 rounded-full blur-[120px] -ml-48 -mb-48" />
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 1, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         className="max-w-md w-full card-luxury p-10 relative z-10 bg-luxury-surface backdrop-blur-2xl"
       >
-        <div className="text-center mb-12">
+        <div className="mb-12 flex flex-col items-center text-center">
           <div className="w-20 h-20 gold-gradient rounded-[24px] flex items-center justify-center mx-auto mb-8 shadow-[0_10px_40px_rgba(212,175,55,0.3)]">
             <ShieldCheck size={40} className="text-black" />
           </div>
-          <h1 className="text-3xl font-black text-white tracking-tighter mb-3">البوابة الفاخرة</h1>
-          <p className="text-white/40 font-medium text-sm">إدارة ثروتك بكل خصوصية وأمان</p>
+          <div className="mx-auto flex w-full max-w-[260px] flex-col items-center">
+            <h1 className="luxury-display mb-3 w-full text-center text-[2rem] font-extrabold leading-none text-luxury-accent drop-shadow-[0_0_18px_rgba(212,175,55,0.3)] sm:text-[2.35rem]">
+            RABIO&amp;RADO
+            </h1>
+            <p className="text-center text-white/55 font-medium text-sm">النظام المتكامل لادارة الشركات</p>
+          </div>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-8">
@@ -61,12 +63,13 @@ const Login = () => {
               {error}
             </p>
           )}
+
           <div className="space-y-2">
             <label className="text-xs font-black text-luxury-accent uppercase tracking-[0.2em] mr-1">البريد الإلكتروني</label>
             <div className="relative">
               <Mail className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20" size={20} />
-              <input 
-                type="email" 
+              <input
+                type="email"
                 placeholder="name@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -80,8 +83,8 @@ const Login = () => {
             <label className="text-xs font-black text-luxury-accent uppercase tracking-[0.2em] mr-1">كلمة المرور</label>
             <div className="relative">
               <Lock className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20" size={20} />
-              <input 
-                type="password" 
+              <input
+                type="password"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -91,7 +94,7 @@ const Login = () => {
             </div>
           </div>
 
-          <button 
+          <button
             type="submit"
             disabled={loading}
             className="w-full gold-gradient text-black py-5 rounded-[20px] font-black shadow-[0_15px_30px_rgba(212,175,55,0.2)] hover:shadow-[0_20px_40px_rgba(212,175,55,0.3)] transition-all active:scale-[0.98] flex items-center justify-center gap-3"
