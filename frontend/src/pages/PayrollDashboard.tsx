@@ -15,7 +15,8 @@ import {
   TrendingUp,
   TrendingDown,
   Printer,
-  AlertCircle
+  AlertCircle,
+  UserPlus,
 } from 'lucide-react';
 import PaginationControls from '../components/PaginationControls';
 import {
@@ -29,15 +30,19 @@ import {
   calculatePayroll,
   calculateAllPayroll,
   listEmployeesPage,
+  getPendingRecruitmentRequestsPage,
+  processRecruitmentRequest,
   type EmployeeProfile,
   type AdvanceRequest,
   type PayrollSlip,
   type EmployeeSummary,
+  type RecruitmentRequest,
+  type ProcessRecruitmentResponse,
 } from '../services/api';
 
 const PayrollDashboard = () => {
   const [me, setMe] = useState<EmployeeProfile | null>(null);
-  const [activeTab, setActiveTab] = useState<'advances' | 'history' | 'calculate'>('advances');
+  const [activeTab, setActiveTab] = useState<'advances' | 'recruitment' | 'history' | 'calculate'>('advances');
   const [, setLoadError] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -70,6 +75,22 @@ const PayrollDashboard = () => {
   const [calcFeedback, setCalcFeedback] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const [showConfirmCalc, setShowConfirmCalc] = useState<{ id?: number; name: string } | null>(null);
 
+  // Recruitment approvals (Stage 3: PENDING_PAYROLL)
+  const [pendingRecruitment, setPendingRecruitment] = useState<RecruitmentRequest[]>([]);
+  const [recruitmentPage, setRecruitmentPage] = useState(0);
+  const [recruitmentTotalPages, setRecruitmentTotalPages] = useState(0);
+  const [recruitmentTotalCount, setRecruitmentTotalCount] = useState(0);
+  const [processingRecruitment, setProcessingRecruitment] = useState<number | null>(null);
+  const [recruitmentNote, setRecruitmentNote] = useState('');
+  const [adjustedSalary, setAdjustedSalary] = useState('');
+  const [selectedRecruitmentId, setSelectedRecruitmentId] = useState<number | null>(null);
+  const [createdCredentials, setCreatedCredentials] = useState<{
+    username: string;
+    password: string;
+    employeeId: string;
+    employeeName: string;
+  } | null>(null);
+
   const reportMonth = currentDate.getMonth() + 1;
   const reportYear = currentDate.getFullYear();
 
@@ -80,6 +101,7 @@ const PayrollDashboard = () => {
   }, []);
 
   const canManagePayroll = me?.roleName === 'HR'
+    || me?.roleName === 'PAYROLL'
     || me?.roleName === 'ADMIN'
     || me?.roleName === 'SUPER_ADMIN';
 
@@ -126,11 +148,52 @@ const PayrollDashboard = () => {
     }
   };
 
+  const loadRecruitmentData = async () => {
+    if (!canManagePayroll) return;
+    try {
+      const res = await getPendingRecruitmentRequestsPage({ page: recruitmentPage, size: 10 });
+      setPendingRecruitment(res.data.items);
+      setRecruitmentTotalPages(res.data.totalPages);
+      setRecruitmentTotalCount(res.data.totalCount);
+    } catch {
+      setLoadError('تعذر تحميل طلبات التوظيف');
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'advances') void loadAdvancesData();
+    if (activeTab === 'recruitment') void loadRecruitmentData();
     if (activeTab === 'history') void loadHistoryData();
     if (activeTab === 'calculate') void loadEmployeesForCalc();
-  }, [activeTab, pendingPage, allPage, historyPage, canManagePayroll]);
+  }, [activeTab, pendingPage, allPage, historyPage, recruitmentPage, canManagePayroll]);
+
+  const handleProcessRecruitment = async (requestId: number, status: 'Approved' | 'Rejected') => {
+    setProcessingRecruitment(requestId);
+    try {
+      const salaryNum = adjustedSalary ? parseFloat(adjustedSalary) : undefined;
+      const res = await processRecruitmentRequest(requestId, status, recruitmentNote || undefined, salaryNum);
+      const data: ProcessRecruitmentResponse = res.data;
+
+      if (status === 'Approved' && data.username && data.password) {
+        setCreatedCredentials({
+          username: data.username ?? '',
+          password: data.password ?? '',
+          employeeId: data.employeeId ?? '',
+          employeeName: data.request?.fullName ?? '',
+        });
+      }
+
+      setRecruitmentNote('');
+      setAdjustedSalary('');
+      setSelectedRecruitmentId(null);
+      void loadRecruitmentData();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'فشل معالجة طلب التوظيف';
+      setLoadError(msg);
+    } finally {
+      setProcessingRecruitment(null);
+    }
+  };
 
   const handlePrevMonth = () => {
     setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
@@ -312,6 +375,15 @@ const PayrollDashboard = () => {
               السلف المالية
             </button>
             <button
+              onClick={() => setActiveTab('recruitment')}
+              className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all ${
+                activeTab === 'recruitment' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <UserPlus size={18} />
+              التوظيف
+            </button>
+            <button
               onClick={() => setActiveTab('calculate')}
               className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all ${
                 activeTab === 'calculate' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' : 'text-slate-400 hover:text-white'
@@ -465,6 +537,116 @@ const PayrollDashboard = () => {
                   )}
                 </div>
               </>
+            )}
+
+            {activeTab === 'recruitment' && (
+              <div className="bg-luxury-surface rounded-[2.5rem] border border-white/5 overflow-hidden">
+                <div className="p-8 border-b border-white/5 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-bold text-white arabic-text">اعتماد طلبات التوظيف (Payroll)</h3>
+                    <p className="text-slate-400 text-sm mt-1">المرحلة الأخيرة: تحديد الراتب النهائي وإنشاء الموظف</p>
+                  </div>
+                  <div className="text-slate-400 text-sm">
+                    إجمالي الطلبات: <span className="text-white font-bold">{recruitmentTotalCount}</span>
+                  </div>
+                </div>
+
+                {pendingRecruitment.length === 0 ? (
+                  <div className="p-20 text-center text-slate-500">لا توجد طلبات توظيف بانتظار اعتماد الرواتب حالياً.</div>
+                ) : (
+                  <div className="divide-y divide-white/5">
+                    {pendingRecruitment.map((req) => (
+                      <div key={req.requestId} className="p-8 hover:bg-white/[0.02] transition-all">
+                        <div className="flex justify-between items-start gap-8">
+                          <div className="flex-1">
+                            <h4 className="text-xl font-bold text-white">{req.fullName}</h4>
+                            <p className="text-slate-500 text-sm mt-1">{req.email}</p>
+                            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                              <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
+                                <p className="text-slate-500 text-xs font-bold uppercase mb-1">الوظيفة</p>
+                                <p className="text-slate-200 font-bold">{req.jobDescription}</p>
+                              </div>
+                              <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
+                                <p className="text-slate-500 text-xs font-bold uppercase mb-1">القسم</p>
+                                <p className="text-slate-200 font-bold">{req.department}</p>
+                              </div>
+                              <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
+                                <p className="text-slate-500 text-xs font-bold uppercase mb-1">الراتب المتوقع (آخر قيمة)</p>
+                                <p className="text-purple-200 font-black text-lg">
+                                  {typeof req.expectedSalary === 'number' ? req.expectedSalary.toLocaleString() : req.expectedSalary} ر.س
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="min-w-[320px]">
+                            {selectedRecruitmentId === req.requestId ? (
+                              <div className="space-y-3 p-4 bg-white/5 rounded-2xl border border-white/5">
+                                <input
+                                  placeholder="الراتب النهائي (اختياري)"
+                                  value={adjustedSalary}
+                                  onChange={(e) => setAdjustedSalary(e.target.value)}
+                                  className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm text-white"
+                                />
+                                <textarea
+                                  placeholder="ملاحظة الاعتماد..."
+                                  value={recruitmentNote}
+                                  onChange={(e) => setRecruitmentNote(e.target.value)}
+                                  className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm text-white resize-none h-20"
+                                />
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => handleProcessRecruitment(req.requestId!, 'Approved')}
+                                    disabled={processingRecruitment === req.requestId}
+                                    className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-xl text-sm disabled:opacity-50"
+                                  >
+                                    اعتماد نهائي
+                                  </button>
+                                  <button
+                                    onClick={() => handleProcessRecruitment(req.requestId!, 'Rejected')}
+                                    disabled={processingRecruitment === req.requestId}
+                                    className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-xl text-sm disabled:opacity-50"
+                                  >
+                                    رفض
+                                  </button>
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    setSelectedRecruitmentId(null);
+                                    setRecruitmentNote('');
+                                    setAdjustedSalary('');
+                                  }}
+                                  className="w-full bg-white/5 hover:bg-white/10 text-white font-bold py-2 rounded-xl text-sm border border-white/10"
+                                >
+                                  إلغاء
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  setSelectedRecruitmentId(req.requestId ?? null);
+                                  setRecruitmentNote('');
+                                  setAdjustedSalary('');
+                                }}
+                                className="w-full bg-white/5 hover:bg-white/10 text-white font-bold py-4 rounded-2xl border border-white/5 transition-all"
+                              >
+                                اتخاذ قرار (Stage 3)
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <PaginationControls
+                  page={recruitmentPage}
+                  totalPages={recruitmentTotalPages}
+                  totalCount={recruitmentTotalCount}
+                  onPageChange={setRecruitmentPage}
+                />
+              </div>
             )}
 
             {activeTab === 'calculate' && (
@@ -677,6 +859,50 @@ const PayrollDashboard = () => {
                       <Printer size={18} /> طباعة القسيمة
                     </button>
                     <button onClick={() => setSelectedSlip(null)} className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-2xl shadow-xl shadow-purple-600/20 transition-all">
+                      حسناً
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+
+            {createdCredentials && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                  className="bg-[#0f1115] w-full max-w-md rounded-[2rem] border border-white/10 shadow-3xl p-8"
+                >
+                  <div className="bg-green-500/10 w-16 h-16 rounded-2xl flex items-center justify-center text-green-400 mb-6">
+                    <UserPlus size={32} />
+                  </div>
+                  <h3 className="text-2xl font-black text-white arabic-text mb-2">تم إنشاء الموظف</h3>
+                  <p className="text-slate-400 text-sm leading-relaxed">
+                    تم اعتماد طلب التوظيف وإنشاء حساب الموظف <span className="text-white font-bold">{createdCredentials.employeeName || '—'}</span>.
+                    هذه البيانات تظهر مرة واحدة فقط.
+                  </p>
+
+                  <div className="mt-6 space-y-3">
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                      <p className="text-slate-500 text-xs font-black uppercase tracking-wider mb-1">Username</p>
+                      <p className="text-white font-mono font-bold break-all">{createdCredentials.username || '—'}</p>
+                    </div>
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                      <p className="text-slate-500 text-xs font-black uppercase tracking-wider mb-1">Password</p>
+                      <p className="text-white font-mono font-bold break-all">{createdCredentials.password || '—'}</p>
+                    </div>
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                      <p className="text-slate-500 text-xs font-black uppercase tracking-wider mb-1">Employee ID</p>
+                      <p className="text-white font-mono font-bold break-all">{createdCredentials.employeeId || '—'}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-8">
+                    <button
+                      onClick={() => setCreatedCredentials(null)}
+                      className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-2xl shadow-xl shadow-purple-600/20 transition-all"
+                    >
                       حسناً
                     </button>
                   </div>

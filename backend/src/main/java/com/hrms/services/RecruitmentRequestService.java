@@ -12,9 +12,11 @@ import com.hrms.core.repositories.TeamRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.security.SecureRandom;
@@ -116,6 +118,24 @@ public class RecruitmentRequestService {
 
         if (RecruitmentRequest.STATUS_APPROVED.equals(currentStatus) || RecruitmentRequest.STATUS_REJECTED.equals(currentStatus)) {
             throw new IllegalStateException("Request has already been finalized");
+        }
+
+        // Enforce stage ownership:
+        // - Stage 2 (PENDING_MANAGER): manager decision only (SUPER_ADMIN override)
+        // - Stage 3 (PENDING_PAYROLL): payroll/hr/admin decision (SUPER_ADMIN override)
+        if (RecruitmentRequest.STATUS_PENDING_MANAGER.equals(currentStatus)) {
+            if (!"MANAGER".equalsIgnoreCase(processorRole) && !"SUPER_ADMIN".equalsIgnoreCase(processorRole)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only MANAGER can process requests in PENDING_MANAGER stage");
+            }
+        } else if (RecruitmentRequest.STATUS_PENDING_PAYROLL.equals(currentStatus)) {
+            boolean allowed =
+                    "PAYROLL".equalsIgnoreCase(processorRole)
+                            || "HR".equalsIgnoreCase(processorRole)
+                            || "ADMIN".equalsIgnoreCase(processorRole)
+                            || "SUPER_ADMIN".equalsIgnoreCase(processorRole);
+            if (!allowed) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only PAYROLL/HR/ADMIN can process requests in PENDING_PAYROLL stage");
+            }
         }
 
         if ("Rejected".equalsIgnoreCase(action)) {
@@ -249,8 +269,9 @@ public class RecruitmentRequestService {
             // If employeeId is provided, use it as the starting number (first time or reset)
         }
 
-        // Generate username from full name (e.g., "Ahmad Khalil" -> "ahmad.khalil")
-        String username = generateUsername(request.getFullName());
+        // Generate username from full name (e.g., "Ahmad Khalil" -> "ahmad.khalil").
+        // Arabic names may not yield a usable latin slug, so we also fall back to email local-part.
+        String username = generateUsername(request.getFullName(), request.getEmail());
 
         // Generate secure random password (e.g., "Xk9#mP2qR")
         String password = generateSecurePassword();
@@ -283,11 +304,25 @@ public class RecruitmentRequestService {
      * Generate a unique username from full name.
      * E.g., "Ahmad Khalil" -> "ahmad.khalil" or "ahmad.khalil2" if taken.
      */
-    private String generateUsername(String fullName) {
-        String base = fullName.toLowerCase()
+    private String generateUsername(String fullName, String email) {
+        String base = fullName == null ? "" : fullName.toLowerCase()
                 .replaceAll("[^a-z\\s]", "")
                 .trim()
                 .replaceAll("\\s+", ".");
+
+        if (base.isBlank()) {
+            String emailBase = email == null ? "" : email.trim().toLowerCase();
+            int at = emailBase.indexOf('@');
+            if (at > 0) {
+                String local = emailBase.substring(0, at).replaceAll("[^a-z0-9._-]", "");
+                if (!local.isBlank()) {
+                    base = local.replaceAll("[._-]+", ".");
+                }
+            }
+        }
+        if (base == null || base.isBlank()) {
+            base = "user";
+        }
 
         // Try base username first, add suffix if email already exists
         String candidate = base;
@@ -353,11 +388,9 @@ public class RecruitmentRequestService {
             // Payroll sees all requests pending payroll review
             return recruitmentRequestRepository.findByStatus(RecruitmentRequest.STATUS_PENDING_PAYROLL, pageable);
         } else if ("HR".equals(roleName) || "ADMIN".equals(roleName) || "SUPER_ADMIN".equals(roleName)) {
-            // HR/Admin see everything pending
-            return recruitmentRequestRepository.findAllByStatuses(Arrays.asList(
-                    RecruitmentRequest.STATUS_PENDING_MANAGER,
-                    RecruitmentRequest.STATUS_PENDING_PAYROLL
-            ), pageable);
+            // HR/Admin see only payroll-stage pending requests:
+            // After Stage 1 creation (PENDING_MANAGER) the request "disappears" from HR view until manager approval.
+            return recruitmentRequestRepository.findByStatus(RecruitmentRequest.STATUS_PENDING_PAYROLL, pageable);
         }
         return Page.empty();
     }
