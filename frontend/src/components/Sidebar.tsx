@@ -29,14 +29,9 @@ interface MenuItem {
 }
 
 const allMenuItems: MenuItem[] = [
-<<<<<<< HEAD
   { path: '/dashboard', icon: LayoutDashboard, label: 'لوحة التحكم',     roles: ['EMPLOYEE', 'PAYROLL', 'SUPER_ADMIN'] },
-  { path: '/payroll',   icon: LayoutDashboard, label: 'الرواتب',          roles: ['PAYROLL', 'SUPER_ADMIN'] },
-=======
-  { path: '/dashboard', icon: LayoutDashboard, label: 'لوحة التحكم',     roles: ['EMPLOYEE', 'SUPER_ADMIN'] },
   { path: '/payroll',   icon: LayoutDashboard, label: 'لوحة الرواتب',     roles: ['PAYROLL', 'SUPER_ADMIN'] },
   { path: '/ceo',       icon: BriefcaseBusiness, label: 'المدير التنفيذي', roles: ['ADMIN', 'SUPER_ADMIN'] },
->>>>>>> d3ed4975408d000b01cc96f738a0f60ca54029a9
   { path: '/leave-calendar', icon: Calendar,    label: 'تقويم الإجازات',   roles: ['HR', 'MANAGER', 'ADMIN', 'PAYROLL', 'SUPER_ADMIN', 'EMPLOYEE'] },
   { path: '/users',     icon: Users,           label: 'إدارة الموظفين',  roles: ['HR', 'ADMIN', 'SUPER_ADMIN'] },
   { path: '/goals',     icon: Star,            label: 'النقاط' },
