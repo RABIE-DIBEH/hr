@@ -16,7 +16,6 @@ import {
   listEmployees,
   updateEmployee,
   type EmployeeSummary,
-  type EmployeeProfile,
   type EmployeeAdminUpdatePayload,
 } from '../services/api';
 import { getRole, getPayload } from '../services/auth';
@@ -138,11 +137,11 @@ const UserManagement = () => {
     setEditForm({
       fullName: emp.fullName,
       email: emp.email,
-      mobileNumber: '',
-      address: '',
-      nationalId: '',
+      mobileNumber: emp.mobileNumber || '',
+      address: emp.address || '',
+      nationalId: emp.nationalId || '',
       teamId: emp.teamId,
-      roleId: null, // Will be populated if we fetch full profile
+      roleId: emp.roleId,
       managerId: null,
       baseSalary: emp.baseSalary,
       employmentStatus: emp.employmentStatus,
@@ -277,7 +276,7 @@ const UserManagement = () => {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="بحث بالاسم أو البريد..."
-              className="w-full pr-10 pl-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder:text-slate-600"
+              className="w-full pr-10 pl-4 py-3 bg-zinc-900 border border-white/10 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder:text-slate-600"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -285,8 +284,9 @@ const UserManagement = () => {
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white"
+              className="px-4 py-3 bg-zinc-900 border border-white/10 rounded-xl text-white"
             >
+
               <option value="ALL">كل الأدوار</option>
               <option value="SUPER_ADMIN">مدير النظام الأعلى</option>
               <option value="ADMIN">مدير النظام</option>
@@ -297,7 +297,7 @@ const UserManagement = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white"
+              className="px-4 py-3 bg-zinc-900 border border-white/10 rounded-xl text-white"
             >
               <option value="ALL">كل الحالات</option>
               <option value="Active">نشط</option>

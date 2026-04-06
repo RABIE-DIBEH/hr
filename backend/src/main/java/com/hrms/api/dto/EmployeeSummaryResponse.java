@@ -13,5 +13,9 @@ public record EmployeeSummaryResponse(
         String nfcStatus,
         BigDecimal baseSalary,
         String employmentStatus,
-        String roleName
+        Long roleId,
+        String roleName,
+        String mobileNumber,
+        String address,
+        String nationalId
 ) {}

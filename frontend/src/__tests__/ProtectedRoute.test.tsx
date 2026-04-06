@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render } from '@testing-library/react';
-import { MemoryRouter, Routes, Route, Location } from 'react-router-dom';
+import { MemoryRouter, Routes, Route, useLocation } from 'react-router-dom';
+import type { Location } from 'react-router-dom';
 import ProtectedRoute from '../components/ProtectedRoute';
 import * as auth from '../services/auth';
 
@@ -18,7 +19,7 @@ const renderWithRouter = (ui: React.ReactElement, initialRoute = '/') => {
   let currentLocation: Location | null = null;
 
   const LocationDisplay = () => {
-    const location = require('react-router-dom').useLocation();
+    const location = useLocation();
     currentLocation = location;
     return <div data-testid="location-display">{location.pathname}</div>;
   };

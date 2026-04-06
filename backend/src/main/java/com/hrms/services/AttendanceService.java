@@ -210,7 +210,7 @@ public class AttendanceService {
 
     @Transactional(readOnly = true)
     public Page<AttendanceRecordDto> getCompanyMonthlyAttendance(int month, int year, Pageable pageable, EmployeeUserDetails actor) {
-        return attendanceRepository.findAllMonthlyRecords(month, year, pageable).map(this::toDto);
+        return attendanceRepository.findAllMonthlyRecordsPage(month, year, pageable).map(this::toDto);
     }
 
     private boolean hasAnyRole(EmployeeUserDetails principal, String... roles) {

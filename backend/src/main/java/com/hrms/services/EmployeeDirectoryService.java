@@ -49,9 +49,7 @@ public class EmployeeDirectoryService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
 
         String teamName = resolveTeamName(employee.getTeamId());
-        String roleName = roleRepository.findById(employee.getRoleId())
-                .map(UsersRole::getRoleName)
-                .orElse("");
+        String roleName = resolveRoleName(employee.getRoleId());
 
         return new EmployeeProfileResponse(
                 employee.getEmployeeId(),
@@ -109,9 +107,7 @@ public class EmployeeDirectoryService {
 
     private EmployeeSummaryResponse toSummary(Employee employee) {
         String teamName = resolveTeamName(employee.getTeamId());
-        String roleName = roleRepository.findById(employee.getRoleId())
-                .map(UsersRole::getRoleName)
-                .orElse("UNKNOWN");
+        String roleName = resolveRoleName(employee.getRoleId());
         return nfcCardRepository.findByEmployee_EmployeeId(employee.getEmployeeId())
                 .map(card -> new EmployeeSummaryResponse(
                         employee.getEmployeeId(),
@@ -124,7 +120,11 @@ public class EmployeeDirectoryService {
                         card.getStatus(),
                         employee.getBaseSalary(),
                         employee.getStatus(),
-                        roleName
+                        employee.getRoleId(),
+                        roleName,
+                        employee.getMobileNumber(),
+                        employee.getAddress(),
+                        employee.getNationalId()
                 ))
                 .orElseGet(() -> new EmployeeSummaryResponse(
                         employee.getEmployeeId(),
@@ -137,7 +137,11 @@ public class EmployeeDirectoryService {
                         null,
                         employee.getBaseSalary(),
                         employee.getStatus(),
-                        roleName
+                        employee.getRoleId(),
+                        roleName,
+                        employee.getMobileNumber(),
+                        employee.getAddress(),
+                        employee.getNationalId()
                 ));
     }
 
@@ -146,6 +150,13 @@ public class EmployeeDirectoryService {
             return null;
         }
         return teamRepository.findById(teamId).map(Team::getName).orElse(null);
+    }
+
+    private String resolveRoleName(Long roleId) {
+        if (roleId == null) {
+            return "";
+        }
+        return roleRepository.findById(roleId).map(UsersRole::getRoleName).orElse("");
     }
 
     /**

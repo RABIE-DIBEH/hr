@@ -1,12 +1,51 @@
-import { useState } from 'react';
-import { CreditCard, CheckCircle, Wifi, ShieldCheck, AlertCircle } from 'lucide-react';
-import { clockByNfc } from '../services/api';
+import { useState, useEffect } from 'react';
+import { CreditCard, CheckCircle, Wifi, ShieldCheck, AlertCircle, Plus, X, Search } from 'lucide-react';
+import { clockByNfc, searchEmployees, assignEmployeeNfcCard } from '../services/api';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const NFCClock = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('اقرب بطاقة NFC من القارئ');
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(false);
+
+  // NFC Card assignment modal
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<{ employeeId: number; fullName: string; email: string }[]>([]);
+  const [assignLoading, setAssignLoading] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<{ employeeId: number; fullName: string } | null>(null);
+  const [cardUid, setCardUid] = useState('');
+  const [assignResult, setAssignResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  useEffect(() => {
+    if (searchQuery.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    const timer = setTimeout(() => {
+      searchEmployees(searchQuery)
+        .then(res => setSearchResults(res.data))
+        .catch(() => setSearchResults([]));
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const handleAssignCard = async () => {
+    if (!selectedEmployee || !cardUid.trim()) return;
+    setAssignLoading(true);
+    try {
+      await assignEmployeeNfcCard(selectedEmployee.employeeId, cardUid.trim());
+      setAssignResult({ success: true, message: `تم ربط البطاقة بـ ${selectedEmployee.fullName}` });
+      setCardUid('');
+      setSelectedEmployee(null);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'فشل ربط البطاقة';
+      setAssignResult({ success: false, message: msg });
+    } finally {
+      setAssignLoading(false);
+    }
+  };
 
   const simulateClock = async () => {
     setLoading(true);
@@ -71,7 +110,7 @@ const NFCClock = () => {
           {message}
         </div>
 
-        <button 
+        <button
           onClick={simulateClock}
           disabled={loading || success}
           className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-white/5 disabled:text-slate-500 py-4 rounded-2xl font-bold transition-all active:scale-95 shadow-lg shadow-blue-900/20"
@@ -79,10 +118,125 @@ const NFCClock = () => {
           {loading ? 'جاري القراءة...' : 'محاكاة تمرير البطاقة (04:23:1A:FF)'}
         </button>
 
+        <button
+          onClick={() => { setShowAssignModal(true); setAssignResult(null); setSearchQuery(''); setSelectedEmployee(null); setCardUid(''); }}
+          className="w-full mt-3 bg-white/5 hover:bg-white/10 border border-white/10 py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 text-slate-300 hover:text-white"
+        >
+          <Plus size={20} />
+          ربط بطاقة NFC بموظف
+        </button>
+
         <p className="mt-8 text-xs text-slate-500">
           معرّف الجهاز: NFC-TERMINAL-01
         </p>
       </div>
+
+      {/* Assign NFC Card Modal */}
+      <AnimatePresence>
+        {showAssignModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={() => setShowAssignModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl max-w-md w-full p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-white">ربط بطاقة NFC</h2>
+                <button onClick={() => setShowAssignModal(false)} className="text-slate-400 hover:text-white">
+                  <X size={20} />
+                </button>
+              </div>
+
+              {!assignResult ? (
+                <div className="space-y-4">
+                  {/* Employee Search */}
+                  <div>
+                    <label className="block text-sm font-bold text-slate-300 mb-2">البحث عن موظف</label>
+                    <div className="relative">
+                      <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => { setSearchQuery(e.target.value); setSelectedEmployee(null); }}
+                        placeholder="اكتب الاسم أو البريد..."
+                        className="w-full pr-10 pl-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    {searchResults.length > 0 && !selectedEmployee && (
+                      <div className="mt-2 max-h-40 overflow-y-auto bg-white/5 rounded-xl border border-white/10">
+                        {searchResults.map(emp => (
+                          <button
+                            key={emp.employeeId}
+                            onClick={() => { setSelectedEmployee({ employeeId: emp.employeeId, fullName: emp.fullName }); setSearchQuery(emp.fullName); }}
+                            className="w-full text-right px-4 py-3 hover:bg-white/10 transition-colors text-sm text-white"
+                          >
+                            {emp.fullName}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {selectedEmployee && (
+                      <div className="mt-2 px-4 py-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-300 text-sm font-bold">
+                        ✓ {selectedEmployee.fullName}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Card UID */}
+                  <div>
+                    <label className="block text-sm font-bold text-slate-300 mb-2">معرف البطاقة (UID)</label>
+                    <input
+                      type="text"
+                      value={cardUid}
+                      onChange={(e) => setCardUid(e.target.value)}
+                      placeholder="مثال: 04:23:1A:FF"
+                      className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white font-mono placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleAssignCard}
+                    disabled={assignLoading || !selectedEmployee || !cardUid.trim()}
+                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 py-3 rounded-xl font-bold text-white transition-all"
+                  >
+                    {assignLoading ? 'جارِ الربط...' : 'ربط البطاقة'}
+                  </button>
+                </div>
+              ) : (
+                <div className={`p-6 rounded-xl text-center ${assignResult.success ? 'bg-green-500/10 border border-green-500/20' : 'bg-red-500/10 border border-red-500/20'}`}>
+                  <p className={`font-bold ${assignResult.success ? 'text-green-400' : 'text-red-400'}`}>
+                    {assignResult.success ? '✓' : '✗'} {assignResult.message}
+                  </p>
+                  {assignResult.success && (
+                    <button
+                      onClick={() => setShowAssignModal(false)}
+                      className="mt-4 w-full bg-blue-600 hover:bg-blue-700 py-3 rounded-xl font-bold text-white transition-all"
+                    >
+                      تم
+                    </button>
+                  )}
+                  {!assignResult.success && (
+                    <button
+                      onClick={() => setAssignResult(null)}
+                      className="mt-4 w-full bg-white/5 hover:bg-white/10 py-3 rounded-xl font-bold text-slate-300 transition-all"
+                    >
+                      إعادة المحاولة
+                    </button>
+                  )}
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

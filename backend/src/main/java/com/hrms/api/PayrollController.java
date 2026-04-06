@@ -17,6 +17,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/payroll")
 public class PayrollController {
@@ -57,6 +59,25 @@ public class PayrollController {
                 payrollService.calculateMonthlyPayroll(employee, month, year),
                 "Payroll calculated successfully"
         ));
+    }
+
+    /**
+     * POST /api/payroll/calculate-all
+     * Calculate payroll for ALL active employees for the given month/year.
+     * HR/ADMIN/SUPER_ADMIN only.
+     */
+    @PostMapping("/calculate-all")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> calculateAllPayroll(
+            @RequestParam int month,
+            @RequestParam int year,
+            @AuthenticationPrincipal EmployeeUserDetails principal) {
+
+        if (!hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only HR/Admin can calculate payroll for all employees");
+        }
+
+        Map<String, Object> result = payrollService.calculateAllMonthlyPayroll(month, year, principal.getUsername());
+        return ResponseEntity.ok(ApiResponse.success(result, "تم احتساب رواتب " + result.get("successCount") + " موظف بنجاح"));
     }
 
     /**

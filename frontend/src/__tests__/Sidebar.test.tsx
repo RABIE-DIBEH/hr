@@ -4,16 +4,14 @@ import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Sidebar from '../components/Sidebar';
 import * as auth from '../services/auth';
-import * as api from '../services/api';
+import type { UserRole } from '../services/auth';
 
 // Mock the auth service
 vi.mock('../services/auth', () => ({
-  getAuthUser: vi.fn(),
+  isAuthenticated: vi.fn(),
   getRole: vi.fn(),
   isSuperAdmin: vi.fn(),
-  isAdmin: vi.fn(),
-  isHr: vi.fn(),
-  isManager: vi.fn(),
+  dashboardForRole: vi.fn(),
 }));
 
 // Mock API for unread count
@@ -43,13 +41,10 @@ describe('Sidebar', () => {
     vi.clearAllMocks();
   });
 
-  const setupMocks = (role: string) => {
-    vi.mocked(auth.getAuthUser).mockReturnValue({ roleName: role, fullName: 'Test User' } as any);
+  const setupMocks = (role: UserRole) => {
+    vi.mocked(auth.isAuthenticated).mockReturnValue(true);
     vi.mocked(auth.getRole).mockReturnValue(role);
     vi.mocked(auth.isSuperAdmin).mockReturnValue(role === 'SUPER_ADMIN');
-    vi.mocked(auth.isAdmin).mockReturnValue(role === 'ADMIN' || role === 'SUPER_ADMIN');
-    vi.mocked(auth.isHr).mockReturnValue(role === 'HR');
-    vi.mocked(auth.isManager).mockReturnValue(role === 'MANAGER');
   };
 
   it('renders basic navigation items for all users', () => {

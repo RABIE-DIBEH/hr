@@ -30,7 +30,6 @@ import {
   getNfcDevicesPage, 
   clearSystemLogs, 
   triggerBackup, 
-  addNfcDevice,
   type SystemMetrics, 
   type SystemLog, 
   type NfcDevice 
@@ -115,32 +114,6 @@ const AdminDashboard = () => {
       });
     } catch {
       alert('Failed to clear logs.');
-    }
-  };
-
-  const handleAddDevice = async () => {
-    const name = window.prompt("Enter new NFC device name (e.g. Floor 2 Gate C):", "New NFC Reader");
-    if (!name) return;
-    try {
-      const payload = {
-        name: name,
-        deviceId: `NFC_${Math.floor(1000 + Math.random() * 9000)}-NEW`,
-        status: "Online",
-        systemLoad: "0%"
-      };
-      await addNfcDevice(payload);
-      getNfcDevicesPage({ page: devicesPage, size: 8 }).then(r => {
-        setDevices(r.data.items);
-        setDevicesTotalPages(r.data.totalPages);
-        setDevicesTotalCount(r.data.totalCount);
-      });
-      getSystemLogsPage({ page: logsPage, size: 10 }).then(r => {
-        setLogs(r.data.items);
-        setLogsTotalPages(r.data.totalPages);
-        setLogsTotalCount(r.data.totalCount);
-      });
-    } catch {
-      alert('Failed to register device.');
     }
   };
 
@@ -234,8 +207,8 @@ const AdminDashboard = () => {
               <button onClick={() => setShowRawLogs(true)} className="bg-white/5 hover:bg-white/10 px-6 py-3 rounded-xl font-bold transition-all border border-white/5 flex items-center gap-2 text-white">
                 <Terminal size={18} /> View Raw Logs
               </button>
-              <button onClick={() => alert('إعدادات النظام: قيد التطوير - سيتم تفعيل خيارات التحكم بالأمان قريباً')} className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-900/20 text-white">
-                System Settings
+              <button onClick={() => navigate('/admin/devices')} className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-900/20 text-white flex items-center gap-2">
+                <Server size={18} /> إدارة الأجهزة
               </button>
             </div>
           </div>

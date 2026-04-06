@@ -16,6 +16,7 @@ import com.lowagie.text.pdf.PdfWriter;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -43,8 +44,9 @@ public class ReportService {
         this.recruitmentRequestRepository = recruitmentRequestRepository;
     }
 
+    @Transactional(readOnly = true)
     public byte[] generateAttendancePdfReport(int month, int year) {
-        List<AttendanceRecord> records = attendanceRepository.findAllMonthlyRecords(month, year);
+        List<AttendanceRecord> records = attendanceRepository.findAllMonthlyRecordsForReport(month, year);
         
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             Document document = new Document(PageSize.A4.rotate());
@@ -71,13 +73,14 @@ public class ReportService {
             }
 
             for (AttendanceRecord record : records) {
+                if (record.getEmployee() == null) continue; // Skip orphaned records
                 table.addCell(record.getEmployee().getEmployeeId().toString());
-                table.addCell(record.getEmployee().getFullName());
+                table.addCell(record.getEmployee().getFullName() != null ? record.getEmployee().getFullName() : "Unknown");
                 table.addCell(record.getCheckIn() != null ? record.getCheckIn().format(DATE_FORMATTER) : "N/A");
                 table.addCell(record.getCheckOut() != null ? record.getCheckOut().format(DATE_FORMATTER) : "N/A");
                 table.addCell(record.getWorkHours() != null ? record.getWorkHours().setScale(2, java.math.RoundingMode.HALF_UP).toString() : "0.00");
-                table.addCell(record.getStatus());
-                table.addCell(record.getIsVerifiedByManager() ? "Yes" : "No");
+                table.addCell(record.getStatus() != null ? record.getStatus() : "Unknown");
+                table.addCell(record.getIsVerifiedByManager() != null && record.getIsVerifiedByManager() ? "Yes" : "No");
             }
 
             document.add(table);
@@ -88,8 +91,9 @@ public class ReportService {
         }
     }
 
+    @Transactional(readOnly = true)
     public byte[] generateAttendanceExcelReport(int month, int year) {
-        List<AttendanceRecord> records = attendanceRepository.findAllMonthlyRecords(month, year);
+        List<AttendanceRecord> records = attendanceRepository.findAllMonthlyRecordsForReport(month, year);
 
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             Sheet sheet = workbook.createSheet("Attendance_" + month + "_" + year);
@@ -109,14 +113,15 @@ public class ReportService {
 
             int rowIdx = 1;
             for (AttendanceRecord record : records) {
+                if (record.getEmployee() == null) continue;
                 org.apache.poi.ss.usermodel.Row row = sheet.createRow(rowIdx++);
                 row.createCell(0).setCellValue(record.getEmployee().getEmployeeId());
-                row.createCell(1).setCellValue(record.getEmployee().getFullName());
+                row.createCell(1).setCellValue(record.getEmployee().getFullName() != null ? record.getEmployee().getFullName() : "Unknown");
                 row.createCell(2).setCellValue(record.getCheckIn() != null ? record.getCheckIn().format(DATE_FORMATTER) : "N/A");
                 row.createCell(3).setCellValue(record.getCheckOut() != null ? record.getCheckOut().format(DATE_FORMATTER) : "N/A");
                 row.createCell(4).setCellValue(record.getWorkHours() != null ? record.getWorkHours().doubleValue() : 0.0);
-                row.createCell(5).setCellValue(record.getStatus());
-                row.createCell(6).setCellValue(record.getIsVerifiedByManager() ? "Yes" : "No");
+                row.createCell(5).setCellValue(record.getStatus() != null ? record.getStatus() : "Unknown");
+                row.createCell(6).setCellValue(record.getIsVerifiedByManager() != null && record.getIsVerifiedByManager() ? "Yes" : "No");
                 row.createCell(7).setCellValue(record.getManagerNotes() != null ? record.getManagerNotes() : "");
             }
 
@@ -131,6 +136,7 @@ public class ReportService {
         }
     }
 
+    @Transactional(readOnly = true)
     public byte[] generatePayrollPdfReport(int month, int year) {
         List<Payroll> payrolls = payrollRepository.findAllMonthlyPayroll(month, year);
 
@@ -157,8 +163,9 @@ public class ReportService {
             }
 
             for (Payroll p : payrolls) {
+                if (p.getEmployee() == null) continue;
                 table.addCell(p.getEmployee().getEmployeeId().toString());
-                table.addCell(p.getEmployee().getFullName());
+                table.addCell(p.getEmployee().getFullName() != null ? p.getEmployee().getFullName() : "Unknown");
                 table.addCell(p.getTotalWorkHours() != null ? p.getTotalWorkHours().setScale(2, java.math.RoundingMode.HALF_UP).toString() : "0.00");
                 table.addCell(p.getOvertimeHours() != null ? p.getOvertimeHours().setScale(2, java.math.RoundingMode.HALF_UP).toString() : "0.00");
                 table.addCell(p.getDeductions() != null ? p.getDeductions().toString() : "0.00");
@@ -174,6 +181,7 @@ public class ReportService {
         }
     }
 
+    @Transactional(readOnly = true)
     public byte[] generatePayrollExcelReport(int month, int year) {
         List<Payroll> payrolls = payrollRepository.findAllMonthlyPayroll(month, year);
 
@@ -195,9 +203,10 @@ public class ReportService {
 
             int rowIdx = 1;
             for (Payroll p : payrolls) {
+                if (p.getEmployee() == null) continue;
                 org.apache.poi.ss.usermodel.Row row = sheet.createRow(rowIdx++);
                 row.createCell(0).setCellValue(p.getEmployee().getEmployeeId());
-                row.createCell(1).setCellValue(p.getEmployee().getFullName());
+                row.createCell(1).setCellValue(p.getEmployee().getFullName() != null ? p.getEmployee().getFullName() : "Unknown");
                 row.createCell(2).setCellValue(p.getEmployee().getBaseSalary() != null ? p.getEmployee().getBaseSalary().doubleValue() : 0.0);
                 row.createCell(3).setCellValue(p.getTotalWorkHours() != null ? p.getTotalWorkHours().doubleValue() : 0.0);
                 row.createCell(4).setCellValue(p.getOvertimeHours() != null ? p.getOvertimeHours().doubleValue() : 0.0);
@@ -219,6 +228,7 @@ public class ReportService {
 
     // ==================== LEAVE REPORTS ====================
 
+    @Transactional(readOnly = true)
     public byte[] generateLeavePdfReport(int month, int year) {
         List<LeaveRequest> records = leaveRequestRepository.findAllByMonthAndYear(month, year);
         List<Object[]> typeCounts = leaveRequestRepository.countByLeaveTypeAndMonthYear(month, year);
@@ -237,7 +247,7 @@ public class ReportService {
             // Summary section
             Font summaryFont = FontFactory.getFont(FontFactory.HELVETICA, 12);
             Map<String, Long> typeMap = typeCounts.stream()
-                    .collect(Collectors.toMap(r -> (String) r[0], r -> (Long) r[1]));
+                    .collect(Collectors.toMap(r -> r[0] != null ? r[0].toString() : "Unknown", r -> (Long) r[1]));
             Paragraph summary = new Paragraph("Total Leave Requests: " + records.size(), summaryFont);
             summary.setSpacingAfter(5);
             document.add(summary);
@@ -260,13 +270,14 @@ public class ReportService {
             }
 
             for (LeaveRequest lr : records) {
+                if (lr.getEmployee() == null) continue;
                 table.addCell(lr.getEmployee().getEmployeeId().toString());
-                table.addCell(lr.getEmployee().getFullName());
-                table.addCell(lr.getLeaveType());
-                table.addCell(lr.getStartDate().toString());
-                table.addCell(lr.getEndDate().toString());
-                table.addCell(lr.getDuration().toString());
-                table.addCell(lr.getStatus());
+                table.addCell(lr.getEmployee().getFullName() != null ? lr.getEmployee().getFullName() : "Unknown");
+                table.addCell(lr.getLeaveType() != null ? lr.getLeaveType() : "N/A");
+                table.addCell(lr.getStartDate() != null ? lr.getStartDate().toString() : "N/A");
+                table.addCell(lr.getEndDate() != null ? lr.getEndDate().toString() : "N/A");
+                table.addCell(lr.getDuration() != null ? lr.getDuration().toString() : "0");
+                table.addCell(lr.getStatus() != null ? lr.getStatus() : "Unknown");
             }
 
             document.add(table);
@@ -277,6 +288,7 @@ public class ReportService {
         }
     }
 
+    @Transactional(readOnly = true)
     public byte[] generateLeaveExcelReport(int month, int year) {
         List<LeaveRequest> records = leaveRequestRepository.findAllByMonthAndYear(month, year);
 
@@ -298,14 +310,15 @@ public class ReportService {
 
             int rowIdx = 1;
             for (LeaveRequest lr : records) {
+                if (lr.getEmployee() == null) continue;
                 org.apache.poi.ss.usermodel.Row row = sheet.createRow(rowIdx++);
                 row.createCell(0).setCellValue(lr.getEmployee().getEmployeeId());
-                row.createCell(1).setCellValue(lr.getEmployee().getFullName());
-                row.createCell(2).setCellValue(lr.getLeaveType());
-                row.createCell(3).setCellValue(lr.getStartDate().toString());
-                row.createCell(4).setCellValue(lr.getEndDate().toString());
-                row.createCell(5).setCellValue(lr.getDuration());
-                row.createCell(6).setCellValue(lr.getStatus());
+                row.createCell(1).setCellValue(lr.getEmployee().getFullName() != null ? lr.getEmployee().getFullName() : "Unknown");
+                row.createCell(2).setCellValue(lr.getLeaveType() != null ? lr.getLeaveType() : "N/A");
+                row.createCell(3).setCellValue(lr.getStartDate() != null ? lr.getStartDate().toString() : "N/A");
+                row.createCell(4).setCellValue(lr.getEndDate() != null ? lr.getEndDate().toString() : "N/A");
+                row.createCell(5).setCellValue(lr.getDuration() != null ? lr.getDuration() : 0);
+                row.createCell(6).setCellValue(lr.getStatus() != null ? lr.getStatus() : "Unknown");
                 row.createCell(7).setCellValue(lr.getReason() != null ? lr.getReason() : "");
                 row.createCell(8).setCellValue(lr.getManagerNote() != null ? lr.getManagerNote() : "");
             }
@@ -323,6 +336,7 @@ public class ReportService {
 
     // ==================== RECRUITMENT REPORTS ====================
 
+    @Transactional(readOnly = true)
     public byte[] generateRecruitmentPdfReport(int month, int year) {
         List<RecruitmentRequest> records = recruitmentRequestRepository.findApprovedByMonthYear(month, year);
         List<Object[]> deptCounts = recruitmentRequestRepository.countApprovedByDepartment(month, year);
@@ -388,6 +402,7 @@ public class ReportService {
         }
     }
 
+    @Transactional(readOnly = true)
     public byte[] generateRecruitmentExcelReport(int month, int year) {
         List<RecruitmentRequest> records = recruitmentRequestRepository.findApprovedByMonthYear(month, year);
 

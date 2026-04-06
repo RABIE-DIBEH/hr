@@ -51,7 +51,7 @@ public class Employee {
 
     public Employee() {}
 
-    public Employee(Long employeeId, String fullName, String email, String passwordHash, Long teamId, Long roleId, Long managerId, BigDecimal baseSalary, String status, String avatarUrl) {
+    public Employee(Long employeeId, String fullName, String email, String passwordHash, Long teamId, Long roleId, Long managerId, BigDecimal baseSalary, String status, String avatarUrl, String mobileNumber, String address, String nationalId, Double leaveBalanceDays, Double overtimeBalanceHours) {
         this.employeeId = employeeId;
         this.fullName = fullName;
         this.email = email;
@@ -62,6 +62,11 @@ public class Employee {
         this.baseSalary = baseSalary;
         this.status = status;
         this.avatarUrl = avatarUrl;
+        this.mobileNumber = mobileNumber;
+        this.address = address;
+        this.nationalId = nationalId;
+        this.leaveBalanceDays = leaveBalanceDays != null ? leaveBalanceDays : 21.0;
+        this.overtimeBalanceHours = overtimeBalanceHours != null ? overtimeBalanceHours : 0.0;
     }
 
     public static EmployeeBuilder builder() {
@@ -118,6 +123,11 @@ public class Employee {
         private BigDecimal baseSalary;
         private String status = "Active";
         private String avatarUrl;
+        private String mobileNumber;
+        private String address;
+        private String nationalId;
+        private Double leaveBalanceDays;
+        private Double overtimeBalanceHours;
 
         public EmployeeBuilder employeeId(Long id) { this.employeeId = id; return this; }
         public EmployeeBuilder fullName(String name) { this.fullName = name; return this; }
@@ -129,8 +139,14 @@ public class Employee {
         public EmployeeBuilder baseSalary(BigDecimal salary) { this.baseSalary = salary; return this; }
         public EmployeeBuilder status(String status) { this.status = status; return this; }
         public EmployeeBuilder avatarUrl(String url) { this.avatarUrl = url; return this; }
+        public EmployeeBuilder mobileNumber(String mobileNumber) { this.mobileNumber = mobileNumber; return this; }
+        public EmployeeBuilder address(String address) { this.address = address; return this; }
+        public EmployeeBuilder nationalId(String nationalId) { this.nationalId = nationalId; return this; }
+        public EmployeeBuilder leaveBalanceDays(Double leaveBalanceDays) { this.leaveBalanceDays = leaveBalanceDays; return this; }
+        public EmployeeBuilder overtimeBalanceHours(Double overtimeBalanceHours) { this.overtimeBalanceHours = overtimeBalanceHours; return this; }
+
         public Employee build() {
-            return new Employee(employeeId, fullName, email, passwordHash, teamId, roleId, managerId, baseSalary, status, avatarUrl);
+            return new Employee(employeeId, fullName, email, passwordHash, teamId, roleId, managerId, baseSalary, status, avatarUrl, mobileNumber, address, nationalId, leaveBalanceDays, overtimeBalanceHours);
         }
     }
 }

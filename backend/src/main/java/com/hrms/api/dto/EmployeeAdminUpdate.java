@@ -29,7 +29,6 @@ public record EmployeeAdminUpdate(
 
         String avatarUrl,
 
-        // Admin-only fields
         Long teamId,
         Long roleId,
         Long managerId,
@@ -37,15 +36,9 @@ public record EmployeeAdminUpdate(
         String employmentStatus
 ) {
     public EmployeeAdminUpdate {
-        // Normalize blank optional strings to null so @Pattern skips them
-        if (mobileNumber != null && mobileNumber.isBlank()) {
-            mobileNumber = null;
-        }
-        if (address != null && address.isBlank()) {
-            address = null;
-        }
-        if (nationalId != null && nationalId.isBlank()) {
-            nationalId = null;
-        }
+        // Normalize blank strings to null so validation @Pattern is ignored for empty optional fields
+        if (mobileNumber != null && mobileNumber.trim().isEmpty()) mobileNumber = null;
+        if (address != null && address.trim().isEmpty()) address = null;
+        if (nationalId != null && nationalId.trim().isEmpty()) nationalId = null;
     }
 }

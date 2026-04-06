@@ -79,12 +79,13 @@ const HRAttendanceGrid = () => {
   const handleDownloadAttendance = async (type: 'pdf' | 'excel') => {
     setIsDownloading(true);
     try {
-      const response = type === 'pdf' 
+      const response = type === 'pdf'
         ? await downloadAttendancePdf(month, year)
         : await downloadAttendanceExcel(month, year);
-      
-      const blob = new Blob([response.data], { 
-        type: type === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+
+      if (!(response.data instanceof Blob)) throw new Error('Invalid response');
+      const blob = new Blob([response.data], {
+        type: type === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');

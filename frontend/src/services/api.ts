@@ -92,7 +92,11 @@ export interface EmployeeSummary {
   nfcStatus: string | null;
   baseSalary: string;
   employmentStatus: string;
+  roleId: number | null;
   roleName: string;
+  mobileNumber?: string;
+  address?: string;
+  nationalId?: string;
 }
 
 export interface AttendanceRecord {
@@ -394,6 +398,9 @@ export const calculatePayroll = (month: number, year: number, employeeId?: numbe
   return api.post(`/payroll/calculate?${params.toString()}`);
 };
 
+export const calculateAllPayroll = (month: number, year: number) =>
+  api.post<CalculateAllPayrollResult>(`/payroll/calculate-all?month=${month}&year=${year}`);
+
 // Recruitment Request APIs
 export const submitRecruitmentRequest = (data: RecruitmentRequest) =>
   api.post('/recruitment/request', data);
@@ -482,6 +489,14 @@ export interface PayrollSlip {
   deductions: number;
   netSalary: number;
   generatedAt: string;
+}
+
+export interface CalculateAllPayrollResult {
+  successCount: number;
+  errorCount: number;
+  totalEmployees?: number;
+  processedEmployeeIds?: number[];
+  failedEmployees?: { employeeId?: number; error: string }[];
 }
 
 // Leave Request APIs

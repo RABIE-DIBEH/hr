@@ -44,9 +44,9 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
     @Query("SELECT a FROM AttendanceRecord a WHERE EXTRACT(MONTH FROM a.checkIn) = :month " +
            "AND EXTRACT(YEAR FROM a.checkIn) = :year " +
            "ORDER BY a.checkIn ASC")
-    List<AttendanceRecord> findAllMonthlyRecords(@Param("month") int month, @Param("year") int year);
+    List<AttendanceRecord> findAllMonthlyRecordsForReport(@Param("month") int month, @Param("year") int year);
 
     @Query("SELECT a FROM AttendanceRecord a WHERE EXTRACT(MONTH FROM a.checkIn) = :month " +
            "AND EXTRACT(YEAR FROM a.checkIn) = :year")
-    Page<AttendanceRecord> findAllMonthlyRecords(int month, int year, Pageable pageable);
+    Page<AttendanceRecord> findAllMonthlyRecordsPage(@Param("month") int month, @Param("year") int year, Pageable pageable);
 }

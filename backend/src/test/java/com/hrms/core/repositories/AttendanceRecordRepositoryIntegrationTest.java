@@ -99,7 +99,7 @@ class AttendanceRecordRepositoryIntegrationTest extends AbstractContainerBaseTes
             repository.save(record);
         }
 
-        Page<AttendanceRecord> page = repository.findAllMonthlyRecords(
+        Page<AttendanceRecord> page = repository.findAllMonthlyRecordsPage(
                 currentMonth, currentYear, PageRequest.of(0, 4));
 
         assertThat(page.getTotalElements()).isEqualTo(6);

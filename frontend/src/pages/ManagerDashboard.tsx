@@ -78,6 +78,8 @@ const ManagerDashboard = () => {
   const [teamPage, setTeamPage] = useState(0);
   const [teamTotalPages, setTeamTotalPages] = useState(0);
   const [teamTotalCount, setTeamTotalCount] = useState(0);
+  const [teamSearch, setTeamSearch] = useState('');
+  const [teamStatusFilter, setTeamStatusFilter] = useState<'ALL' | 'LINKED' | 'NOT_LINKED'>('ALL');
 
   useEffect(() => {
     getCurrentEmployee()
@@ -262,6 +264,20 @@ const ManagerDashboard = () => {
     }
   };
 
+  const filteredTeam = team.filter((emp) => {
+    const matchesSearch =
+      teamSearch === '' ||
+      emp.fullName.toLowerCase().includes(teamSearch.toLowerCase()) ||
+      emp.email.toLowerCase().includes(teamSearch.toLowerCase());
+    
+    const matchesStatus =
+      teamStatusFilter === 'ALL' ||
+      (teamStatusFilter === 'LINKED' && emp.nfcLinked) ||
+      (teamStatusFilter === 'NOT_LINKED' && !emp.nfcLinked);
+
+    return matchesSearch && matchesStatus;
+  });
+
   const handlePrevMonth = () => {
     setReportDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
   };
@@ -273,12 +289,24 @@ const ManagerDashboard = () => {
   const handleDownloadAttendance = async (type: 'pdf' | 'excel') => {
     setIsDownloading(true);
     try {
-      const response = type === 'pdf' 
+      const response = type === 'pdf'
         ? await downloadAttendancePdf(reportMonth, reportYear)
         : await downloadAttendanceExcel(reportMonth, reportYear);
-      
-      const blob = new Blob([response.data], { 
-        type: type === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+
+      // Check if the response is actually a blob (not an error object)
+      if (!(response.data instanceof Blob)) {
+        throw new Error('Invalid response from server');
+      }
+
+      // Check if the response is an error JSON (blob with wrong content type)
+      if (response.data.type === 'application/json') {
+        const text = await response.data.text();
+        const json = JSON.parse(text);
+        throw new Error(json.message || 'Server returned an error');
+      }
+
+      const blob = new Blob([response.data], {
+        type: type === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -288,8 +316,9 @@ const ManagerDashboard = () => {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-    } catch {
-      alert('فشل تحميل تقرير الحضور.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'فشل تحميل تقرير الحضور.';
+      alert(msg);
     } finally {
       setIsDownloading(false);
     }
@@ -745,14 +774,29 @@ const ManagerDashboard = () => {
               <input
                 type="text"
                 placeholder="بحث عن موظف..."
+                value={teamSearch}
+                onChange={(e) => setTeamSearch(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 bg-white/5 border-transparent focus:bg-white/10 focus:border-blue-500/50 rounded-xl text-sm transition-all text-white placeholder:text-slate-500"
               />
             </div>
             <button
               type="button"
-              className="bg-white/5 p-2.5 rounded-xl text-slate-400 hover:bg-white/10 transition-all border border-white/5"
+              onClick={() => {
+                const states: Array<'ALL' | 'LINKED' | 'NOT_LINKED'> = ['ALL', 'LINKED', 'NOT_LINKED'];
+                const next = states[(states.indexOf(teamStatusFilter) + 1) % states.length];
+                setTeamStatusFilter(next);
+              }}
+              className={`p-2.5 rounded-xl transition-all border flex items-center gap-2 text-xs font-bold ${
+                teamStatusFilter === 'ALL' 
+                  ? 'bg-white/5 text-slate-400 border-white/5' 
+                  : 'bg-blue-600/10 text-blue-400 border-blue-500/20'
+              }`}
+              title="تصفية حسب حالة البطاقة"
             >
-              <Filter size={20} />
+              <Filter size={18} />
+              {teamStatusFilter === 'LINKED' && <span>ببطاقة</span>}
+              {teamStatusFilter === 'NOT_LINKED' && <span>بدون بطاقة</span>}
+              {teamStatusFilter === 'ALL' && <span>الكل</span>}
             </button>
           </div>
         </div>
@@ -769,10 +813,12 @@ const ManagerDashboard = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {team.length === 0 ? (
+              {filteredTeam.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="p-8 text-center text-slate-500 text-sm">
-                    {canViewCompanyWideTeam
+                    {teamSearch || teamStatusFilter !== 'ALL'
+                      ? 'لا توجد نتائج تطابق معايير البحث.'
+                      : canViewCompanyWideTeam
                       ? 'لا توجد سجلات موظفين متاحة حالياً.'
                       : me?.roleName === 'MANAGER'
                       ? 'لا يوجد مرؤوسون مسجّلون لك (managerId) في قاعدة البيانات.'
@@ -780,7 +826,7 @@ const ManagerDashboard = () => {
                   </td>
                 </tr>
               ) : (
-                team.map((emp) => (
+                filteredTeam.map((emp) => (
                   <tr key={emp.employeeId} className="hover:bg-white/5 transition-all group">
                     <td className="p-6">
                       <div className="flex items-center gap-4">
@@ -823,7 +869,7 @@ const ManagerDashboard = () => {
         </div>
 
         <div className="p-6 bg-white/[0.02] border-t border-white/5 flex justify-between items-center text-xs text-slate-500 font-medium">
-          <p>إجمالي {teamTotalCount} موظفاً في فريقك</p>
+          <p>عرض {filteredTeam.length} من إجمالي {teamTotalCount} موظفاً في فريقك</p>
         </div>
         <PaginationControls
           page={teamPage}

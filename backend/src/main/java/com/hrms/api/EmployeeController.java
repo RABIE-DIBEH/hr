@@ -77,6 +77,7 @@ public class EmployeeController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only HR/Admin can update other employees");
         }
 
+
         EmployeeProfileResponse updated = employeeDirectoryService.updateEmployeeByAdmin(employeeId, update, principal.getEmployeeId());
         return ResponseEntity.ok(ApiResponse.success(
                 updated,

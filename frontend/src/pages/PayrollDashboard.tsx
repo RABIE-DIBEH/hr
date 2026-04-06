@@ -27,6 +27,7 @@ import {
   downloadPayrollExcel,
   getAllPayrollHistoryPage,
   calculatePayroll,
+  calculateAllPayroll,
   listEmployeesPage,
   type EmployeeProfile,
   type AdvanceRequest,
@@ -183,11 +184,23 @@ const PayrollDashboard = () => {
     setCalcFeedback(null);
     setShowConfirmCalc(null);
     try {
-      await calculatePayroll(reportMonth, reportYear, empId);
-      setCalcFeedback({ msg: 'تم احتساب الراتب بنجاح', type: 'success' });
+      if (empId === undefined || empId === -1) {
+        // Batch calculation for all employees
+        const res = await calculateAllPayroll(reportMonth, reportYear);
+        const data = res.data;
+        const successCount = data.successCount;
+        const errorCount = data.errorCount;
+        setCalcFeedback({
+          msg: `تم احتساب ${successCount} موظف بنجاح${errorCount > 0 ? `، ${errorCount} خطأ` : ''}`,
+          type: 'success',
+        });
+      } else {
+        await calculatePayroll(reportMonth, reportYear, empId);
+        setCalcFeedback({ msg: 'تم احتساب الراتب بنجاح', type: 'success' });
+      }
       if (activeTab === 'history') void loadHistoryData();
-    } catch (err: any) {
-      const msg = err.response?.data?.message || 'فشل احتساب الراتب';
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'فشل احتساب الراتب';
       setCalcFeedback({ msg, type: 'error' });
     } finally {
       setCalculatingId(null);
@@ -482,9 +495,11 @@ const PayrollDashboard = () => {
                     <h5 className="text-white font-bold">احتساب فردي للموظفين</h5>
                     <div className="relative w-64">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
-                      <input 
-                        type="text" 
-                        placeholder="بحث عن موظف..." 
+                      <input
+                        type="text"
+                        placeholder="بحث عن موظف..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
                         className="bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-xs text-white w-full"
                       />
                     </div>
@@ -500,7 +515,9 @@ const PayrollDashboard = () => {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5">
-                        {employees.map(emp => (
+                        {employees
+                          .filter(emp => !searchTerm || emp.fullName.toLowerCase().includes(searchTerm.toLowerCase()) || emp.email.toLowerCase().includes(searchTerm.toLowerCase()))
+                          .map(emp => (
                           <tr key={emp.employeeId} className="hover:bg-white/[0.02]">
                             <td className="p-6 font-bold text-slate-100">{emp.fullName}</td>
                             <td className="p-6 text-slate-300 font-bold">{emp.baseSalary} ر.س</td>

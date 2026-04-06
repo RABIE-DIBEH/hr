@@ -4,6 +4,7 @@ import com.hrms.core.models.AttendanceRecord;
 import com.hrms.core.models.Employee;
 import com.hrms.core.models.Payroll;
 import com.hrms.core.repositories.AttendanceRecordRepository;
+import com.hrms.core.repositories.EmployeeRepository;
 import com.hrms.core.repositories.PayrollRepository;
 import com.hrms.services.AdvanceRequestService;
 import org.springframework.data.domain.Page;
@@ -13,7 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class PayrollService {
@@ -21,13 +24,16 @@ public class PayrollService {
     private final AttendanceRecordRepository attendanceRepository;
     private final PayrollRepository payrollRepository;
     private final AdvanceRequestService advanceRequestService;
+    private final EmployeeRepository employeeRepository;
 
     public PayrollService(AttendanceRecordRepository attendanceRepository,
                           PayrollRepository payrollRepository,
-                          AdvanceRequestService advanceRequestService) {
+                          AdvanceRequestService advanceRequestService,
+                          EmployeeRepository employeeRepository) {
         this.attendanceRepository = attendanceRepository;
         this.payrollRepository = payrollRepository;
         this.advanceRequestService = advanceRequestService;
+        this.employeeRepository = employeeRepository;
     }
 
     @Transactional
@@ -87,5 +93,50 @@ public class PayrollService {
     @Transactional(readOnly = true)
     public Page<Payroll> getAllPayrollHistory(Pageable pageable) {
         return payrollRepository.findAllPayrollRecords(pageable);
+    }
+
+    /**
+     * Calculate payroll for ALL active employees for the given month/year.
+     * Returns a summary of processed employees, skipped, and errors.
+     */
+    @Transactional
+    public Map<String, Object> calculateAllMonthlyPayroll(int month, int year, String requester) {
+        List<Employee> allEmployees = employeeRepository.findAll();
+        List<Map<String, Object>> results = new ArrayList<>();
+        int successCount = 0;
+        int errorCount = 0;
+
+        for (Employee emp : allEmployees) {
+            if ("Terminated".equalsIgnoreCase(emp.getStatus())) {
+                continue; // Skip terminated employees
+            }
+            try {
+                calculateMonthlyPayroll(emp, month, year);
+                results.add(Map.of(
+                        "employeeId", emp.getEmployeeId(),
+                        "fullName", emp.getFullName() != null ? emp.getFullName() : "Unknown",
+                        "status", "success"
+                ));
+                successCount++;
+            } catch (Exception e) {
+                String errorMsg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+                results.add(Map.of(
+                        "employeeId", emp.getEmployeeId(),
+                        "fullName", emp.getFullName() != null ? emp.getFullName() : "Unknown",
+                        "status", "error",
+                        "message", errorMsg
+                ));
+                errorCount++;
+            }
+        }
+
+        return Map.of(
+                "month", month,
+                "year", year,
+                "totalProcessed", allEmployees.size(),
+                "successCount", successCount,
+                "errorCount", errorCount,
+                "requester", requester
+        );
     }
 }

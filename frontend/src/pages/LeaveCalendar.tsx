@@ -23,7 +23,7 @@ const LeaveCalendar = () => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
-  const { data: me } = useQuery({
+  useQuery({
     queryKey: ['me'],
     queryFn: async () => (await getCurrentEmployee()).data,
   });
@@ -66,12 +66,13 @@ const LeaveCalendar = () => {
   const handleDownloadReport = async (type: 'pdf' | 'excel') => {
     setIsDownloading(true);
     try {
-      const response = type === 'pdf' 
+      const response = type === 'pdf'
         ? await downloadLeavePdf(month, year)
         : await downloadLeaveExcel(month, year);
-      
-      const blob = new Blob([response.data], { 
-        type: type === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+
+      if (!(response.data instanceof Blob)) throw new Error('Invalid response');
+      const blob = new Blob([response.data], {
+        type: type === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');

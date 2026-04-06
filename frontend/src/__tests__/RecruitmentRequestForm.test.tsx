@@ -25,10 +25,6 @@ describe('RecruitmentRequestForm', () => {
     const tagMatch = tagName ? element?.tagName.toLowerCase() === tagName.toLowerCase() : true;
     return tagMatch && element?.textContent?.includes(text) === true;
   });
-  const queryByFlexibleText = (text: string, tagName?: string) => screen.queryByText((_, element) => {
-    const tagMatch = tagName ? element?.tagName.toLowerCase() === tagName.toLowerCase() : true;
-    return tagMatch && element?.textContent?.includes(text) === true;
-  });
 
   it('renders all required form fields', () => {
     render(<RecruitmentRequestForm onClose={mockOnClose} onSuccess={mockOnSuccess} />);

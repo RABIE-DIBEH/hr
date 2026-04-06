@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   CheckCircle2,
@@ -44,9 +43,7 @@ import {
 
 const HRDashboard = () => {
   const [employees, setEmployees] = useState<EmployeeSummary[]>([]);
-  const [employeePage, setEmployeePage] = useState(0);
-  const [employeeTotalPages, setEmployeeTotalPages] = useState(0);
-  const [employeeTotalCount, setEmployeeTotalCount] = useState(0);
+  const [employeePage] = useState(0);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | ''>('');
   const [selectedCard, setSelectedCard] = useState<NfcCard | null>(null);
@@ -79,6 +76,8 @@ const HRDashboard = () => {
   const [leaveTotalPages, setLeaveTotalPages] = useState(0);
   const [leaveTotalCount, setLeaveTotalCount] = useState(0);
 
+  const cardSectionRef = useRef<HTMLDivElement>(null);
+
   const selectedEmployee = selectedEmployeeId === ''
     ? null
     : employees.find((employee) => employee.employeeId === selectedEmployeeId) ?? null;
@@ -96,8 +95,6 @@ const HRDashboard = () => {
   const loadEmployees = async (page = 0) => {
     const res = await listEmployeesPage({ page, size: 10 });
     setEmployees(res.data.items);
-    setEmployeeTotalPages(res.data.totalPages);
-    setEmployeeTotalCount(res.data.totalCount);
   };
 
   const loadSelectedCard = async (employeeId: number) => {
@@ -118,24 +115,6 @@ const HRDashboard = () => {
       .then(() => setLoadError(null))
       .catch(() => setLoadError('تعذر تحميل قائمة الموظفين. تأكد من صلاحيات HR والاتصال بالخادم.'));
   }, [employeePage]);
-
-  useEffect(() => {
-    getPendingLeavesForHrPage({ page: leavePage, size: 10 })
-      .then((res) => {
-        setPendingLeaves(res.data.items);
-        setLeaveTotalPages(res.data.totalPages);
-        setLeaveTotalCount(res.data.totalCount);
-      })
-      .catch(() => console.error('Failed to load pending leaves for HR'));
-
-    getPendingRecruitmentRequestsPage({ page: recruitmentPage, size: 10 })
-      .then((res) => {
-        setPendingRecruitment(res.data.items);
-        setRecruitmentTotalPages(res.data.totalPages);
-        setRecruitmentTotalCount(res.data.totalCount);
-      })
-      .catch(() => console.error('Failed to load pending recruitment requests'));
-  }, [leavePage, recruitmentPage]);
 
   useEffect(() => {
     if (selectedEmployeeId === '') {
@@ -220,6 +199,32 @@ const HRDashboard = () => {
     }
   };
 
+  const cardStatusBadge = selectedCard
+    ? selectedCard.status === 'Active'
+      ? 'bg-green-500/10 text-green-400'
+      : selectedCard.status === 'Blocked'
+        ? 'bg-red-500/10 text-red-400'
+        : 'bg-amber-500/10 text-amber-300'
+    : 'bg-slate-500/10 text-slate-400';
+
+  useEffect(() => {
+    getPendingLeavesForHrPage({ page: leavePage, size: 10 })
+      .then((res) => {
+        setPendingLeaves(res.data.items);
+        setLeaveTotalPages(res.data.totalPages);
+        setLeaveTotalCount(res.data.totalCount);
+      })
+      .catch(() => console.error('Failed to load pending leaves for HR'));
+
+    getPendingRecruitmentRequestsPage({ page: recruitmentPage, size: 10 })
+      .then((res) => {
+        setPendingRecruitment(res.data.items);
+        setRecruitmentTotalPages(res.data.totalPages);
+        setRecruitmentTotalCount(res.data.totalCount);
+      })
+      .catch(() => console.error('Failed to load pending recruitment requests'));
+  }, [leavePage, recruitmentPage]);
+
   const handleRecruitmentSuccess = () => {
     setShowRecruitmentForm(false);
     getPendingRecruitmentRequestsPage({ page: recruitmentPage, size: 10 })
@@ -242,12 +247,12 @@ const HRDashboard = () => {
   const handleDownloadRecruitment = async (type: 'pdf' | 'excel') => {
     setIsDownloading(true);
     try {
-      const response = type === 'pdf' 
+      const response = type === 'pdf'
         ? await downloadRecruitmentPdf(reportMonth, reportYear)
         : await downloadRecruitmentExcel(reportMonth, reportYear);
-      
-      const blob = new Blob([response.data], { 
-        type: type === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      if (!(response.data instanceof Blob)) throw new Error('Invalid response');
+      const blob = new Blob([response.data], {
+        type: type === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -267,12 +272,12 @@ const HRDashboard = () => {
   const handleDownloadAttendance = async (type: 'pdf' | 'excel') => {
     setIsDownloading(true);
     try {
-      const response = type === 'pdf' 
+      const response = type === 'pdf'
         ? await downloadAttendancePdf(reportMonth, reportYear)
         : await downloadAttendanceExcel(reportMonth, reportYear);
-      
-      const blob = new Blob([response.data], { 
-        type: type === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      if (!(response.data instanceof Blob)) throw new Error('Invalid response');
+      const blob = new Blob([response.data], {
+        type: type === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -292,12 +297,12 @@ const HRDashboard = () => {
   const handleDownloadPayroll = async (type: 'pdf' | 'excel') => {
     setIsDownloading(true);
     try {
-      const response = type === 'pdf' 
+      const response = type === 'pdf'
         ? await downloadPayrollPdf(reportMonth, reportYear)
         : await downloadPayrollExcel(reportMonth, reportYear);
-      
-      const blob = new Blob([response.data], { 
-        type: type === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      if (!(response.data instanceof Blob)) throw new Error('Invalid response');
+      const blob = new Blob([response.data], {
+        type: type === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -344,14 +349,6 @@ const HRDashboard = () => {
     }
   };
 
-  const cardStatusBadge = selectedCard
-    ? selectedCard.status === 'Active'
-      ? 'bg-green-500/10 text-green-400'
-      : selectedCard.status === 'Blocked'
-        ? 'bg-red-500/10 text-red-400'
-        : 'bg-amber-500/10 text-amber-300'
-    : 'bg-slate-500/10 text-slate-400';
-
   return (
     <>
       <header className="mb-10">
@@ -364,13 +361,13 @@ const HRDashboard = () => {
           </div>
           <div className="flex items-center gap-4">
             <CurrentDateTimePanel />
-            <Link
-              to="/hr/grid"
+            <button
+              onClick={() => window.location.href = '/hr/grid'}
               className="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all border border-white/10"
             >
               <Search size={20} />
               <span>الشبكة المركزية للحضور</span>
-            </Link>
+            </button>
             <button
               onClick={() => setShowRecruitmentForm(true)}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-blue-600/20"
@@ -386,8 +383,124 @@ const HRDashboard = () => {
         <div className="mb-6 p-4 rounded-xl bg-red-500/10 text-red-200 text-sm font-medium">{loadError}</div>
       )}
 
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+        {/* Reports Center Card */}
+        <motion.div
+          initial={{ opacity: 1, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="md:col-span-3 bg-luxury-surface rounded-[2.5rem] p-8 shadow-sm border border-white/5"
+        >
+          <div className="flex justify-between items-center mb-8 border-b border-white/5 pb-6">
+            <div className="flex items-center gap-3">
+              <div className="bg-emerald-500/10 w-12 h-12 rounded-2xl flex items-center justify-center text-emerald-400">
+                <FileText size={24} />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white">مركز التقارير الشهرية</h2>
+                <p className="text-slate-400 text-sm">تصدير بيانات الحضور، الرواتب، والتوظيف لـ {reportDate.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' })}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/10">
+              <button onClick={handlePrevMonth} className="text-slate-400 hover:text-white transition-colors">
+                <ChevronRight size={18} />
+              </button>
+              <span className="text-white font-bold text-xs min-w-[100px] text-center">
+                {reportDate.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' })}
+              </span>
+              <button 
+                onClick={handleNextMonth} 
+                disabled={reportDate >= new Date()} 
+                className="text-slate-400 hover:text-white disabled:opacity-30 transition-colors"
+              >
+                <ChevronLeft size={18} />
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Attendance Reports */}
+            <div className="bg-white/5 p-6 rounded-2xl border border-white/5">
+              <h3 className="text-white font-bold mb-4 flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-blue-400" />
+                تقارير الحضور
+              </h3>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => handleDownloadAttendance('pdf')}
+                  disabled={isDownloading}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-bold transition-all text-xs disabled:opacity-50"
+                >
+                  PDF
+                </button>
+                <button 
+                  onClick={() => handleDownloadAttendance('excel')}
+                  disabled={isDownloading}
+                  className="flex-1 bg-white/10 hover:bg-white/20 text-white py-2 rounded-lg font-bold transition-all text-xs disabled:opacity-50"
+                >
+                  Excel
+                </button>
+              </div>
+            </div>
+
+            {/* Payroll Reports */}
+            <div className="bg-white/5 p-6 rounded-2xl border border-white/5">
+              <h3 className="text-white font-bold mb-4 flex items-center gap-2">
+                <CreditCard size={16} className="text-purple-400" />
+                تقارير الرواتب
+              </h3>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => handleDownloadPayroll('pdf')}
+                  disabled={isDownloading}
+                  className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg font-bold transition-all text-xs disabled:opacity-50"
+                >
+                  PDF
+                </button>
+                <button 
+                  onClick={() => handleDownloadPayroll('excel')}
+                  disabled={isDownloading}
+                  className="flex-1 bg-white/10 hover:bg-white/20 text-white py-2 rounded-lg font-bold transition-all text-xs disabled:opacity-50"
+                >
+                  Excel
+                </button>
+              </div>
+            </div>
+
+            {/* Recruitment Reports */}
+            <div className="bg-white/5 p-6 rounded-2xl border border-white/5">
+              <h3 className="text-white font-bold mb-4 flex items-center gap-2">
+                <UserPlus size={16} className="text-orange-400" />
+                تقارير التوظيف
+              </h3>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => handleDownloadRecruitment('pdf')}
+                  disabled={isDownloading}
+                  className="flex-1 bg-orange-600 hover:bg-orange-700 text-white py-2 rounded-lg font-bold transition-all text-xs disabled:opacity-50"
+                >
+                  PDF
+                </button>
+                <button 
+                  onClick={() => handleDownloadRecruitment('excel')}
+                  disabled={isDownloading}
+                  className="flex-1 bg-white/10 hover:bg-white/20 text-white py-2 rounded-lg font-bold transition-all text-xs disabled:opacity-50"
+                >
+                  Excel
+                </button>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* NFC Card Management Section */}
+      {loadError && (
+        <div className="mb-6 p-4 rounded-xl bg-red-500/10 text-red-200 text-sm font-medium">{loadError}</div>
+      )}
+
       <div className="grid grid-cols-1 gap-8 mb-10">
         <motion.div
+          ref={cardSectionRef}
           initial={{ opacity: 1, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           className="bg-luxury-surface rounded-[2.5rem] p-8 shadow-sm border border-white/5"
@@ -538,116 +651,6 @@ const HRDashboard = () => {
               {cardFeedback}
             </div>
           )}
-        </motion.div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
-        {/* Reports Center Card */}
-        <motion.div
-          initial={{ opacity: 1, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="md:col-span-3 bg-luxury-surface rounded-[2.5rem] p-8 shadow-sm border border-white/5"
-        >
-          <div className="flex justify-between items-center mb-8 border-b border-white/5 pb-6">
-            <div className="flex items-center gap-3">
-              <div className="bg-emerald-500/10 w-12 h-12 rounded-2xl flex items-center justify-center text-emerald-400">
-                <FileText size={24} />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-white">مركز التقارير الشهرية</h2>
-                <p className="text-slate-400 text-sm">تصدير بيانات الحضور، الرواتب، والتوظيف لـ {reportDate.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' })}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/10">
-              <button onClick={handlePrevMonth} className="text-slate-400 hover:text-white transition-colors">
-                <ChevronRight size={18} />
-              </button>
-              <span className="text-white font-bold text-xs min-w-[100px] text-center">
-                {reportDate.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' })}
-              </span>
-              <button 
-                onClick={handleNextMonth} 
-                disabled={reportDate >= new Date()} 
-                className="text-slate-400 hover:text-white disabled:opacity-30 transition-colors"
-              >
-                <ChevronLeft size={18} />
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Attendance Reports */}
-            <div className="bg-white/5 p-6 rounded-2xl border border-white/5">
-              <h3 className="text-white font-bold mb-4 flex items-center gap-2">
-                <CheckCircle2 size={16} className="text-blue-400" />
-                تقارير الحضور
-              </h3>
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => handleDownloadAttendance('pdf')}
-                  disabled={isDownloading}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-bold transition-all text-xs disabled:opacity-50"
-                >
-                  PDF
-                </button>
-                <button 
-                  onClick={() => handleDownloadAttendance('excel')}
-                  disabled={isDownloading}
-                  className="flex-1 bg-white/10 hover:bg-white/20 text-white py-2 rounded-lg font-bold transition-all text-xs disabled:opacity-50"
-                >
-                  Excel
-                </button>
-              </div>
-            </div>
-
-            {/* Payroll Reports */}
-            <div className="bg-white/5 p-6 rounded-2xl border border-white/5">
-              <h3 className="text-white font-bold mb-4 flex items-center gap-2">
-                <CreditCard size={16} className="text-purple-400" />
-                تقارير الرواتب
-              </h3>
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => handleDownloadPayroll('pdf')}
-                  disabled={isDownloading}
-                  className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg font-bold transition-all text-xs disabled:opacity-50"
-                >
-                  PDF
-                </button>
-                <button 
-                  onClick={() => handleDownloadPayroll('excel')}
-                  disabled={isDownloading}
-                  className="flex-1 bg-white/10 hover:bg-white/20 text-white py-2 rounded-lg font-bold transition-all text-xs disabled:opacity-50"
-                >
-                  Excel
-                </button>
-              </div>
-            </div>
-
-            {/* Recruitment Reports */}
-            <div className="bg-white/5 p-6 rounded-2xl border border-white/5">
-              <h3 className="text-white font-bold mb-4 flex items-center gap-2">
-                <UserPlus size={16} className="text-orange-400" />
-                تقارير التوظيف
-              </h3>
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => handleDownloadRecruitment('pdf')}
-                  disabled={isDownloading}
-                  className="flex-1 bg-orange-600 hover:bg-orange-700 text-white py-2 rounded-lg font-bold transition-all text-xs disabled:opacity-50"
-                >
-                  PDF
-                </button>
-                <button 
-                  onClick={() => handleDownloadRecruitment('excel')}
-                  disabled={isDownloading}
-                  className="flex-1 bg-white/10 hover:bg-white/20 text-white py-2 rounded-lg font-bold transition-all text-xs disabled:opacity-50"
-                >
-                  Excel
-                </button>
-              </div>
-            </div>
-          </div>
         </motion.div>
       </div>
 
@@ -880,79 +883,6 @@ const HRDashboard = () => {
           onPageChange={setLeavePage}
         />
       </div>
-
-      <section className="bg-luxury-surface rounded-[2.5rem] shadow-sm border border-white/5 overflow-hidden mb-10">
-        <div className="p-8 border-b border-white/5 flex justify-between items-center flex-wrap gap-4">
-          <h3 className="font-bold text-xl text-white">قائمة الموظفين (قاعدة البيانات)</h3>
-          <span className="text-sm text-slate-500">{employeeTotalCount} موظف</span>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-right border-collapse">
-            <thead className="bg-white/5 text-slate-400 text-[10px] font-black uppercase tracking-[0.15em]">
-              <tr>
-                <th className="p-6">الموظف</th>
-                <th className="p-6">البريد</th>
-                <th className="p-6">الفريق</th>
-                <th className="p-6">معرف البطاقة UID</th>
-                <th className="p-6">حالة البطاقة</th>
-                <th className="p-6">إدارة</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {employees.length === 0 && !loadError ? (
-                <tr>
-                  <td colSpan={6} className="p-8 text-center text-slate-500 text-sm">
-                    لا يوجد موظفون في النظام. أضف موظفين عبر قاعدة البيانات أو أداة الإدارة.
-                  </td>
-                </tr>
-              ) : (
-                employees.map((emp) => (
-                  <tr key={emp.employeeId} className="hover:bg-white/5 transition-all">
-                    <td className="p-6 font-bold text-slate-100">{emp.fullName}</td>
-                    <td className="p-6 text-slate-400 text-sm font-medium">{emp.email}</td>
-                    <td className="p-6 text-slate-400 text-sm font-medium">{emp.teamName ?? '—'}</td>
-                    <td className="p-6 font-mono text-slate-400 text-sm">{emp.cardUid ?? '—'}</td>
-                    <td className="p-6">
-                      <span
-                        className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase ${
-                          emp.nfcLinked
-                            ? emp.nfcStatus === 'Blocked'
-                              ? 'bg-red-500/10 text-red-400'
-                              : emp.nfcStatus === 'Inactive'
-                                ? 'bg-amber-500/10 text-amber-300'
-                                : 'bg-green-500/10 text-green-400'
-                            : 'bg-orange-500/10 text-orange-400'
-                        }`}
-                      >
-                        {emp.nfcLinked ? (emp.nfcStatus ?? 'مرتبط') : 'بدون بطاقة'}
-                      </span>
-                    </td>
-                    <td className="p-6">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedEmployeeId(emp.employeeId);
-                          setCardFeedback(null);
-                          setCardUidInput('');
-                        }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all"
-                      >
-                        إدارة البطاقة
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-        <PaginationControls
-          page={employeePage}
-          totalPages={employeeTotalPages}
-          totalCount={employeeTotalCount}
-          onPageChange={setEmployeePage}
-        />
-      </section>
 
       {showRecruitmentForm && (
         <RecruitmentRequestForm
