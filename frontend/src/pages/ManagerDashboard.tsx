@@ -482,31 +482,34 @@ const ManagerDashboard = () => {
                       </span>
                     </td>
                     <td className="p-6">
-                      {!record.isVerifiedByManager && (
+                      {record.reviewStatus === 'PENDING_REVIEW' ? (
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleVerifyAttendance(record.recordId)}
                             disabled={verifyingRecord === record.recordId}
-                            className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-xs font-bold transition-all disabled:opacity-50"
+                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-50 flex items-center gap-1.5 shadow-lg shadow-green-900/20"
                           >
-                            تأكيد التواجد
+                            <Check size={14} /> تأكيد الحضور
                           </button>
                           <button
                             onClick={() => handleReportFraud(record.recordId)}
                             disabled={verifyingRecord === record.recordId}
-                            className="bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white px-3 py-2 rounded-lg text-xs font-bold transition-all disabled:opacity-50"
+                            className="bg-red-600/10 hover:bg-red-600 text-red-400 hover:text-white px-4 py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-50 flex items-center gap-1.5 border border-red-500/20"
                           >
-                            تلاعب (لم يحضر)
+                            <AlertTriangle size={14} /> تلاعب
                           </button>
                         </div>
-                      )}
-                      {record.managerNotes && (
-                        <p className="text-xs text-slate-500 mt-2">ملاحظتك: {record.managerNotes}</p>
-                      )}
-                      {record.verifiedAt && (
-                        <p className="mt-1 text-xs text-slate-500">
-                          آخر إجراء: {new Date(record.verifiedAt).toLocaleString('ar-SA')}
-                        </p>
+                      ) : (
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs text-slate-500 font-bold flex items-center gap-1">
+                            <CheckCircle2 size={12} className="text-emerald-500" /> تم الاجراء
+                          </span>
+                          {record.managerNotes && (
+                            <p className="text-[10px] text-slate-400 italic max-w-[150px] truncate" title={record.managerNotes}>
+                              {record.managerNotes}
+                            </p>
+                          )}
+                        </div>
                       )}
                     </td>
                   </tr>

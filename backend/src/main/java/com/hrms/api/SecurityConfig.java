@@ -68,6 +68,7 @@ public class SecurityConfig {
                         // Attendance endpoints
                         .requestMatchers(HttpMethod.POST, "/api/attendance/nfc-clock").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/attendance/clock").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/attendance/my").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/attendance/my-records").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/attendance/manager/today").hasAnyRole("MANAGER", "HR", "ADMIN", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/attendance/**").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")

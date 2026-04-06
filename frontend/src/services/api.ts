@@ -295,10 +295,10 @@ const getPaginatedItems = async <T>(path: string, pageSize = 100) => {
 
 // Attendance API
 export const getMyAttendance = () =>
-  getPaginatedItems<AttendanceRecord>('/attendance/my-records');
+  getPaginatedItems<AttendanceRecord>('/attendance/my');
 
 export const getMyAttendancePage = (params?: PaginationParams) =>
-  getPaginatedPage<AttendanceRecord>('/attendance/my-records', params);
+  getPaginatedPage<AttendanceRecord>('/attendance/my', params);
 
 export const getManagerTodayAttendance = () =>
   getPaginatedItems<AttendanceRecord>('/attendance/manager/today');

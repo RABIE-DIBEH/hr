@@ -57,7 +57,7 @@ public class AttendanceController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/my-records")
+    @GetMapping("/my")
     public ResponseEntity<ApiResponse<PaginatedResponse<AttendanceRecordDto>>> getMyRecords(
             @AuthenticationPrincipal EmployeeUserDetails principal,
             @PageableDefault(size = 20) Pageable pageable) {

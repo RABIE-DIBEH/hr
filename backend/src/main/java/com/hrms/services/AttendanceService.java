@@ -118,11 +118,13 @@ public class AttendanceService {
         return "Checked In Successfully at " + newRecord.getCheckIn();
     }
 
+    @Transactional(readOnly = true)
     public Page<AttendanceRecordDto> getMyRecords(Long employeeId, Pageable pageable) {
         return attendanceRepository.findAllByEmployee_EmployeeIdOrderByCheckInDesc(employeeId, pageable)
                 .map(this::toDto);
     }
 
+    @Transactional(readOnly = true)
     public Page<AttendanceRecordDto> getTodayRecordsForManager(Long managerId, Pageable pageable, EmployeeUserDetails principal) {
         boolean privileged = principal.getAuthorities().stream().anyMatch(a ->
                 "ROLE_HR".equals(a.getAuthority()) ||
@@ -206,6 +208,7 @@ public class AttendanceService {
         return Optional.of(attendanceRepository.save(record));
     }
 
+    @Transactional(readOnly = true)
     public Page<AttendanceRecordDto> getCompanyMonthlyAttendance(int month, int year, Pageable pageable, EmployeeUserDetails actor) {
         return attendanceRepository.findAllMonthlyRecords(month, year, pageable).map(this::toDto);
     }

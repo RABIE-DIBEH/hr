@@ -26,8 +26,10 @@ const AttendanceLogs = () => {
       setTotalPages(res.data.totalPages);
       setTotalCount(res.data.totalCount);
       setError(null);
-    } catch {
-      setError('فشل في جلب سجل الدوام');
+    } catch (err: any) {
+      const msg = err.response?.data?.message || err.message || 'فشل في جلب سجل الدوام';
+      setError(`خطأ: ${msg}`);
+      console.error('Attendance fetch error:', err);
     } finally {
       setLoading(false);
     }
@@ -62,8 +64,14 @@ const AttendanceLogs = () => {
               <p>جاري تحميل السجل...</p>
             </div>
           ) : error ? (
-            <div className="p-12 text-center text-red-400">
-              <p>{error}</p>
+            <div className="p-12 text-center">
+              <p className="text-red-400 mb-4">{error}</p>
+              <button 
+                onClick={() => void fetchLogs()}
+                className="bg-white/5 hover:bg-white/10 text-white px-6 py-2 rounded-xl border border-white/10 transition-all font-bold"
+              >
+                إعادة المحاولة
+              </button>
             </div>
           ) : logs.length === 0 ? (
             <div className="p-12 text-center text-slate-500">
