@@ -1,7 +1,6 @@
 package com.hrms.core.repositories;
 
 import com.hrms.core.models.AttendanceRecord;
-import com.hrms.core.models.Employee;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -18,31 +17,25 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
     @Query("SELECT a FROM AttendanceRecord a WHERE a.employee.employeeId = :employeeId AND a.checkOut IS NULL")
     Optional<AttendanceRecord> findActiveSessionByEmployeeId(Long employeeId);
 
-    @Query("SELECT a FROM AttendanceRecord a JOIN FETCH a.employee WHERE a.employee.employeeId = :employeeId ORDER BY a.checkIn DESC")
-    Page<AttendanceRecord> findAllByEmployee_EmployeeIdOrderByCheckInDesc(@Param("employeeId") Long employeeId, Pageable pageable);
+    Page<AttendanceRecord> findAllByEmployee_EmployeeIdOrderByCheckInDesc(Long employeeId, Pageable pageable);
 
     @Query("SELECT a FROM AttendanceRecord a WHERE a.employee.managerId = :managerId " +
-           "AND EXTRACT(YEAR FROM a.checkIn) = EXTRACT(YEAR FROM CURRENT_DATE) " +
-           "AND EXTRACT(MONTH FROM a.checkIn) = EXTRACT(MONTH FROM CURRENT_DATE) " +
-           "AND EXTRACT(DAY FROM a.checkIn) = EXTRACT(DAY FROM CURRENT_DATE)")
-    Page<AttendanceRecord> findTodayRecordsForManager(Long managerId, Pageable pageable);
+           "ORDER BY a.checkIn DESC")
+    Page<AttendanceRecord> findRecentRecordsForManager(@Param("managerId") Long managerId, Pageable pageable);
 
-    @Query("SELECT a FROM AttendanceRecord a " +
-           "WHERE EXTRACT(YEAR FROM a.checkIn) = EXTRACT(YEAR FROM CURRENT_DATE) " +
-           "AND EXTRACT(MONTH FROM a.checkIn) = EXTRACT(MONTH FROM CURRENT_DATE) " +
-           "AND EXTRACT(DAY FROM a.checkIn) = EXTRACT(DAY FROM CURRENT_DATE)")
-    Page<AttendanceRecord> findTodayRecords(Pageable pageable);
+    @Query("SELECT a FROM AttendanceRecord a ORDER BY a.checkIn DESC")
+    Page<AttendanceRecord> findAllRecentRecords(Pageable pageable);
 
     @Query("SELECT a FROM AttendanceRecord a WHERE a.employee.employeeId = :employeeId " +
            "AND EXTRACT(MONTH FROM a.checkIn) = :month " +
            "AND EXTRACT(YEAR FROM a.checkIn) = :year")
-    List<AttendanceRecord> findMonthlyRecords(Long employeeId, int month, int year);
+    List<AttendanceRecord> findMonthlyRecords(@Param("employeeId") Long employeeId, @Param("month") int month, @Param("year") int year);
 
     @Query("SELECT a FROM AttendanceRecord a WHERE a.employee.employeeId = :employeeId " +
            "AND EXTRACT(MONTH FROM a.checkIn) = :month " +
            "AND EXTRACT(YEAR FROM a.checkIn) = :year " +
            "AND a.payrollStatus IN :payrollStatuses")
-    List<AttendanceRecord> findMonthlyRecordsByPayrollStatuses(Long employeeId, int month, int year, List<String> payrollStatuses);
+    List<AttendanceRecord> findMonthlyRecordsByPayrollStatuses(@Param("employeeId") Long employeeId, @Param("month") int month, @Param("year") int year, @Param("payrollStatuses") List<String> payrollStatuses);
 
     @Query("SELECT a FROM AttendanceRecord a WHERE EXTRACT(MONTH FROM a.checkIn) = :month " +
            "AND EXTRACT(YEAR FROM a.checkIn) = :year " +

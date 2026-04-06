@@ -131,9 +131,9 @@ public class AttendanceService {
                 "ROLE_ADMIN".equals(a.getAuthority()) ||
                 "ROLE_SUPER_ADMIN".equals(a.getAuthority()));
         if (privileged) {
-            return attendanceRepository.findTodayRecords(pageable).map(this::toDto);
+            return attendanceRepository.findAllRecentRecords(pageable).map(this::toDto);
         }
-        return attendanceRepository.findTodayRecordsForManager(managerId, pageable).map(this::toDto);
+        return attendanceRepository.findRecentRecordsForManager(managerId, pageable).map(this::toDto);
     }
 
     @Transactional

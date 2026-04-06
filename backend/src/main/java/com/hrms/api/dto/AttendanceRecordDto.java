@@ -1,6 +1,8 @@
 package com.hrms.api.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -13,16 +15,21 @@ public record AttendanceRecordDto(
         Long employeeId,
         String employeeName,
         String employeeEmail,
+        @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
         LocalDateTime checkIn,
+        @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
         LocalDateTime checkOut,
         BigDecimal workHours,
         String status,
+        @JsonProperty("isVerifiedByManager")
         Boolean isVerifiedByManager,
+        @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
         LocalDateTime verifiedAt,
         String managerNotes,
         String reviewStatus,
         String payrollStatus,
         Boolean manuallyAdjusted,
+        @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
         LocalDateTime manuallyAdjustedAt,
         Long manuallyAdjustedBy,
         String manualAdjustmentReason

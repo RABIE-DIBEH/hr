@@ -482,7 +482,7 @@ const ManagerDashboard = () => {
                       </span>
                     </td>
                     <td className="p-6">
-                      {record.reviewStatus === 'PENDING_REVIEW' ? (
+                      {(record.isVerifiedByManager !== true && record.reviewStatus !== 'VERIFIED' && record.reviewStatus !== 'FRAUD') ? (
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleVerifyAttendance(record.recordId)}

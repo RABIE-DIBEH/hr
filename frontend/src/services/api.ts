@@ -94,7 +94,7 @@ export interface AttendanceRecord {
   managerNotes?: string;
   reviewStatus?: string;
   payrollStatus?: string;
-  manuallyAdjusted?: boolean;
+  manuallyAdjusted: boolean;
   manuallyAdjustedAt?: string;
   manuallyAdjustedBy?: number;
   manualAdjustmentReason?: string;

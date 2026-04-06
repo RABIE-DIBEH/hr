@@ -73,7 +73,7 @@ public class AttendanceRecord {
     public void setWorkHours(BigDecimal workHours) { this.workHours = workHours; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
-    public Boolean getIsVerifiedByManager() { return isVerifiedByManager; }
+    public Boolean getIsVerifiedByManager() { return isVerifiedByManager != null && isVerifiedByManager; }
     public void setIsVerifiedByManager(Boolean verified) { this.isVerifiedByManager = verified; }
     public LocalDateTime getVerifiedAt() { return verifiedAt; }
     public void setVerifiedAt(LocalDateTime verifiedAt) { this.verifiedAt = verifiedAt; }
@@ -83,7 +83,7 @@ public class AttendanceRecord {
     public void setReviewStatus(String reviewStatus) { this.reviewStatus = reviewStatus; }
     public String getPayrollStatus() { return payrollStatus; }
     public void setPayrollStatus(String payrollStatus) { this.payrollStatus = payrollStatus; }
-    public Boolean getManuallyAdjusted() { return manuallyAdjusted; }
+    public Boolean getManuallyAdjusted() { return manuallyAdjusted != null && manuallyAdjusted; }
     public void setManuallyAdjusted(Boolean manuallyAdjusted) { this.manuallyAdjusted = manuallyAdjusted; }
     public LocalDateTime getManuallyAdjustedAt() { return manuallyAdjustedAt; }
     public void setManuallyAdjustedAt(LocalDateTime manuallyAdjustedAt) { this.manuallyAdjustedAt = manuallyAdjustedAt; }
