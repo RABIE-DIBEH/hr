@@ -22,6 +22,7 @@ import NFCClock from './pages/NFCClock';
 import Login from './pages/Login';
 import Goals from './pages/Goals';
 import Inbox from './pages/Inbox';
+import CEODashboard from './pages/CEODashboard';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -80,6 +81,11 @@ function App() {
           <Route path="/admin" element={
             <ProtectedRoute allowedRoles={['ADMIN']}>
               <Layout><AdminDashboard /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/ceo" element={
+            <ProtectedRoute allowedRoles={['ADMIN', 'SUPER_ADMIN']}>
+              <Layout><CEODashboard /></Layout>
             </ProtectedRoute>
           } />
           <Route path="/admin/devices" element={
