@@ -68,7 +68,7 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/payroll" element={
-            <ProtectedRoute allowedRoles={['HR', 'ADMIN', 'PAYROLL']}>
+            <ProtectedRoute allowedRoles={['PAYROLL']}>
               <Layout><PayrollDashboard /></Layout>
             </ProtectedRoute>
           } />
