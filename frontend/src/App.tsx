@@ -88,7 +88,7 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/leave-calendar" element={
-            <ProtectedRoute allowedRoles={['HR', 'MANAGER', 'ADMIN', 'SUPER_ADMIN', 'EMPLOYEE']}>
+            <ProtectedRoute allowedRoles={['HR', 'MANAGER', 'ADMIN', 'PAYROLL', 'SUPER_ADMIN', 'EMPLOYEE']}>
               <Layout><LeaveCalendar /></Layout>
             </ProtectedRoute>
           } />

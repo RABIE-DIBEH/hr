@@ -30,8 +30,9 @@ interface MenuItem {
 
 const allMenuItems: MenuItem[] = [
   { path: '/dashboard', icon: LayoutDashboard, label: 'لوحة التحكم',     roles: ['EMPLOYEE', 'SUPER_ADMIN'] },
-  { path: '/payroll',   icon: DollarSign,      label: 'إدارة الرواتب',    roles: ['HR', 'ADMIN', 'PAYROLL', 'SUPER_ADMIN'] },
-  { path: '/leave-calendar', icon: Calendar,    label: 'تقويم الإجازات',   roles: ['HR', 'MANAGER', 'ADMIN', 'SUPER_ADMIN', 'EMPLOYEE'] },
+  { path: '/payroll',   icon: LayoutDashboard, label: 'لوحة التحكم',     roles: ['PAYROLL'] },
+  { path: '/payroll',   icon: DollarSign,      label: 'إدارة الرواتب',    roles: ['HR', 'ADMIN', 'SUPER_ADMIN'] },
+  { path: '/leave-calendar', icon: Calendar,    label: 'تقويم الإجازات',   roles: ['HR', 'MANAGER', 'ADMIN', 'PAYROLL', 'SUPER_ADMIN', 'EMPLOYEE'] },
   { path: '/users',     icon: Users,           label: 'إدارة الموظفين',  roles: ['HR', 'ADMIN', 'SUPER_ADMIN'] },
   { path: '/goals',     icon: Star,            label: 'النقاط' },
   { path: '/manager',   icon: Users,           label: 'إدارة الفريق',    roles: ['MANAGER', 'SUPER_ADMIN'] },
@@ -98,7 +99,7 @@ const Sidebar = () => {
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {visibleItems.map((item) => (
           <NavLink
-            key={item.path}
+            key={`${item.path}:${item.label}`}
             to={item.path}
             end
             className={({ isActive }) => `
