@@ -34,15 +34,17 @@ public class AdvanceRequestService {
             throw new IllegalArgumentException("Amount must be greater than zero");
         }
 
-        request.setStatus("Pending");
+        request.setStatus(AdvanceRequest.STATUS_PENDING_MANAGER);
         request.setRequestedAt(LocalDateTime.now());
+        request.setSalaryMonth(request.getRequestedAt().getMonthValue());
+        request.setSalaryYear(request.getRequestedAt().getYear());
         AdvanceRequest saved = advanceRequestRepository.save(request);
 
-        // Notify HR about new request
+        // Stage 2: notify managers that a new advance request is awaiting manager approval.
         inboxService.sendMessage(
             "New Advance Request",
             "A new advance request of " + saved.getAmount() + " has been submitted and is pending review.",
-            "HR",
+            "MANAGER",
             "System",
             null,
             "MEDIUM"
@@ -52,43 +54,97 @@ public class AdvanceRequestService {
     }
 
     /**
-     * Process an advance request (approve/reject) - HR/Admin only
+     * Process an advance request (approve/reject).
+     * Stage 2: MANAGER processes PENDING_MANAGER -> PENDING_PAYROLL/REJECTED
+     * Stage 3: PAYROLL processes PENDING_PAYROLL -> APPROVED/REJECTED
      */
     @Transactional
-    public AdvanceRequest processRequest(Long advanceId, String status, String note, Long processorId) {
+    public AdvanceRequest processRequest(
+            Long advanceId,
+            String action,
+            String note,
+            BigDecimal adjustedAmount,
+            String adjustedReason,
+            Long processorId,
+            String processorRole
+    ) {
         AdvanceRequest request = advanceRequestRepository.findById(Objects.requireNonNull(advanceId))
                 .orElseThrow(() -> new IllegalArgumentException("Advance request not found"));
 
-        if (!"Pending".equals(request.getStatus())) {
-            throw new IllegalStateException("Request has already been processed");
-        }
-
-        if (!"Approved".equals(status) && !"Rejected".equals(status)) {
+        if (!"Approved".equalsIgnoreCase(action) && !"Rejected".equalsIgnoreCase(action)) {
             throw new IllegalArgumentException("Status must be 'Approved' or 'Rejected'");
         }
 
-        request.setStatus(status);
+        String current = request.getStatus();
+        boolean isManagerStage = AdvanceRequest.STATUS_PENDING_MANAGER.equals(current);
+        boolean isPayrollStage = AdvanceRequest.STATUS_PENDING_PAYROLL.equals(current);
+
+        if (!isManagerStage && !isPayrollStage) {
+            throw new IllegalStateException("Request is not in a processable stage");
+        }
+
+        // Stage ownership
+        if (isManagerStage && !"MANAGER".equalsIgnoreCase(processorRole) && !"SUPER_ADMIN".equalsIgnoreCase(processorRole)) {
+            throw new IllegalStateException("Only MANAGER can process requests in PENDING_MANAGER stage");
+        }
+        if (isPayrollStage && !"PAYROLL".equalsIgnoreCase(processorRole) && !"SUPER_ADMIN".equalsIgnoreCase(processorRole)) {
+            throw new IllegalStateException("Only PAYROLL can process requests in PENDING_PAYROLL stage");
+        }
+
+        if (isManagerStage) {
+            // Manager can modify amount/reason before sending to payroll.
+            if (adjustedAmount != null) {
+                if (adjustedAmount.compareTo(BigDecimal.ZERO) <= 0) {
+                    throw new IllegalArgumentException("Amount must be greater than zero");
+                }
+                request.setAmount(adjustedAmount);
+            }
+            if (adjustedReason != null && !adjustedReason.isBlank()) {
+                request.setReason(adjustedReason);
+            }
+        }
+
+        if ("Rejected".equalsIgnoreCase(action)) {
+            request.setStatus(AdvanceRequest.STATUS_REJECTED);
+        } else {
+            request.setStatus(isManagerStage ? AdvanceRequest.STATUS_PENDING_PAYROLL : AdvanceRequest.STATUS_APPROVED);
+        }
+
         request.setHrNote(note);
         request.setProcessedAt(LocalDateTime.now());
         request.setProcessedBy(processorId);
 
         AdvanceRequest saved = advanceRequestRepository.save(request);
 
-        // Notify Employee about the decision
-        String title = "Advance Request " + status;
-        String message = "Your advance request for " + saved.getAmount() + " has been " + status.toLowerCase() + ".";
-        if (note != null && !note.isBlank()) {
-            message += " Note: " + note;
+        if (isManagerStage) {
+            // Forward to payroll only on manager approval.
+            if (AdvanceRequest.STATUS_PENDING_PAYROLL.equals(saved.getStatus())) {
+                inboxService.sendMessage(
+                        "Advance Request Pending Payroll Approval",
+                        "A manager approved an advance request of " + saved.getAmount() + " for employeeId=" + saved.getEmployeeId() + ". It is pending payroll final approval.",
+                        "PAYROLL",
+                        "System",
+                        null,
+                        "HIGH"
+                );
+            }
+        } else if (isPayrollStage) {
+            // Notify employee about final decision (approved/rejected).
+            String finalStatus = saved.getStatus();
+            String title = "Advance Request " + finalStatus;
+            String message = "Your advance request for " + saved.getAmount() + " is now " + finalStatus + ".";
+            if (note != null && !note.isBlank()) {
+                message += " Note: " + note;
+            }
+            inboxService.sendPersonalMessage(
+                    title,
+                    message,
+                    saved.getEmployeeId(),
+                    "Payroll Management Department",
+                    null,
+                    AdvanceRequest.STATUS_APPROVED.equals(finalStatus) ? "MEDIUM" : "HIGH"
+            );
         }
-
-        inboxService.sendPersonalMessage(
-            title,
-            message,
-            saved.getEmployeeId(),
-            "HR Department",
-            null,
-            status.equals("Approved") ? "MEDIUM" : "HIGH"
-        );
 
         return saved;
     }
@@ -100,8 +156,8 @@ public class AdvanceRequestService {
         AdvanceRequest request = advanceRequestRepository.findById(Objects.requireNonNull(advanceId))
                 .orElseThrow(() -> new IllegalArgumentException("Advance request not found"));
 
-        if (!"Approved".equals(request.getStatus())) {
-            throw new IllegalStateException("Only approved advance requests can be marked as delivered");
+        if (!AdvanceRequest.STATUS_APPROVED.equals(request.getStatus())) {
+            throw new IllegalStateException("Only payroll-approved advance requests can be marked as delivered");
         }
 
         if (request.isPaid()) {
@@ -110,7 +166,7 @@ public class AdvanceRequestService {
 
         request.setPaid(true);
         request.setPaidAt(LocalDateTime.now());
-        request.setStatus("Delivered");
+        request.setStatus(AdvanceRequest.STATUS_DELIVERED);
         AdvanceRequest saved = advanceRequestRepository.save(request);
 
         // Notify Employee about delivery
@@ -127,10 +183,53 @@ public class AdvanceRequestService {
     }
 
     /**
-     * Get all pending advance requests for HR/Payroll review
+     * Get stage-specific pending advance requests.
      */
-    public Page<AdvanceRequest> getPendingRequests(Pageable pageable) {
-        return advanceRequestRepository.findAllPendingRequests(pageable);
+    public Page<AdvanceRequest> getPendingRequestsForRole(String roleName, Pageable pageable) {
+        if ("MANAGER".equalsIgnoreCase(roleName)) {
+            return advanceRequestRepository.findAllPendingRequests(pageable);
+        }
+        if ("PAYROLL".equalsIgnoreCase(roleName)) {
+            return advanceRequestRepository.findAllPendingPayrollRequests(pageable);
+        }
+        return Page.empty();
+    }
+
+    public Page<AdvanceRequest> getApprovedAwaitingDelivery(Pageable pageable) {
+        return advanceRequestRepository.findAllApprovedAwaitingDelivery(pageable);
+    }
+
+    public Page<AdvanceRequest> getDeliveredForSalaryMonthYear(int month, int year, Pageable pageable) {
+        return advanceRequestRepository.findDeliveredForSalaryMonthYear(month, year, pageable);
+    }
+
+    public List<AdvanceRequest> getApprovedAwaitingDeliveryForMonth(int month, int year) {
+        return advanceRequestRepository.findAllApprovedAwaitingDeliveryForMonth(month, year);
+    }
+
+    @Transactional
+    public int deliverAllApprovedAwaitingDelivery(int month, int year, Long processorId) {
+        List<AdvanceRequest> toDeliver = advanceRequestRepository.findAllApprovedAwaitingDeliveryForMonth(month, year);
+        int delivered = 0;
+        for (AdvanceRequest req : toDeliver) {
+            if (req.isPaid()) continue;
+            req.setPaid(true);
+            req.setPaidAt(LocalDateTime.now());
+            req.setStatus(AdvanceRequest.STATUS_DELIVERED);
+            req.setProcessedBy(processorId);
+            req.setProcessedAt(LocalDateTime.now());
+            delivered++;
+            inboxService.sendPersonalMessage(
+                    "Advance Funds Delivered",
+                    "Your advance request for " + req.getAmount() + " has been marked as delivered/paid. The amount will be deducted from your month-end payroll.",
+                    req.getEmployeeId(),
+                    "Payroll Management Department",
+                    null,
+                    "MEDIUM"
+            );
+        }
+        advanceRequestRepository.saveAll(toDeliver);
+        return delivered;
     }
 
     /**
@@ -171,16 +270,16 @@ public class AdvanceRequestService {
     /**
      * Get total paid advances available for payroll deduction
      */
-    public BigDecimal getUndeductedDeliveredAmountForEmployee(Long employeeId) {
-        return advanceRequestRepository.sumUndeductedDeliveredAmountByEmployee(employeeId);
+    public BigDecimal getUndeductedDeliveredAmountForEmployee(Long employeeId, int month, int year) {
+        return advanceRequestRepository.sumUndeductedDeliveredAmountByEmployeeForMonth(employeeId, month, year);
     }
 
     /**
      * Mark delivered advances as deducted after payroll creation
      */
     @Transactional
-    public void markDeliveredAdvancesAsDeducted(Long employeeId) {
-        List<AdvanceRequest> advances = advanceRequestRepository.findUndeductedDeliveredAdvancesByEmployee(employeeId);
+    public void markDeliveredAdvancesAsDeducted(Long employeeId, int month, int year) {
+        List<AdvanceRequest> advances = advanceRequestRepository.findUndeductedDeliveredAdvancesByEmployeeForMonth(employeeId, month, year);
         advances.forEach(request -> request.setDeducted(true));
         advanceRequestRepository.saveAll(advances);
     }

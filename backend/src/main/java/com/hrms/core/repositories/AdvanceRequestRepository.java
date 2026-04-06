@@ -16,8 +16,17 @@ public interface AdvanceRequestRepository extends JpaRepository<AdvanceRequest, 
     /**
      * Find all pending advance requests
      */
-    @Query("SELECT a FROM AdvanceRequest a WHERE a.status = 'Pending' ORDER BY a.requestedAt DESC")
+    @Query("SELECT a FROM AdvanceRequest a WHERE a.status = 'PENDING_MANAGER' ORDER BY a.requestedAt DESC")
     Page<AdvanceRequest> findAllPendingRequests(Pageable pageable);
+
+    @Query("SELECT a FROM AdvanceRequest a WHERE a.status = 'PENDING_PAYROLL' ORDER BY a.requestedAt DESC")
+    Page<AdvanceRequest> findAllPendingPayrollRequests(Pageable pageable);
+
+    @Query("SELECT a FROM AdvanceRequest a WHERE a.status = 'APPROVED' AND a.paid = false ORDER BY a.processedAt DESC")
+    Page<AdvanceRequest> findAllApprovedAwaitingDelivery(Pageable pageable);
+
+    @Query("SELECT a FROM AdvanceRequest a WHERE a.status = 'APPROVED' AND a.paid = false AND a.salaryMonth = :month AND a.salaryYear = :year ORDER BY a.processedAt DESC")
+    List<AdvanceRequest> findAllApprovedAwaitingDeliveryForMonth(@Param("month") int month, @Param("year") int year);
 
     /**
      * Find all advance requests for a specific employee
@@ -40,19 +49,28 @@ public interface AdvanceRequestRepository extends JpaRepository<AdvanceRequest, 
     /**
      * Get total pending advance amount for an employee
      */
-    @Query("SELECT COALESCE(SUM(a.amount), 0) FROM AdvanceRequest a WHERE a.employeeId = :employeeId AND a.status = 'Pending'")
+    @Query("SELECT COALESCE(SUM(a.amount), 0) FROM AdvanceRequest a WHERE a.employeeId = :employeeId AND a.status = 'PENDING_MANAGER'")
     java.math.BigDecimal sumPendingAmountByEmployee(@Param("employeeId") Long employeeId);
 
     /**
      * Get total amount for delivered advances that have not yet been deducted from payroll
      */
-    @Query("SELECT COALESCE(SUM(a.amount), 0) FROM AdvanceRequest a WHERE a.employeeId = :employeeId AND a.status = 'Delivered' AND a.deducted = false")
-    java.math.BigDecimal sumUndeductedDeliveredAmountByEmployee(@Param("employeeId") Long employeeId);
+    @Query("SELECT COALESCE(SUM(a.amount), 0) FROM AdvanceRequest a WHERE a.employeeId = :employeeId AND a.status = 'DELIVERED' AND a.deducted = false AND a.salaryMonth = :month AND a.salaryYear = :year")
+    java.math.BigDecimal sumUndeductedDeliveredAmountByEmployeeForMonth(@Param("employeeId") Long employeeId,
+                                                                        @Param("month") int month,
+                                                                        @Param("year") int year);
 
     /**
      * Find delivered advances that are ready to be deducted from payroll
      * This one does NOT need pagination as it is used for internal payroll calculation
      */
-    @Query("SELECT a FROM AdvanceRequest a WHERE a.employeeId = :employeeId AND a.status = 'Delivered' AND a.deducted = false ORDER BY a.paidAt DESC")
-    List<AdvanceRequest> findUndeductedDeliveredAdvancesByEmployee(@Param("employeeId") Long employeeId);
+    @Query("SELECT a FROM AdvanceRequest a WHERE a.employeeId = :employeeId AND a.status = 'DELIVERED' AND a.deducted = false AND a.salaryMonth = :month AND a.salaryYear = :year ORDER BY a.paidAt DESC")
+    List<AdvanceRequest> findUndeductedDeliveredAdvancesByEmployeeForMonth(@Param("employeeId") Long employeeId,
+                                                                           @Param("month") int month,
+                                                                           @Param("year") int year);
+
+    @Query("SELECT a FROM AdvanceRequest a WHERE a.status = 'DELIVERED' AND a.salaryMonth = :month AND a.salaryYear = :year ORDER BY a.paidAt DESC")
+    Page<AdvanceRequest> findDeliveredForSalaryMonthYear(@Param("month") int month,
+                                                         @Param("year") int year,
+                                                         Pageable pageable);
 }

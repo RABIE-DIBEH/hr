@@ -62,18 +62,20 @@ public class AdvanceRequestController {
 
     /**
      * GET /api/advances/pending
-     * Get all pending advance requests (HR/ADMIN only)
+     * Get pending advance requests for the current stage/role:
+     * - MANAGER: PENDING_MANAGER
+     * - PAYROLL: PENDING_PAYROLL
      */
     @GetMapping("/pending")
     public ResponseEntity<ApiResponse<PaginatedResponse<AdvanceRequestResponse>>> getPendingRequests(
             @AuthenticationPrincipal EmployeeUserDetails principal,
             @PageableDefault(size = 20) Pageable pageable) {
         
-        if (!hasAnyRole(principal, "HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")) {
+        if (!hasAnyRole(principal, "MANAGER", "PAYROLL", "SUPER_ADMIN")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         }
 
-        Page<AdvanceRequest> page = advanceRequestService.getPendingRequests(pageable);
+        Page<AdvanceRequest> page = advanceRequestService.getPendingRequestsForRole(principal.getRoleName(), pageable);
         List<AdvanceRequestResponse> responses = page.getContent().stream()
                 .map(this::toResponse)
                 .toList();
@@ -137,20 +139,28 @@ public class AdvanceRequestController {
 
     /**
      * PUT /api/advances/process/{advanceId}
-     * Process an advance request (approve/reject) - HR/ADMIN only
+     * Process an advance request (approve/reject).
+     * Stage 2: MANAGER
+     * Stage 3: PAYROLL
      * Uses @Valid to validate ProcessAdvanceRequestDto fields
      */
     @PutMapping("/process/{advanceId}")
     public ResponseEntity<?> processRequest(@PathVariable Long advanceId,
                                             @Valid @RequestBody ProcessAdvanceRequestDto dto,
                                             @AuthenticationPrincipal EmployeeUserDetails principal) {
-        if (!hasAnyRole(principal, "HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")) {
+        if (!hasAnyRole(principal, "MANAGER", "PAYROLL", "SUPER_ADMIN")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         }
 
         try {
             AdvanceRequest processed = advanceRequestService.processRequest(
-                    advanceId, dto.status(), dto.note(), principal.getEmployeeId());
+                    advanceId,
+                    dto.status(),
+                    dto.note(),
+                    dto.amount(),
+                    dto.reason(),
+                    principal.getEmployeeId(),
+                    principal.getRoleName());
             return ResponseEntity.ok(ApiResponse.success(
                     new StatusResponseDto(processed.getStatus()),
                     "Advance request processed successfully"
@@ -164,12 +174,12 @@ public class AdvanceRequestController {
 
     /**
      * PUT /api/advances/deliver/{advanceId}
-     * Mark an approved advance request as delivered / paid - HR/ADMIN only
+     * Mark a payroll-approved advance request as delivered / paid (PAYROLL only)
      */
     @PutMapping("/deliver/{advanceId}")
     public ResponseEntity<?> deliverRequest(@PathVariable Long advanceId,
                                             @AuthenticationPrincipal EmployeeUserDetails principal) {
-        if (!hasAnyRole(principal, "HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")) {
+        if (!hasAnyRole(principal, "PAYROLL", "SUPER_ADMIN")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         }
 
@@ -187,6 +197,80 @@ public class AdvanceRequestController {
         } catch (IllegalStateException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
+    }
+
+    /**
+     * GET /api/advances/approved-awaiting-delivery
+     * Payroll list: advances approved by payroll but not delivered yet.
+     */
+    @GetMapping("/approved-awaiting-delivery")
+    public ResponseEntity<ApiResponse<PaginatedResponse<AdvanceRequestResponse>>> getApprovedAwaitingDelivery(
+            @AuthenticationPrincipal EmployeeUserDetails principal,
+            @PageableDefault(size = 20) Pageable pageable) {
+        if (!hasAnyRole(principal, "PAYROLL", "SUPER_ADMIN")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+        }
+
+        Page<AdvanceRequest> page = advanceRequestService.getApprovedAwaitingDelivery(pageable);
+        List<AdvanceRequestResponse> responses = page.getContent().stream()
+                .map(this::toResponse)
+                .toList();
+
+        return ResponseEntity.ok(ApiResponse.success(
+                PaginatedResponse.of(responses, page.getTotalElements(), page.getNumber(), page.getSize()),
+                "Approved advances awaiting delivery retrieved successfully"
+        ));
+    }
+
+    /**
+     * PUT /api/advances/deliver-all
+     * Payroll bulk action: deliver all payroll-approved advances for a given month/year.
+     */
+    @PutMapping("/deliver-all")
+    public ResponseEntity<ApiResponse<StatusResponseDto>> deliverAll(
+            @RequestParam int month,
+            @RequestParam int year,
+            @AuthenticationPrincipal EmployeeUserDetails principal) {
+        if (!hasAnyRole(principal, "PAYROLL", "SUPER_ADMIN")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+        }
+
+        int deliveredCount = advanceRequestService.deliverAllApprovedAwaitingDelivery(month, year, principal.getEmployeeId());
+        return ResponseEntity.ok(ApiResponse.success(
+                new StatusResponseDto("DELIVERED_COUNT=" + deliveredCount),
+                "Delivered advances successfully"
+        ));
+    }
+
+    /**
+     * GET /api/advances/report
+     * Payroll report: approved (not delivered) advances for month/year.
+     */
+    @GetMapping("/report")
+    public ResponseEntity<ApiResponse<AdvanceApprovalReportResponse>> getReport(
+            @RequestParam int month,
+            @RequestParam int year,
+            @AuthenticationPrincipal EmployeeUserDetails principal) {
+        if (!hasAnyRole(principal, "PAYROLL", "SUPER_ADMIN")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+        }
+
+        List<AdvanceRequest> approved = advanceRequestService.getApprovedAwaitingDeliveryForMonth(month, year);
+        List<AdvanceRequestResponse> items = approved.stream().map(this::toResponse).toList();
+        java.math.BigDecimal totalAmount = approved.stream()
+                .map(AdvanceRequest::getAmount)
+                .filter(java.util.Objects::nonNull)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+
+        AdvanceApprovalReportResponse report = new AdvanceApprovalReportResponse(
+                month,
+                year,
+                items.size(),
+                totalAmount,
+                items
+        );
+
+        return ResponseEntity.ok(ApiResponse.success(report, "Advance approval report generated successfully"));
     }
 
     /**

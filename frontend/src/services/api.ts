@@ -470,6 +470,9 @@ export const getPendingAdvanceRequests = () =>
 export const getPendingAdvanceRequestsPage = (params?: PaginationParams) =>
   getPaginatedPage<AdvanceRequest>('/advances/pending', params);
 
+export const getApprovedAdvancesAwaitingDeliveryPage = (params?: PaginationParams) =>
+  getPaginatedPage<AdvanceRequest>('/advances/approved-awaiting-delivery', params);
+
 export const getMyAdvanceRequests = () =>
   getPaginatedItems<AdvanceRequest>('/advances/my-requests');
 
@@ -489,8 +492,22 @@ export const processAdvanceRequest = (advanceId: number, status: string, note?: 
 export const deliverAdvanceRequest = (advanceId: number) =>
   api.put(`/advances/deliver/${advanceId}`);
 
+export const deliverAllApprovedAdvances = (month: number, year: number) =>
+  api.put<{ status: string }>(`/advances/deliver-all?month=${month}&year=${year}`);
+
+export interface AdvanceApprovalReportResponse {
+  month: number;
+  year: number;
+  totalCount: number;
+  totalAmount: number | string;
+  items: AdvanceRequest[];
+}
+
+export const getAdvanceApprovalReport = (month: number, year: number) =>
+  api.get<AdvanceApprovalReportResponse>(`/advances/report?month=${month}&year=${year}`);
+
 export const getPaidAdvanceRequests = () =>
-  getPaginatedItems<AdvanceRequest>('/advances/all?status=Delivered');
+  getPaginatedItems<AdvanceRequest>('/advances/all?status=DELIVERED');
 
 export const getAdvanceRequest = (advanceId: number) =>
   api.get<AdvanceRequest>(`/advances/${advanceId}`);

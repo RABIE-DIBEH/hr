@@ -62,7 +62,7 @@ public class PayrollService {
                         .year(year)
                         .build());
 
-        BigDecimal advanceDeductions = advanceRequestService.getUndeductedDeliveredAmountForEmployee(employee.getEmployeeId());
+        BigDecimal advanceDeductions = advanceRequestService.getUndeductedDeliveredAmountForEmployee(employee.getEmployeeId(), month, year);
         BigDecimal payrollDeductions = advanceDeductions.max(BigDecimal.ZERO);
         BigDecimal netSalaryWithDeductions = netSalary.subtract(payrollDeductions).setScale(2, RoundingMode.HALF_UP);
 
@@ -74,7 +74,7 @@ public class PayrollService {
 
         Payroll saved = payrollRepository.save(payroll);
         records.forEach(record -> record.setPayrollStatus("PROCESSED"));
-        advanceRequestService.markDeliveredAdvancesAsDeducted(employee.getEmployeeId());
+        advanceRequestService.markDeliveredAdvancesAsDeducted(employee.getEmployeeId(), month, year);
         return saved;
     }
 

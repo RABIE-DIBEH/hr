@@ -23,6 +23,10 @@ import {
   getCurrentEmployee,
   getPendingAdvanceRequestsPage,
   processAdvanceRequest,
+  deliverAdvanceRequest,
+  getApprovedAdvancesAwaitingDeliveryPage,
+  deliverAllApprovedAdvances,
+  getAdvanceApprovalReport,
   getAllAdvanceRequestsPage,
   downloadPayrollPdf,
   downloadPayrollExcel,
@@ -49,14 +53,18 @@ const PayrollDashboard = () => {
 
   // Advances State
   const [pendingAdvances, setPendingAdvances] = useState<AdvanceRequest[]>([]);
+  const [approvedAdvances, setApprovedAdvances] = useState<AdvanceRequest[]>([]);
   const [allAdvances, setAllAdvances] = useState<AdvanceRequest[]>([]);
   const [processingAdvance, setProcessingAdvance] = useState<number | null>(null);
   const [advanceNote, setAdvanceNote] = useState<string>('');
   const [selectedAdvanceId, setSelectedAdvanceId] = useState<number | null>(null);
-  const [advancesSubTab, setAdvancesSubTab] = useState<'pending' | 'all'>('pending');
+  const [advancesSubTab, setAdvancesSubTab] = useState<'pending' | 'approved' | 'all'>('pending');
   const [pendingPage, setPendingPage] = useState(0);
   const [pendingTotalPages, setPendingTotalPages] = useState(0);
   const [pendingTotalCount, setPendingTotalCount] = useState(0);
+  const [approvedPage, setApprovedPage] = useState(0);
+  const [approvedTotalPages, setApprovedTotalPages] = useState(0);
+  const [approvedTotalCount, setApprovedTotalCount] = useState(0);
   const [allPage, setAllPage] = useState(0);
   const [allTotalPages, setAllTotalPages] = useState(0);
   const [allTotalCount, setAllTotalCount] = useState(0);
@@ -109,13 +117,17 @@ const PayrollDashboard = () => {
   const loadAdvancesData = async () => {
     if (!canManagePayroll) return;
     try {
-      const [pendingRes, allRes] = await Promise.all([
+      const [pendingRes, approvedRes, allRes] = await Promise.all([
         getPendingAdvanceRequestsPage({ page: pendingPage, size: 10 }),
+        getApprovedAdvancesAwaitingDeliveryPage({ page: approvedPage, size: 10 }),
         getAllAdvanceRequestsPage({ page: allPage, size: 10 }),
       ]);
       setPendingAdvances(pendingRes.data.items);
       setPendingTotalPages(pendingRes.data.totalPages);
       setPendingTotalCount(pendingRes.data.totalCount);
+      setApprovedAdvances(approvedRes.data.items);
+      setApprovedTotalPages(approvedRes.data.totalPages);
+      setApprovedTotalCount(approvedRes.data.totalCount);
       setAllAdvances(allRes.data.items);
       setAllTotalPages(allRes.data.totalPages);
       setAllTotalCount(allRes.data.totalCount);
@@ -165,7 +177,7 @@ const PayrollDashboard = () => {
     if (activeTab === 'recruitment') void loadRecruitmentData();
     if (activeTab === 'history') void loadHistoryData();
     if (activeTab === 'calculate') void loadEmployeesForCalc();
-  }, [activeTab, pendingPage, allPage, historyPage, recruitmentPage, canManagePayroll]);
+  }, [activeTab, pendingPage, approvedPage, allPage, historyPage, recruitmentPage, canManagePayroll]);
 
   const handleProcessRecruitment = async (requestId: number, status: 'Approved' | 'Rejected') => {
     setProcessingRecruitment(requestId);
@@ -242,6 +254,76 @@ const PayrollDashboard = () => {
     }
   };
 
+  const handleDeliverAdvance = async (advanceId: number) => {
+    setProcessingAdvance(advanceId);
+    try {
+      await deliverAdvanceRequest(advanceId);
+      void loadAdvancesData();
+    } catch {
+      setLoadError('فشل تعليم طلب السلفة كـ تم التسليم');
+    } finally {
+      setProcessingAdvance(null);
+    }
+  };
+
+  const handleDeliverAllApproved = async () => {
+    if (!window.confirm(`تأكيد: تسليم جميع السلف المعتمدة لشهر ${reportMonth}/${reportYear}؟`)) return;
+    setProcessingAdvance(-1);
+    try {
+      await deliverAllApprovedAdvances(reportMonth, reportYear);
+      void loadAdvancesData();
+    } catch {
+      setLoadError('فشل تسليم جميع السلف المعتمدة');
+    } finally {
+      setProcessingAdvance(null);
+    }
+  };
+
+  const handleDownloadAdvanceReportCsv = async () => {
+    try {
+      const res = await getAdvanceApprovalReport(reportMonth, reportYear);
+      const report = res.data;
+
+      const rows = [
+        ['employeeId', 'employeeName', 'amount', 'requestedAt', 'reason'],
+        ...report.items.map((item) => [
+          String(item.employeeId ?? ''),
+          String(item.employeeName ?? ''),
+          String(item.amount ?? ''),
+          String(item.requestedAt ?? ''),
+          String(item.reason ?? ''),
+        ]),
+        [],
+        ['totalCount', String(report.totalCount)],
+        ['totalAmount', String(report.totalAmount)],
+      ];
+
+      const csv = rows
+        .map((cols) =>
+          cols
+            .map((col) => {
+              const s = String(col ?? '');
+              // Basic CSV escaping.
+              return `"${s.replaceAll('"', '""')}"`;
+            })
+            .join(','),
+        )
+        .join('\n');
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `advances_approved_${reportMonth}_${reportYear}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      alert('فشل تحميل تقرير السلف');
+    }
+  };
+
   const handleRunCalculation = async (empId?: number) => {
     setCalculatingId(empId ?? -1); // -1 for "All"
     setCalcFeedback(null);
@@ -270,9 +352,8 @@ const PayrollDashboard = () => {
     }
   };
 
-  const totalApprovedAmount = allAdvances
-    .filter((a) => a.status === 'Approved')
-    .reduce((sum, a) => sum + (a.amount || 0), 0);
+  const totalApprovedAmount = approvedAdvances
+    .reduce((sum, a) => sum + (typeof a.amount === 'number' ? a.amount : Number(a.amount ?? 0)), 0);
 
   const stats = [
     { label: 'سلف معلقة', value: String(pendingTotalCount), icon: Clock, color: 'text-orange-400', bg: 'bg-orange-500/10' },
@@ -410,134 +491,214 @@ const PayrollDashboard = () => {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-6"
           >
-            {activeTab === 'advances' && (
-              <>
-                <div className="flex gap-4 mb-4 border-b border-white/5">
-                  <button
-                    onClick={() => setAdvancesSubTab('pending')}
-                    className={`pb-4 px-4 font-bold transition-all ${advancesSubTab === 'pending' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-slate-500'}`}
-                  >
-                    طلبات معلقة ({pendingTotalCount})
-                  </button>
-                  <button
-                    onClick={() => setAdvancesSubTab('all')}
-                    className={`pb-4 px-4 font-bold transition-all ${advancesSubTab === 'all' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-slate-500'}`}
-                  >
-                    جميع السجلات ({allTotalCount})
-                  </button>
-                </div>
+	            {activeTab === 'advances' && (
+	              <>
+	                <div className="flex gap-4 mb-4 border-b border-white/5">
+	                  <button
+	                    onClick={() => setAdvancesSubTab('pending')}
+	                    className={`pb-4 px-4 font-bold transition-all ${advancesSubTab === 'pending' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-slate-500'}`}
+	                  >
+	                    بانتظار اعتماد الرواتب ({pendingTotalCount})
+	                  </button>
+	                  <button
+	                    onClick={() => setAdvancesSubTab('approved')}
+	                    className={`pb-4 px-4 font-bold transition-all ${advancesSubTab === 'approved' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-slate-500'}`}
+	                  >
+	                    معتمدة بانتظار التسليم ({approvedTotalCount})
+	                  </button>
+	                  <button
+	                    onClick={() => setAdvancesSubTab('all')}
+	                    className={`pb-4 px-4 font-bold transition-all ${advancesSubTab === 'all' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-slate-500'}`}
+	                  >
+	                    جميع السجلات ({allTotalCount})
+	                  </button>
+	                </div>
+	
+	                <div className="bg-luxury-surface rounded-[2.5rem] border border-white/5 overflow-hidden">
+	                  {advancesSubTab === 'pending' ? (
+	                    pendingAdvances.length === 0 ? (
+	                      <div className="p-20 text-center text-slate-500">لا توجد طلبات سلف بانتظار اعتماد الرواتب.</div>
+	                    ) : (
+	                      <div className="divide-y divide-white/5">
+	                        {pendingAdvances.map(advance => (
+	                          <div key={advance.advanceId} className="p-8 hover:bg-white/[0.02] transition-all">
+	                            <div className="flex justify-between items-start">
+	                              <div className="flex gap-4">
+	                                <div className="w-14 h-14 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-400 font-black text-xl">
+	                                  {advance.employeeName?.[0] || '؟'}
+	                                </div>
+	                                <div>
+	                                  <h4 className="text-xl font-bold text-white">{advance.employeeName}</h4>
+	                                  <p className="text-slate-500 text-sm flex items-center gap-2 mt-1">
+	                                    <Clock size={14} /> {advance.requestedAt ? new Date(advance.requestedAt).toLocaleDateString('ar-SA') : ''}
+	                                  </p>
+	                                  <div className="mt-4 flex gap-8">
+	                                    <div>
+	                                      <p className="text-slate-500 text-xs font-bold uppercase mb-1">المبلغ</p>
+	                                      <p className="text-purple-300 font-black text-lg">{advance.amount} ر.س</p>
+	                                    </div>
+	                                    <div>
+	                                      <p className="text-slate-500 text-xs font-bold uppercase mb-1">السبب</p>
+	                                      <p className="text-slate-300 text-sm">{advance.reason || '—'}</p>
+	                                    </div>
+	                                  </div>
+	                                </div>
+	                              </div>
+	                              <div className="min-w-[250px]">
+	                                {selectedAdvanceId === advance.advanceId ? (
+	                                  <div className="space-y-3 p-4 bg-white/5 rounded-2xl border border-white/5">
+	                                    <textarea
+	                                      placeholder="ملاحظة الاعتماد/الرفض..."
+	                                      value={advanceNote}
+	                                      onChange={(e) => setAdvanceNote(e.target.value)}
+	                                      className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm text-white resize-none h-20"
+	                                    />
+	                                    <div className="flex gap-2">
+	                                      <button
+	                                        onClick={() => handleProcessAdvance(advance.advanceId!, 'Approved')}
+	                                        disabled={processingAdvance === advance.advanceId}
+	                                        className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-xl text-sm disabled:opacity-50"
+	                                      >
+	                                        اعتماد نهائي
+	                                      </button>
+	                                      <button
+	                                        onClick={() => handleProcessAdvance(advance.advanceId!, 'Rejected')}
+	                                        disabled={processingAdvance === advance.advanceId}
+	                                        className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-xl text-sm disabled:opacity-50"
+	                                      >
+	                                        رفض
+	                                      </button>
+	                                    </div>
+	                                  </div>
+	                                ) : (
+	                                  <button
+	                                    onClick={() => setSelectedAdvanceId(advance.advanceId!)}
+	                                    className="w-full bg-white/5 hover:bg-white/10 text-white font-bold py-4 rounded-2xl border border-white/5 transition-all"
+	                                  >
+	                                    اتخاذ قرار
+	                                  </button>
+	                                )}
+	                              </div>
+	                            </div>
+	                          </div>
+	                        ))}
+	                      </div>
+	                    )
+	                  ) : advancesSubTab === 'approved' ? (
+	                    <>
+	                      <div className="p-6 border-b border-white/5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+	                        <div>
+	                          <p className="text-white font-bold">معتمدة بانتظار التسليم</p>
+	                          <p className="text-slate-400 text-xs mt-1">يمكنك استخراج تقرير ثم تسليم السلف (فردي أو جماعي).</p>
+	                        </div>
+	                        <div className="flex flex-wrap gap-2">
+	                          <button
+	                            onClick={handleDownloadAdvanceReportCsv}
+	                            className="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-xl font-bold border border-white/10 text-sm"
+	                          >
+	                            تنزيل تقرير CSV
+	                          </button>
+	                          <button
+	                            onClick={handleDeliverAllApproved}
+	                            disabled={approvedTotalCount === 0 || processingAdvance !== null}
+	                            className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-900 text-white px-4 py-2 rounded-xl font-bold text-sm"
+	                          >
+	                            تسليم الكل ({reportMonth}/{reportYear})
+	                          </button>
+	                        </div>
+	                      </div>
 
-                <div className="bg-luxury-surface rounded-[2.5rem] border border-white/5 overflow-hidden">
-                  {advancesSubTab === 'pending' ? (
-                    pendingAdvances.length === 0 ? (
-                      <div className="p-20 text-center text-slate-500">لا توجد طلبات سلفة معلقة حالياً.</div>
-                    ) : (
-                      <div className="divide-y divide-white/5">
-                        {pendingAdvances.map(advance => (
-                          <div key={advance.advanceId} className="p-8 hover:bg-white/[0.02] transition-all">
-                            <div className="flex justify-between items-start">
-                              <div className="flex gap-4">
-                                <div className="w-14 h-14 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-400 font-black text-xl">
-                                  {advance.employeeName?.[0] || '؟'}
-                                </div>
-                                <div>
-                                  <h4 className="text-xl font-bold text-white">{advance.employeeName}</h4>
-                                  <p className="text-slate-500 text-sm flex items-center gap-2 mt-1">
-                                    <Clock size={14} /> {advance.requestedAt ? new Date(advance.requestedAt).toLocaleDateString('ar-SA') : ''}
-                                  </p>
-                                  <div className="mt-4 flex gap-8">
-                                    <div>
-                                      <p className="text-slate-500 text-xs font-bold uppercase mb-1">المبلغ</p>
-                                      <p className="text-purple-300 font-black text-lg">{advance.amount} ر.س</p>
-                                    </div>
-                                    <div>
-                                      <p className="text-slate-500 text-xs font-bold uppercase mb-1">السبب</p>
-                                      <p className="text-slate-300 text-sm">{advance.reason || '—'}</p>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="min-w-[250px]">
-                                {selectedAdvanceId === advance.advanceId ? (
-                                  <div className="space-y-3 p-4 bg-white/5 rounded-2xl border border-white/5">
-                                    <textarea
-                                      placeholder="ملاحظة المراجعة..."
-                                      value={advanceNote}
-                                      onChange={(e) => setAdvanceNote(e.target.value)}
-                                      className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm text-white resize-none h-20"
-                                    />
-                                    <div className="flex gap-2">
-                                      <button
-                                        onClick={() => handleProcessAdvance(advance.advanceId!, 'Approved')}
-                                        disabled={processingAdvance === advance.advanceId}
-                                        className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-xl text-sm disabled:opacity-50"
-                                      >
-                                        موافقة
-                                      </button>
-                                      <button
-                                        onClick={() => handleProcessAdvance(advance.advanceId!, 'Rejected')}
-                                        disabled={processingAdvance === advance.advanceId}
-                                        className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-xl text-sm disabled:opacity-50"
-                                      >
-                                        رفض
-                                      </button>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <button
-                                    onClick={() => setSelectedAdvanceId(advance.advanceId!)}
-                                    className="w-full bg-white/5 hover:bg-white/10 text-white font-bold py-4 rounded-2xl border border-white/5 transition-all"
-                                  >
-                                    اتخاذ قرار
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-right">
-                        <thead className="bg-white/5 text-slate-400 text-[11px] font-black uppercase tracking-wider">
-                          <tr>
-                            <th className="p-6">الموظف</th>
-                            <th className="p-6">المبلغ</th>
-                            <th className="p-6">الحالة</th>
-                            <th className="p-6">التاريخ</th>
-                            <th className="p-6">المعالج</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-white/5 text-sm">
-                          {allAdvances.map(adv => (
-                            <tr key={adv.advanceId} className="hover:bg-white/[0.02]">
-                              <td className="p-6 font-bold text-slate-100">{adv.employeeName}</td>
-                              <td className="p-6 text-purple-300 font-bold">{adv.amount} ر.س</td>
-                              <td className="p-6">
-                                <span className={`px-3 py-1 rounded-lg font-bold text-xs ${
-                                  adv.status === 'Approved' ? 'bg-green-500/10 text-green-400' :
-                                  adv.status === 'Rejected' ? 'bg-red-500/10 text-red-400' : 'bg-orange-500/10 text-orange-400'
-                                }`}>
-                                  {adv.status === 'Approved' ? 'مقبول' : adv.status === 'Rejected' ? 'مرفوض' : 'معلق'}
-                                </span>
-                              </td>
-                              <td className="p-6 text-slate-500">{adv.requestedAt ? new Date(adv.requestedAt).toLocaleDateString('ar-SA') : ''}</td>
-                              <td className="p-6 text-slate-400">{adv.processedByName || '—'}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                  {advancesSubTab === 'pending' ? (
-                    <PaginationControls page={pendingPage} totalPages={pendingTotalPages} totalCount={pendingTotalCount} onPageChange={setPendingPage} />
-                  ) : (
-                    <PaginationControls page={allPage} totalPages={allTotalPages} totalCount={allTotalCount} onPageChange={setAllPage} />
-                  )}
-                </div>
-              </>
-            )}
+	                      {approvedAdvances.length === 0 ? (
+	                        <div className="p-20 text-center text-slate-500">لا توجد سلف معتمدة بانتظار التسليم.</div>
+	                      ) : (
+	                        <div className="divide-y divide-white/5">
+	                          {approvedAdvances.map((adv) => (
+	                            <div key={adv.advanceId} className="p-8 hover:bg-white/[0.02] transition-all flex flex-col md:flex-row md:items-center justify-between gap-6">
+	                              <div className="flex items-start gap-4">
+	                                <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-300 font-black text-xl">
+	                                  {adv.employeeName?.[0] || '؟'}
+	                                </div>
+	                                <div>
+	                                  <p className="text-white font-black text-lg">{adv.employeeName}</p>
+	                                  <p className="text-slate-500 text-sm">{adv.reason || '—'}</p>
+	                                  <p className="text-slate-500 text-xs mt-2">
+	                                    {adv.processedAt ? new Date(adv.processedAt).toLocaleString('ar-SA') : ''}
+	                                  </p>
+	                                </div>
+	                              </div>
+	                              <div className="flex items-center justify-between md:justify-end gap-4">
+	                                <div className="text-right">
+	                                  <p className="text-slate-500 text-xs font-bold uppercase mb-1">المبلغ</p>
+	                                  <p className="text-emerald-200 font-black text-xl">{adv.amount} ر.س</p>
+	                                </div>
+	                                <button
+	                                  onClick={() => handleDeliverAdvance(adv.advanceId!)}
+	                                  disabled={processingAdvance === adv.advanceId}
+	                                  className="bg-purple-600 hover:bg-purple-700 disabled:bg-purple-900 text-white font-bold px-6 py-3 rounded-2xl"
+	                                >
+	                                  {processingAdvance === adv.advanceId ? '...' : 'تم التسليم'}
+	                                </button>
+	                              </div>
+	                            </div>
+	                          ))}
+	                        </div>
+	                      )}
+	                    </>
+	                  ) : (
+	                    <div className="overflow-x-auto">
+	                      <table className="w-full text-right">
+	                        <thead className="bg-white/5 text-slate-400 text-[11px] font-black uppercase tracking-wider">
+	                          <tr>
+	                            <th className="p-6">الموظف</th>
+	                            <th className="p-6">المبلغ</th>
+	                            <th className="p-6">الحالة</th>
+	                            <th className="p-6">التاريخ</th>
+	                            <th className="p-6">المعالج</th>
+	                          </tr>
+	                        </thead>
+	                        <tbody className="divide-y divide-white/5 text-sm">
+	                          {allAdvances.map(adv => {
+	                            const status = adv.status;
+	                            const statusClass =
+	                              status === 'APPROVED' ? 'bg-green-500/10 text-green-400' :
+	                              status === 'REJECTED' ? 'bg-red-500/10 text-red-400' :
+	                              status === 'DELIVERED' ? 'bg-blue-500/10 text-blue-400' :
+	                              status === 'PENDING_PAYROLL' ? 'bg-purple-500/10 text-purple-400' :
+	                              'bg-orange-500/10 text-orange-400';
+	                            const statusLabel =
+	                              status === 'APPROVED' ? 'معتمد' :
+	                              status === 'REJECTED' ? 'مرفوض' :
+	                              status === 'DELIVERED' ? 'تم التسليم' :
+	                              status === 'PENDING_PAYROLL' ? 'بانتظار الرواتب' :
+	                              'بانتظار المدير';
+	                            return (
+	                              <tr key={adv.advanceId} className="hover:bg-white/[0.02]">
+	                                <td className="p-6 font-bold text-slate-100">{adv.employeeName}</td>
+	                                <td className="p-6 text-purple-300 font-bold">{adv.amount} ر.س</td>
+	                                <td className="p-6">
+	                                  <span className={`px-3 py-1 rounded-lg font-bold text-xs ${statusClass}`}>
+	                                    {statusLabel}
+	                                  </span>
+	                                </td>
+	                                <td className="p-6 text-slate-500">{adv.requestedAt ? new Date(adv.requestedAt).toLocaleDateString('ar-SA') : ''}</td>
+	                                <td className="p-6 text-slate-400">{adv.processedByName || '—'}</td>
+	                              </tr>
+	                            );
+	                          })}
+	                        </tbody>
+	                      </table>
+	                    </div>
+	                  )}
+	                  {advancesSubTab === 'pending' ? (
+	                    <PaginationControls page={pendingPage} totalPages={pendingTotalPages} totalCount={pendingTotalCount} onPageChange={setPendingPage} />
+	                  ) : advancesSubTab === 'approved' ? (
+	                    <PaginationControls page={approvedPage} totalPages={approvedTotalPages} totalCount={approvedTotalCount} onPageChange={setApprovedPage} />
+	                  ) : (
+	                    <PaginationControls page={allPage} totalPages={allTotalPages} totalCount={allTotalCount} onPageChange={setAllPage} />
+	                  )}
+	                </div>
+	              </>
+	            )}
 
             {activeTab === 'recruitment' && (
               <div className="bg-luxury-surface rounded-[2.5rem] border border-white/5 overflow-hidden">

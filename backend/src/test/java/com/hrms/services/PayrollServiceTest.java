@@ -60,7 +60,7 @@ class PayrollServiceTest {
                 .thenReturn(List.of(record));
         when(payrollRepository.findByEmployeeEmployeeIdAndMonthAndYear(anyLong(), anyInt(), anyInt()))
                 .thenReturn(Optional.empty());
-        when(advanceRequestService.getUndeductedDeliveredAmountForEmployee(anyLong()))
+        when(advanceRequestService.getUndeductedDeliveredAmountForEmployee(anyLong(), anyInt(), anyInt()))
                 .thenReturn(BigDecimal.ZERO);
         when(payrollRepository.save(any(Payroll.class))).thenAnswer(i -> i.getArguments()[0]);
 
@@ -71,7 +71,7 @@ class PayrollServiceTest {
         assertEquals(new BigDecimal("1600.00"), result.getNetSalary());
         assertEquals(0, BigDecimal.ZERO.compareTo(result.getDeductions()));
         assertEquals(0, BigDecimal.ZERO.compareTo(result.getOvertimeHours()));
-        verify(advanceRequestService).markDeliveredAdvancesAsDeducted(1L);
+        verify(advanceRequestService).markDeliveredAdvancesAsDeducted(1L, 5, 2024);
     }
 
     @Test
@@ -88,7 +88,7 @@ class PayrollServiceTest {
                 .thenReturn(List.of(record));
         when(payrollRepository.findByEmployeeEmployeeIdAndMonthAndYear(anyLong(), anyInt(), anyInt()))
                 .thenReturn(Optional.empty());
-        when(advanceRequestService.getUndeductedDeliveredAmountForEmployee(anyLong()))
+        when(advanceRequestService.getUndeductedDeliveredAmountForEmployee(anyLong(), anyInt(), anyInt()))
                 .thenReturn(new BigDecimal("200.00"));
         when(payrollRepository.save(any(Payroll.class))).thenAnswer(i -> i.getArguments()[0]);
 
@@ -106,7 +106,7 @@ class PayrollServiceTest {
                 .thenReturn(Collections.emptyList());
         when(payrollRepository.findByEmployeeEmployeeIdAndMonthAndYear(anyLong(), anyInt(), anyInt()))
                 .thenReturn(Optional.empty());
-        when(advanceRequestService.getUndeductedDeliveredAmountForEmployee(anyLong()))
+        when(advanceRequestService.getUndeductedDeliveredAmountForEmployee(anyLong(), anyInt(), anyInt()))
                 .thenReturn(BigDecimal.ZERO);
         when(payrollRepository.save(any(Payroll.class))).thenAnswer(i -> i.getArguments()[0]);
 

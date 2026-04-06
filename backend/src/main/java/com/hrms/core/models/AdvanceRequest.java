@@ -8,6 +8,12 @@ import java.time.LocalDateTime;
 @Table(name = "Advance_Requests")
 public class AdvanceRequest {
 
+    public static final String STATUS_PENDING_MANAGER = "PENDING_MANAGER";
+    public static final String STATUS_PENDING_PAYROLL = "PENDING_PAYROLL";
+    public static final String STATUS_APPROVED = "APPROVED";
+    public static final String STATUS_REJECTED = "REJECTED";
+    public static final String STATUS_DELIVERED = "DELIVERED";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long advanceId;
@@ -26,6 +32,12 @@ public class AdvanceRequest {
 
     @Column(name = "requested_at")
     private LocalDateTime requestedAt;
+
+    @Column(name = "salary_month", nullable = false)
+    private Integer salaryMonth;
+
+    @Column(name = "salary_year", nullable = false)
+    private Integer salaryYear;
 
     @Column(name = "processed_at")
     private LocalDateTime processedAt;
@@ -54,8 +66,10 @@ public class AdvanceRequest {
         this.employeeId = employeeId;
         this.amount = amount;
         this.reason = reason;
-        this.status = "Pending";
+        this.status = STATUS_PENDING_MANAGER;
         this.requestedAt = LocalDateTime.now();
+        this.salaryMonth = this.requestedAt.getMonthValue();
+        this.salaryYear = this.requestedAt.getYear();
     }
 
     @PrePersist
@@ -63,8 +77,14 @@ public class AdvanceRequest {
         if (this.requestedAt == null) {
             this.requestedAt = LocalDateTime.now();
         }
+        if (this.salaryMonth == null) {
+            this.salaryMonth = this.requestedAt.getMonthValue();
+        }
+        if (this.salaryYear == null) {
+            this.salaryYear = this.requestedAt.getYear();
+        }
         if (this.status == null) {
-            this.status = "Pending";
+            this.status = STATUS_PENDING_MANAGER;
         }
         this.paid = this.paid;
         this.deducted = this.deducted;
@@ -117,6 +137,22 @@ public class AdvanceRequest {
 
     public void setRequestedAt(LocalDateTime requestedAt) {
         this.requestedAt = requestedAt;
+    }
+
+    public Integer getSalaryMonth() {
+        return salaryMonth;
+    }
+
+    public void setSalaryMonth(Integer salaryMonth) {
+        this.salaryMonth = salaryMonth;
+    }
+
+    public Integer getSalaryYear() {
+        return salaryYear;
+    }
+
+    public void setSalaryYear(Integer salaryYear) {
+        this.salaryYear = salaryYear;
     }
 
     public LocalDateTime getProcessedAt() {

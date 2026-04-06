@@ -266,13 +266,18 @@ const EmployeeDashboard = () => {
                   <div key={adv.advanceId} className="bg-white/5 p-5 rounded-[2rem] border border-white/5">
                     <div className="flex justify-between items-center mb-3">
                       <span className="text-purple-400 font-black text-lg">{adv.amount} ر.س</span>
-                      <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${
-                        adv.status === 'Approved' ? 'bg-emerald-500/10 text-emerald-400' : 
-                        adv.status === 'Rejected' ? 'bg-red-500/10 text-red-400' : 
-                        'bg-orange-500/10 text-orange-400'
-                      }`}>
-                        {adv.status === 'Approved' ? 'مقبول' : adv.status === 'Rejected' ? 'مرفوض' : 'معلق'}
-                      </span>
+	                      <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${
+	                        adv.status === 'APPROVED' ? 'bg-emerald-500/10 text-emerald-400' :
+	                        adv.status === 'REJECTED' ? 'bg-red-500/10 text-red-400' :
+	                        adv.status === 'DELIVERED' ? 'bg-blue-500/10 text-blue-400' :
+	                        'bg-orange-500/10 text-orange-400'
+	                      }`}>
+	                        {adv.status === 'APPROVED' ? 'معتمد' :
+	                          adv.status === 'REJECTED' ? 'مرفوض' :
+	                          adv.status === 'DELIVERED' ? 'تم التسليم' :
+	                          adv.status === 'PENDING_PAYROLL' ? 'بانتظار الرواتب' :
+	                          'بانتظار المدير'}
+	                      </span>
                     </div>
                     <p className="text-slate-400 text-[10px] font-medium leading-relaxed italic">{adv.reason || 'لا يوجد سبب مكتوب'}</p>
                     <div className="mt-3 flex items-center gap-2 text-[10px] text-slate-600 font-bold uppercase">

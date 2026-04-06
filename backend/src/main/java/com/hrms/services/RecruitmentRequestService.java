@@ -89,11 +89,11 @@ public class RecruitmentRequestService {
             throw new IllegalArgumentException("رقم الهوية هذا موجود بالفعل في النظام. لا يمكن إنشاء طلب مكرر.");
         }
 
-        // Notify HR role about new recruitment request
+        // Stage 2: Notify managers that a new request is awaiting manager review.
         inboxService.sendMessage(
             "New Recruitment Request",
             "A new recruitment request for " + saved.getJobDescription() + " has been submitted and is pending review.",
-            "HR",
+            "MANAGER",
             "System",
             null,
             "MEDIUM"
@@ -130,11 +130,9 @@ public class RecruitmentRequestService {
         } else if (RecruitmentRequest.STATUS_PENDING_PAYROLL.equals(currentStatus)) {
             boolean allowed =
                     "PAYROLL".equalsIgnoreCase(processorRole)
-                            || "HR".equalsIgnoreCase(processorRole)
-                            || "ADMIN".equalsIgnoreCase(processorRole)
                             || "SUPER_ADMIN".equalsIgnoreCase(processorRole);
             if (!allowed) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only PAYROLL/HR/ADMIN can process requests in PENDING_PAYROLL stage");
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only PAYROLL can process requests in PENDING_PAYROLL stage");
             }
         }
 
@@ -171,6 +169,16 @@ public class RecruitmentRequestService {
             if (adjustedSalary != null) {
                 request.setExpectedSalary(adjustedSalary);
             }
+
+            // Stage 3: notify payroll that the request is ready for final approval.
+            inboxService.sendMessage(
+                    "Recruitment Request Pending Payroll Approval",
+                    "A recruitment request for " + request.getJobDescription() + " has been approved by the manager and is pending payroll approval.",
+                    "PAYROLL",
+                    "System",
+                    null,
+                    "HIGH"
+            );
         } else if (RecruitmentRequest.STATUS_PENDING_PAYROLL.equals(currentStatus)) {
             // Payroll Approval -> Move to Final Approved and Create Employee
             request.setStatus(RecruitmentRequest.STATUS_APPROVED);
@@ -225,6 +233,26 @@ public class RecruitmentRequestService {
 
         // Return credentials when employee was created
         if (credentials != null) {
+            // Notify the HR requester with credentials and the next step (link NFC UID).
+            if (saved.getRequestedBy() != null) {
+                String msg = String.format(
+                        "Final approval completed. Employee created for %s (%s).\n\nCredentials (shown once):\nUsername: %s\nPassword: %s\nEmployee ID: %s\n\nNext step: please link the employee's NFC card (UID) from the HR dashboard.",
+                        saved.getFullName(),
+                        saved.getEmail(),
+                        credentials.get("username"),
+                        credentials.get("password"),
+                        credentials.get("employeeId")
+                );
+                inboxService.sendPersonalMessage(
+                        "Employee Created - Credentials + NFC Linking Required",
+                        msg,
+                        saved.getRequestedBy(),
+                        "System",
+                        null,
+                        "HIGH"
+                );
+            }
+
             return ProcessRecruitmentResult.withCredentials(
                     saved,
                     credentials.get("username"),
