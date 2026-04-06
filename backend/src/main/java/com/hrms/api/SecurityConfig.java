@@ -54,8 +54,12 @@ public class SecurityConfig {
                         
                         // Employee endpoints
                         .requestMatchers(HttpMethod.GET, "/api/employees/me").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/employees/me").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/employees/team").hasAnyRole("MANAGER", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/employees/search").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/employees").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/employees/**").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/employees/*/reset-password").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN", "EMPLOYEE", "MANAGER")
                         
                         // Leave endpoints - employees can request/view own, managers/HR process
                         .requestMatchers(HttpMethod.POST, "/api/leaves/request").authenticated()

@@ -2,7 +2,14 @@
   "permissions": {
     "allow": [
       "Bash(npm run *)",
-      "Bash(mvn *)"
+      "Bash(mvn *)",
+      "Bash(npm install *)",
+      "Bash(timeout *)",
+      "Bash(psql *)",
+      "Bash(curl *)",
+      "Bash(pkill *)",
+      "Bash(npx *)",
+      "Bash(python3 *)"
     ]
   },
   "$version": 3

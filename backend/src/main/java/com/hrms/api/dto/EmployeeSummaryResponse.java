@@ -12,5 +12,6 @@ public record EmployeeSummaryResponse(
         boolean nfcLinked,
         String nfcStatus,
         BigDecimal baseSalary,
-        String employmentStatus
+        String employmentStatus,
+        String roleName
 ) {}

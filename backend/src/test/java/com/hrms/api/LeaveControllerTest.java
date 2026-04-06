@@ -94,8 +94,8 @@ class LeaveControllerTest {
 
         mockMvc.perform(get("/api/leaves/my-requests").param("employeeId", "77"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.items[0].employee.employeeId").value(77))
-                .andExpect(jsonPath("$.data.items[0].employee.fullName").value("Another Employee"));
+                .andExpect(jsonPath("$.data.items[0].employeeId").value(77))
+                .andExpect(jsonPath("$.data.items[0].employeeName").value("Another Employee"));
     }
 
     @Test
@@ -122,7 +122,7 @@ class LeaveControllerTest {
         mockMvc.perform(get("/api/leaves/manager/pending").param("managerId", "25"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.items[0].requestId").value(55))
-                .andExpect(jsonPath("$.data.items[0].employee.fullName").value("Managed Employee"));
+                .andExpect(jsonPath("$.data.items[0].employeeName").value("Managed Employee"));
 
         ArgumentCaptor<org.springframework.data.domain.Pageable> pageableCaptor =
                 ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);

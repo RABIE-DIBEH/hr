@@ -1,7 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'services/api_service.dart';
+import 'services/auth_service.dart';
+import 'services/nfc_service.dart';
+import 'providers/auth_provider.dart';
+import 'screens/login_screen.dart';
+import 'screens/dashboard_screen.dart';
 
 void main() {
-  runApp(const HRMSApp());
+  final apiService = ApiService();
+  final authService = AuthService(apiService);
+  final nfcService = NfcService(apiService);
+
+  runApp(
+    MultiProvider(
+      providers: [
+        Provider<ApiService>.value(value: apiService),
+        Provider<AuthService>.value(value: authService),
+        Provider<NfcService>.value(value: nfcService),
+        ChangeNotifierProvider(create: (context) => AuthProvider(authService)),
+      ],
+      child: const HRMSApp(),
+    ),
+  );
 }
 
 class HRMSApp extends StatelessWidget {
@@ -11,40 +32,20 @@ class HRMSApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'HRMS Pro Mobile',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      home: const LoginScreen(),
-    );
-  }
-}
-
-class LoginScreen extends StatelessWidget {
-  const LoginScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.shield_rounded, size: 80, color: Colors.blue),
-            const SizedBox(height: 20),
-            const Text('HRMS PRO', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            const Text('Attendance & HR Portal', style: TextStyle(color: Colors.grey)),
-            const SizedBox(height: 40),
-            ElevatedButton.icon(
-              onPressed: () {
-                // TODO: Implement NFC Scanning Logic
-              },
-              icon: const Icon(Icons.nfc),
-              label: const Text('Login with NFC Card'),
-              style: ElevatedButton.styleFrom(padding: const EdgeInsets.all(20)),
-            ),
-          ],
-        ),
+      home: Consumer<AuthProvider>(
+        builder: (context, auth, _) {
+          if (auth.isLoading) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+          return auth.isAuthenticated ? const DashboardScreen() : const LoginScreen();
+        },
       ),
     );
   }

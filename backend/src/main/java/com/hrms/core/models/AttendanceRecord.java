@@ -97,19 +97,25 @@ public class AttendanceRecord {
         private Employee employee;
         private LocalDateTime checkIn;
         private LocalDateTime checkOut;
+        private BigDecimal workHours;
         private String status = "Normal";
         private Boolean isVerifiedByManager = false;
         private String reviewStatus = "PENDING_REVIEW";
         private String payrollStatus = "PENDING_APPROVAL";
 
+        public AttendanceRecordBuilder recordId(Long id) { this.recordId = id; return this; }
         public AttendanceRecordBuilder employee(Employee emp) { this.employee = emp; return this; }
         public AttendanceRecordBuilder checkIn(LocalDateTime in) { this.checkIn = in; return this; }
+        public AttendanceRecordBuilder checkOut(LocalDateTime out) { this.checkOut = out; return this; }
+        public AttendanceRecordBuilder workHours(BigDecimal hours) { this.workHours = hours; return this; }
         public AttendanceRecordBuilder status(String s) { this.status = s; return this; }
         public AttendanceRecordBuilder isVerifiedByManager(Boolean v) { this.isVerifiedByManager = v; return this; }
         public AttendanceRecordBuilder reviewStatus(String reviewStatus) { this.reviewStatus = reviewStatus; return this; }
         public AttendanceRecordBuilder payrollStatus(String payrollStatus) { this.payrollStatus = payrollStatus; return this; }
         public AttendanceRecord build() {
-            return new AttendanceRecord(recordId, employee, checkIn, checkOut, status, isVerifiedByManager, reviewStatus, payrollStatus);
+            AttendanceRecord record = new AttendanceRecord(recordId, employee, checkIn, checkOut, status, isVerifiedByManager, reviewStatus, payrollStatus);
+            record.setWorkHours(this.workHours);
+            return record;
         }
     }
 }

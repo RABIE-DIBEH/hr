@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
@@ -35,12 +36,15 @@ class EmployeeDirectoryServiceTest {
     @Mock
     private NFCCardRepository nfcCardRepository;
 
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
     private EmployeeDirectoryService service;
 
     @BeforeEach
     void setUp() {
         service = new EmployeeDirectoryService(
-                employeeRepository, teamRepository, roleRepository, nfcCardRepository
+                employeeRepository, teamRepository, roleRepository, nfcCardRepository, passwordEncoder
         );
     }
 

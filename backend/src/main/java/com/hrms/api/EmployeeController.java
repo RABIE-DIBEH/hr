@@ -18,6 +18,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -25,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/employees")
@@ -121,6 +125,50 @@ public class EmployeeController {
             String email,
             String status
     ) {}
+
+    /**
+     * DELETE /api/employees/{employeeId}
+     * Soft-delete an employee (HR/ADMIN/SUPER_ADMIN only).
+     * Sets status to "Terminated" instead of removing the record for audit trail.
+     */
+    @DeleteMapping("/{employeeId}")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> deleteEmployee(
+            @PathVariable Long employeeId,
+            @AuthenticationPrincipal EmployeeUserDetails principal) {
+
+        if (!hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only HR/Admin can delete employees");
+        }
+
+        // Prevent self-deletion
+        if (principal.getEmployeeId().equals(employeeId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot delete your own account");
+        }
+
+        Map<String, Object> result = employeeDirectoryService.deleteEmployee(employeeId, principal.getEmployeeId());
+        return ResponseEntity.ok(ApiResponse.success(result, result.get("message").toString()));
+    }
+
+    /**
+     * POST /api/employees/{employeeId}/reset-password
+     * Reset an employee's password to a new secure random password.
+     * Allowed by: dev@hrms.com, HR, ADMIN, SUPER_ADMIN, MANAGER
+     */
+    @PostMapping("/{employeeId}/reset-password")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> resetPassword(
+            @PathVariable Long employeeId,
+            @AuthenticationPrincipal EmployeeUserDetails principal) {
+
+        boolean isDev = "dev@hrms.com".equals(principal.getUsername());
+        boolean isAuthorized = hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN", "ROLE_MANAGER");
+
+        if (!isDev && !isAuthorized) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only dev@hrms.com or HR/Admin/Manager can reset passwords");
+        }
+
+        Map<String, Object> result = employeeDirectoryService.resetEmployeePassword(employeeId, principal.getEmployeeId());
+        return ResponseEntity.ok(ApiResponse.success(result, result.get("message").toString()));
+    }
 
     private static boolean hasAnyRole(EmployeeUserDetails principal, String... roles) {
         for (String role : roles) {

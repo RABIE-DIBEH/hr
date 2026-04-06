@@ -11,6 +11,8 @@ import {
   ClipboardList,
   Check,
   X,
+  ChevronRight,
+  ChevronLeft,
 } from 'lucide-react';
 import PaginationControls from '../components/PaginationControls';
 import CurrentDateTimePanel from '../components/CurrentDateTimePanel';
@@ -26,6 +28,8 @@ import {
   getManagerTodayAttendancePage,
   verifyAttendance,
   reportFraud,
+  downloadAttendancePdf,
+  downloadAttendanceExcel,
   type EmployeeProfile,
   type EmployeeSummary,
   type RecruitmentRequest,
@@ -47,6 +51,12 @@ const ManagerDashboard = () => {
   const [processNote, setProcessNote] = useState<string>('');
   const [adjustedSalary, setAdjustedSalary] = useState<string>('');
   const [selectedRequestId, setSelectedRequestId] = useState<number | null>(null);
+
+  // Reports state
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [reportDate, setReportDate] = useState(new Date());
+  const reportMonth = reportDate.getMonth() + 1;
+  const reportYear = reportDate.getFullYear();
 
   // Leaves & Attendance State
   const [pendingLeaves, setPendingLeaves] = useState<LeaveRequest[]>([]);
@@ -252,6 +262,39 @@ const ManagerDashboard = () => {
     }
   };
 
+  const handlePrevMonth = () => {
+    setReportDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setReportDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  };
+
+  const handleDownloadAttendance = async (type: 'pdf' | 'excel') => {
+    setIsDownloading(true);
+    try {
+      const response = type === 'pdf' 
+        ? await downloadAttendancePdf(reportMonth, reportYear)
+        : await downloadAttendanceExcel(reportMonth, reportYear);
+      
+      const blob = new Blob([response.data], { 
+        type: type === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `attendance_report_${reportMonth}_${reportYear}.${type === 'pdf' ? 'pdf' : 'xlsx'}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      alert('فشل تحميل تقرير الحضور.');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   return (
     <>
       <header className="flex justify-between items-center mb-10">
@@ -292,6 +335,70 @@ const ManagerDashboard = () => {
             <p className="text-3xl font-black text-white">{stat.value}</p>
           </motion.div>
         ))}
+      </div>
+
+      <div className="mb-10">
+        <motion.div
+          initial={{ opacity: 1, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-luxury-surface rounded-[2.5rem] p-8 shadow-sm border border-white/5"
+        >
+          <div className="flex justify-between items-center mb-8 border-b border-white/5 pb-6">
+            <div className="flex items-center gap-3">
+              <div className="bg-emerald-500/10 w-12 h-12 rounded-2xl flex items-center justify-center text-emerald-400">
+                <FileText size={24} />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white">مركز التقارير (إدارة الحضور)</h2>
+                <p className="text-slate-400 text-sm">تصدير بيانات حضور الفريق لـ {reportDate.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' })}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/10">
+              <button onClick={handlePrevMonth} className="text-slate-400 hover:text-white transition-colors">
+                <ChevronRight size={18} />
+              </button>
+              <span className="text-white font-bold text-xs min-w-[100px] text-center">
+                {reportDate.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' })}
+              </span>
+              <button 
+                onClick={handleNextMonth} 
+                disabled={reportDate >= new Date()} 
+                className="text-slate-400 hover:text-white disabled:opacity-30 transition-colors"
+              >
+                <ChevronLeft size={18} />
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white/5 p-6 rounded-2xl border border-white/5 flex items-center justify-between">
+              <div>
+                <h3 className="text-white font-bold mb-1">تقرير الحضور الشهري (PDF)</h3>
+                <p className="text-slate-500 text-xs">ملف جاهز للطباعة والتوثيق</p>
+              </div>
+              <button 
+                onClick={() => handleDownloadAttendance('pdf')}
+                disabled={isDownloading}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-bold transition-all text-xs disabled:opacity-50"
+              >
+                تحميل PDF
+              </button>
+            </div>
+            <div className="bg-white/5 p-6 rounded-2xl border border-white/5 flex items-center justify-between">
+              <div>
+                <h3 className="text-white font-bold mb-1">تقرير الحضور الشهري (Excel)</h3>
+                <p className="text-slate-500 text-xs">ملف قابل للتعديل والتحليل الإحصائي</p>
+              </div>
+              <button 
+                onClick={() => handleDownloadAttendance('excel')}
+                disabled={isDownloading}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg font-bold transition-all text-xs disabled:opacity-50"
+              >
+                تحميل Excel
+              </button>
+            </div>
+          </div>
+        </motion.div>
       </div>
 
       {/* Pending Recruitment Requests Section */}

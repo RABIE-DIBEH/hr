@@ -11,6 +11,7 @@ const ManagerDashboard = lazy(() => import('./pages/ManagerDashboard'));
 const HRDashboard = lazy(() => import('./pages/HRDashboard'));
 const HRAttendanceGrid = lazy(() => import('./pages/HRAttendanceGrid'));
 const PayrollDashboard = lazy(() => import('./pages/PayrollDashboard'));
+const UserManagement = lazy(() => import('./pages/UserManagement'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const LeaveCalendar = lazy(() => import('./pages/LeaveCalendar'));
 const AttendanceLogs = lazy(() => import('./pages/AttendanceLogs'));
@@ -57,8 +58,13 @@ function App() {
               </ProtectedRoute>
             } />
             <Route path="/payroll" element={
-              <ProtectedRoute allowedRoles={['HR', 'ADMIN']}>
+              <ProtectedRoute allowedRoles={['HR', 'ADMIN', 'PAYROLL']}>
                 <Layout><PayrollDashboard /></Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/users" element={
+              <ProtectedRoute allowedRoles={['HR', 'ADMIN', 'SUPER_ADMIN']}>
+                <Layout><UserManagement /></Layout>
               </ProtectedRoute>
             } />
             <Route path="/admin" element={

@@ -78,6 +78,7 @@ export interface EmployeeSummary {
   nfcStatus: string | null;
   baseSalary: string;
   employmentStatus: string;
+  roleName: string;
 }
 
 export interface AttendanceRecord {

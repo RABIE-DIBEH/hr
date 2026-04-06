@@ -1,0 +1,673 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Search,
+  UserX,
+  Edit,
+  Eye,
+  Filter,
+  Users,
+  ShieldCheck,
+  UserCog,
+  Briefcase,
+  Key,
+} from 'lucide-react';
+import {
+  listEmployees,
+  updateProfileMe,
+  type EmployeeSummary,
+  type EmployeeProfile,
+  type EmployeeProfileUpdatePayload,
+} from '../services/api';
+import { getRole, getPayload } from '../services/auth';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const roleLabel = (role: string) => {
+  const map: Record<string, string> = {
+    SUPER_ADMIN: 'مدير النظام الأعلى',
+    ADMIN: 'مدير النظام',
+    HR: 'الموارد البشرية',
+    MANAGER: 'مدير القسم',
+    EMPLOYEE: 'موظف',
+  };
+  return map[role] || role;
+};
+
+const roleIcon = (role: string) => {
+  const map: Record<string, React.ComponentType<{ size?: number }>> = {
+    SUPER_ADMIN: ShieldCheck,
+    ADMIN: UserCog,
+    HR: Briefcase,
+    MANAGER: Users,
+    EMPLOYEE: Users,
+  };
+  const Icon = map[role] || Users;
+  return <Icon size={16} />;
+};
+
+const roleColors: Record<string, string> = {
+  SUPER_ADMIN: 'bg-red-500/10 text-red-400 border-red-500/20',
+  ADMIN: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
+  HR: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+  MANAGER: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+  EMPLOYEE: 'bg-green-500/10 text-green-400 border-green-500/20',
+};
+
+const statusColors: Record<string, string> = {
+  Active: 'bg-green-500/10 text-green-400',
+  Inactive: 'bg-yellow-500/10 text-yellow-400',
+  Terminated: 'bg-red-500/10 text-red-400',
+};
+
+const UserManagement = () => {
+  const navigate = useNavigate();
+  const userRole = getRole() || '';
+  const isHighRole = ['HR', 'ADMIN', 'SUPER_ADMIN'].includes(userRole);
+  const isManager = userRole === 'MANAGER';
+  const currentUserEmail = getPayload()?.sub || '';
+  const isDevUser = currentUserEmail === 'dev@hrms.com';
+  const canManagePasswords = isDevUser || isHighRole || isManager;
+
+  const [employees, setEmployees] = useState<EmployeeSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [error, setError] = useState<string | null>(null);
+
+  // Modal state
+  const [selectedEmployee, setSelectedEmployee] = useState<EmployeeSummary | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [resetPasswordResult, setResetPasswordResult] = useState<{ password: string; name: string } | null>(null);
+
+  // Edit form state
+  const [editForm, setEditForm] = useState<EmployeeProfileUpdatePayload>({
+    fullName: '',
+    email: '',
+    mobileNumber: '',
+    address: '',
+    nationalId: '',
+  });
+
+  const loadEmployees = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await listEmployees();
+      setEmployees(res.data);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'فشل في تحميل بيانات الموظفين';
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isHighRole) void loadEmployees();
+    else navigate('/dashboard');
+  }, [isHighRole, navigate]);
+
+  const filtered = employees.filter((emp) => {
+    const matchesSearch =
+      search === '' ||
+      emp.fullName.toLowerCase().includes(search.toLowerCase()) ||
+      emp.email.toLowerCase().includes(search.toLowerCase());
+    const matchesRole = roleFilter === 'ALL' || emp.roleName === roleFilter;
+    const matchesStatus = statusFilter === 'ALL' || emp.employmentStatus === statusFilter;
+    return matchesSearch && matchesRole && matchesStatus;
+  });
+
+  const handleView = (emp: EmployeeSummary) => {
+    setSelectedEmployee(emp);
+    setShowViewModal(true);
+  };
+
+  const handleEdit = async (emp: EmployeeSummary) => {
+    setSelectedEmployee(emp);
+    setEditForm({
+      fullName: emp.fullName,
+      email: emp.email,
+      mobileNumber: '',
+      address: '',
+      nationalId: '',
+    });
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedEmployee) return;
+    setActionLoading(true);
+    try {
+      await updateProfileMe(editForm);
+      setSuccessMessage('تم تحديث بيانات الموظف بنجاح');
+      setShowEditModal(false);
+      await loadEmployees();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'فشل في التحديث';
+      setError(msg);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedEmployee) return;
+    setActionLoading(true);
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+      const token = localStorage.getItem('hrms_jwt');
+      const res = await fetch(`${API_BASE_URL}/employees/${selectedEmployee.employeeId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.message || `خطأ ${res.status}`);
+      }
+      const json = await res.json();
+      setSuccessMessage(json.message || 'تم إنهاء الموظف بنجاح');
+      setShowDeleteConfirm(false);
+      setSelectedEmployee(null);
+      await loadEmployees();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'فشل في الحذف';
+      setError(msg);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!selectedEmployee) return;
+    setActionLoading(true);
+    setResetPasswordResult(null);
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+      const token = localStorage.getItem('hrms_jwt');
+      const res = await fetch(`${API_BASE_URL}/employees/${selectedEmployee.employeeId}/reset-password`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.message || `خطأ ${res.status}`);
+      }
+      const json = await res.json();
+      setResetPasswordResult({ password: json.data.newPassword, name: json.data.fullName });
+      setSuccessMessage(json.message);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'فشل في إعادة تعيين كلمة المرور';
+      setError(msg);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const clearMessages = () => {
+    setSuccessMessage(null);
+    setError(null);
+  };
+
+  return (
+    <div className="min-h-screen bg-zinc-950 text-white" dir="rtl">
+      {/* Success/Error Toasts */}
+      <AnimatePresence>
+        {successMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white px-6 py-3 rounded-xl shadow-lg max-w-md"
+          >
+            <p className="font-bold">{successMessage}</p>
+            <button onClick={clearMessages} className="text-green-200 text-sm mt-1 hover:text-white">إغلاق</button>
+          </motion.div>
+        )}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-red-600 text-white px-6 py-3 rounded-xl shadow-lg max-w-md"
+          >
+            <p className="font-bold">{error}</p>
+            <button onClick={clearMessages} className="text-red-200 text-sm mt-1 hover:text-white">إغلاق</button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Header */}
+      <div className="bg-gradient-to-l from-blue-900 via-indigo-900 to-zinc-950 border-b border-white/5">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="flex items-center gap-4">
+            <div className="bg-blue-500/10 p-3 rounded-xl">
+              <Users size={28} className="text-blue-400" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold">إدارة الموظفين</h1>
+              <p className="text-slate-400 mt-1">عرض، تعديل، وإنهاء حسابات الموظفين</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Filters */}
+        <div className="flex flex-wrap gap-4 mb-6">
+          <div className="relative flex-1 min-w-[250px]">
+            <Search size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="بحث بالاسم أو البريد..."
+              className="w-full pr-10 pl-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder:text-slate-600"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Filter size={16} className="text-slate-500" />
+            <select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white"
+            >
+              <option value="ALL">كل الأدوار</option>
+              <option value="SUPER_ADMIN">مدير النظام الأعلى</option>
+              <option value="ADMIN">مدير النظام</option>
+              <option value="HR">الموارد البشرية</option>
+              <option value="MANAGER">مدير القسم</option>
+              <option value="EMPLOYEE">موظف</option>
+            </select>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white"
+            >
+              <option value="ALL">كل الحالات</option>
+              <option value="Active">نشط</option>
+              <option value="Inactive">غير نشط</option>
+              <option value="Terminated">مُنهى</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Table */}
+        {loading ? (
+          <div className="text-center py-12 text-slate-500">جارِ التحميل...</div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-12 text-slate-500">لا توجد نتائج</div>
+        ) : (
+          <div className="bg-zinc-900 border border-white/5 rounded-2xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-white/5 text-slate-400">
+                  <tr>
+                    <th className="px-6 py-4 text-right font-bold">#</th>
+                    <th className="px-6 py-4 text-right font-bold">الاسم</th>
+                    <th className="px-6 py-4 text-right font-bold">البريد</th>
+                    <th className="px-6 py-4 text-right font-bold">الدور</th>
+                    <th className="px-6 py-4 text-right font-bold">القسم</th>
+                    <th className="px-6 py-4 text-right font-bold">الحالة</th>
+                    <th className="px-6 py-4 text-right font-bold">البطاقة</th>
+                    <th className="px-6 py-4 text-right font-bold">إجراءات</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((emp, idx) => (
+                    <tr key={emp.employeeId} className="border-t border-white/5 hover:bg-white/[0.02] transition-colors">
+                      <td className="px-6 py-4 text-slate-500">{idx + 1}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400 font-bold text-xs">
+                            {emp.fullName.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                          </div>
+                          <span className="font-bold text-slate-100">{emp.fullName}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-slate-300">{emp.email}</td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${roleColors[emp.roleName] || ''}`}>
+                          {roleIcon(emp.roleName)}
+                          {roleLabel(emp.roleName)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-slate-300">{emp.teamName ?? '—'}</td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${statusColors[emp.employmentStatus] || 'bg-slate-500/10 text-slate-400'}`}>
+                          {emp.employmentStatus === 'Active' ? 'نشط' : emp.employmentStatus === 'Terminated' ? 'مُنهى' : emp.employmentStatus}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        {emp.nfcLinked ? (
+                          <span className="text-green-400 text-xs font-bold">✓ مرتبط</span>
+                        ) : (
+                          <span className="text-slate-500 text-xs">—</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleView(emp)}
+                            className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+                            title="عرض"
+                          >
+                            <Eye size={16} />
+                          </button>
+                          {canManagePasswords && (
+                            <button
+                              onClick={() => { setSelectedEmployee(emp); setResetPasswordResult(null); setShowResetPassword(true); }}
+                              className="p-2 rounded-lg bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 hover:text-yellow-300 transition-colors"
+                              title={isDevUser ? "إعادة تعيين كلمة المرور (Dev)" : "إعادة تعيين كلمة المرور"}
+                            >
+                              <Key size={16} />
+                            </button>
+                          )}
+                          {emp.employmentStatus !== 'Terminated' && (
+                            <button
+                              onClick={() => { setSelectedEmployee(emp); setShowDeleteConfirm(true); }}
+                              className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-colors"
+                              title="إنهاء"
+                            >
+                              <UserX size={16} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Footer count */}
+        {!loading && (
+          <div className="mt-4 text-slate-500 text-sm">
+            عرض {filtered.length} من أصل {employees.length} موظف
+          </div>
+        )}
+      </div>
+
+      {/* View Modal */}
+      <AnimatePresence>
+        {showViewModal && selectedEmployee && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={() => setShowViewModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl max-w-lg w-full p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400 font-bold text-2xl">
+                  {selectedEmployee.fullName.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">{selectedEmployee.fullName}</h2>
+                  <p className="text-slate-400">{selectedEmployee.email}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="bg-white/5 p-4 rounded-xl">
+                  <p className="text-slate-500 mb-1">الدور</p>
+                  <p className="text-white font-bold">{roleLabel(selectedEmployee.roleName)}</p>
+                </div>
+                <div className="bg-white/5 p-4 rounded-xl">
+                  <p className="text-slate-500 mb-1">القسم</p>
+                  <p className="text-white font-bold">{selectedEmployee.teamName ?? '—'}</p>
+                </div>
+                <div className="bg-white/5 p-4 rounded-xl">
+                  <p className="text-slate-500 mb-1">الراتب الأساسي</p>
+                  <p className="text-white font-bold">{selectedEmployee.baseSalary ? `${Number(selectedEmployee.baseSalary).toLocaleString()} ل.س` : '—'}</p>
+                </div>
+                <div className="bg-white/5 p-4 rounded-xl">
+                  <p className="text-slate-500 mb-1">الحالة</p>
+                  <p className={`font-bold ${selectedEmployee.employmentStatus === 'Active' ? 'text-green-400' : 'text-red-400'}`}>
+                    {selectedEmployee.employmentStatus === 'Active' ? 'نشط' : selectedEmployee.employmentStatus}
+                  </p>
+                </div>
+                <div className="bg-white/5 p-4 rounded-xl">
+                  <p className="text-slate-500 mb-1">بطاقة NFC</p>
+                  <p className="text-white font-bold">{selectedEmployee.nfcLinked ? `✓ ${selectedEmployee.cardUid ?? ''}` : 'غير مرتبط'}</p>
+                </div>
+                <div className="bg-white/5 p-4 rounded-xl">
+                  <p className="text-slate-500 mb-1">رقم الموظف</p>
+                  <p className="text-white font-bold">#{selectedEmployee.employeeId}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowViewModal(false)}
+                className="w-full mt-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-slate-300 transition-colors"
+              >
+                إغلاق
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Edit Modal */}
+      <AnimatePresence>
+        {showEditModal && selectedEmployee && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={() => setShowEditModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl max-w-lg w-full p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="text-xl font-bold text-white mb-6">تعديل بيانات: {selectedEmployee.fullName}</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-slate-300 mb-2">الاسم الكامل</label>
+                  <input
+                    type="text"
+                    value={editForm.fullName}
+                    onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-300 mb-2">البريد الإلكتروني</label>
+                  <input
+                    type="email"
+                    value={editForm.email}
+                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-300 mb-2">رقم الهاتف</label>
+                  <input
+                    type="text"
+                    value={editForm.mobileNumber}
+                    onChange={(e) => setEditForm({ ...editForm, mobileNumber: e.target.value })}
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-300 mb-2">العنوان</label>
+                  <input
+                    type="text"
+                    value={editForm.address}
+                    onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-300 mb-2">رقم الهوية</label>
+                  <input
+                    type="text"
+                    value={editForm.nationalId}
+                    onChange={(e) => setEditForm({ ...editForm, nationalId: e.target.value })}
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="flex-1 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-slate-300 transition-colors"
+                >
+                  إلغاء
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  disabled={actionLoading}
+                  className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold text-white transition-colors disabled:opacity-50"
+                >
+                  {actionLoading ? 'جارِ الحفظ...' : 'حفظ التغييرات'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteConfirm && selectedEmployee && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={() => setShowDeleteConfirm(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl max-w-md w-full p-6 text-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center mx-auto text-4xl text-red-400 mb-4">
+                <UserX size={36} />
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-2">تأكيد الإنهاء</h2>
+              <p className="text-slate-400 mb-2">
+                هل أنت متأكد من إنهاء حساب الموظف التالي؟
+              </p>
+              <div className="bg-white/5 rounded-xl p-4 mb-6">
+                <p className="text-white font-bold text-lg">{selectedEmployee.fullName}</p>
+                <p className="text-slate-500 text-sm">{selectedEmployee.email} · {roleLabel(selectedEmployee.roleName)}</p>
+              </div>
+              <p className="text-yellow-500/80 text-xs mb-6">
+                ⚠️ سيتم تغيير الحالة إلى "مُنهى" وتعطيل بطاقة NFC المرتبطة. لا يمكن التراجع عن هذا الإجراء بسهولة.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-slate-300 transition-colors"
+                >
+                  إلغاء
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={actionLoading}
+                  className="flex-[2] py-3 bg-red-600 hover:bg-red-700 rounded-xl font-bold text-white transition-colors disabled:opacity-50"
+                >
+                  {actionLoading ? 'جارِ الإنهاء...' : 'تأكيد الإنهاء'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Reset Password Modal */}
+      <AnimatePresence>
+        {showResetPassword && selectedEmployee && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={() => { setShowResetPassword(false); setResetPasswordResult(null); }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl max-w-md w-full p-6 text-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-20 h-20 rounded-full bg-yellow-500/10 flex items-center justify-center mx-auto text-4xl text-yellow-400 mb-4">
+                <Key size={36} />
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-2">إعادة تعيين كلمة المرور</h2>
+
+              {!resetPasswordResult ? (
+                <>
+                  <p className="text-slate-400 mb-2">
+                    هل تريد إعادة تعيين كلمة المرور للموظف التالي؟
+                  </p>
+                  <div className="bg-white/5 rounded-xl p-4 mb-6">
+                    <p className="text-white font-bold text-lg">{selectedEmployee.fullName}</p>
+                    <p className="text-slate-500 text-sm">{selectedEmployee.email}</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => { setShowResetPassword(false); setResetPasswordResult(null); }}
+                      className="flex-1 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-slate-300 transition-colors"
+                    >
+                      إلغاء
+                    </button>
+                    <button
+                      onClick={handleResetPassword}
+                      disabled={actionLoading}
+                      className="flex-[2] py-3 bg-yellow-600 hover:bg-yellow-700 rounded-xl font-bold text-white transition-colors disabled:opacity-50"
+                    >
+                      {actionLoading ? 'جارِ التعيين...' : 'تأكيد إعادة التعيين'}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 mb-4">
+                    <p className="text-green-400 font-bold mb-3">✓ تم تعيين كلمة مرور جديدة</p>
+                    <div className="bg-zinc-950 rounded-lg p-4 font-mono text-lg text-white select-all">
+                      {resetPasswordResult.password}
+                    </div>
+                    <p className="text-slate-400 text-xs mt-3">
+                      هذه هي كلمة المرور الوحيدة — انسخها وأرسلها للموظف <strong>{resetPasswordResult.name}</strong>
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => { setShowResetPassword(false); setResetPasswordResult(null); }}
+                    className="w-full py-3 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold text-white transition-colors"
+                  >
+                    تم
+                  </button>
+                </>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+export default UserManagement;

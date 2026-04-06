@@ -308,10 +308,11 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Full Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
                   الاسم الثلاثي <span className="text-red-500">*</span>
                 </label>
                 <input
+                  id="fullName"
                   type="text"
                   name="fullName"
                   value={formData.fullName}
@@ -328,10 +329,11 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
 
               {/* Email */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                   البريد الإلكتروني <span className="text-red-500">*</span>
                 </label>
                 <input
+                  id="email"
                   type="email"
                   name="email"
                   value={formData.email}
@@ -348,10 +350,11 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
 
               {/* National ID */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="nationalId" className="block text-sm font-medium text-gray-700 mb-2">
                   رقم الهوية الوطنية <span className="text-red-500">*</span>
                 </label>
                 <input
+                  id="nationalId"
                   type="text"
                   name="nationalId"
                   value={formData.nationalId}
@@ -369,10 +372,11 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
 
               {/* Age */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="age" className="block text-sm font-medium text-gray-700 mb-2">
                   العمر <span className="text-red-500">*</span>
                 </label>
                 <input
+                  id="age"
                   type="number"
                   name="age"
                   value={formData.age}
@@ -391,10 +395,11 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
 
               {/* Marital Status */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="maritalStatus" className="block text-sm font-medium text-gray-700 mb-2">
                   الحالة الاجتماعية <span className="text-red-500">*</span>
                 </label>
                 <select
+                  id="maritalStatus"
                   name="maritalStatus"
                   value={formData.maritalStatus}
                   onChange={handleChange}
@@ -415,10 +420,11 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
 
               {/* Number of Children */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="numberOfChildren" className="block text-sm font-medium text-gray-700 mb-2">
                   عدد الأطفال
                 </label>
                 <input
+                  id="numberOfChildren"
                   type="number"
                   name="numberOfChildren"
                   value={formData.numberOfChildren}
@@ -436,10 +442,11 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
 
               {/* Military Service Status */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="militaryServiceStatus" className="block text-sm font-medium text-gray-700 mb-2">
                   حالة الخدمة العسكرية <span className="text-red-500">*</span>
                 </label>
                 <select
+                  id="militaryServiceStatus"
                   name="militaryServiceStatus"
                   value={formData.militaryServiceStatus}
                   onChange={handleChange}
@@ -466,10 +473,11 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Mobile Number */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="mobileNumber" className="block text-sm font-medium text-gray-700 mb-2">
                   رقم الجوال <span className="text-red-500">*</span>
                 </label>
                 <input
+                  id="mobileNumber"
                   type="text"
                   name="mobileNumber"
                   value={formData.mobileNumber}
@@ -487,10 +495,11 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
 
               {/* Address */}
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
                   العنوان <span className="text-red-500">*</span>
                 </label>
                 <input
+                  id="address"
                   type="text"
                   name="address"
                   value={formData.address}
@@ -513,10 +522,11 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Job Description */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="jobDescription" className="block text-sm font-medium text-gray-700 mb-2">
                   المسمى الوظيفي <span className="text-red-500">*</span>
                 </label>
                 <input
+                  id="jobDescription"
                   type="text"
                   name="jobDescription"
                   value={formData.jobDescription}
@@ -533,10 +543,11 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
 
               {/* Department */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-2">
                   القسم <span className="text-red-500">*</span>
                 </label>
                 <input
+                  id="department"
                   type="text"
                   name="department"
                   value={formData.department}
@@ -608,6 +619,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                       🔢 <strong>أول استخدام:</strong> أدخل رقم البداية وسيتم توليد الأرقام التالية تلقائياً
                     </p>
                     <input
+                      id="startingNumber"
                       type="number"
                       value={manualEmployeeId}
                       onChange={(e) => setManualEmployeeId(e.target.value)}
@@ -627,6 +639,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                 {employeeIdMode === 'manual' && (
                   <div className="mt-3">
                     <input
+                      id="manualEmployeeId"
                       type="number"
                       value={manualEmployeeId}
                       onChange={(e) => setManualEmployeeId(e.target.value)}
@@ -645,10 +658,11 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
 
               {/* Expected Salary */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="expectedSalary" className="block text-sm font-medium text-gray-700 mb-2">
                   الراتب المتوقع <span className="text-red-500">*</span>
                 </label>
                 <input
+                  id="expectedSalary"
                   type="number"
                   name="expectedSalary"
                   value={formData.expectedSalary}
@@ -667,10 +681,11 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
 
               {/* Insurance Number */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="insuranceNumber" className="block text-sm font-medium text-gray-700 mb-2">
                   رقم التأمين
                 </label>
                 <input
+                  id="insuranceNumber"
                   type="text"
                   name="insuranceNumber"
                   value={formData.insuranceNumber}
@@ -682,10 +697,11 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
 
               {/* Health Number */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="healthNumber" className="block text-sm font-medium text-gray-700 mb-2">
                   الرقم الصحي
                 </label>
                 <input
+                  id="healthNumber"
                   type="text"
                   name="healthNumber"
                   value={formData.healthNumber}

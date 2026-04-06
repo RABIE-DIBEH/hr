@@ -1,6 +1,6 @@
 import { AUTH_TOKEN_KEY } from './api';
 
-export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'HR' | 'MANAGER' | 'EMPLOYEE';
+export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'HR' | 'MANAGER' | 'PAYROLL' | 'EMPLOYEE';
 
 interface JwtPayload {
   sub: string;        // email
@@ -62,6 +62,7 @@ export function dashboardForRole(role: UserRole): string {
     case 'ADMIN':       return '/admin';
     case 'HR':          return '/hr';
     case 'MANAGER':     return '/manager';
+    case 'PAYROLL':     return '/payroll'; // Added missing Payroll dashboard
     case 'EMPLOYEE':    return '/dashboard';
   }
 }

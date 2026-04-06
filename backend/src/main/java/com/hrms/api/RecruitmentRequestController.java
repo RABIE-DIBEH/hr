@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -159,9 +160,10 @@ public class RecruitmentRequestController {
     /**
      * PUT /api/recruitment/process/{requestId}
      * Process a recruitment request (approve/reject)
+     * Returns generated credentials when a new employee is created (final approval).
      */
     @PutMapping("/process/{requestId}")
-    public ResponseEntity<?> processRequest(@PathVariable Long requestId,
+    public ResponseEntity<ApiResponse<Map<String, Object>>> processRequest(@PathVariable Long requestId,
                                             @Valid @RequestBody ProcessRecruitmentRequestDto dto,
                                             @AuthenticationPrincipal EmployeeUserDetails principal) {
         if (!hasAnyRole(principal, "MANAGER", "HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")) {
@@ -169,12 +171,17 @@ public class RecruitmentRequestController {
         }
 
         try {
-            RecruitmentRequest processed = recruitmentRequestService.processRequest(
+            Map<String, Object> result = recruitmentRequestService.processRequest(
                     requestId, dto.status(), dto.note(), dto.salary(), principal.getEmployeeId(), principal.getRoleName());
-            return ResponseEntity.ok(ApiResponse.success(
-                    new StatusResponseDto(processed.getStatus()),
-                    "Request processed successfully"
-            ));
+
+            String message = "Request processed successfully";
+            // If credentials were generated, update the message
+            if (result.containsKey("username")) {
+                message = String.format("Request approved! Employee credentials — Username: %s, Password: %s (Share with employee)",
+                        result.get("username"), result.get("password"));
+            }
+
+            return ResponseEntity.ok(ApiResponse.success(result, message));
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
         } catch (IllegalStateException e) {
