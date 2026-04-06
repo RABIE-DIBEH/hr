@@ -473,6 +473,9 @@ export const getPendingAdvanceRequestsPage = (params?: PaginationParams) =>
 export const getApprovedAdvancesAwaitingDeliveryPage = (params?: PaginationParams) =>
   getPaginatedPage<AdvanceRequest>('/advances/approved-awaiting-delivery', params);
 
+export const getDeliveredAdvancesPage = (month: number, year: number, params?: PaginationParams) =>
+  getPaginatedPage<AdvanceRequest>(`/advances/delivered?month=${month}&year=${year}`, params);
+
 export const getMyAdvanceRequests = () =>
   getPaginatedItems<AdvanceRequest>('/advances/my-requests');
 

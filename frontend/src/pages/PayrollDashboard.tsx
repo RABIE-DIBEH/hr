@@ -25,6 +25,7 @@ import {
   processAdvanceRequest,
   deliverAdvanceRequest,
   getApprovedAdvancesAwaitingDeliveryPage,
+  getDeliveredAdvancesPage,
   deliverAllApprovedAdvances,
   getAdvanceApprovalReport,
   getAllAdvanceRequestsPage,
@@ -54,17 +55,21 @@ const PayrollDashboard = () => {
   // Advances State
   const [pendingAdvances, setPendingAdvances] = useState<AdvanceRequest[]>([]);
   const [approvedAdvances, setApprovedAdvances] = useState<AdvanceRequest[]>([]);
+  const [deliveredAdvances, setDeliveredAdvances] = useState<AdvanceRequest[]>([]);
   const [allAdvances, setAllAdvances] = useState<AdvanceRequest[]>([]);
   const [processingAdvance, setProcessingAdvance] = useState<number | null>(null);
   const [advanceNote, setAdvanceNote] = useState<string>('');
   const [selectedAdvanceId, setSelectedAdvanceId] = useState<number | null>(null);
-  const [advancesSubTab, setAdvancesSubTab] = useState<'pending' | 'approved' | 'all'>('pending');
+  const [advancesSubTab, setAdvancesSubTab] = useState<'pending' | 'approved' | 'delivered' | 'all'>('pending');
   const [pendingPage, setPendingPage] = useState(0);
   const [pendingTotalPages, setPendingTotalPages] = useState(0);
   const [pendingTotalCount, setPendingTotalCount] = useState(0);
   const [approvedPage, setApprovedPage] = useState(0);
   const [approvedTotalPages, setApprovedTotalPages] = useState(0);
   const [approvedTotalCount, setApprovedTotalCount] = useState(0);
+  const [deliveredPage, setDeliveredPage] = useState(0);
+  const [deliveredTotalPages, setDeliveredTotalPages] = useState(0);
+  const [deliveredTotalCount, setDeliveredTotalCount] = useState(0);
   const [allPage, setAllPage] = useState(0);
   const [allTotalPages, setAllTotalPages] = useState(0);
   const [allTotalCount, setAllTotalCount] = useState(0);
@@ -117,9 +122,10 @@ const PayrollDashboard = () => {
   const loadAdvancesData = async () => {
     if (!canManagePayroll) return;
     try {
-      const [pendingRes, approvedRes, allRes] = await Promise.all([
+      const [pendingRes, approvedRes, deliveredRes, allRes] = await Promise.all([
         getPendingAdvanceRequestsPage({ page: pendingPage, size: 10 }),
         getApprovedAdvancesAwaitingDeliveryPage({ page: approvedPage, size: 10 }),
+        getDeliveredAdvancesPage(reportMonth, reportYear, { page: deliveredPage, size: 10 }),
         getAllAdvanceRequestsPage({ page: allPage, size: 10 }),
       ]);
       setPendingAdvances(pendingRes.data.items);
@@ -128,6 +134,9 @@ const PayrollDashboard = () => {
       setApprovedAdvances(approvedRes.data.items);
       setApprovedTotalPages(approvedRes.data.totalPages);
       setApprovedTotalCount(approvedRes.data.totalCount);
+      setDeliveredAdvances(deliveredRes.data.items);
+      setDeliveredTotalPages(deliveredRes.data.totalPages);
+      setDeliveredTotalCount(deliveredRes.data.totalCount);
       setAllAdvances(allRes.data.items);
       setAllTotalPages(allRes.data.totalPages);
       setAllTotalCount(allRes.data.totalCount);
@@ -177,7 +186,7 @@ const PayrollDashboard = () => {
     if (activeTab === 'recruitment') void loadRecruitmentData();
     if (activeTab === 'history') void loadHistoryData();
     if (activeTab === 'calculate') void loadEmployeesForCalc();
-  }, [activeTab, pendingPage, approvedPage, allPage, historyPage, recruitmentPage, canManagePayroll]);
+  }, [activeTab, pendingPage, approvedPage, deliveredPage, allPage, historyPage, recruitmentPage, canManagePayroll, reportMonth, reportYear]);
 
   const handleProcessRecruitment = async (requestId: number, status: 'Approved' | 'Rejected') => {
     setProcessingRecruitment(requestId);
@@ -507,6 +516,12 @@ const PayrollDashboard = () => {
 	                    معتمدة بانتظار التسليم ({approvedTotalCount})
 	                  </button>
 	                  <button
+	                    onClick={() => setAdvancesSubTab('delivered')}
+	                    className={`pb-4 px-4 font-bold transition-all ${advancesSubTab === 'delivered' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-slate-500'}`}
+	                  >
+	                    سجل التسليمات ({deliveredTotalCount})
+	                  </button>
+	                  <button
 	                    onClick={() => setAdvancesSubTab('all')}
 	                    className={`pb-4 px-4 font-bold transition-all ${advancesSubTab === 'all' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-slate-500'}`}
 	                  >
@@ -584,8 +599,8 @@ const PayrollDashboard = () => {
 	                        ))}
 	                      </div>
 	                    )
-	                  ) : advancesSubTab === 'approved' ? (
-	                    <>
+                  ) : advancesSubTab === 'approved' ? (
+                    <>
 	                      <div className="p-6 border-b border-white/5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
 	                        <div>
 	                          <p className="text-white font-bold">معتمدة بانتظار التسليم</p>
@@ -643,10 +658,46 @@ const PayrollDashboard = () => {
 	                          ))}
 	                        </div>
 	                      )}
-	                    </>
-	                  ) : (
-	                    <div className="overflow-x-auto">
-	                      <table className="w-full text-right">
+                    </>
+                  ) : advancesSubTab === 'delivered' ? (
+                    <>
+                      <div className="p-6 border-b border-white/5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                        <div>
+                          <p className="text-white font-bold">سجل التسليمات</p>
+                          <p className="text-slate-400 text-xs mt-1">يعرض كل السلف التي تم تسليمها ضمن شهر الراتب المحدد ({reportMonth}/{reportYear}).</p>
+                        </div>
+                      </div>
+
+                      {deliveredAdvances.length === 0 ? (
+                        <div className="p-20 text-center text-slate-500">لا توجد سلف تم تسليمها لهذا الشهر.</div>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-right">
+                            <thead className="bg-white/5 text-slate-400 text-[11px] font-black uppercase tracking-wider">
+                              <tr>
+                                <th className="p-6">الموظف</th>
+                                <th className="p-6">المبلغ</th>
+                                <th className="p-6">تاريخ التسليم</th>
+                                <th className="p-6">ملاحظة</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5 text-sm">
+                              {deliveredAdvances.map((adv) => (
+                                <tr key={adv.advanceId} className="hover:bg-white/[0.02]">
+                                  <td className="p-6 font-bold text-slate-100">{adv.employeeName}</td>
+                                  <td className="p-6 text-blue-300 font-bold">{adv.amount} ر.س</td>
+                                  <td className="p-6 text-slate-500">{adv.paidAt ? new Date(adv.paidAt).toLocaleString('ar-SA') : '—'}</td>
+                                  <td className="p-6 text-slate-400">{adv.hrNote || '—'}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-right">
 	                        <thead className="bg-white/5 text-slate-400 text-[11px] font-black uppercase tracking-wider">
 	                          <tr>
 	                            <th className="p-6">الموظف</th>
@@ -691,14 +742,16 @@ const PayrollDashboard = () => {
 	                  )}
 	                  {advancesSubTab === 'pending' ? (
 	                    <PaginationControls page={pendingPage} totalPages={pendingTotalPages} totalCount={pendingTotalCount} onPageChange={setPendingPage} />
-	                  ) : advancesSubTab === 'approved' ? (
-	                    <PaginationControls page={approvedPage} totalPages={approvedTotalPages} totalCount={approvedTotalCount} onPageChange={setApprovedPage} />
-	                  ) : (
-	                    <PaginationControls page={allPage} totalPages={allTotalPages} totalCount={allTotalCount} onPageChange={setAllPage} />
-	                  )}
-	                </div>
-	              </>
-	            )}
+                  ) : advancesSubTab === 'approved' ? (
+                    <PaginationControls page={approvedPage} totalPages={approvedTotalPages} totalCount={approvedTotalCount} onPageChange={setApprovedPage} />
+                  ) : advancesSubTab === 'delivered' ? (
+                    <PaginationControls page={deliveredPage} totalPages={deliveredTotalPages} totalCount={deliveredTotalCount} onPageChange={setDeliveredPage} />
+                  ) : (
+                    <PaginationControls page={allPage} totalPages={allTotalPages} totalCount={allTotalCount} onPageChange={setAllPage} />
+                  )}
+                </div>
+              </>
+            )}
 
             {activeTab === 'recruitment' && (
               <div className="bg-luxury-surface rounded-[2.5rem] border border-white/5 overflow-hidden">

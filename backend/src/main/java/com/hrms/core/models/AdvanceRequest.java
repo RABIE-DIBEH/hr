@@ -33,10 +33,12 @@ public class AdvanceRequest {
     @Column(name = "requested_at")
     private LocalDateTime requestedAt;
 
-    @Column(name = "salary_month", nullable = false)
+    // Nullable for safe schema evolution with ddl-auto=update on existing databases.
+    @Column(name = "salary_month")
     private Integer salaryMonth;
 
-    @Column(name = "salary_year", nullable = false)
+    // Nullable for safe schema evolution with ddl-auto=update on existing databases.
+    @Column(name = "salary_year")
     private Integer salaryYear;
 
     @Column(name = "processed_at")

@@ -223,6 +223,31 @@ public class AdvanceRequestController {
     }
 
     /**
+     * GET /api/advances/delivered
+     * Payroll delivered history (by salary month/year bucket).
+     */
+    @GetMapping("/delivered")
+    public ResponseEntity<ApiResponse<PaginatedResponse<AdvanceRequestResponse>>> getDeliveredForSalaryMonthYear(
+            @RequestParam int month,
+            @RequestParam int year,
+            @AuthenticationPrincipal EmployeeUserDetails principal,
+            @PageableDefault(size = 20) Pageable pageable) {
+        if (!hasAnyRole(principal, "PAYROLL", "SUPER_ADMIN")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+        }
+
+        Page<AdvanceRequest> page = advanceRequestService.getDeliveredForSalaryMonthYear(month, year, pageable);
+        List<AdvanceRequestResponse> responses = page.getContent().stream()
+                .map(this::toResponse)
+                .toList();
+
+        return ResponseEntity.ok(ApiResponse.success(
+                PaginatedResponse.of(responses, page.getTotalElements(), page.getNumber(), page.getSize()),
+                "Delivered advances retrieved successfully"
+        ));
+    }
+
+    /**
      * PUT /api/advances/deliver-all
      * Payroll bulk action: deliver all payroll-approved advances for a given month/year.
      */
