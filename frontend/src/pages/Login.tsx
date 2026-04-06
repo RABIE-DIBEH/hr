@@ -49,13 +49,13 @@ const Login = () => {
           <div className="w-20 h-20 gold-gradient rounded-[24px] flex items-center justify-center mx-auto mb-8 shadow-[0_10px_40px_rgba(212,175,55,0.3)]">
             <ShieldCheck size={40} className="text-black" />
           </div>
-          <div className="mx-auto flex w-full max-w-[260px] flex-col items-center">
-            <h1 className="luxury-display mb-3 w-full text-center text-[2rem] font-extrabold leading-none text-luxury-accent drop-shadow-[0_0_18px_rgba(212,175,55,0.3)] sm:text-[2.35rem]">
-            RABIO&amp;RADO
-            </h1>
-            <p className="text-center text-white/55 font-medium text-sm">النظام المتكامل لادارة الشركات</p>
-          </div>
-        </div>
+	          <div className="mx-auto flex w-full flex-col items-center">
+	            <h1 className="luxury-display mb-3 w-fit mx-auto text-center text-[2rem] font-extrabold leading-none text-luxury-accent drop-shadow-[0_0_18px_rgba(212,175,55,0.3)] sm:text-[2.35rem]">
+	              RABIO&amp;RADO
+	            </h1>
+	            <p className="w-fit mx-auto text-center text-white/55 font-medium text-sm">النظام المتكامل لادارة الشركات</p>
+	          </div>
+	        </div>
 
         <form onSubmit={handleLogin} className="space-y-8">
           {error && (
