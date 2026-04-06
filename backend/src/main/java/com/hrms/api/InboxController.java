@@ -196,8 +196,10 @@ public class InboxController {
             inboxService.archiveMessage(messageId, role, employeeId);
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
         }
-        
+
         return ResponseEntity.ok(ApiResponse.success(
                 new InboxActionResponseDto("archived", messageId),
                 "Message archived successfully"
@@ -226,6 +228,7 @@ public class InboxController {
                 dto.message(),
                 dto.targetEmployeeId(),
                 dto.senderName(),
+                principal.getEmployeeId(),
                 dto.priority()
             );
         } else {
@@ -234,6 +237,7 @@ public class InboxController {
                 dto.message(),
                 dto.targetRole(),
                 dto.senderName(),
+                principal.getEmployeeId(),
                 dto.priority()
             );
         }
@@ -259,6 +263,8 @@ public class InboxController {
             inboxService.deleteMessage(messageId, role, employeeId);
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
         }
 
         return ResponseEntity.ok(ApiResponse.success(

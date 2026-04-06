@@ -14,17 +14,21 @@ import java.util.List;
 @Repository
 public interface LeaveRequestRepository extends JpaRepository<LeaveRequest, Long> {
     
-    @Query("SELECT l FROM LeaveRequest l WHERE l.employee.employeeId = :employeeId ORDER BY l.requestedAt DESC")
+    @Query("SELECT l FROM LeaveRequest l JOIN FETCH l.employee WHERE l.employee.employeeId = :employeeId ORDER BY l.requestedAt DESC")
     Page<LeaveRequest> findAllByEmployeeId(Long employeeId, Pageable pageable);
 
-    @Query("SELECT l FROM LeaveRequest l WHERE l.employee.managerId = :managerId AND l.status = 'PENDING_MANAGER'")
+    @Query("SELECT l FROM LeaveRequest l JOIN FETCH l.employee WHERE l.employee.managerId = :managerId AND l.status = 'PENDING_MANAGER'")
     Page<LeaveRequest> findPendingRequestsForManager(Long managerId, Pageable pageable);
 
-    @Query("SELECT l FROM LeaveRequest l WHERE l.status = 'PENDING_HR'")
+    @Query("SELECT l FROM LeaveRequest l JOIN FETCH l.employee WHERE l.status IN ('PENDING_HR', 'PENDING_MANAGER') " +
+           "ORDER BY l.requestedAt DESC")
     Page<LeaveRequest> findPendingRequestsForHr(Pageable pageable);
 
-    @Query("SELECT l FROM LeaveRequest l WHERE (l.startDate <= :end AND l.endDate >= :start) AND l.status != 'REJECTED'")
+    @Query("SELECT l FROM LeaveRequest l JOIN FETCH l.employee WHERE (l.startDate <= :end AND l.endDate >= :start) AND l.status != 'REJECTED'")
     List<LeaveRequest> findAllInRange(@Param("start") LocalDate start, @Param("end") LocalDate end);
+
+    @Query("SELECT l FROM LeaveRequest l JOIN FETCH l.employee WHERE l.employee.employeeId = :employeeId AND (l.startDate <= :end AND l.endDate >= :start) AND l.status != 'REJECTED'")
+    List<LeaveRequest> findEmployeeLeavesInRange(@Param("employeeId") Long employeeId, @Param("start") LocalDate start, @Param("end") LocalDate end);
 
     /**
      * Find all leave requests for a given month and year (by checking if start or end falls in that month)

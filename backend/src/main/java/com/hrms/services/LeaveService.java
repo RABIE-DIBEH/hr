@@ -35,24 +35,33 @@ public class LeaveService {
     @Transactional
     public LeaveRequest submitRequest(Employee employee, LeaveRequest requestData) {
         requestData.setEmployee(employee);
-        requestData.setStatus("PENDING_MANAGER");
+        
+        // If employee has no manager (null or 0), it goes straight to HR
+        if (employee.getManagerId() == null || employee.getManagerId() == 0) {
+            requestData.setStatus("PENDING_HR");
+        } else {
+            requestData.setStatus("PENDING_MANAGER");
+        }
+        
         LeaveRequest saved = leaveRequestRepository.save(requestData);
 
-        // Notify specific manager if exists, otherwise notify general MANAGER role
-        if (employee.getManagerId() != null) {
+        // Notify specific manager if exists, otherwise notify HR role
+        if (employee.getManagerId() != null && employee.getManagerId() != 0) {
             inboxService.sendPersonalMessage(
                 "New Leave Request",
                 "Employee " + employee.getFullName() + " has submitted a leave request for " + saved.getLeaveType() + ".",
                 employee.getManagerId(),
                 "System",
+                null,
                 "MEDIUM"
             );
         } else {
             inboxService.sendMessage(
-                "New Leave Request",
-                "Employee " + employee.getFullName() + " has submitted a leave request for " + saved.getLeaveType() + ".",
-                "MANAGER",
+                "New Leave Request (No Manager assigned)",
+                "Employee " + employee.getFullName() + " (who has no manager) has submitted a leave request. It is now awaiting HR approval.",
+                "HR",
                 "System",
+                null,
                 "MEDIUM"
             );
         }
@@ -114,6 +123,7 @@ public class LeaveService {
                     message,
                     requester.getEmployeeId(),
                     "HR/Manager",
+                    null,
                     saved.getStatus().equals("REJECTED") ? "HIGH" : "MEDIUM"
                 );
 
@@ -141,6 +151,7 @@ public class LeaveService {
                         "A leave request from " + requester.getFullName() + " has been approved by their manager and is now awaiting HR final review.",
                         "HR",
                         "System",
+                        null,
                         "MEDIUM"
                     );
                 }
@@ -162,22 +173,32 @@ public class LeaveService {
         return false;
     }
 
+    @Transactional(readOnly = true)
     public Page<LeaveRequest> getEmployeeRequests(Long employeeId, Pageable pageable) {
         return leaveRequestRepository.findAllByEmployeeId(employeeId, pageable);
     }
 
+    @Transactional(readOnly = true)
     public Page<LeaveRequest> getPendingRequestsForManager(Long managerId, Pageable pageable) {
         return leaveRequestRepository.findPendingRequestsForManager(managerId, pageable);
     }
 
+    @Transactional(readOnly = true)
     public Page<LeaveRequest> getPendingRequestsForHr(Pageable pageable) {
         return leaveRequestRepository.findPendingRequestsForHr(pageable);
     }
 
     /**
-     * Get all leaves (Approved/Pending) within a date range for the calendar view.
+     * Get leaves within a date range for the calendar view.
+     * If employeeId is null, returns all leaves (for HR/Admins).
+     * If employeeId is provided, returns only that employee's leaves.
      */
-    public java.util.List<LeaveRequest> getAllLeavesInRange(java.time.LocalDate start, java.time.LocalDate end) {
-        return leaveRequestRepository.findAllInRange(start, end);
+    @Transactional(readOnly = true)
+    public java.util.List<LeaveRequest> getAllLeavesInRange(java.time.LocalDate start, java.time.LocalDate end, Long employeeId) {
+        if (employeeId == null) {
+            return leaveRequestRepository.findAllInRange(start, end);
+        } else {
+            return leaveRequestRepository.findEmployeeLeavesInRange(employeeId, start, end);
+        }
     }
 }

@@ -1,89 +1,97 @@
-import { useEffect, useEffectEvent, useState } from 'react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Clock,
   Calendar,
   CheckCircle,
-  AlertCircle,
   TrendingUp,
   ArrowUpRight,
   Monitor,
   HandCoins,
   DollarSign,
   User,
+  X,
+  ChevronRight,
 } from 'lucide-react';
 import PaginationControls from '../components/PaginationControls';
 import CurrentDateTimePanel from '../components/CurrentDateTimePanel';
 import AdvanceRequestForm from '../components/AdvanceRequestForm';
 import LeaveRequestForm from '../components/LeaveRequestForm';
 import ProfileEditModal from '../components/ProfileEditModal';
-import { getCurrentEmployee, getMyAdvanceRequests, getMyPayrollSlipsPage, type EmployeeProfile, type AdvanceRequest, type PayrollSlip } from '../services/api';
+import { 
+  getCurrentEmployee, 
+  getMyAdvanceRequests, 
+  getMyPayrollSlipsPage, 
+  getMyAttendancePage, 
+  getMyLeaveRequests
+} from '../services/api';
 
 const EmployeeDashboard = () => {
-  const [status] = useState('Checked In');
-  const [me, setMe] = useState<EmployeeProfile | null>(null);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [showAdvanceForm, setShowAdvanceForm] = useState(false);
   const [showLeaveForm, setShowLeaveForm] = useState(false);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
-  
-  const [myAdvances, setMyAdvances] = useState<AdvanceRequest[]>([]);
-  const [loadingAdvances, setLoadingAdvances] = useState(false);
-  const [myPayrollSlips, setMyPayrollSlips] = useState<PayrollSlip[]>([]);
-  const [loadingPayroll, setLoadingPayroll] = useState(false);
+  const [showDayDetails, setShowDayDetails] = useState(false);
   const [payrollPage, setPayrollPage] = useState(0);
-  const [payrollTotalPages, setPayrollTotalPages] = useState(0);
-  const [payrollTotalCount, setPayrollTotalCount] = useState(0);
 
-  const loadEmployeeData = useEffectEvent(async () => {
-    if (!me) return;
-    setLoadingAdvances(true);
-    setLoadingPayroll(true);
-
-    try {
-      const [advancesResult, payrollResult] = await Promise.all([
-        getMyAdvanceRequests(),
-        getMyPayrollSlipsPage({ page: payrollPage, size: 6 }),
-      ]);
-      setMyAdvances(advancesResult.data);
-      setMyPayrollSlips(payrollResult.data.items);
-      setPayrollTotalPages(payrollResult.data.totalPages);
-      setPayrollTotalCount(payrollResult.data.totalCount);
-    } catch (err) {
-      console.error('Failed to load dashboard data', err);
-    } finally {
-      setLoadingAdvances(false);
-      setLoadingPayroll(false);
-    }
+  // Queries
+  const { data: me } = useQuery({
+    queryKey: ['me'],
+    queryFn: async () => (await getCurrentEmployee()).data,
   });
 
-  useEffect(() => {
-    getCurrentEmployee()
-      .then((res) => setMe(res.data))
-      .catch(() => setMe(null));
-  }, []);
+  const { data: myAdvances = [], isLoading: loadingAdvances } = useQuery({
+    queryKey: ['myAdvances'],
+    queryFn: async () => (await getMyAdvanceRequests()).data,
+    enabled: !!me,
+  });
 
-  useEffect(() => {
-    if (me) void loadEmployeeData();
-  }, [me, payrollPage]);
+  const { data: myLeaves = [], isLoading: loadingLeaves } = useQuery({
+    queryKey: ['myLeaves'],
+    queryFn: async () => (await getMyLeaveRequests()).data,
+    enabled: !!me,
+  });
 
-  // Specific refresh for advances after a successful submission
-  const refreshAdvances = async () => {
-    setLoadingAdvances(true);
-    try {
-      const res = await getMyAdvanceRequests();
-      setMyAdvances(res.data);
-    } finally {
-      setLoadingAdvances(false);
-    }
-  };
+  const { data: payrollData, isLoading: loadingPayroll } = useQuery({
+    queryKey: ['myPayroll', payrollPage],
+    queryFn: async () => (await getMyPayrollSlipsPage({ page: payrollPage, size: 6 })).data,
+    enabled: !!me,
+  });
+
+  const { data: attendanceData, isLoading: loadingAttendance } = useQuery({
+    queryKey: ['myAttendanceLatest'],
+    queryFn: async () => (await getMyAttendancePage({ page: 0, size: 3 })).data,
+    enabled: !!me,
+  });
+
+  const { data: todayAttendance, isLoading: loadingDayDetails } = useQuery({
+    queryKey: ['myAttendanceToday'],
+    queryFn: async () => (await getMyAttendancePage({ page: 0, size: 1 })).data,
+    enabled: showDayDetails,
+  });
+
+  const myPayrollSlips = payrollData?.items || [];
+  const payrollTotalPages = payrollData?.totalPages || 0;
+  const payrollTotalCount = payrollData?.totalCount || 0;
+  const latestAttendance = attendanceData?.items || [];
+  const todayRecord = todayAttendance?.items?.[0] || null;
 
   const handleAdvanceSuccess = () => {
     setShowAdvanceForm(false);
-    void refreshAdvances();
+    queryClient.invalidateQueries({ queryKey: ['myAdvances'] });
   };
 
-  const handleProfileUpdate = (updatedMe: EmployeeProfile) => {
-    setMe(updatedMe);
+  const handleLeaveSuccess = () => {
+    setShowLeaveForm(false);
+    queryClient.invalidateQueries({ queryKey: ['myLeaves'] });
+  };
+
+  const handleProfileUpdate = () => {
+    setShowProfileEdit(false);
+    queryClient.invalidateQueries({ queryKey: ['me'] });
   };
 
   const container = {
@@ -128,279 +136,265 @@ const EmployeeDashboard = () => {
             title="تعديل الملف الشخصي"
           >
             <User size={18} />
-            <span className="text-sm font-medium">تعديل الملف</span>
-          </button>
-          <button
-            onClick={() => alert('التقويم قيد التطوير')}
-            className="bg-luxury-surface border border-white/5 p-3 rounded-xl shadow-sm hover:bg-white/5 transition-all"
-          >
-            <Calendar size={20} className="text-slate-300" />
-          </button>
-          <button 
-            onClick={() => alert('إحصائيات الشهر قيد التطوير')}
-            className="bg-blue-600 text-white px-5 py-3 rounded-xl shadow-lg shadow-blue-900/20 font-semibold flex items-center gap-2 hover:bg-blue-700 transition-all cursor-pointer"
-          >
-            <TrendingUp size={18} />
-            <span>إحصائيات الشهر</span>
           </button>
         </div>
       </header>
 
-      <motion.div 
+      {/* Hero Stats */}
+      <motion.div
         variants={container}
         initial="hidden"
         animate="show"
-        className="grid grid-cols-1 lg:grid-cols-3 gap-8"
+        className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12"
       >
-        {/* Status Card */}
-        <motion.div variants={item} className="lg:col-span-2 bg-luxury-surface rounded-[2rem] p-8 shadow-sm border border-white/5 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-bl-[5rem] -mr-10 -mt-10 transition-all group-hover:scale-110 duration-500"></div>
-          
+        <motion.div variants={item} className="bg-luxury-surface p-6 rounded-[2rem] border border-white/5 shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-full blur-3xl -mr-8 -mt-8" />
           <div className="relative z-10">
-            <div className="flex justify-between items-center mb-10">
-              <div className="bg-blue-600/10 p-3 rounded-2xl">
-                <Monitor className="text-blue-400" size={28} />
-              </div>
-              <span className={`px-4 py-1.5 rounded-full text-sm font-bold border ${
-                status === 'Checked In' 
-                  ? 'bg-green-500/10 text-green-400 border-green-500/20' 
-                  : 'bg-white/5 text-slate-500 border-white/10'
-              }`}>
-                {status === 'Checked In' ? '• متواجد حالياً' : '• غير متواجد'}
-              </span>
+            <div className="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center mb-4 text-blue-400 group-hover:scale-110 transition-transform">
+              <Clock size={24} />
             </div>
-
-            <div className="flex flex-col md:flex-row md:items-end gap-10">
-              <div className="flex-1">
-                <h3 className="text-slate-500 text-sm font-semibold uppercase tracking-wider mb-2">ساعات دوام اليوم</h3>
-                <p className="text-5xl font-black text-white tabular-nums">08:15 <span className="text-slate-700 font-light">—</span> --:--</p>
-              </div>
-              <div className="flex-1 border-r border-white/5 pr-8">
-                <h3 className="text-slate-500 text-sm font-semibold mb-2">إجمالي الوقت الفعلي</h3>
-                <p className="text-3xl font-bold text-white">04 <span className="text-slate-400 text-xl font-medium">ساعة</span> 30 <span className="text-slate-400 text-xl font-medium">دقيقة</span></p>
-              </div>
-            </div>
-
-            <div className="mt-12 flex items-center gap-4">
-              <button 
-                onClick={() => alert("قريباً - قيد التطوير")}
-                className="bg-white text-black px-8 py-4 rounded-2xl font-bold hover:bg-slate-200 transition-all shadow-xl shadow-white/5"
-              >
-                عرض تفاصيل اليوم
-              </button>
-              <p className="text-sm text-slate-500 font-medium">تم التحديث منذ دقيقتين</p>
+            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">ساعات الشهر</p>
+            <h3 className="text-2xl font-black text-white">160 ساعة</h3>
+            <div className="mt-3 flex items-center gap-1.5 text-[10px] font-bold text-blue-400 bg-blue-500/10 w-fit px-2.5 py-1 rounded-full uppercase">
+              <TrendingUp size={10} /> +12% vs last month
             </div>
           </div>
         </motion.div>
 
-        {/* Quick Stats Column */}
-        <div className="flex flex-col gap-6">
-          <motion.div variants={item} className="bg-luxury-surface p-6 rounded-3xl shadow-sm border border-white/5 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="bg-purple-500/10 p-3 rounded-2xl">
-                <Calendar className="text-purple-400" size={24} />
-              </div>
-              <div>
-                <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">ساعات الشهر</p>
-                <p className="text-xl font-bold text-white">172 / 180</p>
-              </div>
+        <motion.div variants={item} className="bg-luxury-surface p-6 rounded-[2rem] border border-white/5 shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-3xl -mr-8 -mt-8" />
+          <div className="relative z-10">
+            <div className="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center mb-4 text-emerald-400 group-hover:scale-110 transition-transform">
+              <CheckCircle size={24} />
             </div>
-            <div className="w-12 h-12 rounded-full border-4 border-white/5 border-t-purple-500 flex items-center justify-center text-[10px] font-bold text-white">
-              95%
+            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">الحضور اليومي</p>
+            <h3 className="text-2xl font-black text-white">منتظم</h3>
+            <div className="mt-3 flex items-center gap-1.5 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 w-fit px-2.5 py-1 rounded-full uppercase tracking-tighter">
+              98% Reliability Score
             </div>
-          </motion.div>
+          </div>
+        </motion.div>
 
-          <motion.div variants={item} className="bg-luxury-surface p-6 rounded-3xl shadow-sm border border-white/5">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="bg-orange-500/10 p-3 rounded-2xl">
-                <AlertCircle className="text-orange-400" size={24} />
-              </div>
-              <div>
-                <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">ساعات التأخير</p>
-                <p className="text-xl font-bold text-orange-400">45 دقيقة</p>
-              </div>
+        <motion.div variants={item} className="bg-luxury-surface p-6 rounded-[2rem] border border-white/5 shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 rounded-full blur-3xl -mr-8 -mt-8" />
+          <div className="relative z-10">
+            <div className="w-12 h-12 bg-purple-500/20 rounded-2xl flex items-center justify-center mb-4 text-purple-400 group-hover:scale-110 transition-transform">
+              <DollarSign size={24} />
             </div>
-            <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
-              <div className="bg-orange-500 h-full w-1/3"></div>
+            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">الراتب المتوقع</p>
+            <h3 className="text-2xl font-black text-white">{me?.baseSalary?.toLocaleString() ?? 0} ر.س</h3>
+            <div className="mt-3 flex items-center gap-1.5 text-[10px] font-bold text-purple-400 bg-purple-500/10 w-fit px-2.5 py-1 rounded-full uppercase">
+              Current Cycle
             </div>
-          </motion.div>
+          </div>
+        </motion.div>
 
-          <motion.div variants={item} className="bg-blue-600 p-8 rounded-[2rem] shadow-xl shadow-blue-900/20 text-white flex flex-col justify-between aspect-square lg:aspect-auto h-48">
-            <div className="flex justify-between items-start">
-              <p className="font-bold text-lg leading-tight">طلب إجازة<br/>سريع</p>
+        <motion.div variants={item} className="bg-luxury-surface p-6 rounded-[2rem] border border-white/5 shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/10 rounded-full blur-3xl -mr-8 -mt-8" />
+          <div className="relative z-10">
+            <div className="w-12 h-12 bg-orange-500/20 rounded-2xl flex items-center justify-center mb-4 text-orange-400 group-hover:scale-110 transition-transform">
               <ArrowUpRight size={24} />
             </div>
-            <button 
-              onClick={() => setShowLeaveForm(true)}
-              className="bg-white/20 backdrop-blur-md hover:bg-white/30 transition-all py-3 rounded-xl font-bold text-sm"
-            >
-              إنشاء طلب جديد
-            </button>
-          </motion.div>
-
-          {/* Request Advance Card */}
-          <motion.div variants={item} className="bg-gradient-to-br from-purple-600 to-purple-700 p-8 rounded-[2rem] shadow-xl shadow-purple-900/20 text-white flex flex-col justify-between aspect-square lg:aspect-auto h-48">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="font-bold text-lg leading-tight">طلب سلفة<br/>مالية</p>
-                <p className="text-purple-200 text-xs mt-1">خصم من الراتب الشهري</p>
-              </div>
-              <HandCoins size={24} className="text-purple-200" />
+            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">رصيد الإجازات</p>
+            <h3 className="text-2xl font-black text-white">14 يوم</h3>
+            <div className="mt-3 flex items-center gap-1.5 text-[10px] font-bold text-orange-400 bg-orange-500/10 w-fit px-2.5 py-1 rounded-full uppercase">
+              Valid until Dec 2026
             </div>
-            <button
-              onClick={() => setShowAdvanceForm(true)}
-              className="bg-white/20 backdrop-blur-md hover:bg-white/30 transition-all py-3 rounded-xl font-bold text-sm"
-            >
-              تقديم الطلب
-            </button>
-          </motion.div>
-        </div>
+          </div>
+        </motion.div>
       </motion.div>
 
-      {/* My Advances Section */}
-      <motion.section
-        initial={{ opacity: 1, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="mt-12 bg-luxury-surface rounded-[2rem] p-8 shadow-sm border border-white/5"
-      >
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-xl font-bold text-white tracking-tight">سلفي المالية</h2>
-          <button
-            onClick={() => setShowAdvanceForm(true)}
-            className="text-purple-400 text-sm font-bold hover:underline"
-          >
-            طلب سلفة جديدة
-          </button>
-        </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        {/* Quick Actions & Requests */}
+        <div className="lg:col-span-1 space-y-10">
+          <section className="bg-luxury-surface rounded-[2.5rem] p-8 shadow-sm border border-white/5">
+            <h2 className="text-xl font-bold text-white mb-6 tracking-tight arabic-text">إجراءات سريعة</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={() => setShowLeaveForm(true)}
+                className="bg-white/5 hover:bg-white/10 p-5 rounded-3xl flex flex-col items-center gap-3 transition-all border border-white/5 active:scale-95 group"
+              >
+                <div className="bg-purple-600/20 p-3 rounded-2xl text-purple-400 group-hover:scale-110 transition-all">
+                  <Calendar size={24} />
+                </div>
+                <span className="text-sm font-bold text-slate-100">طلب إجازة</span>
+              </button>
+              <button
+                onClick={() => setShowAdvanceForm(true)}
+                className="bg-white/5 hover:bg-white/10 p-5 rounded-3xl flex flex-col items-center gap-3 transition-all border border-white/5 active:scale-95 group"
+              >
+                <div className="bg-emerald-600/20 p-3 rounded-2xl text-emerald-400 group-hover:scale-110 transition-all">
+                  <HandCoins size={24} />
+                </div>
+                <span className="text-sm font-bold text-slate-100">طلب سلفة</span>
+              </button>
+              <button
+                onClick={() => navigate('/clock')}
+                className="bg-white/5 hover:bg-white/10 p-5 rounded-3xl flex flex-col items-center gap-3 transition-all border border-white/5 active:scale-95 group"
+              >
+                <div className="bg-blue-600/20 p-3 rounded-2xl text-blue-400 group-hover:scale-110 transition-all">
+                  <Monitor size={24} />
+                </div>
+                <span className="text-sm font-bold text-slate-100">تسجيل الدوام</span>
+              </button>
+              <button
+                onClick={() => navigate('/goals')}
+                className="bg-white/5 hover:bg-white/10 p-5 rounded-3xl flex flex-col items-center gap-3 transition-all border border-white/5 active:scale-95 group"
+              >
+                <div className="bg-orange-600/20 p-3 rounded-2xl text-orange-400 group-hover:scale-110 transition-all">
+                  <TrendingUp size={24} />
+                </div>
+                <span className="text-sm font-bold text-slate-100">أهدافي</span>
+              </button>
+            </div>
+          </section>
 
-        {loadingAdvances ? (
-          <div className="p-8 text-center text-slate-500">
-            <p>جاري تحميل السلف...</p>
-          </div>
-        ) : myAdvances.length === 0 ? (
-          <div className="p-8 text-center text-slate-500">
-            <HandCoins size={40} className="mx-auto mb-3 opacity-40 text-slate-600" />
-            <p className="font-medium">لا توجد سلف مالية حالياً</p>
-            <p className="text-sm mt-1 text-slate-600">يمكنك طلب سلفة جديدة من الزر أعلاه</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-right border-collapse">
-              <thead className="bg-white/5 text-slate-400 text-[10px] font-black uppercase tracking-[0.15em]">
-                <tr>
-                  <th className="p-4">المبلغ</th>
-                  <th className="p-4">السبب</th>
-                  <th className="p-4">الحالة</th>
-                  <th className="p-4">تاريخ الطلب</th>
-                  <th className="p-4">ملاحظات</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
+          {/* Pending Advance Requests */}
+          <section className="bg-luxury-surface rounded-[2.5rem] p-8 shadow-sm border border-white/5 overflow-hidden">
+            <h2 className="text-xl font-bold text-white mb-6 tracking-tight arabic-text">طلبات السلف الحالية</h2>
+            {loadingAdvances ? (
+              <div className="text-center py-6 text-slate-500">جاري التحميل...</div>
+            ) : myAdvances.length === 0 ? (
+              <div className="text-center py-10 opacity-40">
+                <HandCoins size={40} className="mx-auto mb-3" />
+                <p className="text-sm font-medium">لا توجد طلبات سلف معلقة</p>
+              </div>
+            ) : (
+              <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                 {myAdvances.map((adv) => (
-                  <tr key={adv.advanceId} className="hover:bg-white/5 transition-all">
-                    <td className="p-4 font-bold text-purple-300">{adv.amount?.toLocaleString() || 0} ر.س</td>
-                    <td className="p-4 text-slate-300 text-sm">{adv.reason || '—'}</td>
-                    <td className="p-4">
-                      <span
-                        className={`px-3 py-1 rounded-lg text-xs font-bold ${
-                          adv.status === 'Approved'
-                            ? 'bg-green-500/10 text-green-400'
-                            : adv.status === 'Rejected'
-                            ? 'bg-red-500/10 text-red-400'
-                            : adv.status === 'Delivered'
-                            ? 'bg-blue-500/10 text-blue-400'
-                            : 'bg-orange-500/10 text-orange-400'
-                        }`}
-                      >
-                        {adv.status === 'Approved'
-                          ? 'موافق'
-                          : adv.status === 'Rejected'
-                          ? 'مرفوض'
-                          : adv.status === 'Delivered'
-                          ? 'تم التسليم'
-                          : 'معلق'}
+                  <div key={adv.advanceId} className="bg-white/5 p-5 rounded-[2rem] border border-white/5">
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="text-purple-400 font-black text-lg">{adv.amount} ر.س</span>
+                      <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${
+                        adv.status === 'Approved' ? 'bg-emerald-500/10 text-emerald-400' : 
+                        adv.status === 'Rejected' ? 'bg-red-500/10 text-red-400' : 
+                        'bg-orange-500/10 text-orange-400'
+                      }`}>
+                        {adv.status === 'Approved' ? 'مقبول' : adv.status === 'Rejected' ? 'مرفوض' : 'معلق'}
                       </span>
-                    </td>
-                    <td className="p-4 text-slate-400 text-sm">
-                      {adv.requestedAt
-                        ? new Date(adv.requestedAt).toLocaleDateString('ar-SA')
-                        : '—'}
-                    </td>
-                    <td className="p-4 text-slate-500 text-sm">{adv.hrNote || '—'}</td>
-                  </tr>
+                    </div>
+                    <p className="text-slate-400 text-[10px] font-medium leading-relaxed italic">{adv.reason || 'لا يوجد سبب مكتوب'}</p>
+                    <div className="mt-3 flex items-center gap-2 text-[10px] text-slate-600 font-bold uppercase">
+                      <Clock size={12} /> {adv.requestedAt ? new Date(adv.requestedAt).toLocaleDateString('ar-SA') : '—'}
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-        <PaginationControls
-          page={payrollPage}
-          totalPages={payrollTotalPages}
-          totalCount={payrollTotalCount}
-          onPageChange={setPayrollPage}
-        />
-      </motion.section>
+              </div>
+            )}
+          </section>
 
-      {/* Payroll Slips Section */}
-      <motion.section
-        initial={{ opacity: 1, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.45 }}
-        className="mt-12 bg-luxury-surface rounded-[2rem] p-8 shadow-sm border border-white/5"
-      >
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-xl font-bold text-white tracking-tight">قسائم الراتب</h2>
+          {/* Pending Leave Requests */}
+          <section className="bg-luxury-surface rounded-[2.5rem] p-8 shadow-sm border border-white/5 overflow-hidden">
+            <h2 className="text-xl font-bold text-white mb-6 tracking-tight arabic-text">طلبات الإجازة</h2>
+            {loadingLeaves ? (
+              <div className="text-center py-6 text-slate-500">جاري التحميل...</div>
+            ) : myLeaves.length === 0 ? (
+              <div className="text-center py-10 opacity-40">
+                <Calendar size={40} className="mx-auto mb-3" />
+                <p className="text-sm font-medium">لا توجد طلبات إجازة حالية</p>
+              </div>
+            ) : (
+              <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                {myLeaves.map((leave) => (
+                  <div key={leave.requestId} className="bg-white/5 p-5 rounded-[2rem] border border-white/5">
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="text-blue-400 font-bold text-sm">{leave.leaveType === 'Hourly' ? 'إجازة ساعية' : 'إجازة أيام'}</span>
+                      <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${
+                        leave.status === 'APPROVED' ? 'bg-green-500/10 text-green-400' : 
+                        leave.status === 'REJECTED' ? 'bg-red-500/10 text-red-400' : 
+                        leave.status === 'PENDING_HR' ? 'bg-purple-500/10 text-purple-400' :
+                        'bg-orange-500/10 text-orange-400'
+                      }`}>
+                        {leave.status === 'APPROVED' ? 'مقبول' : 
+                         leave.status === 'REJECTED' ? 'مرفوض' : 
+                         leave.status === 'PENDING_HR' ? 'بانتظار HR' :
+                         'بانتظار المدير'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-slate-300 font-bold">
+                      <span>{new Date(leave.startDate).toLocaleDateString('ar-SA')}</span>
+                      <ChevronRight size={12} className="opacity-20" />
+                      <span>{leave.duration} {leave.leaveType === 'Hourly' ? 'ساعة' : 'يوم'}</span>
+                    </div>
+                    {leave.reason && <p className="text-slate-500 text-[10px] mt-2 italic truncate">{leave.reason}</p>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
         </div>
 
-        {loadingPayroll ? (
-          <div className="p-8 text-center text-slate-500">
-            <p>جاري تحميل قسائم الراتب...</p>
+        {/* Payroll History */}
+        <section className="lg:col-span-2 bg-luxury-surface rounded-[2.5rem] p-10 shadow-sm border border-white/5 overflow-hidden flex flex-col">
+          <div className="flex justify-between items-center mb-10">
+            <div>
+              <h2 className="text-2xl font-black text-white tracking-tight arabic-text">سجل الرواتب (Pay Slips)</h2>
+              <p className="text-slate-400 text-sm mt-1">تاريخ صرف المستحقات والخصومات</p>
+            </div>
+            <div className="p-3 bg-white/5 rounded-2xl">
+              <DollarSign className="text-purple-500" size={24} />
+            </div>
           </div>
-        ) : myPayrollSlips.length === 0 ? (
-          <div className="p-8 text-center text-slate-500">
-            <DollarSign size={40} className="mx-auto mb-3 opacity-40 text-slate-600" />
-            <p className="font-medium">لا توجد قسائم راتب حالياً</p>
-            <p className="text-sm mt-1 text-slate-600">سيتم إنشاء قسيمة الراتب عند معالجة الرواتب من قبل HR</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-right border-collapse">
-              <thead className="bg-white/5 text-slate-400 text-[10px] font-black uppercase tracking-[0.15em]">
-                <tr>
-                  <th className="p-4">الشهر / السنة</th>
-                  <th className="p-4">ساعات العمل</th>
-                  <th className="p-4">ساعات إضافية</th>
-                  <th className="p-4">الخصومات</th>
-                  <th className="p-4">صافي الراتب</th>
-                  <th className="p-4">تاريخ الإصدار</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {myPayrollSlips.map((slip) => (
-                  <tr key={slip.payrollId} className="hover:bg-white/5 transition-all">
-                    <td className="p-4 font-bold text-slate-100">
-                      {new Date(slip.year, slip.month - 1).toLocaleDateString('ar-SA', { month: 'long', year: 'numeric' })}
-                    </td>
-                    <td className="p-4 text-slate-300 text-sm">{slip.totalWorkHours ?? 0} ساعة</td>
-                    <td className="p-4 text-slate-300 text-sm">{slip.overtimeHours ?? 0} ساعة</td>
-                    <td className="p-4 text-red-400 text-sm">{slip.deductions ?? 0} ر.س</td>
-                    <td className="p-4 font-bold text-green-400">{slip.netSalary?.toLocaleString() ?? 0} ر.س</td>
-                    <td className="p-4 text-slate-500 text-sm">
-                      {slip.generatedAt
-                        ? new Date(slip.generatedAt).toLocaleDateString('ar-SA')
-                        : '—'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </motion.section>
 
-      {/* Activity Table Mockup */}
-      <motion.section 
+          {loadingPayroll ? (
+            <div className="text-center py-20 text-slate-500 flex flex-col items-center gap-4">
+              <div className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+              جاري جلب سجلات الرواتب...
+            </div>
+          ) : myPayrollSlips.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center py-20 text-slate-500">
+              <DollarSign size={40} className="mx-auto mb-3 opacity-40 text-slate-600" />
+              <p className="font-medium">لا توجد قسائم راتب حالياً</p>
+              <p className="text-sm mt-1 text-slate-600">سيتم إنشاء قسيمة الراتب عند معالجة الرواتب من قبل HR</p>
+            </div>
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full text-right border-collapse">
+                  <thead className="bg-white/5 text-slate-400 text-[10px] font-black uppercase tracking-[0.15em]">
+                    <tr>
+                      <th className="p-4">الشهر / السنة</th>
+                      <th className="p-4">ساعات العمل</th>
+                      <th className="p-4">ساعات إضافية</th>
+                      <th className="p-4">الخصومات</th>
+                      <th className="p-4">صافي الراتب</th>
+                      <th className="p-4">تاريخ الإصدار</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {myPayrollSlips.map((slip) => (
+                      <tr key={slip.payrollId} className="hover:bg-white/5 transition-all">
+                        <td className="p-4 font-bold text-slate-100">
+                          {new Date(slip.year, slip.month - 1).toLocaleDateString('ar-SA', { month: 'long', year: 'numeric' })}
+                        </td>
+                        <td className="p-4 text-slate-300 text-sm">{slip.totalWorkHours ?? 0} ساعة</td>
+                        <td className="p-4 text-slate-300 text-sm">{slip.overtimeHours ?? 0} ساعة</td>
+                        <td className="p-4 text-red-400 text-sm">{slip.deductions ?? 0} ر.س</td>
+                        <td className="p-4 font-bold text-green-400">{slip.netSalary?.toLocaleString() ?? 0} ر.س</td>
+                        <td className="p-4 text-slate-500 text-sm">
+                          {slip.generatedAt
+                            ? new Date(slip.generatedAt).toLocaleDateString('ar-SA')
+                            : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <PaginationControls
+                page={payrollPage}
+                totalPages={payrollTotalPages}
+                totalCount={payrollTotalCount}
+                onPageChange={setPayrollPage}
+                className="mt-auto pt-6"
+              />
+            </>
+          )}
+        </section>
+      </div>
+
+      {/* Activity Table */}
+      <motion.section
         initial={{ opacity: 1, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
@@ -408,38 +402,50 @@ const EmployeeDashboard = () => {
       >
         <div className="flex justify-between items-center mb-8">
           <h2 className="text-xl font-bold text-white tracking-tight">آخر عمليات الحضور</h2>
-          <button 
-            onClick={() => alert('عرض جميع السجلات قيد التطوير')}
+          <button
+            onClick={() => navigate('/attendance')}
             className="text-blue-400 text-sm font-bold hover:underline"
           >
             مشاهدة الكل
           </button>
         </div>
-        
+
         <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="flex items-center justify-between p-4 rounded-2xl hover:bg-white/5 transition-all border border-transparent hover:border-white/5 group">
-              <div className="flex items-center gap-4">
-                <div className="bg-white/5 p-3 rounded-xl group-hover:bg-white/10 transition-all">
-                  <Clock className="text-slate-400" size={20} />
+          {loadingAttendance ? (
+            <div className="text-center py-8 text-slate-500">جاري التحميل...</div>
+          ) : latestAttendance.length === 0 ? (
+            <div className="text-center py-8 text-slate-500">لا يوجد سجلات حضور حتى الآن</div>
+          ) : (
+            latestAttendance.map((log) => (
+              <div key={log.recordId} className="flex items-center justify-between p-4 rounded-2xl hover:bg-white/5 transition-all border border-transparent hover:border-white/5 group">
+                <div className="flex items-center gap-4">
+                  <div className="bg-white/5 p-3 rounded-xl group-hover:bg-white/10 transition-all">
+                    <Clock className="text-slate-400" size={20} />
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-100">
+                      {new Date(log.checkIn).toLocaleDateString('ar-SA', { weekday: 'long', day: 'numeric', month: 'long' })}
+                    </p>
+                    <p className="text-xs text-slate-500 font-medium">
+                      {log.workHours ? `دوام (${log.workHours} ساعة)` : 'جاري العمل...'}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-bold text-slate-100">يوم الثلاثاء، {20 - i} مايو</p>
-                  <p className="text-xs text-slate-500 font-medium">دوام كامل (8 ساعات)</p>
+                <div className="text-right">
+                  <p className="font-mono font-bold text-slate-200">
+                    {new Date(log.checkIn).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })} — {log.checkOut ? new Date(log.checkOut).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }) : '...'}
+                  </p>
+                  <p className="text-[10px] text-green-400 font-bold uppercase tracking-widest mt-1 flex items-center justify-end gap-1">
+                    <CheckCircle size={10} /> Verified
+                  </p>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="font-mono font-bold text-slate-200">08:00 — 16:30</p>
-                <p className="text-[10px] text-green-400 font-bold uppercase tracking-widest mt-1 flex items-center justify-end gap-1">
-                  <CheckCircle size={10} /> Verified
-                </p>
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </motion.section>
 
-      {/* Profile Edit Modal */}
+      {/* Modals */}
       <AnimatePresence>
         {showProfileEdit && me && (
           <ProfileEditModal
@@ -450,7 +456,6 @@ const EmployeeDashboard = () => {
         )}
       </AnimatePresence>
 
-      {/* Advance Request Modal */}
       <AnimatePresence>
         {showAdvanceForm && (
           <AdvanceRequestForm
@@ -460,13 +465,85 @@ const EmployeeDashboard = () => {
         )}
       </AnimatePresence>
 
-      {/* Leave Request Modal */}
       <AnimatePresence>
         {showLeaveForm && (
           <LeaveRequestForm
             onClose={() => setShowLeaveForm(false)}
-            onSuccess={() => setShowLeaveForm(false)}
+            onSuccess={handleLeaveSuccess}
           />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showDayDetails && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowDayDetails(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              className="bg-[#1a1520] border border-white/10 rounded-2xl w-full max-w-md p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Clock size={20} className="text-luxury-primary" />
+                  تفاصيل دوام اليوم
+                </h2>
+                <button onClick={() => setShowDayDetails(false)} className="text-slate-400 hover:text-white transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
+
+              {loadingDayDetails ? (
+                <div className="text-center py-8 text-slate-400">جاري التحميل...</div>
+              ) : !todayRecord ? (
+                <div className="text-center py-8 text-slate-400">لا توجد بيانات دوام لهذا اليوم</div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="bg-white/5 rounded-xl p-4 border border-white/5">
+                    <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">تسجيل الدخول</p>
+                    <p className="text-2xl font-bold text-white">
+                      {new Date(todayRecord.checkIn).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                  <div className="bg-white/5 rounded-xl p-4 border border-white/5">
+                    <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">تسجيل الخروج</p>
+                    <p className="text-2xl font-bold text-white">
+                      {todayRecord.checkOut
+                        ? new Date(todayRecord.checkOut).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })
+                        : 'لم يتم بعد'}
+                    </p>
+                  </div>
+                  {todayRecord.workHours != null && (
+                    <div className="bg-white/5 rounded-xl p-4 border border-white/5">
+                      <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">إجمالي ساعات العمل</p>
+                      <p className="text-2xl font-bold text-luxury-primary">
+                        {Math.floor(todayRecord.workHours)} ساعة {Math.round((todayRecord.workHours % 1) * 60)} دقيقة
+                      </p>
+                    </div>
+                  )}
+                  <div className="bg-white/5 rounded-xl p-4 border border-white/5">
+                    <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">الحالة</p>
+                    <span className={`inline-block px-3 py-1 rounded-lg text-sm font-bold ${
+                      todayRecord.status === 'Present'
+                        ? 'bg-green-500/10 text-green-400'
+                        : todayRecord.status === 'Absent'
+                        ? 'bg-red-500/10 text-red-400'
+                        : 'bg-yellow-500/10 text-yellow-400'
+                    }`}>
+                      {todayRecord.status === 'Present' ? 'حاضر' : todayRecord.status === 'Absent' ? 'غائب' : todayRecord.status}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </>

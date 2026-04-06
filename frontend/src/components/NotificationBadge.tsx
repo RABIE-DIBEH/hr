@@ -1,28 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Bell } from 'lucide-react';
 import { getUnreadCount } from '../services/api';
 
 const NotificationBadge = () => {
-  const [unreadCount, setUnreadCount] = useState(0);
+  const { data } = useQuery({
+    queryKey: ['unreadCount'],
+    queryFn: async () => (await getUnreadCount()).data,
+    refetchInterval: 30000, // Still poll every 30s as fallback
+    staleTime: 5000,
+  });
 
-  useEffect(() => {
-    const fetchUnreadCount = async () => {
-      try {
-        const response = await getUnreadCount();
-        setUnreadCount(response.data.unreadCount);
-      } catch (err) {
-        // Silently fail - don't break the entire UI if inbox endpoint is unavailable
-        console.debug('Inbox check failed (this is OK):', (err as Error)?.message);
-        setUnreadCount(0);
-      }
-    };
-
-    fetchUnreadCount();
-    
-    // Poll every 30 seconds (only refetch, don't block render)
-    const interval = setInterval(fetchUnreadCount, 30000);
-    return () => clearInterval(interval);
-  }, []);
+  const unreadCount = data?.unreadCount ?? 0;
 
   return (
     <div className="relative inline-block">

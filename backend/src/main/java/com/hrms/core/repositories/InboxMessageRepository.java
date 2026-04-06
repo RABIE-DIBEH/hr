@@ -13,18 +13,23 @@ public interface InboxMessageRepository extends JpaRepository<InboxMessage, Long
     
     /**
      * Find all messages for a specific role or specifically for a client (unarchived, ordered by date desc)
+     * Includes: role-targeted messages, ALL messages, personal messages, AND replies the user sent.
      */
-    @Query("SELECT m FROM InboxMessage m WHERE (m.targetRole = :role OR m.targetRole = 'ALL' OR m.targetEmployeeId = :employeeId) " +
-           "AND m.archived = false ORDER BY m.createdAt DESC")
+    @Query("SELECT m FROM InboxMessage m WHERE m.archived = false " +
+           "AND (m.targetRole = :role OR m.targetRole = 'ALL' " +
+           "    OR m.targetEmployeeId = :employeeId " +
+           "    OR m.senderEmployeeId = :employeeId) " +
+           "ORDER BY m.createdAt DESC")
     Page<InboxMessage> findByTargetRoleOrEmployee(@Param("role") String role, @Param("employeeId") Long employeeId, Pageable pageable);
-    
+
     /**
      * Find unread messages for a specific role or specifically for a client
+     * Excludes sent messages (senderEmployeeId IS NULL) so only received messages count as unread.
      */
     @Query("SELECT m FROM InboxMessage m WHERE (m.targetRole = :role OR m.targetRole = 'ALL' OR m.targetEmployeeId = :employeeId) " +
-           "AND m.readAt IS NULL AND m.archived = false ORDER BY m.priority DESC, m.createdAt DESC")
+           "AND m.readAt IS NULL AND m.archived = false AND m.senderEmployeeId IS NULL ORDER BY m.priority DESC, m.createdAt DESC")
     Page<InboxMessage> findUnreadByTargetRoleOrEmployee(@Param("role") String role, @Param("employeeId") Long employeeId, Pageable pageable);
-    
+
     /**
      * Count unread messages for a specific role or specifically for a client
      */

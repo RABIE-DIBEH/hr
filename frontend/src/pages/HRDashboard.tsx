@@ -24,7 +24,7 @@ import {
   getEmployeeNfcCard,
   getPendingLeavesForHrPage,
   getPendingRecruitmentRequestsPage,
-  listEmployees,
+  listEmployeesPage,
   processLeaveRequest,
   processRecruitmentRequest,
   replaceEmployeeNfcCard,
@@ -44,6 +44,9 @@ import {
 
 const HRDashboard = () => {
   const [employees, setEmployees] = useState<EmployeeSummary[]>([]);
+  const [employeePage, setEmployeePage] = useState(0);
+  const [employeeTotalPages, setEmployeeTotalPages] = useState(0);
+  const [employeeTotalCount, setEmployeeTotalCount] = useState(0);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | ''>('');
   const [selectedCard, setSelectedCard] = useState<NfcCard | null>(null);
@@ -90,9 +93,11 @@ const HRDashboard = () => {
     return fallback;
   };
 
-  const loadEmployees = async () => {
-    const res = await listEmployees();
-    setEmployees(res.data);
+  const loadEmployees = async (page = 0) => {
+    const res = await listEmployeesPage({ page, size: 10 });
+    setEmployees(res.data.items);
+    setEmployeeTotalPages(res.data.totalPages);
+    setEmployeeTotalCount(res.data.totalCount);
   };
 
   const loadSelectedCard = async (employeeId: number) => {
@@ -109,10 +114,12 @@ const HRDashboard = () => {
   };
 
   useEffect(() => {
-    loadEmployees()
+    loadEmployees(employeePage)
       .then(() => setLoadError(null))
       .catch(() => setLoadError('تعذر تحميل قائمة الموظفين. تأكد من صلاحيات HR والاتصال بالخادم.'));
+  }, [employeePage]);
 
+  useEffect(() => {
     getPendingLeavesForHrPage({ page: leavePage, size: 10 })
       .then((res) => {
         setPendingLeaves(res.data.items);
@@ -144,7 +151,7 @@ const HRDashboard = () => {
   }, [selectedEmployeeId]);
 
   const refreshEmployeesAndCard = async (employeeId: number) => {
-    await loadEmployees();
+    await loadEmployees(employeePage);
     await loadSelectedCard(employeeId);
   };
 
@@ -201,7 +208,7 @@ const HRDashboard = () => {
     setCardActionLoading(true);
     try {
       await unassignEmployeeNfcCard(selectedEmployeeId);
-      await loadEmployees();
+      await loadEmployees(employeePage);
       setSelectedCard(null);
       setCardUidInput('');
       setCardFeedback('تم فك ربط البطاقة من الموظف.');
@@ -774,9 +781,9 @@ const HRDashboard = () => {
             <CheckCircle2 size={24} />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-white">اعتمادات الإجازات (HR)</h2>
+            <h2 className="text-xl font-bold text-white">طلبات الإجازة (بانتظار HR)</h2>
             <p className="text-slate-400 text-sm">
-              {pendingLeaves.length} طلب إجازة معتمد من المدير بانتظار توثيق الـ HR
+              {pendingLeaves.length} طلب إجازة بانتظار مراجعة أو توثيق الـ HR
             </p>
           </div>
         </div>
@@ -874,10 +881,10 @@ const HRDashboard = () => {
         />
       </div>
 
-      <section className="bg-luxury-surface rounded-[2.5rem] shadow-sm border border-white/5 overflow-hidden">
+      <section className="bg-luxury-surface rounded-[2.5rem] shadow-sm border border-white/5 overflow-hidden mb-10">
         <div className="p-8 border-b border-white/5 flex justify-between items-center flex-wrap gap-4">
           <h3 className="font-bold text-xl text-white">قائمة الموظفين (قاعدة البيانات)</h3>
-          <span className="text-sm text-slate-500">{employees.length} موظف</span>
+          <span className="text-sm text-slate-500">{employeeTotalCount} موظف</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-right border-collapse">
@@ -939,6 +946,12 @@ const HRDashboard = () => {
             </tbody>
           </table>
         </div>
+        <PaginationControls
+          page={employeePage}
+          totalPages={employeeTotalPages}
+          totalCount={employeeTotalCount}
+          onPageChange={setEmployeePage}
+        />
       </section>
 
       {showRecruitmentForm && (

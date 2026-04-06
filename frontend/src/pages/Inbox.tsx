@@ -1,5 +1,6 @@
-import { useEffect, useEffectEvent, useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Bell, Archive, Check, CheckCheck, AlertCircle, Trash2,
   FolderOpen, Square, SquareCheck, Reply, Send, X, ChevronDown,
@@ -20,14 +21,13 @@ import {
   getMessageThread,
   sendToEmployee,
   getCurrentEmployee,
-  searchEmployees,
-  type InboxMessage,
-  type EmployeeProfile
+  searchEmployees
 } from '../services/api';
 
 type FilterType = 'all' | 'unread' | 'high-priority' | 'archived' | 'sent';
 
 const Inbox = () => {
+  const queryClient = useQueryClient();
   const filters: Array<{ value: FilterType; label: string; icon?: React.ReactNode }> = [
     { value: 'all', label: 'الكل' },
     { value: 'unread', label: 'غير المقروءة' },
@@ -36,20 +36,13 @@ const Inbox = () => {
     { value: 'archived', label: 'الأرشيف', icon: <FolderOpen size={14} /> },
   ];
 
-  const [messages, setMessages] = useState<InboxMessage[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterType>('all');
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [page, setPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalCount, setTotalCount] = useState(0);
 
   // Thread / reply state
   const [expandedMessage, setExpandedMessage] = useState<number | null>(null);
-  const [threadReplies, setThreadReplies] = useState<InboxMessage[]>([]);
   const [replyText, setReplyText] = useState('');
-  const [sendingReply, setSendingReply] = useState(false);
 
   // Compose modal state
   const [showCompose, setShowCompose] = useState(false);
@@ -61,14 +54,16 @@ const Inbox = () => {
   const [composeTitle, setComposeTitle] = useState('');
   const [composeMessage, setComposeMessage] = useState('');
   const [composePriority, setComposePriority] = useState<'LOW' | 'MEDIUM' | 'HIGH'>('MEDIUM');
-  const [sendingMessage, setSendingMessage] = useState(false);
-  const [currentUser, setCurrentUser] = useState<EmployeeProfile | null>(null);
 
-  const loadMessages = useEffectEvent(async () => {
-    setLoading(true);
-    setError(null);
-    setSelectedIds(new Set());
-    try {
+  // Queries
+  const { data: me } = useQuery({
+    queryKey: ['me'],
+    queryFn: async () => (await getCurrentEmployee()).data,
+  });
+
+  const { data: inboxData, isLoading: loading, isError } = useQuery({
+    queryKey: ['inbox', filter, page],
+    queryFn: async () => {
       let response;
       if (filter === 'unread') {
         response = await getUnreadMessagesPage({ page, size: 20 });
@@ -81,112 +76,87 @@ const Inbox = () => {
       } else {
         response = await getInboxPage({ page, size: 20 });
       }
-      setTotalPages(response.data.totalPages);
-      setTotalCount(response.data.totalCount);
-      setMessages(response.data.items);
-    } catch (err) {
-      setError('خطأ في تحميل الرسائل');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+      return response.data;
+    },
   });
 
-  useEffect(() => {
-    void loadMessages();
-  }, [filter, page]);
+  const { data: threadReplies = [] } = useQuery({
+    queryKey: ['thread', expandedMessage],
+    queryFn: async () => (await getMessageThread(expandedMessage!)).data,
+    enabled: !!expandedMessage,
+  });
 
-  useEffect(() => {
-    setPage(0);
-  }, [filter]);
+  const messages = inboxData?.items || [];
+  const totalPages = inboxData?.totalPages || 0;
+  const totalCount = inboxData?.totalCount || 0;
 
-  // Load current user for compose
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const res = await getCurrentEmployee();
-        setCurrentUser(res.data);
-      } catch { /* ignore */ }
-    };
-    void loadUser();
-  }, []);
+  // Mutations
+  const markReadMutation = useMutation({
+    mutationFn: (id: number) => markMessageAsRead(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inbox'] });
+      queryClient.invalidateQueries({ queryKey: ['unreadCount'] });
+    },
+  });
 
-  const handleMarkAsRead = async (messageId: number) => {
-    try {
-      await markMessageAsRead(messageId);
-      setMessages(messages.map((m) =>
-        m.messageId === messageId ? { ...m, readAt: new Date().toISOString(), isRead: true } : m
-      ));
-    } catch (err) {
-      console.error('خطأ في تحديث الرسالة:', err);
-    }
-  };
+  const markAllReadMutation = useMutation({
+    mutationFn: markAllAsRead,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inbox'] });
+      queryClient.invalidateQueries({ queryKey: ['unreadCount'] });
+    },
+  });
 
-  const handleMarkAllAsRead = async () => {
-    try {
-      await markAllAsRead();
-      setMessages(messages.map((m) => ({ ...m, readAt: new Date().toISOString(), isRead: true })));
-    } catch (err) {
-      console.error('خطأ في تحديث جميع الرسائل:', err);
-    }
-  };
+  const archiveMutation = useMutation({
+    mutationFn: (id: number) => archiveMessage(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inbox'] });
+    },
+  });
 
-  const handleArchive = async (messageId: number) => {
-    try {
-      await archiveMessage(messageId);
-      setMessages(messages.filter((m) => m.messageId !== messageId));
-    } catch (err) {
-      console.error('خطأ في أرشفة الرسالة:', err);
-    }
-  };
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => deleteMessage(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inbox'] });
+      queryClient.invalidateQueries({ queryKey: ['unreadCount'] });
+    },
+  });
 
-  const handleDelete = async (messageId: number) => {
-    if (!window.confirm('هل أنت متأكد من حذف هذه الرسالة نهائياً؟')) return;
-    try {
-      await deleteMessage(messageId);
-      setMessages(messages.filter((m) => m.messageId !== messageId));
-    } catch (err) {
-      console.error('خطأ في حذف الرسالة:', err);
-    }
-  };
-
-  // Thread / reply handlers
-  const loadThread = async (messageId: number) => {
-    if (expandedMessage === messageId) {
-      setExpandedMessage(null);
-      setThreadReplies([]);
-      return;
-    }
-    try {
-      const res = await getMessageThread(messageId);
-      setThreadReplies(res.data);
-      setExpandedMessage(messageId);
-      // Auto mark as read
-      if (!messages.find(m => m.messageId === messageId)?.readAt) {
-        await markMessageAsRead(messageId);
-      }
-    } catch (err) {
-      console.error('خطأ في تحميل الردود:', err);
-    }
-  };
-
-  const handleReply = async (messageId: number) => {
-    if (!replyText.trim()) return;
-    setSendingReply(true);
-    try {
-      await replyToMessage(messageId, replyText.trim());
+  const replyMutation = useMutation({
+    mutationFn: ({ id, text }: { id: number; text: string }) => replyToMessage(id, text),
+    onSuccess: (_, variables) => {
       setReplyText('');
-      // Reload thread
-      const res = await getMessageThread(messageId);
-      setThreadReplies(res.data);
-    } catch (err) {
-      console.error('خطأ في إرسال الرد:', err);
-    } finally {
-      setSendingReply(false);
-    }
+      queryClient.invalidateQueries({ queryKey: ['thread', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['inbox'] });
+    },
+  });
+
+  const sendMutation = useMutation({
+    mutationFn: sendToEmployee,
+    onSuccess: () => {
+      setShowCompose(false);
+      setSelectedEmployee(null);
+      setSearchQuery('');
+      setComposeTitle('');
+      setComposeMessage('');
+      setComposePriority('MEDIUM');
+      queryClient.invalidateQueries({ queryKey: ['inbox', 'sent'] });
+    },
+  });
+
+  const handleMarkAsRead = (messageId: number) => markReadMutation.mutate(messageId);
+  const handleMarkAllAsRead = () => markAllReadMutation.mutate();
+  const handleArchive = (messageId: number) => archiveMutation.mutate(messageId);
+  const handleDelete = (messageId: number) => {
+    if (!window.confirm('هل أنت متأكد من حذف هذه الرسالة نهائياً؟')) return;
+    deleteMutation.mutate(messageId);
   };
 
-  // Compose handlers
+  const handleReply = (messageId: number) => {
+    if (!replyText.trim()) return;
+    replyMutation.mutate({ id: messageId, text: replyText.trim() });
+  };
+
   const handleSearchEmployees = async (query: string) => {
     setSearchQuery(query);
     if (query.length < 2) {
@@ -212,29 +182,14 @@ const Inbox = () => {
     setShowDropdown(false);
   };
 
-  const handleCompose = async () => {
+  const handleCompose = () => {
     if (!selectedEmployee || !composeTitle.trim() || !composeMessage.trim()) return;
-    setSendingMessage(true);
-    try {
-      await sendToEmployee({
-        targetEmployeeId: selectedEmployee.id,
-        title: composeTitle.trim(),
-        message: composeMessage.trim(),
-        priority: composePriority,
-      });
-      setShowCompose(false);
-      setSelectedEmployee(null);
-      setSearchQuery('');
-      setComposeTitle('');
-      setComposeMessage('');
-      setComposePriority('MEDIUM');
-      if (filter === 'sent') void loadMessages();
-    } catch (err) {
-      console.error('خطأ في إرسال الرسالة:', err);
-      alert('فشل في إرسال الرسالة.');
-    } finally {
-      setSendingMessage(false);
-    }
+    sendMutation.mutate({
+      targetEmployeeId: selectedEmployee.id,
+      title: composeTitle.trim(),
+      message: composeMessage.trim(),
+      priority: composePriority,
+    });
   };
 
   // Bulk selection
@@ -259,10 +214,10 @@ const Inbox = () => {
     if (selectedIds.size === 0) return;
     try {
       await Promise.all(Array.from(selectedIds).map((id) => archiveMessage(id)));
-      setMessages(messages.filter((m) => !selectedIds.has(m.messageId)));
       setSelectedIds(new Set());
-    } catch (err) {
-      console.error('خطأ في أرشفة الرسائل المحددة:', err);
+      queryClient.invalidateQueries({ queryKey: ['inbox'] });
+    } catch {
+      alert('فشل في أرشفة الرسائل المحددة.');
     }
   };
 
@@ -271,16 +226,16 @@ const Inbox = () => {
     if (!window.confirm(`هل أنت متأكد من حذف ${selectedIds.size} رسالة نهائياً؟`)) return;
     try {
       await Promise.all(Array.from(selectedIds).map((id) => deleteMessage(id)));
-      setMessages(messages.filter((m) => !selectedIds.has(m.messageId)));
       setSelectedIds(new Set());
-    } catch (err) {
-      console.error('خطأ في حذف الرسائل المحددة:', err);
+      queryClient.invalidateQueries({ queryKey: ['inbox'] });
+      queryClient.invalidateQueries({ queryKey: ['unreadCount'] });
+    } catch {
+      alert('فشل في حذف الرسائل المحددة.');
     }
   };
 
-  const unreadCount = messages.filter((m) => !m.readAt && !m.isRead).length;
-  const allSelected = messages.length > 0 && selectedIds.size === messages.length;
   const someSelected = selectedIds.size > 0;
+  const allSelected = messages.length > 0 && selectedIds.size === messages.length;
 
   const priorityColor = (priority: string) => {
     switch (priority) {
@@ -318,20 +273,19 @@ const Inbox = () => {
             <div>
               <h1 className="text-3xl font-bold text-white">صندوق الرسائل</h1>
               <p className="text-slate-400 text-sm mt-1">
-                {unreadCount} رسالة غير مقروءة
+                {totalCount} رسالة في هذا الصنف
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {unreadCount > 0 && (
-              <button
-                onClick={handleMarkAllAsRead}
-                className="bg-luxury-primary/20 hover:bg-luxury-primary/30 text-luxury-primary border border-luxury-primary/30 px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
-              >
-                <CheckCheck size={16} />
-                <span>تحديد الكل كمقروء</span>
-              </button>
-            )}
+            <button
+              onClick={handleMarkAllAsRead}
+              disabled={markAllReadMutation.isPending}
+              className="bg-luxury-primary/20 hover:bg-luxury-primary/30 text-luxury-primary border border-luxury-primary/30 px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 disabled:opacity-50"
+            >
+              <CheckCheck size={16} />
+              <span>تحديد الكل كمقروء</span>
+            </button>
             <button
               onClick={() => setShowCompose(true)}
               className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
@@ -347,7 +301,7 @@ const Inbox = () => {
           {filters.map((f) => (
             <button
               key={f.value}
-              onClick={() => setFilter(f.value)}
+              onClick={() => { setFilter(f.value); setPage(0); }}
               className={`px-4 py-2 rounded-lg font-semibold transition-all flex items-center gap-2 ${
                 filter === f.value
                   ? 'bg-luxury-primary/20 text-luxury-primary border border-luxury-primary/30'
@@ -355,7 +309,7 @@ const Inbox = () => {
               }`}
             >
               {f.icon}
-              {f.value === 'unread' ? `${f.label} (${unreadCount})` : f.label}
+              {f.label}
             </button>
           ))}
         </div>
@@ -396,13 +350,13 @@ const Inbox = () => {
       )}
 
       {/* Error */}
-      {error && (
+      {isError && (
         <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-lg mb-6 flex items-center gap-2">
-          <AlertCircle size={20} /> {error}
+          <AlertCircle size={20} /> خطأ في تحميل الرسائل
         </div>
       )}
 
-      {/* Loading */}
+      {/* Loading or Messages */}
       {loading ? (
         <div className="text-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border border-luxury-primary border-t-transparent mx-auto mb-4"></div>
@@ -446,7 +400,7 @@ const Inbox = () => {
                     </div>
 
                     {/* Message Content */}
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0" onClick={() => !isSent && setExpandedMessage(isExpanded ? null : message.messageId)}>
                       <div className="flex items-start justify-between mb-2">
                         <div>
                           <h3 className="font-bold text-white text-lg">{message.title}</h3>
@@ -482,10 +436,9 @@ const Inbox = () => {
                     <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      {/* Thread toggle */}
                       {!isSent && (
                         <button
-                          onClick={() => loadThread(message.messageId)}
+                          onClick={() => setExpandedMessage(isExpanded ? null : message.messageId)}
                           className="p-2 hover:bg-blue-500/20 rounded-lg text-slate-400 hover:text-blue-400 transition-all"
                           title="عرض الردود"
                         >
@@ -522,16 +475,13 @@ const Inbox = () => {
                       className="overflow-hidden"
                     >
                       <div className="mr-8 ml-4 mt-2 mb-3 space-y-2 border-r-2 border-luxury-primary/20 pr-4">
-                        {threadReplies.length === 0 && (
-                          <p className="text-slate-500 text-sm py-2">لا توجد ردود بعد</p>
-                        )}
                         {threadReplies.map((reply) => (
                           <div key={reply.messageId} className="bg-white/5 rounded-xl p-3 border border-white/5">
                             <div className="flex items-center justify-between mb-1">
                               <span className="text-xs text-slate-400">
                                 {reply.senderName} • {formatDate(reply.createdAt)}
                               </span>
-                              {reply.senderEmployeeId === currentUser?.employeeId && (
+                              {reply.senderEmployeeId === me?.employeeId && (
                                 <span className="text-xs text-emerald-400">أنت</span>
                               )}
                             </div>
@@ -551,7 +501,7 @@ const Inbox = () => {
                           />
                           <button
                             onClick={() => handleReply(message.messageId)}
-                            disabled={sendingReply || !replyText.trim()}
+                            disabled={replyMutation.isPending || !replyText.trim()}
                             className="bg-luxury-primary/20 hover:bg-luxury-primary/30 disabled:opacity-50 text-luxury-primary px-3 py-2 rounded-lg transition-all"
                           >
                             <Reply size={16} />
@@ -603,7 +553,6 @@ const Inbox = () => {
               </div>
 
               <div className="space-y-4">
-                {/* Employee Search */}
                 <div className="relative">
                   <label className="block text-sm font-medium text-slate-300 mb-1">المستلم</label>
                   <input
@@ -623,7 +572,6 @@ const Inbox = () => {
                     </button>
                   )}
 
-                  {/* Search Dropdown */}
                   {showDropdown && searchResults.length > 0 && (
                     <div className="absolute z-10 mt-1 w-full bg-[#1a1520] border border-white/10 rounded-lg shadow-xl max-h-48 overflow-y-auto">
                       {searchResults.map((emp) => (
@@ -671,7 +619,7 @@ const Inbox = () => {
                           composePriority === p
                             ? p === 'HIGH' ? 'bg-red-500/20 text-red-400 border border-red-500/30'
                               : p === 'MEDIUM' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                              : 'bg-green-500/20 text-green-400 border border-green-500/30'
+                              : 'bg-green-500/20 text-green-400 border-green-500/30'
                             : 'bg-white/5 text-slate-400 border border-white/10'
                         }`}
                       >
@@ -695,10 +643,10 @@ const Inbox = () => {
                     className="px-4 py-2 border border-white/10 text-slate-400 rounded-lg hover:bg-white/5 transition-all">
                     إلغاء
                   </button>
-                  <button onClick={handleCompose} disabled={sendingMessage || !selectedEmployee || !composeTitle || !composeMessage}
+                  <button onClick={handleCompose} disabled={sendMutation.isPending || !selectedEmployee || !composeTitle || !composeMessage}
                     className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg transition-all flex items-center gap-2">
                     <Send size={16} />
-                    {sendingMessage ? 'جاري الإرسال...' : 'إرسال'}
+                    {sendMutation.isPending ? 'جاري الإرسال...' : 'إرسال'}
                   </button>
                 </div>
               </div>

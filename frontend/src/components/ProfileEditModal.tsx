@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { User, X, Save, Upload, AlertCircle } from 'lucide-react';
+import { User, X, Save, Upload, AlertCircle, Lock } from 'lucide-react';
 import { updateProfileMe, getCurrentEmployee, type EmployeeProfile, type EmployeeProfileUpdatePayload } from '../services/api';
+import { getRole } from '../services/auth';
 
 interface ProfileEditModalProps {
   me: EmployeeProfile;
@@ -9,7 +10,11 @@ interface ProfileEditModalProps {
   onSuccess: (updatedMe: EmployeeProfile) => void;
 }
 
+const EDITABLE_ROLES = ['SUPER_ADMIN', 'ADMIN', 'HR', 'MANAGER'];
+
 const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ me, onClose, onSuccess }) => {
+  const currentRole = getRole();
+  const canEditIdentity = currentRole ? EDITABLE_ROLES.includes(currentRole) : false;
   const [profileForm, setProfileForm] = useState<EmployeeProfileUpdatePayload>({
     fullName: me.fullName,
     email: me.email,
@@ -150,14 +155,21 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ me, onClose, onSucc
               <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 px-1">
                 الاسم الكامل <span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
-                name="fullName"
-                value={profileForm.fullName}
-                onChange={handleProfileChange}
-                required
-                className="w-full px-5 py-3.5 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all outline-none"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  name="fullName"
+                  value={profileForm.fullName}
+                  onChange={handleProfileChange}
+                  readOnly={!canEditIdentity}
+                  className={`w-full px-5 py-3.5 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all outline-none ${
+                    !canEditIdentity ? 'cursor-not-allowed opacity-60' : ''
+                  }`}
+                />
+                {!canEditIdentity && (
+                  <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
+                )}
+              </div>
             </div>
 
             {/* Email */}
@@ -165,14 +177,21 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ me, onClose, onSucc
               <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 px-1">
                 البريد الإلكتروني <span className="text-red-500">*</span>
               </label>
-              <input
-                type="email"
-                name="email"
-                value={profileForm.email}
-                onChange={handleProfileChange}
-                required
-                className="w-full px-5 py-3.5 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all outline-none"
-              />
+              <div className="relative">
+                <input
+                  type="email"
+                  name="email"
+                  value={profileForm.email}
+                  onChange={handleProfileChange}
+                  readOnly={!canEditIdentity}
+                  className={`w-full px-5 py-3.5 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all outline-none ${
+                    !canEditIdentity ? 'cursor-not-allowed opacity-60' : ''
+                  }`}
+                />
+                {!canEditIdentity && (
+                  <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
+                )}
+              </div>
             </div>
 
             {/* Mobile Number */}
@@ -196,15 +215,23 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ me, onClose, onSucc
               <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 px-1">
                 رقم الهوية
               </label>
-              <input
-                type="text"
-                name="nationalId"
-                value={profileForm.nationalId ?? ''}
-                onChange={handleProfileChange}
-                placeholder="10 أرقام"
-                maxLength={10}
-                className="w-full px-5 py-3.5 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all outline-none font-mono"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  name="nationalId"
+                  value={profileForm.nationalId ?? ''}
+                  onChange={handleProfileChange}
+                  readOnly={!canEditIdentity}
+                  placeholder="10 أرقام"
+                  maxLength={10}
+                  className={`w-full px-5 py-3.5 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all outline-none font-mono ${
+                    !canEditIdentity ? 'cursor-not-allowed opacity-60' : ''
+                  }`}
+                />
+                {!canEditIdentity && (
+                  <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
+                )}
+              </div>
             </div>
 
             {/* Address */}

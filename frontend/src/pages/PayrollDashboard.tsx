@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   HandCoins,
   DollarSign,
@@ -11,6 +11,11 @@ import {
   Search,
   Calculator,
   History,
+  X,
+  TrendingUp,
+  TrendingDown,
+  Printer,
+  AlertCircle
 } from 'lucide-react';
 import PaginationControls from '../components/PaginationControls';
 import {
@@ -22,7 +27,7 @@ import {
   downloadPayrollExcel,
   getAllPayrollHistoryPage,
   calculatePayroll,
-  listEmployees,
+  listEmployeesPage,
   type EmployeeProfile,
   type AdvanceRequest,
   type PayrollSlip,
@@ -56,11 +61,13 @@ const PayrollDashboard = () => {
   const [historyTotalPages, setHistoryTotalPages] = useState(0);
   const [historyTotalCount, setHistoryTotalCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedSlip, setSelectedSlip] = useState<PayrollSlip | null>(null);
 
   // Calculate State
   const [employees, setEmployees] = useState<EmployeeSummary[]>([]);
   const [calculatingId, setCalculatingId] = useState<number | null>(null);
   const [calcFeedback, setCalcFeedback] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const [showConfirmCalc, setShowConfirmCalc] = useState<{ id?: number; name: string } | null>(null);
 
   const reportMonth = currentDate.getMonth() + 1;
   const reportYear = currentDate.getFullYear();
@@ -111,8 +118,8 @@ const PayrollDashboard = () => {
   const loadEmployeesForCalc = async () => {
     if (!canManagePayroll) return;
     try {
-      const res = await listEmployees();
-      setEmployees(res.data);
+      const res = await listEmployeesPage({ page: 0, size: 100 });
+      setEmployees(res.data.items);
     } catch {
       setLoadError('تعذر تحميل قائمة الموظفين');
     }
@@ -174,6 +181,7 @@ const PayrollDashboard = () => {
   const handleRunCalculation = async (empId?: number) => {
     setCalculatingId(empId ?? -1); // -1 for "All"
     setCalcFeedback(null);
+    setShowConfirmCalc(null);
     try {
       await calculatePayroll(reportMonth, reportYear, empId);
       setCalcFeedback({ msg: 'تم احتساب الراتب بنجاح', type: 'success' });
@@ -454,7 +462,7 @@ const PayrollDashboard = () => {
                     <p className="text-slate-400 text-sm mt-1">سيتم معالجة ساعات العمل المعتمدة وتحويلها إلى رواتب قابلة للصرف</p>
                   </div>
                   <button
-                    onClick={() => handleRunCalculation()}
+                    onClick={() => setShowConfirmCalc({ name: 'جميع الموظفين' })}
                     disabled={calculatingId !== null}
                     className="bg-purple-600 hover:bg-purple-700 text-white font-bold px-8 py-4 rounded-2xl shadow-xl shadow-purple-500/20 disabled:opacity-50 transition-all flex items-center gap-3"
                   >
@@ -501,7 +509,7 @@ const PayrollDashboard = () => {
                             </td>
                             <td className="p-6">
                               <button
-                                onClick={() => handleRunCalculation(emp.employeeId)}
+                                onClick={() => setShowConfirmCalc({ id: emp.employeeId, name: emp.fullName })}
                                 disabled={calculatingId !== null}
                                 className="text-purple-400 hover:text-purple-300 font-bold text-sm flex items-center gap-2 disabled:opacity-50"
                               >
@@ -544,11 +552,12 @@ const PayrollDashboard = () => {
                           <th className="p-6">إضافي</th>
                           <th className="p-6">سلف مخصومة</th>
                           <th className="p-6">الصافي</th>
+                          <th className="p-6">تفاصيل</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5">
                         {slips.filter(s => s.employeeName?.includes(searchTerm)).map(slip => (
-                          <tr key={slip.payrollId} className="hover:bg-white/[0.02]">
+                          <tr key={slip.payrollId} className="hover:bg-white/[0.02] group">
                             <td className="p-6 font-bold text-slate-100">{slip.employeeName}</td>
                             <td className="p-6 text-slate-400 text-xs">
                               {new Date(slip.year, slip.month - 1).toLocaleDateString('ar-SA', { month: 'long', year: 'numeric' })}
@@ -557,6 +566,14 @@ const PayrollDashboard = () => {
                             <td className="p-6 text-blue-400 font-bold">{slip.overtimeHours} س</td>
                             <td className="p-6 text-red-400 font-bold">{slip.deductions} ر.س</td>
                             <td className="p-6 text-green-400 font-black text-lg">{slip.netSalary?.toLocaleString()} ر.س</td>
+                            <td className="p-6">
+                              <button 
+                                onClick={() => setSelectedSlip(slip)}
+                                className="p-2 hover:bg-white/10 rounded-lg text-slate-500 hover:text-white transition-all"
+                              >
+                                <Search size={18} />
+                              </button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -567,6 +584,124 @@ const PayrollDashboard = () => {
               </div>
             )}
           </motion.div>
+
+          <AnimatePresence>
+            {selectedSlip && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9, y: 30 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: 30 }}
+                  className="bg-[#0f1115] w-full max-w-2xl rounded-[2.5rem] border border-white/10 shadow-3xl overflow-hidden"
+                >
+                  <div className="p-8 border-b border-white/5 flex justify-between items-center bg-gradient-to-r from-purple-600/10 to-transparent">
+                    <div className="flex items-center gap-4">
+                      <div className="bg-purple-600 p-3 rounded-2xl text-white shadow-lg shadow-purple-600/30">
+                        <FileText size={24} />
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-black text-white arabic-text">تفاصيل قسيمة الراتب</h3>
+                        <p className="text-slate-400 text-sm">{selectedSlip.employeeName} — {new Date(selectedSlip.year, selectedSlip.month - 1).toLocaleDateString('ar-SA', { month: 'long', year: 'numeric' })}</p>
+                      </div>
+                    </div>
+                    <button onClick={() => setSelectedSlip(null)} className="p-2 hover:bg-white/10 rounded-full text-slate-400 hover:text-white transition-all">
+                      <X size={24} />
+                    </button>
+                  </div>
+
+                  <div className="p-10 space-y-8">
+                    <div className="grid grid-cols-2 gap-8">
+                      <div className="bg-white/5 p-6 rounded-3xl border border-white/5">
+                        <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
+                          <TrendingUp size={14} className="text-green-500" /> الاستحقاقات
+                        </p>
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center">
+                            <span className="text-slate-400 text-sm">ساعات العمل الأساسية</span>
+                            <span className="text-white font-bold">{selectedSlip.totalWorkHours} ساعة</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-slate-400 text-sm">الساعات الإضافية</span>
+                            <span className="text-blue-400 font-bold">+{selectedSlip.overtimeHours} ساعة</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-white/5 p-6 rounded-3xl border border-white/5">
+                        <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
+                          <TrendingDown size={14} className="text-red-500" /> الاستقطاعات
+                        </p>
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center">
+                            <span className="text-slate-400 text-sm">سلف مخصومة</span>
+                            <span className="text-red-400 font-bold">{selectedSlip.deductions?.toLocaleString()} ر.س</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-slate-400 text-sm">تأمينات / أخرى</span>
+                            <span className="text-slate-500 font-bold">0 ر.س</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-purple-600/10 p-8 rounded-[2rem] border border-purple-500/20 text-center relative overflow-hidden">
+                       <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl" />
+                       <p className="text-purple-400 text-xs font-black uppercase tracking-[0.2em] mb-2">صافي المبلغ المستحق</p>
+                       <p className="text-5xl font-black text-white tracking-tight">{selectedSlip.netSalary?.toLocaleString()} <span className="text-lg font-bold text-purple-400">ر.س</span></p>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                      <Clock size={12} /> صدر بتاريخ: {new Date(selectedSlip.generatedAt).toLocaleString('ar-SA')}
+                    </div>
+                  </div>
+
+                  <div className="p-8 border-t border-white/5 bg-white/5 flex justify-between gap-4">
+                    <button className="flex-1 bg-white/5 hover:bg-white/10 text-white font-bold py-4 rounded-2xl border border-white/5 transition-all flex items-center justify-center gap-2">
+                      <Printer size={18} /> طباعة القسيمة
+                    </button>
+                    <button onClick={() => setSelectedSlip(null)} className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-2xl shadow-xl shadow-purple-600/20 transition-all">
+                      حسناً
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+
+            {showConfirmCalc && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="bg-[#0f1115] w-full max-w-md rounded-[2rem] border border-white/10 shadow-3xl p-8"
+                >
+                  <div className="bg-orange-500/10 w-16 h-16 rounded-2xl flex items-center justify-center text-orange-500 mb-6">
+                    <AlertCircle size={32} />
+                  </div>
+                  <h3 className="text-2xl font-black text-white arabic-text mb-2">تأكيد احتساب الراتب</h3>
+                  <p className="text-slate-400 text-sm leading-relaxed">
+                    أنت على وشك احتساب راتب شهر <span className="text-white font-bold">{reportMonth}/{reportYear}</span> لـ <span className="text-purple-400 font-bold">{showConfirmCalc.name}</span>.
+                    سيتم اعتماد ساعات العمل المعتمدة وخصم السلف الموافق عليها تلقائياً.
+                  </p>
+                  
+                  <div className="mt-8 space-y-3">
+                    <button
+                      onClick={() => handleRunCalculation(showConfirmCalc.id)}
+                      className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-2xl shadow-xl shadow-purple-600/20 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Calculator size={18} />
+                      تأكيد والاحتساب الآن
+                    </button>
+                    <button
+                      onClick={() => setShowConfirmCalc(null)}
+                      className="w-full bg-white/5 hover:bg-white/10 text-white font-bold py-4 rounded-2xl transition-all"
+                    >
+                      إلغاء
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>
     </>
   );
 };

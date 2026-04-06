@@ -90,6 +90,7 @@ public class RecruitmentRequestService {
             "A new recruitment request for " + saved.getJobDescription() + " has been submitted and is pending review.",
             "HR",
             "System",
+            null,
             "MEDIUM"
         );
 
@@ -128,6 +129,7 @@ public class RecruitmentRequestService {
                     "Your recruitment request for " + saved.getJobDescription() + " has been rejected.",
                     saved.getRequestedBy(),
                     "System",
+                    null,
                     "HIGH"
                 );
             }
@@ -165,6 +167,7 @@ public class RecruitmentRequestService {
                 "Your recruitment request for " + saved.getJobDescription() + " is now " + saved.getStatus().replace("_", " ") + ".",
                 saved.getRequestedBy(),
                 "System",
+                null,
                 "MEDIUM"
             );
 

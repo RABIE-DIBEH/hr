@@ -143,21 +143,21 @@ const ManagerDashboard = () => {
   const stats = [
     {
       label: 'إجمالي الفريق',
-      value: String(team.length),
+      value: String(teamTotalCount),
       icon: Users,
       color: 'text-blue-400',
       bg: 'bg-blue-500/10',
     },
     {
-      label: 'بطاقة NFC مفعّلة',
-      value: String(team.filter((m) => m.nfcLinked).length),
+      label: 'طلبات توظيف معلقة',
+      value: String(requestTotalCount),
       icon: UserCheck,
       color: 'text-green-400',
       bg: 'bg-green-500/10',
     },
     {
-      label: 'بدون بطاقة',
-      value: String(team.filter((m) => !m.nfcLinked).length),
+      label: 'طلبات إجازة معلقة',
+      value: String(leaveTotalCount),
       icon: AlertTriangle,
       color: 'text-orange-400',
       bg: 'bg-orange-500/10',
@@ -713,7 +713,7 @@ const ManagerDashboard = () => {
         </div>
 
         <div className="p-6 bg-white/[0.02] border-t border-white/5 flex justify-between items-center text-xs text-slate-500 font-medium">
-          <p>إجمالي {team.length} موظفاً في فريقك</p>
+          <p>إجمالي {teamTotalCount} موظفاً في فريقك</p>
         </div>
         <PaginationControls
           page={teamPage}

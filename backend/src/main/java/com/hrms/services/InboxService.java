@@ -1,6 +1,8 @@
 package com.hrms.services;
 
+import com.hrms.core.models.Employee;
 import com.hrms.core.models.InboxMessage;
+import com.hrms.core.repositories.EmployeeRepository;
 import com.hrms.core.repositories.InboxMessageRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,11 +19,17 @@ import java.util.Objects;
  */
 @Service
 public class InboxService {
-    
+
     private final InboxMessageRepository inboxMessageRepository;
-    
-    public InboxService(InboxMessageRepository inboxMessageRepository) {
+    private final EmployeeRepository employeeRepository;
+    private final EmailService emailService;
+
+    public InboxService(InboxMessageRepository inboxMessageRepository,
+                        EmployeeRepository employeeRepository,
+                        EmailService emailService) {
         this.inboxMessageRepository = inboxMessageRepository;
+        this.employeeRepository = employeeRepository;
+        this.emailService = emailService;
     }
     
     /**
@@ -57,7 +65,7 @@ public class InboxService {
      */
     @Transactional
     public InboxMessage sendMessage(String title, String message, String targetRole, 
-                                   String senderName, String priority) {
+                                   String senderName, Long senderEmployeeId, String priority) {
         String finalPriority = (priority != null && !priority.isBlank()) ? priority : "MEDIUM";
         
         InboxMessage msg = new InboxMessage.InboxMessageBuilder()
@@ -65,6 +73,7 @@ public class InboxService {
                 .message(message)
                 .targetRole(targetRole)
                 .senderName(senderName)
+                .senderEmployeeId(senderEmployeeId)
                 .priority(finalPriority)
                 .build();
         
@@ -76,7 +85,7 @@ public class InboxService {
      */
     @Transactional
     public InboxMessage sendPersonalMessage(String title, String message, Long targetEmployeeId, 
-                                           String senderName, String priority) {
+                                           String senderName, Long senderEmployeeId, String priority) {
         String finalPriority = (priority != null && !priority.isBlank()) ? priority : "MEDIUM";
         
         InboxMessage msg = new InboxMessage.InboxMessageBuilder()
@@ -84,6 +93,7 @@ public class InboxService {
                 .message(message)
                 .targetEmployeeId(targetEmployeeId)
                 .senderName(senderName)
+                .senderEmployeeId(senderEmployeeId)
                 .priority(finalPriority)
                 .build();
         
@@ -140,6 +150,7 @@ public class InboxService {
 
     /**
      * Reply to an existing message (creates a threaded reply)
+     * The reply is delivered to the ORIGINAL sender of the parent message.
      */
     @Transactional
     public InboxMessage replyToMessage(Long parentMessageId, String message,
@@ -147,13 +158,20 @@ public class InboxService {
         InboxMessage parent = inboxMessageRepository.findById(parentMessageId)
                 .orElseThrow(() -> new IllegalArgumentException("Parent message not found"));
 
+        // The reply goes back to the original sender of that specific message
+        Long replyTargetId = parent.getSenderEmployeeId();
+        
+        // If the parent message didn't have a senderEmployeeId (e.g. system message), 
+        // we can't reply to it personally.
+        if (replyTargetId == null) {
+            throw new IllegalArgumentException("Cannot reply to a system-generated message without a sender ID");
+        }
+
         InboxMessage reply = new InboxMessage.InboxMessageBuilder()
                 .title("Re: " + parent.getTitle())
                 .message(message)
                 .targetRole("NONE")
-                .targetEmployeeId(parent.getTargetEmployeeId() != null
-                        ? parent.getTargetEmployeeId()
-                        : parent.getSenderEmployeeId())
+                .targetEmployeeId(replyTargetId)
                 .senderName(senderName)
                 .senderEmployeeId(senderEmployeeId)
                 .priority(parent.getPriority())
@@ -212,8 +230,9 @@ public class InboxService {
         boolean visibleToEmployee = message.getTargetEmployeeId() != null && message.getTargetEmployeeId().equals(employeeId);
         boolean visibleToRole = role != null && role.equals(message.getTargetRole());
         boolean visibleToAll = "ALL".equals(message.getTargetRole());
+        boolean isSender = message.getSenderEmployeeId() != null && message.getSenderEmployeeId().equals(employeeId);
 
-        if (!visibleToEmployee && !visibleToRole && !visibleToAll) {
+        if (!visibleToEmployee && !visibleToRole && !visibleToAll && !isSender) {
             throw new AccessDeniedException("Access denied");
         }
 

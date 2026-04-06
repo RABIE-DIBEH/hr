@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 export const AUTH_TOKEN_KEY = 'hrms_jwt';
 
 const api = axios.create({
@@ -567,7 +567,7 @@ export const sendMessage = (data: { title: string; message: string; targetRole: 
 
 // New messaging APIs
 export const replyToMessage = (messageId: number, message: string) =>
-  api.post<InboxMessage>(`/inbox/${messageId}/reply`, { message });
+  api.post<InboxMessage>(`/inbox/${messageId}/reply`, { replyTo: messageId, message });
 
 export const getMessageThread = (messageId: number) =>
   api.get<InboxMessage[]>(`/inbox/${messageId}/thread`);

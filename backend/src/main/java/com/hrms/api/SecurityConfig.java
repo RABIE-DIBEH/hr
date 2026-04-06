@@ -50,6 +50,7 @@ public class SecurityConfig {
                         // Public endpoints
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/login").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         
                         // Employee endpoints
                         .requestMatchers(HttpMethod.GET, "/api/employees/me").authenticated()
@@ -59,6 +60,7 @@ public class SecurityConfig {
                         // Leave endpoints - employees can request/view own, managers/HR process
                         .requestMatchers(HttpMethod.POST, "/api/leaves/request").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/leaves/my-requests").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/leaves/calendar").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/leaves/pending").hasAnyRole("MANAGER", "HR", "ADMIN", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/leaves/all").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/leaves/process/**").hasAnyRole("MANAGER", "HR", "ADMIN", "SUPER_ADMIN")

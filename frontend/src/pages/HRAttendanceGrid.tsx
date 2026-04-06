@@ -15,7 +15,7 @@ import {
 import PaginationControls from '../components/PaginationControls';
 import {
   getHrMonthlyAttendancePage,
-  listEmployees,
+  listEmployeesPage,
   manuallyCorrectAttendance,
   downloadAttendancePdf,
   downloadAttendanceExcel,
@@ -51,8 +51,8 @@ const HRAttendanceGrid = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const empRes = await listEmployees();
-        setEmployees(empRes.data);
+        const empRes = await listEmployeesPage({ page: 0, size: 100 });
+        setEmployees(empRes.data.items);
         const recordRes = await getHrMonthlyAttendancePage(month, year, { page, size: 100 });
         setRecords(recordRes.data.items);
         setTotalPages(recordRes.data.totalPages);
@@ -216,8 +216,8 @@ const HRAttendanceGrid = () => {
         approveForPayroll,
       });
 
-      const empRes = await listEmployees();
-      setEmployees(empRes.data);
+      const empRes = await listEmployeesPage({ page: 0, size: 100 });
+      setEmployees(empRes.data.items);
       const recordRes = await getHrMonthlyAttendancePage(month, year, { page, size: 100 });
       setRecords(recordRes.data.items);
       setTotalPages(recordRes.data.totalPages);

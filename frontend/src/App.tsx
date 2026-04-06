@@ -2,7 +2,7 @@ import { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Navigate } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
-import { ErrorBoundary } from './components/ErrorBoundary';
+import ErrorBoundary from './components/ErrorBoundary';
 import Layout from './components/Layout';
 
 const Home = lazy(() => import('./pages/Home'));
@@ -67,7 +67,7 @@ function App() {
               </ProtectedRoute>
             } />
             <Route path="/leave-calendar" element={
-              <ProtectedRoute allowedRoles={['HR', 'MANAGER', 'ADMIN', 'SUPER_ADMIN']}>
+              <ProtectedRoute allowedRoles={['HR', 'MANAGER', 'ADMIN', 'SUPER_ADMIN', 'EMPLOYEE']}>
                 <Layout><LeaveCalendar /></Layout>
               </ProtectedRoute>
             } />

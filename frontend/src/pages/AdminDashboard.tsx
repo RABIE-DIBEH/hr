@@ -12,6 +12,15 @@ import {
   RefreshCw,
   Cpu
 } from 'lucide-react';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
 import PaginationControls from '../components/PaginationControls';
 import CurrentDateTimePanel from '../components/CurrentDateTimePanel';
 import { 
@@ -38,14 +47,33 @@ const AdminDashboard = () => {
   const [devicesTotalPages, setDevicesTotalPages] = useState(0);
   const [devicesTotalCount, setDevicesTotalCount] = useState(0);
 
+  // Mocked history data for the chart
+  const [cpuHistory, setCpuHistory] = useState([
+    { time: '10:00', usage: 20 },
+    { time: '10:05', usage: 25 },
+    { time: '10:10', usage: 18 },
+    { time: '10:15', usage: 30 },
+    { time: '10:20', usage: 22 },
+    { time: '10:25', usage: 28 },
+    { time: '10:30', usage: 24 },
+  ]);
+
   useEffect(() => {
     const loadData = () => {
-      getAdminMetrics().then(res => setMetrics(res.data)).catch(console.error);
+      getAdminMetrics().then(res => {
+        setMetrics(res.data);
+        // Update history with new data point
+        const newUsage = parseInt(res.data.cpu.replace('%', '')) || 0;
+        const now = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+        setCpuHistory(prev => [...prev.slice(-6), { time: now, usage: newUsage }]);
+      }).catch(console.error);
+      
       getSystemLogsPage({ page: logsPage, size: 10 }).then(res => {
         setLogs(res.data.items);
         setLogsTotalPages(res.data.totalPages);
         setLogsTotalCount(res.data.totalCount);
       }).catch(console.error);
+      
       getNfcDevicesPage({ page: devicesPage, size: 8 }).then(res => {
         setDevices(res.data.items);
         setDevicesTotalPages(res.data.totalPages);
@@ -82,7 +110,7 @@ const AdminDashboard = () => {
         setLogs(r.data.items);
         setLogsTotalPages(r.data.totalPages);
         setLogsTotalCount(r.data.totalCount);
-      }); // Should bring up the "Clear Logs" record
+      });
     } catch {
       alert('Failed to clear logs.');
     }
@@ -123,6 +151,15 @@ const AdminDashboard = () => {
         </div>
         <div className="flex items-center gap-3">
           <CurrentDateTimePanel />
+          <a 
+            href="/swagger-ui/index.html" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 px-5 py-3 rounded-xl font-bold flex items-center gap-2 border border-blue-500/20 transition-all"
+          >
+            <Server size={18} />
+            <span>وثائق API (Swagger)</span>
+          </a>
           <button onClick={handleBackup} className="bg-white text-black px-5 py-3 rounded-xl font-bold flex items-center gap-2 shadow-xl shadow-white/5 transition-transform hover:scale-105 active:scale-95">
             <Database size={18} />
             <span>النسخ الاحتياطي الآن</span>
@@ -151,21 +188,43 @@ const AdminDashboard = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
-              <div className="space-y-2">
-                <p className="text-slate-400 text-xs font-bold uppercase tracking-wider flex items-center gap-2"><Cpu size={14}/> CPU Usage</p>
-                <p className="text-3xl font-black text-white">{metrics ? metrics.cpu : '24%'}</p>
-                <div className="w-full bg-white/5 h-1.5 rounded-full"><div className="bg-blue-500 h-full w-[24%] rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div></div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+              <div className="md:col-span-1 space-y-6">
+                <div className="space-y-2">
+                  <p className="text-slate-400 text-xs font-bold uppercase tracking-wider flex items-center gap-2"><Cpu size={14}/> CPU Usage</p>
+                  <p className="text-3xl font-black text-white">{metrics ? metrics.cpu : '24%'}</p>
+                  <div className="w-full bg-white/5 h-1.5 rounded-full"><div className="bg-blue-500 h-full w-[24%] rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div></div>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-slate-400 text-xs font-bold uppercase tracking-wider flex items-center gap-2"><HardDrive size={14}/> Storage</p>
+                  <p className="text-3xl font-black text-white">{metrics ? metrics.storage : '1.2GB'}</p>
+                  <div className="w-full bg-white/5 h-1.5 rounded-full"><div className="bg-purple-500 h-full w-[45%] rounded-full shadow-[0_0_10px_rgba(168,85,247,0.5)]"></div></div>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-slate-400 text-xs font-bold uppercase tracking-wider flex items-center gap-2"><RefreshCw size={14}/> Uptime</p>
+                  <p className="text-3xl font-black text-white">{metrics ? metrics.uptime : '99.9%'}</p>
+                </div>
               </div>
-              <div className="space-y-2">
-                <p className="text-slate-400 text-xs font-bold uppercase tracking-wider flex items-center gap-2"><HardDrive size={14}/> Storage</p>
-                <p className="text-3xl font-black text-white">{metrics ? metrics.storage : '1.2GB'}</p>
-                <div className="w-full bg-white/5 h-1.5 rounded-full"><div className="bg-purple-500 h-full w-[45%] rounded-full shadow-[0_0_10px_rgba(168,85,247,0.5)]"></div></div>
-              </div>
-              <div className="space-y-2 col-span-2 md:col-span-1">
-                <p className="text-slate-400 text-xs font-bold uppercase tracking-wider flex items-center gap-2"><RefreshCw size={14}/> Uptime</p>
-                <p className="text-3xl font-black text-white">{metrics ? metrics.uptime : '99.9%'}</p>
-                <p className="text-[10px] text-green-400 font-bold">Live since {metrics?.uptimeStr || '...'} ago</p>
+
+              <div className="md:col-span-3 h-[200px] w-full bg-white/5 rounded-2xl p-4 border border-white/5">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={cpuHistory}>
+                    <defs>
+                      <linearGradient id="colorUsage" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+                    <XAxis dataKey="time" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
+                    <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} unit="%" />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #ffffff10', borderRadius: '8px' }}
+                      itemStyle={{ color: '#3b82f6', fontWeight: 'bold' }}
+                    />
+                    <Area type="monotone" dataKey="usage" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorUsage)" />
+                  </AreaChart>
+                </ResponsiveContainer>
               </div>
             </div>
 
@@ -173,7 +232,7 @@ const AdminDashboard = () => {
               <button onClick={() => setShowRawLogs(true)} className="bg-white/5 hover:bg-white/10 px-6 py-3 rounded-xl font-bold transition-all border border-white/5 flex items-center gap-2 text-white">
                 <Terminal size={18} /> View Raw Logs
               </button>
-              <button onClick={() => alert('إعدادات النظام قيد التطوير...')} className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-900/20 text-white">
+              <button onClick={() => alert('إعدادات النظام: قيد التطوير - سيتم تفعيل خيارات التحكم بالأمان قريباً')} className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-900/20 text-white">
                 System Settings
               </button>
             </div>

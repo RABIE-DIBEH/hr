@@ -44,6 +44,7 @@ public class AdvanceRequestService {
             "A new advance request of " + saved.getAmount() + " has been submitted and is pending review.",
             "HR",
             "System",
+            null,
             "MEDIUM"
         );
 
@@ -85,6 +86,7 @@ public class AdvanceRequestService {
             message,
             saved.getEmployeeId(),
             "HR Department",
+            null,
             status.equals("Approved") ? "MEDIUM" : "HIGH"
         );
 
@@ -117,6 +119,7 @@ public class AdvanceRequestService {
             "Your advance request for " + saved.getAmount() + " has been marked as delivered/paid. The amount will be deducted from your next payroll.",
             saved.getEmployeeId(),
             "Payroll Management Department",
+            null,
             "MEDIUM"
         );
 
