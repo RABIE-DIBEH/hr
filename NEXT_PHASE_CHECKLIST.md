@@ -3,12 +3,12 @@
 This checklist coordinates parallel work across Agent A, Agent B, and integration.
 
 ## Agent A: Backend API Response Consistency
-- [ ] Replace `Map<String, Object>` response in `EmployeeController#deleteEmployee` with typed DTO.
-- [ ] Replace `Map<String, Object>` response in `EmployeeController#resetPassword` with typed DTO.
-- [ ] Replace `Map<String, Object>` response in `PayrollController#calculateAllPayroll` with typed DTO.
-- [ ] Replace `Map<String, Object>` response in `RecruitmentRequestController#processRequest` with typed DTO.
-- [ ] Replace `Map<String, Object>` response in `AdminController#deleteDevice` with typed DTO.
-- [ ] Add/update controller tests for all five endpoints above.
+- [x] ✅ Replace `Map<String, Object>` response in `EmployeeController#deleteEmployee` with typed DTO. **(ALREADY DONE)**
+- [x] ✅ Replace `Map<String, Object>` response in `EmployeeController#resetPassword` with typed DTO. **(ALREADY DONE)**
+- [x] ✅ Replace `Map<String, Object>` response in `PayrollController#calculateAllPayroll` with typed DTO. **(ALREADY DONE)**
+- [x] ✅ Replace `Map<String, Object>` response in `RecruitmentRequestController#processRequest` with typed DTO. **(ALREADY DONE)**
+- [x] ✅ Replace `Map<String, Object>` response in `AdminController#deleteDevice` with typed DTO. **(ALREADY DONE)**
+- [x] ✅ Add/update controller tests for all five endpoints above. **(TESTS EXIST)**
 
 ## Agent B: Frontend Data Layer Consistency
 - [ ] Standardize React Query defaults (`staleTime`, retry policy, key conventions).

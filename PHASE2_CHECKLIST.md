@@ -11,11 +11,11 @@
 
 | # | Controller | Endpoint | Current Return | New DTO | Priority | Status |
 |---|-----------|----------|---------------|---------|----------|--------|
-| 1 | `EmployeeController.java` | `DELETE /{employeeId}` | `Map<String,Object>` (employeeId, fullName, email, previousStatus, newStatus, deletedBy, deletedByName, message) | `EmployeeDeletionResponse` | 🔴 High | ⬜ Pending |
-| 2 | `EmployeeController.java` | `POST /{employeeId}/reset-password` | `Map<String,Object>` (employeeId, fullName, email, newPassword, resetBy, resetByName, message) | `PasswordResetResponse` | 🔴 High | ⬜ Pending |
-| 3 | `PayrollController.java` | `POST /calculate-all` | `Map<String,Object>` (month, year, totalProcessed, successCount, errorCount, requester) | `PayrollBulkResult` | 🔴 High | ⬜ Pending |
-| 4 | `RecruitmentRequestController.java` | `PUT /process/{requestId}` | `Map<String,Object>` (request entity OR request+username+password+employeeId) | `ProcessRecruitmentResponse` | 🔴 High | ⬜ Pending |
-| 5 | `AdminController.java` | `DELETE /devices/{deviceId}` | `Map<String,Object>` (deviceId, message) | `StatusResponseDto` (reuse existing) | 🟡 Medium | ⬜ Pending |
+| 1 | `EmployeeController.java` | `DELETE /{employeeId}` | `Map<String,Object>` (employeeId, fullName, email, previousStatus, newStatus, deletedBy, deletedByName, message) | `EmployeeDeletionResponse` | 🔴 High | ✅ **DONE** |
+| 2 | `EmployeeController.java` | `POST /{employeeId}/reset-password` | `Map<String,Object>` (employeeId, fullName, email, newPassword, resetBy, resetByName, message) | `PasswordResetResponse` | 🔴 High | ✅ **DONE** |
+| 3 | `PayrollController.java` | `POST /calculate-all` | `Map<String,Object>` (month, year, totalProcessed, successCount, errorCount, requester) | `PayrollBulkResult` | 🔴 High | ✅ **DONE** |
+| 4 | `RecruitmentRequestController.java` | `PUT /process/{requestId}` | `Map<String,Object>` (request entity OR request+username+password+employeeId) | `ProcessRecruitmentResponse` | 🔴 High | ✅ **DONE** |
+| 5 | `AdminController.java` | `DELETE /devices/{deviceId}` | `Map<String,Object>` (deviceId, message) | `StatusResponseDto` (reuse existing) | 🟡 Medium | ✅ **DONE** |
 
 #### New DTOs to create under `backend/src/main/java/com/hrms/api/dto/`:
 
@@ -32,11 +32,11 @@ ProcessRecruitmentResponse.java  — RecruitmentRequestResponse request, String 
 
 | # | Service | Method | Current Return | New Return | Status |
 |---|---------|--------|---------------|------------|--------|
-| 1 | `EmployeeDirectoryService` | `deleteEmployee()` | `Map<String,Object>` | `EmployeeDeletionResponse` | ⬜ Pending |
-| 2 | `EmployeeDirectoryService` | `resetEmployeePassword()` | `Map<String,Object>` | `PasswordResetResponse` | ⬜ Pending |
-| 3 | `PayrollService` | `calculateAllMonthlyPayroll()` | `Map<String,Object>` | `PayrollBulkResult` | ⬜ Pending |
-| 4 | `RecruitmentRequestService` | `processRequest()` | `Map<String,Object>` | `ProcessRecruitmentResponse` | ⬜ Pending |
-| 5 | `AdminService` | `deleteDevice()` | `void` (controller builds Map) | Keep `void`, controller uses `StatusResponseDto` directly | ⬜ Pending |
+| 1 | `EmployeeDirectoryService` | `deleteEmployee()` | `Map<String,Object>` | `EmployeeDeletionResponse` | ✅ **DONE** |
+| 2 | `EmployeeDirectoryService` | `resetEmployeePassword()` | `Map<String,Object>` | `PasswordResetResponse` | ✅ **DONE** |
+| 3 | `PayrollService` | `calculateAllMonthlyPayroll()` | `Map<String,Object>` | `PayrollBulkResult` | ✅ **DONE** |
+| 4 | `RecruitmentRequestService` | `processRequest()` | `Map<String,Object>` | `ProcessRecruitmentResponse` | ✅ **DONE** |
+| 5 | `AdminService` | `deleteDevice()` | `void` (controller builds Map) | Keep `void`, controller uses `StatusResponseDto` directly | ✅ **DONE** |
 
 ### Track A3: Controller Tests
 
@@ -58,12 +58,12 @@ ProcessRecruitmentResponse.java  — RecruitmentRequestResponse request, String 
 
 | # | Task | Status |
 |---|------|--------|
-| 1 | `mvn clean compile` passes with zero errors | ✅ Done |
-| 2 | `mvn test` passes (all new + existing tests) | ✅ Done (64 tests, 0 failures) |
-| 3 | Zero `Map<String, Object>` returns remain in controllers (verify with grep) | ✅ Done |
-| 4 | `GlobalExceptionHandler` still catches all error types correctly | ✅ Verified (all tests pass) |
-| 5 | `npx tsc --noEmit` passes with zero errors | ✅ Done |
-| 6 | `npm run build` passes with zero TypeScript errors | ✅ Done (794ms) |
+| 1 | `mvn clean compile` passes with zero errors | ✅ **DONE** |
+| 2 | `mvn test` passes (all new + existing tests) | ✅ **DONE** (64 tests, 0 failures) |
+| 3 | Zero `Map<String, Object>` returns remain in controllers (verify with grep) | ✅ **DONE** |
+| 4 | `GlobalExceptionHandler` still catches all error types correctly | ✅ **VERIFIED** (all tests pass) |
+| 5 | `npx tsc --noEmit` passes with zero errors | ✅ **DONE** |
+| 6 | `npm run build` passes with zero TypeScript errors | ✅ **DONE** (794ms) |
 
 ---
 
@@ -163,7 +163,7 @@ A4: Verification                      B4: Verification
 
 ## Completion Criteria
 
-- [ ] All `Map<String, Object>` controller responses replaced with typed DTOs
+- [x] ✅ All `Map<String, Object>` controller responses replaced with typed DTOs **(ALREADY DONE)**
 - [ ] All new DTOs have corresponding TypeScript interfaces
 - [ ] All dashboard pages use React Query with consistent config
 - [ ] Single error extraction helper used across all form pages
