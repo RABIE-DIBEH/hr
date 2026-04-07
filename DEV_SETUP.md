@@ -140,9 +140,30 @@ npm run dev
 
 > Frontend runs at **http://localhost:5173**
 
----
+## 6. Mobile App Setup
 
-## 6. Test Credentials
+### Prerequisites
+- Install Flutter SDK from [flutter.dev](https://flutter.dev)
+- Run `flutter doctor` to verify installation
+
+### Platform Generation
+Platform directories (`android/`, `ios/`) are not committed to git. Generate them:
+
+```bash
+cd mobile
+chmod +x setup-mobile.sh
+./setup-mobile.sh
+```
+
+### Build APK
+```bash
+./build-apk.sh
+```
+
+**Note**: The `build-apk.sh` script will fail if platform directories are not generated first.
+
+---
+## 7. Test Credentials
 
 Once the backend is running and the seed data is loaded, use these accounts:
 
@@ -162,7 +183,7 @@ The test employee has a linked NFC card for clock-in simulation:
 
 ---
 
-## 7. Database Config (`application.properties`)
+## 8. Database Config (`application.properties`)
 
 ```properties
 spring.datasource.url=jdbc:postgresql://localhost:5432/hrms_db
@@ -175,7 +196,7 @@ jwt.secret=ChangeThisToAVeryLongSecretKeyAtLeast32CharsForHS256!!
 
 ---
 
-## 8. Useful Commands
+## 9. Useful Commands
 
 ### Backend
 ```bash
@@ -209,7 +230,7 @@ SELECT * FROM Leave_Requests;
 
 ---
 
-## 9. Cross-Platform Notes
+## 10. Cross-Platform Notes
 
 | Topic | Detail |
 |---|---|

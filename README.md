@@ -92,7 +92,10 @@ hrms-pro/
 │   │   ├── services/       # API integration
 │   │   └── utils/          # Helper functions
 │   └── package.json        # Node.js dependencies
-├── mobile/                 # Flutter mobile app (scaffolding)
+├── mobile/                 # Flutter mobile app
+│   ├── lib/                # Dart source code
+│   ├── build scripts/      # setup-mobile.sh, build-apk.sh
+│   └── Platform generation required (see mobile/README.md)
 ├── database/               # SQL schema and seed data
 ├── docker-compose.yml      # Multi-service container setup
 └── README.md               # This file
