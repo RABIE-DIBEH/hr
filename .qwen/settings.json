@@ -11,7 +11,11 @@
       "Bash(npx *)",
       "Bash(python3 *)",
       "Bash(lsof *)",
-      "Bash(xargs *)"
+      "Bash(xargs *)",
+      "Bash(make *)",
+      "Bash(jq *)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
     ]
   },
   "$version": 3
