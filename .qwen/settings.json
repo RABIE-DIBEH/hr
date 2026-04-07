@@ -15,7 +15,10 @@
       "Bash(make *)",
       "Bash(jq *)",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(git pull *)",
+      "Bash(git checkout *)",
+      "Bash(git push *)"
     ]
   },
   "$version": 3
