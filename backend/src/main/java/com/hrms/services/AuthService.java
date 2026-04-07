@@ -80,6 +80,22 @@ public class AuthService {
 
         if (bcryptMatch) {
             log.debug("BCrypt match success for employeeId={}", employee.getEmployeeId());
+            
+            // Structured logging for successful login
+            try {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                com.fasterxml.jackson.databind.node.ObjectNode auditDetails = mapper.createObjectNode();
+                auditDetails.put("employeeId", employee.getEmployeeId());
+                auditDetails.put("email", employee.getEmail());
+                auditDetails.put("roleId", employee.getRoleId());
+                auditDetails.put("authMethod", "bcrypt");
+                
+                com.hrms.logging.LoggingConfig.logAuditEvent("LOGIN_SUCCESS", "auth", 
+                    String.valueOf(employee.getEmployeeId()), auditDetails);
+            } catch (Exception e) {
+                log.debug("Failed to create structured audit log: {}", e.getMessage());
+            }
+            
             return buildToken(employee);
         }
 

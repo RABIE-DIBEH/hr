@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:nfc_manager/nfc_manager.dart';
 import 'api_service.dart';
 
@@ -39,7 +40,7 @@ class NfcService {
                 .toUpperCase();
           }
 
-          await NfcManager.instance.stopSession(errorAlertMessage: '');
+          await NfcManager.instance.stopSession();
           completer.complete(uid);
         } catch (e) {
           if (!completer.isCompleted) {
@@ -49,20 +50,20 @@ class NfcService {
       });
 
       // Timeout after 10 seconds
-      final timeout = Future.delayed(
+      final timeout = Future<String?>.delayed(
         const Duration(seconds: 10),
-        () => 'TIMEOUT',
+        () => null,
       );
 
-      final result = await Future.any([completer.future, timeout]);
-      if (result == 'TIMEOUT') {
+      final result = await Future.any<String?>([completer.future, timeout]);
+      if (result == null) {
         if (!sessionStopped) {
           sessionStopped = true;
           await NfcManager.instance.stopSession();
         }
         return null;
       }
-      return result as String?;
+      return result;
     } catch (e) {
       if (!sessionStopped) {
         sessionStopped = true;

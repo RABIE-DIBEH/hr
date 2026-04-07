@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Property definitions -->
+    <property name="LOG_PATH" value="${LOG_PATH:-logs}" />
+    <property name="LOG_FILE" value="${LOG_FILE:-hrms-backend}" />
+    <property name="CONSOLE_LOG_PATTERN" value="%d{ISO8601} [%thread] %-5level %logger{36} - %msg%n" />
+    <property name="JSON_LOG_PATTERN" value="%d{ISO8601} [%thread] %-5level %logger{36} - %msg%n" />
+    
+    <!-- Spring profiles -->
+    <springProfile name="dev,development,local">
+        <!-- Development: Console logging with colors -->
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>%d{HH:mm:ss.SSS} %highlight(%-5level) %cyan(%logger{36}) - %msg%n</pattern>
+            </encoder>
+        </appender>
+        
+        <root level="INFO">
+            <appender-ref ref="CONSOLE" />
+        </root>
+        
+        <!-- Application-specific loggers -->
+        <logger name="com.hrms" level="DEBUG" />
+        <logger name="org.springframework" level="WARN" />
+        <logger name="org.hibernate" level="WARN" />
+    </springProfile>
+    
+    <springProfile name="test">
+        <!-- Test: Minimal logging -->
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>%d{HH:mm:ss.SSS} %-5level %logger{36} - %msg%n</pattern>
+            </encoder>
+        </appender>
+        
+        <root level="WARN">
+            <appender-ref ref="CONSOLE" />
+        </root>
+        
+        <logger name="com.hrms" level="INFO" />
+    </springProfile>
+    
+    <springProfile name="prod,production,docker">
+        <!-- Production: Structured JSON logging with rotation -->
+        
+        <!-- Console appender with JSON format -->
+        <appender name="CONSOLE_JSON" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <customFields>{"application":"hrms-backend","environment":"production"}</customFields>
+                <fieldNames>
+                    <timestamp>@timestamp</timestamp>
+                    <message>message</message>
+                    <thread>thread</thread>
+                    <logger>logger</logger>
+                    <level>level</level>
+                    <levelValue>level_value</levelValue>
+                    <stackTrace>stack_trace</stackTrace>
+                </fieldNames>
+            </encoder>
+        </appender>
+        
+        <!-- File appender with JSON format and rotation -->
+        <appender name="FILE_JSON" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_PATH}/${LOG_FILE}.json</file>
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <customFields>{"application":"hrms-backend","environment":"production"}</customFields>
+                <fieldNames>
+                    <timestamp>@timestamp</timestamp>
+                    <message>message</message>
+                    <thread>thread</thread>
+                    <logger>logger</logger>
+                    <level>level</level>
+                    <levelValue>level_value</levelValue>
+                    <stackTrace>stack_trace</stackTrace>
+                </fieldNames>
+            </encoder>
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_PATH}/${LOG_FILE}.%d{yyyy-MM-dd}.json</fileNamePattern>
+                <maxHistory>30</maxHistory>
+                <totalSizeCap>3GB</totalSizeCap>
+            </rollingPolicy>
+        </appender>
+        
+        <!-- Error file appender -->
+        <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_PATH}/${LOG_FILE}-error.json</file>
+            <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+                <level>ERROR</level>
+            </filter>
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <customFields>{"application":"hrms-backend","environment":"production"}</customFields>
+                <fieldNames>
+                    <timestamp>@timestamp</timestamp>
+                    <message>message</message>
+                    <thread>thread</thread>
+                    <logger>logger</logger>
+                    <level>level</level>
+                    <levelValue>level_value</levelValue>
+                    <stackTrace>stack_trace</stackTrace>
+                </fieldNames>
+            </encoder>
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_PATH}/${LOG_FILE}-error.%d{yyyy-MM-dd}.json</fileNamePattern>
+                <maxHistory>90</maxHistory>
+                <totalSizeCap>1GB</totalSizeCap>
+            </rollingPolicy>
+        </appender>
+        
+        <!-- Audit log appender -->
+        <appender name="AUDIT_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_PATH}/${LOG_FILE}-audit.json</file>
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <customFields>{"application":"hrms-backend","environment":"production","logType":"audit"}</customFields>
+                <fieldNames>
+                    <timestamp>@timestamp</timestamp>
+                    <message>message</message>
+                    <thread>thread</thread>
+                    <logger>logger</logger>
+                    <level>level</level>
+                    <levelValue>level_value</levelValue>
+                </fieldNames>
+            </encoder>
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_PATH}/${LOG_FILE}-audit.%d{yyyy-MM-dd}.json</fileNamePattern>
+                <maxHistory>365</maxHistory>
+                <totalSizeCap>5GB</totalSizeCap>
+            </rollingPolicy>
+        </appender>
+        
+        <!-- Performance log appender -->
+        <appender name="PERFORMANCE_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_PATH}/${LOG_FILE}-performance.json</file>
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <customFields>{"application":"hrms-backend","environment":"production","logType":"performance"}</customFields>
+                <fieldNames>
+                    <timestamp>@timestamp</timestamp>
+                    <message>message</message>
+                    <thread>thread</thread>
+                    <logger>logger</logger>
+                    <level>level</level>
+                    <levelValue>level_value</levelValue>
+                </fieldNames>
+            </encoder>
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_PATH}/${LOG_FILE}-performance.%d{yyyy-MM-dd}.json</fileNamePattern>
+                <maxHistory>30</maxHistory>
+                <totalSizeCap>2GB</totalSizeCap>
+            </rollingPolicy>
+        </appender>
+        
+        <root level="INFO">
+            <appender-ref ref="CONSOLE_JSON" />
+            <appender-ref ref="FILE_JSON" />
+            <appender-ref ref="ERROR_FILE" />
+        </root>
+        
+        <!-- Application-specific loggers -->
+        <logger name="com.hrms" level="INFO" />
+        <logger name="AUDIT_EVENTS" level="INFO" additivity="false">
+            <appender-ref ref="AUDIT_FILE" />
+            <appender-ref ref="CONSOLE_JSON" />
+        </logger>
+        <logger name="PERFORMANCE_EVENTS" level="INFO" additivity="false">
+            <appender-ref ref="PERFORMANCE_FILE" />
+        </logger>
+        <logger name="BUSINESS_EVENTS" level="INFO" additivity="false">
+            <appender-ref ref="FILE_JSON" />
+        </logger>
+        
+        <!-- External library loggers -->
+        <logger name="org.springframework" level="WARN" />
+        <logger name="org.hibernate" level="WARN" />
+        <logger name="org.apache" level="WARN" />
+        <logger name="com.zaxxer" level="WARN" />
+    </springProfile>
+    
+    <!-- Default profile (when no profile specified) -->
+    <springProfile name="!dev &amp; !test &amp; !prod">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            </encoder>
+        </appender>
+        
+        <root level="INFO">
+            <appender-ref ref="CONSOLE" />
+        </root>
+    </springProfile>
+</configuration>

@@ -27,7 +27,8 @@
       "Bash(which *)",
       "Bash(flutter *)",
       "Bash(chmod *)",
-      "Bash(sed *)"
+      "Bash(sed *)",
+      "Bash(tar *)"
     ]
   },
   "$version": 3

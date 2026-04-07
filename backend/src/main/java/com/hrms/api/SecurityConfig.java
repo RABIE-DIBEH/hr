@@ -2,6 +2,7 @@ package com.hrms.api;
 
 import com.hrms.security.JwtAuthenticationFilter;
 import com.hrms.security.SecurityHeadersConfig;
+import com.hrms.logging.StructuredLoggingFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import jakarta.servlet.http.HttpServletResponse;
@@ -27,11 +28,14 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final SecurityHeadersConfig securityHeadersConfig;
+    private final StructuredLoggingFilter structuredLoggingFilter;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, 
-                         SecurityHeadersConfig securityHeadersConfig) {
+                         SecurityHeadersConfig securityHeadersConfig,
+                         StructuredLoggingFilter structuredLoggingFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.securityHeadersConfig = securityHeadersConfig;
+        this.structuredLoggingFilter = structuredLoggingFilter;
     }
 
     @Bean
@@ -149,6 +153,7 @@ public class SecurityConfig {
                         // Default: all other /api/** require authentication
                         .requestMatchers("/api/**").authenticated()
                 )
+                .addFilterBefore(structuredLoggingFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(securityHeadersConfig, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
