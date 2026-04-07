@@ -1,9 +1,8 @@
-version: '3.8'
-
 services:
   database:
     image: postgres:15-alpine
     container_name: hrms-db
+    restart: unless-stopped
     environment:
       POSTGRES_DB: hrms_db
       POSTGRES_USER: ${DB_USERNAME:-postgres}
@@ -25,6 +24,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: hrms-backend
+    restart: unless-stopped
     environment:
       - DB_URL=jdbc:postgresql://database:5432/hrms_db
       - DB_USERNAME=${DB_USERNAME:-postgres}
@@ -41,10 +41,17 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: hrms-frontend
+    restart: unless-stopped
     ports:
       - "80:80"
     depends_on:
       - backend
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
 volumes:
   db-data:
