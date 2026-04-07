@@ -10,39 +10,66 @@ class NfcService {
     return await NfcManager.instance.isAvailable();
   }
 
+  /// Scans an NFC tag and returns its UID using a Completer for proper async handling.
+  /// Returns null if no tag is found within the timeout (10 seconds).
   Future<String?> scanNfcTag() async {
-    String? uid;
-    
+    final completer = Completer<String?>();
+    bool sessionStopped = false;
+
     try {
       await NfcManager.instance.startSession(onDiscovered: (NfcTag tag) async {
-        final ndef = Ndef.from(tag);
-        // UID extraction depends on tag type, but common way for many tags is via 'identifier'
-        final List<int> identifier = tag.data['isDep'] != null 
-          ? tag.data['isDep']['identifier'] 
-          : tag.data['nfca'] != null 
-            ? tag.data['nfca']['identifier'] 
-            : tag.data['mifare'] != null 
-              ? tag.data['mifare']['identifier'] 
-              : [];
-        
-        if (identifier.isNotEmpty) {
-          uid = identifier.map((e) => e.toRadixString(16).padLeft(2, '0')).join(':').toUpperCase();
+        if (sessionStopped) return;
+        sessionStopped = true;
+
+        try {
+          // UID extraction depends on tag type
+          final List<int> identifier = tag.data['isDep'] != null
+              ? tag.data['isDep']['identifier']
+              : tag.data['nfca'] != null
+                  ? tag.data['nfca']['identifier']
+                  : tag.data['mifare'] != null
+                      ? tag.data['mifare']['identifier']
+                      : [];
+
+          String? uid;
+          if (identifier.isNotEmpty) {
+            uid = identifier
+                .map((e) => e.toRadixString(16).padLeft(2, '0'))
+                .join(':')
+                .toUpperCase();
+          }
+
+          await NfcManager.instance.stopSession(errorAlertMessage: '');
+          completer.complete(uid);
+        } catch (e) {
+          if (!completer.isCompleted) {
+            completer.complete(null);
+          }
         }
-        
-        await NfcManager.instance.stopSession();
       });
-      
-      // We need to wait for the session to find a tag or timeout
-      // In a real app, this would be more robust with a Completer
-      int attempts = 0;
-      while (uid == null && attempts < 100) {
-        await Future.delayed(const Duration(milliseconds: 100));
-        attempts++;
+
+      // Timeout after 10 seconds
+      final timeout = Future.delayed(
+        const Duration(seconds: 10),
+        () => 'TIMEOUT',
+      );
+
+      final result = await Future.any([completer.future, timeout]);
+      if (result == 'TIMEOUT') {
+        if (!sessionStopped) {
+          sessionStopped = true;
+          await NfcManager.instance.stopSession();
+        }
+        return null;
       }
-      
-      return uid;
+      return result as String?;
     } catch (e) {
-      await NfcManager.instance.stopSession();
+      if (!sessionStopped) {
+        sessionStopped = true;
+        try {
+          await NfcManager.instance.stopSession();
+        } catch (_) {}
+      }
       return null;
     }
   }

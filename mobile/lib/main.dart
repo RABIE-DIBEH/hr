@@ -18,7 +18,9 @@ void main() {
         Provider<ApiService>.value(value: apiService),
         Provider<AuthService>.value(value: authService),
         Provider<NfcService>.value(value: nfcService),
-        ChangeNotifierProvider(create: (context) => AuthProvider(authService)),
+        ChangeNotifierProvider(
+          create: (_) => AuthProvider(authService, apiService),
+        ),
       ],
       child: const HRMSApp(),
     ),
@@ -44,7 +46,9 @@ class HRMSApp extends StatelessWidget {
               body: Center(child: CircularProgressIndicator()),
             );
           }
-          return auth.isAuthenticated ? const DashboardScreen() : const LoginScreen();
+          return auth.isAuthenticated
+              ? const DashboardScreen()
+              : const LoginScreen();
         },
       ),
     );
