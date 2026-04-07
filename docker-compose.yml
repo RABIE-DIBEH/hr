@@ -71,8 +71,27 @@ services:
     environment:
       - VITE_API_BASE_URL=/api
 
+  prometheus:
+    image: prom/prometheus:v2.53.1
+    container_name: hrms-prometheus
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - hrms-network
+
 volumes:
   postgres_data:
+  prometheus_data:
 
 networks:
   hrms-network:

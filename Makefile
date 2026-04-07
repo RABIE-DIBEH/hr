@@ -1,6 +1,6 @@
 COMPOSE ?= docker compose
 
-.PHONY: help build up up-dev down restart-dev logs logs-backend logs-frontend logs-db clean test test-frontend verify verify-backend verify-frontend verify-compose status ps shell-backend shell-frontend shell-db db-backup db-restore health
+.PHONY: help build up up-dev down restart-dev logs logs-backend logs-frontend logs-db clean test test-frontend verify verify-backend verify-frontend verify-compose status ps shell-backend shell-frontend shell-db db-backup db-restore backup-daily rollback restore-verify env-parity uat health
 
 help:
 	@echo "HRMS Docker Management Commands:"
@@ -25,6 +25,11 @@ help:
 	@echo "  shell-backend    - Open shell in backend container"
 	@echo "  shell-frontend   - Open shell in frontend container"
 	@echo "  shell-db         - Open psql shell in database"
+	@echo "  backup-daily     - Create timestamped backup with retention policy"
+	@echo "  restore-verify   - Restore a backup into a temporary verification database"
+	@echo "  rollback         - Roll back deployment to a previous git tag"
+	@echo "  env-parity       - Check environment parity expectations"
+	@echo "  uat              - Generate UAT checklist for four roles"
 	@echo "  health           - Check service health"
 	@echo ""
 
@@ -94,6 +99,21 @@ db-backup:
 
 db-restore:
 	@echo "Usage: docker compose exec -T postgres psql -U hrms_user -d hrms < backup_file.sql"
+
+backup-daily:
+	./backup-daily.sh
+
+restore-verify:
+	@echo "Usage: ./restore-verify.sh <backup-file.sql>"
+
+rollback:
+	@echo "Usage: ./rollback.sh <tag>"
+
+env-parity:
+	./check-env-parity.sh
+
+uat:
+	./uat-role-scenarios.sh
 
 health:
 	@echo "Checking services health..."
