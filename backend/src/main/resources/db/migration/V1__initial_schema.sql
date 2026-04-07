@@ -168,4 +168,4 @@ CREATE TABLE nfc_devices (
 );
 
 -- Seed Initial Roles
-INSERT INTO Users_Roles (role_name) VALUES ('ADMIN'), ('HR'), ('MANAGER'), ('EMPLOYEE');
+INSERT INTO Users_Roles (role_name) VALUES ('ADMIN'), ('HR'), ('MANAGER'), ('EMPLOYEE'), ('SUPER_ADMIN'), ('PAYROLL');

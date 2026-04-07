@@ -47,7 +47,14 @@ VALUES
   -- │  Email   : employee@hrms.com                            │
   -- │  Password: Employee@1234                                │
   -- └─────────────────────────────────────────────────────────┘
-  ('Lina Employee', 'employee@hrms.com', 'Employee@1234', 4, 1, 3, 5000.00, 'Active')
+  ('Lina Employee', 'employee@hrms.com', 'Employee@1234', 4, 1, 3, 5000.00, 'Active'),
+
+  -- ┌─────────────────────────────────────────────────────────┐
+  -- │  Role: PAYROLL  (RoleId = 6)                            │
+  -- │  Email   : payroll@hrms.com                             │
+  -- │  Password: Payroll@1234                                 │
+  -- └─────────────────────────────────────────────────────────┘
+  ('Payroll Specialist', 'payroll@hrms.com', 'Payroll@1234', 6, NULL, NULL, 10000.00, 'Active')
 
 ON CONFLICT (Email) DO NOTHING;
 
