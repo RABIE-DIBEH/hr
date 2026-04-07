@@ -56,10 +56,9 @@ project-root/
 ├── database/
 │   ├── schema.sql             # PostgreSQL DDL
 │   └── seed_test_data.sql     # Test data with default users
-└── docs/
-    ├── AGENTS.md              # Development guidelines
-    ├── API_DOCS.md            # API endpoint reference
-    └── project structure.md   # SRS document (German/Arabic)
+├── AGENTS.md              # Development guidelines
+├── API_DOCS.md            # API endpoint reference
+└── project structure.md   # SRS document (German/Arabic)
 ```
 
 ---
@@ -315,26 +314,31 @@ Entity (core/models/)
 
 ---
 
-## Known Gaps and TODOs
+## Current Status (v0.9-stable)
 
 ### Security
-- [ ] JWT secret in `application.properties` - consider using environment variables in production
-- [ ] BCrypt migration for legacy plain-text passwords is automatic on first successful login
+- [x] JWT filter implemented (`JwtAuthenticationFilter.java`)
+- [x] Password auto-upgraded to BCrypt on first login
+- [x] Role-based access control enforced
+- [x] Secrets loaded from environment / `backend/.env` (not hardcoded)
+- [ ] JWT secret should use vault/KMS in production
 
 ### Testing
-- [ ] No test directories exist (`src/test/java/`, `src/test/`)
-- [ ] Add JUnit 5 + Mockito for backend
-- [ ] Add Vitest + React Testing Library for frontend
+- [x] Backend: 86+ JUnit 5 tests (JUnit 5 + Mockito + MockMvc)
+- [x] Frontend: 23 tests (Vitest + React Testing Library)
+- [ ] Integration test suite needs expansion (payroll workflows, leave workflows)
 
 ### Code Quality
-- [ ] No DTOs for request/response bodies (using `Map<String, String>`)
-- [ ] No input validation (`@Valid` + Bean Validation annotations)
-- [ ] No pagination for list endpoints
-- [x] Centralized error handling implemented (`GlobalExceptionHandler`)
+- [x] Centralized error handling (`GlobalExceptionHandler.java`)
+- [x] DTOs with `@Valid` + Bean Validation on all endpoints
+- [x] Pagination on list endpoints
+- [ ] Response format standardization to `ApiResponse<T>` wrapper in progress
+- [ ] Consider React Query/SWR caching layer for frontend
 
 ### Frontend
-- [ ] No error boundaries around pages
-- [ ] Consider React Query/SWR for data fetching
+- [x] Error boundaries wrap all pages
+- [x] React Query integrated for server-state management
+- [ ] Bundle size optimization (code-splitting for large dashboard pages)
 
 ---
 
@@ -342,8 +346,10 @@ Entity (core/models/)
 
 | Role | Description | Access Level |
 |------|-------------|--------------|
-| **ADMIN** | System administrator | Full access to all features, device management, user permissions |
+| **SUPER_ADMIN** | Platform owner | Full access to everything, bypass all role restrictions |
+| **ADMIN** | System administrator | All features, device management, user permissions |
 | **HR** | Human Resources staff | All employee data, payroll processing, attendance management |
+| **PAYROLL** | Payroll officer | Payroll calculation, payroll slips, salary reports |
 | **MANAGER** | Department head | View/edit team attendance, approve leave requests |
 | **EMPLOYEE** | Regular employee | Personal dashboard, view own attendance, request leave |
 

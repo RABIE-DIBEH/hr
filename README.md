@@ -2,7 +2,7 @@
 
 ![HRMS Banner](https://img.shields.io/badge/HRMS-PRO-blue)
 ![Java](https://img.shields.io/badge/Java-21-orange)
-![Spring Boot](https://imgwards.io/badge/Spring%20Boot-3.2.0-brightgreen)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.0-brightgreen)
 ![React](https://img.shields.io/badge/React-19-61DAFB)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-336791)
@@ -142,7 +142,7 @@ npm run dev                # Start Vite dev server (port 5173)
 npm run build              # Type-check + production build
 npm run lint               # Run ESLint
 npm run preview            # Preview production build
-npm test                   # Run frontend tests
+npm run test:run         # Run frontend tests
 ```
 
 ### Database
@@ -216,7 +216,7 @@ Key API endpoints:
 |-----------|------------|
 | **Backend** | Java 21, Spring Boot 3.2.0, Spring Security, JPA/Hibernate |
 | **Frontend** | React 19, TypeScript, Vite, Tailwind CSS v4 |
-| **Database** | PostgreSQL 15, Flyway for migrations |
+| **Database** | PostgreSQL 15, manual SQL migrations |
 | **Authentication** | JWT, BCrypt password hashing |
 | **Containerization** | Docker, Docker Compose |
 | **Testing** | JUnit 5, Mockito, Vitest, React Testing Library |

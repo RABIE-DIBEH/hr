@@ -15,25 +15,25 @@ Use seeded test users from DataInitializer:
 
 ### Admin User
 - **Email**: admin@hrms.com
-- **Password**: admin123
+- **Password**: Admin@1234
 - **Role**: SUPER_ADMIN
 - **Access**: Full system access
 
 ### HR User
-- **Email**: hr@hrms.com  
-- **Password**: hr123
+- **Email**: hr@hrms.com
+- **Password**: HR@1234
 - **Role**: HR
 - **Access**: Employee management, recruitment, payroll
 
 ### Manager User
 - **Email**: manager@hrms.com
-- **Password**: manager123
+- **Password**: Manager@1234
 - **Role**: MANAGER
 - **Access**: Team management, leave approvals
 
 ### Employee User
 - **Email**: employee@hrms.com
-- **Password**: employee123
+- **Password**: Employee@1234
 - **Role**: EMPLOYEE
 - **Access**: Personal dashboard, leave requests
 
@@ -99,20 +99,20 @@ Use seeded test users from DataInitializer:
 - [ ] `DELETE /api/employees/{id}` - Soft delete employee
 
 #### Attendance API
-- [ ] `POST /api/attendance/clock` - NFC clock simulation
-- [ ] `GET /api/attendance/my-records` - Personal attendance
-- [ ] `GET /api/attendance/team/{teamId}` - Team attendance (Manager)
+- [ ] `POST /api/attendance/nfc-clock` - NFC clock simulation
+- [ ] `GET /api/attendance/my` - Personal attendance
+- [ ] `GET /api/attendance/manager/today` - Team attendance (Manager)
 
 #### Leave API
-- [ ] `POST /api/leave/request` - Submit leave request
-- [ ] `GET /api/leave/my-requests` - Personal leave requests
-- [ ] `GET /api/leave/pending` - Pending approvals (Manager/HR)
-- [ ] `PUT /api/leave/process/{id}` - Process leave request
+- [ ] `POST /api/leaves/request` - Submit leave request
+- [ ] `GET /api/leaves/my-requests` - Personal leave requests
+- [ ] `GET /api/leaves/manager/pending` - Pending approvals (Manager/HR)
+- [ ] `PUT /api/leaves/process/{id}` - Process leave request
 
 #### Payroll API
-- [ ] `POST /api/payroll/generate` - Generate payroll
-- [ ] `GET /api/payroll/history` - Payroll history
-- [ ] `GET /api/payroll/employee/{id}` - Employee payroll
+- [ ] `POST /api/payroll/calculate` - Generate payroll
+- [ ] `GET /api/payroll/my-slips` - Payroll history
+- [ ] `GET /api/payroll/history` - All payroll records
 
 ### 5. Frontend-Specific Tests
 #### React Query Functionality
