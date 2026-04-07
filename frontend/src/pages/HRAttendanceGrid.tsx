@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import axios from 'axios';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
   Calendar,
@@ -20,52 +20,83 @@ import {
   downloadAttendancePdf,
   downloadAttendanceExcel,
   type AttendanceRecord,
-  type EmployeeSummary,
 } from '../services/api';
+import { queryKeys } from '../services/queryKeys';
+import { extractApiError } from '../utils/errorHandler';
 import { getPayrollStatusMeta, getReviewStatusMeta } from '../components/attendanceStatus';
 
 const HRAttendanceGrid = () => {
-  const [employees, setEmployees] = useState<EmployeeSummary[]>([]);
-  const [records, setRecords] = useState<AttendanceRecord[]>([]);
-  const [page, setPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalCount, setTotalCount] = useState(0);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   const [selectedRecord, setSelectedRecord] = useState<AttendanceRecord | null>(null);
   const [correctionCheckIn, setCorrectionCheckIn] = useState('');
   const [correctionCheckOut, setCorrectionCheckOut] = useState('');
   const [correctionReason, setCorrectionReason] = useState('');
   const [approveForPayroll, setApproveForPayroll] = useState(true);
-  const [submittingCorrection, setSubmittingCorrection] = useState(false);
   const [correctionFeedback, setCorrectionFeedback] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
 
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [page, setPage] = useState(0);
 
   const month = currentDate.getMonth() + 1;
   const year = currentDate.getFullYear();
-  
+
   const daysInMonth = new Date(year, month, 0).getDate();
   const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const empRes = await listEmployeesPage({ page: 0, size: 100 });
-        setEmployees(empRes.data.items);
-        const recordRes = await getHrMonthlyAttendancePage(month, year, { page, size: 100 });
-        setRecords(recordRes.data.items);
-        setTotalPages(recordRes.data.totalPages);
-        setTotalCount(recordRes.data.totalCount);
-        setLoadError(null);
-      } catch {
-        setLoadError('تعذر تحميل البيانات المركزية للحضور. تأكد من صلاحيات HR.');
-      }
-    };
+  const {
+    data: employeesData,
+    error: employeesError,
+  } = useQuery({
+    queryKey: ['hr-employees-list'],
+    queryFn: async () => {
+      const res = await listEmployeesPage({ page: 0, size: 100 });
+      return res.data.items;
+    },
+  });
 
-    void loadData();
-  }, [month, year, page]);
+  const {
+    data: recordsData,
+    error: recordsError,
+  } = useQuery({
+    queryKey: queryKeys.attendance.hrMonthly(month, year, page),
+    queryFn: async () => {
+      const res = await getHrMonthlyAttendancePage(month, year, { page, size: 100 });
+      return res.data;
+    },
+  });
 
+  const correctionMutation = useMutation({
+    mutationFn: async (payload: {
+      recordId: number;
+      checkIn?: string;
+      checkOut?: string;
+      reason: string;
+      approveForPayroll: boolean;
+    }) => {
+      const { recordId, ...data } = payload;
+      return manuallyCorrectAttendance(recordId, data);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.attendance.hrMonthlyRoot });
+      void queryClient.invalidateQueries({ queryKey: ['hr-employees-list'] });
+      closeCorrectionModal();
+    },
+    onError: (err: unknown) => {
+      const apiError = extractApiError(err);
+      setCorrectionFeedback(apiError.message);
+    },
+  });
+
+  const employees = employeesData ?? [];
+  const records = recordsData?.items ?? [];
+  const totalPages = recordsData?.totalPages ?? 0;
+  const totalCount = recordsData?.totalCount ?? 0;
+  const loadError = employeesError ? 'تعذر تحميل البيانات المركزية للحضور. تأكد من صلاحيات HR.' :
+                    recordsError ? 'تعذر تحميل سجلات الحضور. تأكد من صلاحيات HR.' : null;
+
+  // Loading state derived from queries
+  
   const handlePrevMonth = () => {
     setPage(0);
     setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
@@ -208,32 +239,14 @@ const HRAttendanceGrid = () => {
       return;
     }
 
-    setSubmittingCorrection(true);
-    try {
-      await manuallyCorrectAttendance(selectedRecord.recordId, {
-        checkIn: toApiDateTime(correctionCheckIn),
-        checkOut: toApiDateTime(correctionCheckOut),
-        reason: correctionReason.trim(),
-        approveForPayroll,
-      });
-
-      const empRes = await listEmployeesPage({ page: 0, size: 100 });
-      setEmployees(empRes.data.items);
-      const recordRes = await getHrMonthlyAttendancePage(month, year, { page, size: 100 });
-      setRecords(recordRes.data.items);
-      setTotalPages(recordRes.data.totalPages);
-      setTotalCount(recordRes.data.totalCount);
-      setLoadError(null);
-      closeCorrectionModal();
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error) && typeof error.response?.data?.message === 'string') {
-        setCorrectionFeedback(error.response.data.message);
-      } else {
-        setCorrectionFeedback('فشل حفظ التصحيح اليدوي.');
-      }
-    } finally {
-      setSubmittingCorrection(false);
-    }
+    setCorrectionFeedback(null);
+    correctionMutation.mutate({
+      recordId: selectedRecord.recordId,
+      checkIn: toApiDateTime(correctionCheckIn),
+      checkOut: toApiDateTime(correctionCheckOut),
+      reason: correctionReason.trim(),
+      approveForPayroll,
+    });
   };
 
   return (
@@ -456,7 +469,7 @@ const HRAttendanceGrid = () => {
               <button
                 type="button"
                 onClick={closeCorrectionModal}
-                disabled={submittingCorrection}
+                disabled={correctionMutation.isPending}
                 className="rounded-xl border border-white/10 p-2 text-slate-400 transition-all hover:bg-white/5 hover:text-white disabled:opacity-50"
               >
                 <X size={18} />
@@ -518,7 +531,7 @@ const HRAttendanceGrid = () => {
               <button
                 type="button"
                 onClick={closeCorrectionModal}
-                disabled={submittingCorrection}
+                disabled={correctionMutation.isPending}
                 className="rounded-2xl border border-white/10 px-5 py-3 text-sm font-bold text-slate-300 transition-all hover:bg-white/5 disabled:opacity-50"
               >
                 إلغاء
@@ -526,10 +539,10 @@ const HRAttendanceGrid = () => {
               <button
                 type="button"
                 onClick={handleSubmitCorrection}
-                disabled={submittingCorrection}
+                disabled={correctionMutation.isPending}
                 className="rounded-2xl bg-sky-600 px-5 py-3 text-sm font-bold text-white transition-all hover:bg-sky-700 disabled:opacity-50"
               >
-                {submittingCorrection ? 'جارٍ الحفظ...' : 'حفظ التصحيح'}
+                {correctionMutation.isPending ? 'جارٍ الحفظ...' : 'حفظ التصحيح'}
               </button>
             </div>
           </div>

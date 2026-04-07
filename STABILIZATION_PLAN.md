@@ -18,10 +18,10 @@
 
 ## Phase 0: Freeze (1-2 Days)
 
-- [ ] Create branch: `git checkout -b stabilization-phase`
-- [ ] Announce freeze to team: "No new features until stabilization is complete."
-- [ ] All commits go to `stabilization-phase` only.
-- [ ] No direct commits to `main` except critical hotfixes.
+- [x] Create branch: `git checkout -b stabilization-phase`
+- [x] Announce freeze to team: "No new features until stabilization is complete."
+- [x] All commits go to `stabilization-phase` only.
+- [x] No direct commits to `main` except critical hotfixes.
 
 ---
 
@@ -29,28 +29,14 @@
 
 ### 1.1 Write Master README.md (Root Level)
 
-Create a comprehensive `README.md` in the project root with:
-
-- **Project Description**: Brief overview (HRMS with NFC-based attendance tracking)
-- **Tech Stack**: Backend (Java 21, Spring Boot 3.2.0, PostgreSQL), Frontend (React 19, TypeScript, Vite, Tailwind CSS v4), Mobile (Flutter)
-- **Step-by-Step Windows Setup Guide**:
-  1. Install prerequisites (Java 21, Node.js 18+, PostgreSQL 12+, Maven)
-  2. Database setup (`CREATE DATABASE hrms_db;` + run `schema.sql` + `seed_test_data.sql`)
-  3. Backend setup (`backend/.env` configuration + `mvn spring-boot:run`)
-  4. Frontend setup (`npm install` + `npm run dev`)
-  5. Default test credentials table
-- **Test Credentials Table**:
-
-| Role | Email | Password | Dashboard |
-|------|-------|----------|-----------|
-| ADMIN | `admin@hrms.com` | `Admin@1234` | `/admin` |
-| HR | `hr@hrms.com` | `HR@1234` | `/hr` |
-| MANAGER | `manager@hrms.com` | `Manager@1234` | `/manager` |
-| EMPLOYEE | `employee@hrms.com` | `Employee@1234` | `/dashboard` |
-
-- **Directory Structure**: Visual tree of major folders
-- **Team分工**: Who works on what (Person 1: Backend + DB + Testing + Docker | Person 2: Frontend + Mobile + Docs + UI)
-- **Important Links**: DEV_SETUP.md, API_DOCS.md, project structure.md
+- [ ] Create a comprehensive `README.md` in the project root with:
+  - Project Description
+  - Tech Stack
+  - Step-by-Step Windows Setup Guide
+  - Test Credentials Table
+  - Directory Structure
+  - Team Division
+  - Important Links
 
 ### 1.2 Review & Complete Existing Documentation Files
 
@@ -62,17 +48,17 @@ Create a comprehensive `README.md` in the project root with:
 
 ### 1.3 Fix Existing Minor Issues
 
-- [ ] Convert `Map<String, Object>` requests to typed DTOs (see Phase 1.4 below)
-- [ ] Fix any obvious response format inconsistencies
-- [ ] Ensure all controllers return `ResponseEntity<T>` with explicit status codes
+- [x] Convert `Map<String, Object>` requests to typed DTOs (see Phase 1.4 below)
+- [x] Fix any obvious response format inconsistencies
+- [x] Ensure all controllers return `ResponseEntity<T>` with explicit status codes
 
 ### 1.4 Backend DTO Conversion Tasks (from NEXT_PHASE_CHECKLIST.md)
 
 Review and convert these endpoints from `Map<String, Object>` to typed DTOs:
 
-- [ ] Recruitment Request endpoints → `RecruitmentRequestDto.java`
-- [ ] Advance Request endpoints → `AdvanceRequestDto.java`
-- [ ] Any other Map-based request endpoints found during review
+- [x] Recruitment Request endpoints → `RecruitmentRequestDto.java`
+- [x] Advance Request endpoints → `AdvanceRequestDto.java`
+- [x] Any other Map-based request endpoints found during review
 
 ---
 

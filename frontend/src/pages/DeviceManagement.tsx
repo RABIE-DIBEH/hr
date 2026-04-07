@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Server,
@@ -17,42 +18,73 @@ import {
   deleteNfcDevice,
   type NfcDevice,
 } from '../services/api';
+import { queryKeys } from '../services/queryKeys';
 import PaginationControls from '../components/PaginationControls';
+import { extractApiError } from '../utils/errorHandler';
 
 const DeviceManagement = () => {
-  const [devices, setDevices] = useState<NfcDevice[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalCount, setTotalCount] = useState(0);
-
-  // Modal state
   const [showAddModal, setShowAddModal] = useState(false);
   const [addForm, setAddForm] = useState({ name: '', deviceId: '' });
-  const [actionLoading, setActionLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
-  const loadDevices = () => {
-    setLoading(true);
-    setError(null);
-    getNfcDevicesPage({ page, size: 10 })
-      .then((res) => {
-        setDevices(res.data.items);
-        setTotalPages(res.data.totalPages);
-        setTotalCount(res.data.totalCount);
-      })
-      .catch((err: unknown) => {
-        const msg = err instanceof Error ? err.message : 'فشل في تحميل الأجهزة';
-        setError(msg);
-      })
-      .finally(() => setLoading(false));
-  };
+  const {
+    data: devicesData,
+    isLoading: loading,
+    error: queryError,
+    refetch: refetchDevices,
+  } = useQuery({
+    queryKey: queryKeys.admin.devices(page),
+    queryFn: () => getNfcDevicesPage({ page, size: 10 }),
+  });
 
-  useEffect(() => {
-    loadDevices();
-  }, [page]);
+  const devices = devicesData?.data?.items ?? [];
+  const totalPages = devicesData?.data?.totalPages ?? 0;
+  const totalCount = devicesData?.data?.totalCount ?? 0;
+  const error = queryError ? extractApiError(queryError).message : null;
+
+  const addMutation = useMutation({
+    mutationFn: (data: { name: string; deviceId: string }) =>
+      addNfcDevice({
+        name: data.name,
+        deviceId: data.deviceId,
+        status: 'Offline',
+        systemLoad: '0%',
+      }),
+    onSuccess: () => {
+      setSuccessMessage('تم إضافة الجهاز بنجاح');
+      setShowAddModal(false);
+      setAddForm({ name: '', deviceId: '' });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.devicesRoot });
+    },
+  });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ deviceId: _deviceId, status }: { deviceId: string; status: string }) =>
+      updateNfcDeviceStatus(_deviceId, status),
+    onSuccess: () => {
+      setSuccessMessage('تم تحديث الحالة بنجاح');
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.devicesRoot });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (deviceId: string) => deleteNfcDevice(deviceId),
+    onSuccess: () => {
+      setSuccessMessage('تم حذف الجهاز بنجاح');
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.devicesRoot });
+    },
+  });
+
+  // Show mutation errors
+  const mutationError =
+    addMutation.error || updateStatusMutation.error || deleteMutation.error
+      ? extractApiError(addMutation.error ?? updateStatusMutation.error ?? deleteMutation.error!).message
+      : null;
+
+  const displayError = error ?? mutationError;
 
   const filtered = devices.filter(
     (d) =>
@@ -62,65 +94,26 @@ const DeviceManagement = () => {
 
   const handleAddDevice = async () => {
     if (!addForm.name.trim() || !addForm.deviceId.trim()) {
-      setError('يرجى ملء جميع الحقول');
       return;
     }
-    setActionLoading(true);
-    setError(null);
-    try {
-      await addNfcDevice({
-        name: addForm.name.trim(),
-        deviceId: addForm.deviceId.trim(),
-        status: 'Offline',
-        systemLoad: '0%',
-      });
-      setSuccessMessage('تم إضافة الجهاز بنجاح');
-      setShowAddModal(false);
-      setAddForm({ name: '', deviceId: '' });
-      loadDevices();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'فشل في إضافة الجهاز';
-      setError(msg);
-    } finally {
-      setActionLoading(false);
-    }
+    addMutation.mutate({ name: addForm.name.trim(), deviceId: addForm.deviceId.trim() });
   };
 
   const handleToggleStatus = async (device: NfcDevice) => {
     const newStatus = device.status === 'Online' ? 'Offline' : 'Online';
-    setActionLoading(true);
-    setError(null);
-    try {
-      await updateNfcDeviceStatus(device.deviceId, newStatus);
-      setSuccessMessage(`تم تحديث حالة ${device.name} إلى ${newStatus}`);
-      loadDevices();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'فشل في تحديث الحالة';
-      setError(msg);
-    } finally {
-      setActionLoading(false);
-    }
+    updateStatusMutation.mutate({ deviceId: device.deviceId, status: newStatus });
   };
 
   const handleDeleteDevice = async (device: NfcDevice) => {
     if (!window.confirm(`هل أنت متأكد من حذف الجهاز "${device.name}"؟`)) return;
-    setActionLoading(true);
-    setError(null);
-    try {
-      await deleteNfcDevice(device.deviceId);
-      setSuccessMessage('تم حذف الجهاز بنجاح');
-      loadDevices();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'فشل في حذف الجهاز';
-      setError(msg);
-    } finally {
-      setActionLoading(false);
-    }
+    deleteMutation.mutate(device.deviceId);
   };
 
   const clearMessages = () => {
     setSuccessMessage(null);
-    setError(null);
+    if (addMutation.error) addMutation.reset();
+    if (updateStatusMutation.error) updateStatusMutation.reset();
+    if (deleteMutation.error) deleteMutation.reset();
   };
 
   return (
@@ -140,14 +133,14 @@ const DeviceManagement = () => {
             </button>
           </motion.div>
         )}
-        {error && (
+        {displayError && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: -20 }}
             exit={{ opacity: 0, y: -20 }}
             className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-red-600 text-white px-6 py-3 rounded-xl shadow-lg max-w-md"
           >
-            <p className="font-bold">{error}</p>
+            <p className="font-bold">{displayError}</p>
             <button onClick={clearMessages} className="text-red-200 text-sm mt-1 hover:text-white">
               إغلاق
             </button>
@@ -170,10 +163,10 @@ const DeviceManagement = () => {
             </div>
             <div className="flex items-center gap-3">
               <button
-                onClick={loadDevices}
+                onClick={() => refetchDevices()}
                 className="bg-white/5 hover:bg-white/10 px-4 py-3 rounded-xl font-bold flex items-center gap-2 border border-white/10 transition-all"
               >
-                <RefreshCw size={18} />
+                <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
                 <span>تحديث</span>
               </button>
               <button
@@ -271,7 +264,7 @@ const DeviceManagement = () => {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleToggleStatus(device)}
-                            disabled={actionLoading}
+                            disabled={updateStatusMutation.isPending}
                             className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors disabled:opacity-50"
                             title={device.status === 'Online' ? 'إيقاف' : 'تشغيل'}
                           >
@@ -279,7 +272,7 @@ const DeviceManagement = () => {
                           </button>
                           <button
                             onClick={() => handleDeleteDevice(device)}
-                            disabled={actionLoading}
+                            disabled={deleteMutation.isPending}
                             className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-colors disabled:opacity-50"
                             title="حذف"
                           >
@@ -352,10 +345,10 @@ const DeviceManagement = () => {
                 </button>
                 <button
                   onClick={handleAddDevice}
-                  disabled={actionLoading}
+                  disabled={addMutation.isPending}
                   className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold text-white transition-colors disabled:opacity-50"
                 >
-                  {actionLoading ? 'جارِ الإضافة...' : 'إضافة الجهاز'}
+                  {addMutation.isPending ? 'جارِ الإضافة...' : 'إضافة الجهاز'}
                 </button>
               </div>
             </motion.div>

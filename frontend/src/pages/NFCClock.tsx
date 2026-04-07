@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { CreditCard, CheckCircle, Wifi, ShieldCheck, AlertCircle, Plus, X, Search } from 'lucide-react';
 import { clockByNfc, searchEmployees, assignEmployeeNfcCard } from '../services/api';
+import { extractApiError } from '../utils/errorHandler';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const NFCClock = () => {
@@ -12,24 +14,18 @@ const NFCClock = () => {
   // NFC Card assignment modal
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<{ employeeId: number; fullName: string; email: string }[]>([]);
   const [assignLoading, setAssignLoading] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<{ employeeId: number; fullName: string } | null>(null);
   const [cardUid, setCardUid] = useState('');
   const [assignResult, setAssignResult] = useState<{ success: boolean; message: string } | null>(null);
 
-  useEffect(() => {
-    if (searchQuery.length < 2) {
-      setSearchResults([]);
-      return;
-    }
-    const timer = setTimeout(() => {
-      searchEmployees(searchQuery)
-        .then(res => setSearchResults(res.data))
-        .catch(() => setSearchResults([]));
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
+  const { data: searchResults = [] } = useQuery({
+    queryKey: ['nfc', 'employee-search', searchQuery],
+    queryFn: () => searchEmployees(searchQuery).then(res => res.data),
+    enabled: searchQuery.length >= 2,
+    staleTime: 1000 * 2,
+    retry: false,
+  });
 
   const handleAssignCard = async () => {
     if (!selectedEmployee || !cardUid.trim()) return;
@@ -40,8 +36,8 @@ const NFCClock = () => {
       setCardUid('');
       setSelectedEmployee(null);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'فشل ربط البطاقة';
-      setAssignResult({ success: false, message: msg });
+      const apiError = extractApiError(err);
+      setAssignResult({ success: false, message: apiError.message });
     } finally {
       setAssignLoading(false);
     }
@@ -66,10 +62,8 @@ const NFCClock = () => {
     } catch (err: unknown) {
       setLoading(false);
       setError(true);
-      const msg = (typeof err === 'object' && err !== null && 'response' in err)
-        ? ((err as { response?: { data?: { message?: string } } }).response?.data?.message || 'خطأ في الاتصال بالخادم')
-        : 'خطأ في الاتصال بالخادم';
-      setMessage(msg);
+      const apiError = extractApiError(err);
+      setMessage(apiError.message || 'خطأ في الاتصال بالخادم');
       
       setTimeout(() => {
         setError(false);

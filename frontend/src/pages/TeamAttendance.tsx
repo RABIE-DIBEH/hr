@@ -1,4 +1,5 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   UserCheck,
   AlertTriangle,
@@ -14,8 +15,9 @@ import {
   getManagerTodayAttendancePage,
   verifyAttendance,
   reportFraud,
-  type AttendanceRecord,
 } from '../services/api';
+import { queryKeys } from '../services/queryKeys';
+import { extractApiError } from '../utils/errorHandler';
 import {
   getLegacyAttendanceStatusMeta,
   getPayrollStatusMeta,
@@ -23,56 +25,47 @@ import {
 } from '../components/attendanceStatus';
 
 const TeamAttendance = () => {
-  const [todayAttendance, setTodayAttendance] = useState<AttendanceRecord[]>([]);
+  const queryClient = useQueryClient();
   const [verifyingRecord, setVerifyingRecord] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalCount, setTotalCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const fetchAttendance = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await getManagerTodayAttendancePage({ page, size: 20 });
-      setTodayAttendance(res.data.items);
-      setTotalPages(res.data.totalPages);
-      setTotalCount(res.data.totalCount);
-      setError(null);
-    } catch (err) {
-      setError('فشل في تحميل سجلات الحضور لليوم');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [page]);
+  const {
+    data: attendanceData,
+    isLoading: loading,
+    error: queryError,
+    refetch: refetchAttendance,
+  } = useQuery({
+    queryKey: queryKeys.manager.todayAttendance(page),
+    queryFn: () => getManagerTodayAttendancePage({ page, size: 20 }),
+  });
 
-  useEffect(() => {
-    fetchAttendance();
-  }, [fetchAttendance]);
+  const todayAttendance = attendanceData?.data?.items ?? [];
+  const totalPages = attendanceData?.data?.totalPages ?? 0;
+  const totalCount = attendanceData?.data?.totalCount ?? 0;
+  const error = queryError ? extractApiError(queryError).message : null;
+
+  const verifyMutation = useMutation({
+    mutationFn: (recordId: number) => verifyAttendance(recordId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.manager.todayAttendanceRoot });
+    },
+  });
+
+  const fraudMutation = useMutation({
+    mutationFn: ({ recordId, note }: { recordId: number; note: string }) =>
+      reportFraud(recordId, note),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.manager.todayAttendanceRoot });
+    },
+  });
 
   const handleVerifyAttendance = async (recordId: number) => {
     setVerifyingRecord(recordId);
     try {
-      await verifyAttendance(recordId);
-      setTodayAttendance(prev => 
-        prev.map((r) => (
-          r.recordId === recordId
-            ? {
-                ...r,
-                status: 'Verified',
-                isVerifiedByManager: true,
-                reviewStatus: 'VERIFIED',
-                payrollStatus: 'APPROVED_FOR_PAYROLL',
-                verifiedAt: new Date().toISOString(),
-                managerNotes: 'Verified via Team Attendance Screen',
-              }
-            : r
-        ))
-      );
+      await verifyMutation.mutateAsync(recordId);
     } catch {
-      alert("فشل تأكيد الحضور");
+      alert('فشل تأكيد الحضور');
     } finally {
       setVerifyingRecord(null);
     }
@@ -81,32 +74,20 @@ const TeamAttendance = () => {
   const handleReportFraud = async (recordId: number) => {
     const note = prompt('يرجى إدخال تفاصيل التلاعب أو ملاحظتك:');
     if (!note) return;
-    
+
     setVerifyingRecord(recordId);
     try {
-      await reportFraud(recordId, note);
-      setTodayAttendance(prev => 
-        prev.map((r) => (
-          r.recordId === recordId
-            ? {
-                ...r,
-                status: 'Fraud',
-                isVerifiedByManager: true,
-                reviewStatus: 'FRAUD',
-                payrollStatus: 'EXCLUDED_FROM_PAYROLL',
-                verifiedAt: new Date().toISOString(),
-                managerNotes: note,
-                workHours: 0,
-              }
-            : r
-        ))
-      );
+      await fraudMutation.mutateAsync({ recordId, note });
     } catch {
-      alert("فشل الإبلاغ عن تلاعب");
+      alert('فشل الإبلاغ عن تلاعب');
     } finally {
       setVerifyingRecord(null);
     }
   };
+
+  const handleRefresh = useCallback(() => {
+    refetchAttendance();
+  }, [refetchAttendance]);
 
   const filteredAttendance = todayAttendance.filter(r => 
     r.employeeName.toLowerCase().includes(searchTerm.toLowerCase())
@@ -125,8 +106,8 @@ const TeamAttendance = () => {
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <button 
-            onClick={() => fetchAttendance()}
+          <button
+            onClick={handleRefresh}
             className="p-3 bg-white/5 rounded-2xl text-slate-400 hover:bg-white/10 hover:text-white transition-all border border-white/5"
             title="تحديث البيانات"
           >
@@ -169,7 +150,7 @@ const TeamAttendance = () => {
           <div className="p-20 text-center text-red-400 bg-red-500/5 border-y border-red-500/10">
             <AlertTriangle className="mx-auto mb-4" size={40} />
             <p className="text-lg font-bold">{error}</p>
-            <button onClick={() => fetchAttendance()} className="mt-4 px-6 py-2 bg-red-500 text-white rounded-xl font-bold hover:bg-red-600 transition-all">إعادة المحاولة</button>
+            <button onClick={handleRefresh} className="mt-4 px-6 py-2 bg-red-500 text-white rounded-xl font-bold hover:bg-red-600 transition-all">إعادة المحاولة</button>
           </div>
         ) : filteredAttendance.length === 0 ? (
           <div className="p-20 text-center text-slate-500">

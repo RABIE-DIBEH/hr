@@ -29,7 +29,7 @@ public class AttendanceController {
     }
 
     @PostMapping("/nfc-clock")
-    public ResponseEntity<?> clockByNfc(
+    public ResponseEntity<ApiResponse<StatusResponseDto>> clockByNfc(
             @Valid @RequestBody NfcClockRequest request,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
 

@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
   Wallet,
@@ -11,54 +12,54 @@ import {
   Clock,
 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
-import { calculatePayroll, listEmployees, getAllPayrollHistory, type EmployeeSummary, type PayrollSlip } from '../services/api';
+import { calculatePayroll, listEmployees, getAllPayrollHistory } from '../services/api';
+import { queryKeys } from '../services/queryKeys';
+import { extractApiError } from '../utils/errorHandler';
 
 const Expenses = () => {
-  const [employees, setEmployees] = useState<EmployeeSummary[]>([]);
+  const queryClient = useQueryClient();
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | ''>('');
-  const [payrollLoading, setPayrollLoading] = useState(false);
   const [payrollMessage, setPayrollMessage] = useState<string | null>(null);
-  const [payrollHistory, setPayrollHistory] = useState<PayrollSlip[]>([]);
-  const [loadingHistory, setLoadingHistory] = useState(false);
   const now = new Date();
   const [payrollMonth, setPayrollMonth] = useState(now.getMonth() + 1);
   const [payrollYear, setPayrollYear] = useState(now.getFullYear());
 
-  useEffect(() => {
-    listEmployees()
-      .then((res) => setEmployees(res.data))
-      .catch(() => {});
-  }, []);
+  const { data: employees = [] } = useQuery({
+    queryKey: queryKeys.expenses.employees,
+    queryFn: () => listEmployees().then((res) => res.data),
+  });
 
-  useEffect(() => {
-    setLoadingHistory(true);
-    getAllPayrollHistory()
-      .then((res) => setPayrollHistory(res.data))
-      .catch(() => {})
-      .finally(() => setLoadingHistory(false));
-  }, []);
+  const { data: payrollHistory = [], isLoading: loadingHistory } = useQuery({
+    queryKey: queryKeys.expenses.payrollHistory,
+    queryFn: () => getAllPayrollHistory().then((res) => res.data),
+  });
 
-  const handlePayroll = async () => {
+  const calculatePayrollMutation = useMutation({
+    mutationFn: ({ month, year, employeeId }: { month: number; year: number; employeeId: number }) =>
+      calculatePayroll(month, year, employeeId),
+    onSuccess: (data) => {
+      setPayrollMessage(
+        `تم احتساب الراتب: ${data.data.netSalary} (ساعات: ${data.data.totalWorkHours ?? '—'}) للموظف ${selectedEmployeeId}`
+      );
+      void queryClient.invalidateQueries({ queryKey: queryKeys.expenses.payrollHistory });
+    },
+    onError: (err) => {
+      const apiError = extractApiError(err);
+      setPayrollMessage(apiError.message || 'فشل احتساب الراتب. تحقق من البيانات أو الصلاحيات.');
+    },
+  });
+
+  const handlePayroll = () => {
     if (selectedEmployeeId === '') {
       setPayrollMessage('اختر موظفاً أولاً');
       return;
     }
-    setPayrollLoading(true);
     setPayrollMessage(null);
-    try {
-      const { data } = await calculatePayroll(payrollMonth, payrollYear, selectedEmployeeId);
-      setPayrollMessage(
-        `تم احتساب الراتب: ${data.netSalary} (ساعات: ${data.totalWorkHours ?? '—'}) للموظف ${selectedEmployeeId}`
-      );
-      // Refresh history after calculating
-      getAllPayrollHistory()
-        .then((res) => setPayrollHistory(res.data))
-        .catch(() => {});
-    } catch {
-      setPayrollMessage('فشل احتساب الراتب. تحقق من البيانات أو الصلاحيات.');
-    } finally {
-      setPayrollLoading(false);
-    }
+    calculatePayrollMutation.mutate({
+      month: payrollMonth,
+      year: payrollYear,
+      employeeId: selectedEmployeeId as number,
+    });
   };
 
   // Calculate real totals from payroll history
@@ -203,10 +204,10 @@ const Expenses = () => {
               <button
                 type="button"
                 onClick={handlePayroll}
-                disabled={payrollLoading || selectedEmployeeId === ''}
+                disabled={calculatePayrollMutation.isPending || selectedEmployeeId === ''}
                 className="w-full bg-emerald-600 text-white py-4 rounded-2xl font-black shadow-xl shadow-emerald-900/20 hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                {payrollLoading ? <RefreshCcw className="animate-spin" size={20} /> : <RefreshCcw size={20} />}
+                {calculatePayrollMutation.isPending ? <RefreshCcw className="animate-spin" size={20} /> : <RefreshCcw size={20} />}
                 <span>احتساب الراتب للموظف المحدد</span>
               </button>
             </div>
