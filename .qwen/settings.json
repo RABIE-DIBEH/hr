@@ -20,7 +20,13 @@
       "Bash(git checkout *)",
       "Bash(git push *)",
       "Bash(git config *)",
-      "Bash(rm *)"
+      "Bash(rm *)",
+      "Bash(git fetch *)",
+      "Bash(git tag *)",
+      "Bash(git *)",
+      "Bash(which *)",
+      "Bash(flutter *)",
+      "Bash(chmod *)"
     ]
   },
   "$version": 3

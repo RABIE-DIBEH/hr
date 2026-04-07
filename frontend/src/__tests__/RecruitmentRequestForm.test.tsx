@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import RecruitmentRequestForm from '../components/RecruitmentRequestForm';
 import * as api from '../services/api';
@@ -26,9 +26,11 @@ describe('RecruitmentRequestForm', () => {
     return tagMatch && element?.textContent?.includes(text) === true;
   });
 
-  it('renders all required form fields', () => {
-    render(<RecruitmentRequestForm onClose={mockOnClose} onSuccess={mockOnSuccess} />);
-    
+  it('renders all required form fields', async () => {
+    await act(async () => {
+      render(<RecruitmentRequestForm onClose={mockOnClose} onSuccess={mockOnSuccess} />);
+    });
+
     expect(getByFlexibleText('طلب توظيف جديد', 'h2')).toBeDefined();
     expect(screen.getByLabelText(/الاسم الثلاثي/)).toBeDefined();
     expect(screen.getByLabelText(/البريد الإلكتروني/)).toBeDefined();

@@ -156,13 +156,13 @@ const CEODashboard = () => {
   const loading = meQuery.isLoading || employeesQuery.isLoading || attendanceQuery.isLoading || payrollQuery.isLoading || advancesQuery.isLoading || alertsQuery.isLoading;
   const error = meQuery.error || employeesQuery.error || attendanceQuery.error || payrollQuery.error || advancesQuery.error || alertsQuery.error;
 
-  const employees = employeesQuery.data ?? [];
-  const attendance = attendanceQuery.data ?? [];
-  const payroll = payrollQuery.data ?? [];
-  const advances = advancesQuery.data ?? [];
-  const alerts = alertsQuery.data ?? [];
-
   const data = useMemo(() => {
+    const employees = employeesQuery.data ?? [];
+    const attendance = attendanceQuery.data ?? [];
+    const payroll = payrollQuery.data ?? [];
+    const advances = advancesQuery.data ?? [];
+    const alerts = alertsQuery.data ?? [];
+
     const today = new Date().toISOString().slice(0, 10);
     const activeEmployees = employees.filter((employee) => employee.employmentStatus === 'Active');
     const managers = activeEmployees.filter((employee) => employee.roleName === 'MANAGER');
@@ -281,7 +281,16 @@ const CEODashboard = () => {
       paymentHistory,
       recentAlerts,
     };
-  }, [advances, alerts, attendance, employees, payroll, reportMonth, reportMonthId, reportYear]);
+  }, [
+    advancesQuery.data,
+    alertsQuery.data,
+    attendanceQuery.data,
+    employeesQuery.data,
+    payrollQuery.data,
+    reportMonth,
+    reportMonthId,
+    reportYear,
+  ]);
 
   const downloadReport = async (
     key: string,

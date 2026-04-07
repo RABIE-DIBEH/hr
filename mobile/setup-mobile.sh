@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+# setup-mobile.sh - Initialize Flutter mobile project and configure NFC permissions
+# Run this script ONCE when setting up the mobile project for the first time.
+# Requires: Flutter SDK on PATH
+set -euo pipefail
+
+echo "=== HRMS Mobile Project Setup ==="
+
+cd "$(dirname "$0")"
+
+# Check Flutter
+if ! command -v flutter &>/dev/null; then
+  echo "ERROR: Flutter not found. Install from https://flutter.dev"
+  exit 1
+fi
+
+# Generate platform directories (android/ and ios/)
+if [ -d "android" ] && [ -d "ios" ]; then
+  echo "→ android/ and ios/ already exist. Skipping flutter create."
+else
+  echo "→ Generating platform directories..."
+  flutter create --org com.hrms --project-name hrms_mobile .
+fi
+
+# Get dependencies
+echo "→ Getting dependencies..."
+flutter pub get
+
+# Add NFC permission to AndroidManifest.xml
+echo "→ Adding NFC permission to AndroidManifest.xml..."
+ANDROID_MANIFEST="android/app/src/main/AndroidManifest.xml"
+if [ -f "$ANDROID_MANIFEST" ]; then
+  if ! grep -q 'android.permission.NFC' "$ANDROID_MANIFEST"; then
+    # Insert NFC permission before </manifest>
+    sed -i '/<\/manifest>/i\    <uses-permission android:name="android.permission.NFC" />\n    <uses-feature android:name="android.hardware.nfc" android:required="false" />' "$ANDROID_MANIFEST"
+    echo "  ✅ NFC permission added."
+  else
+    echo "  ✅ NFC permission already present."
+  fi
+else
+  echo "  ⚠️  AndroidManifest.xml not found. Add NFC permission manually:"
+  echo "     <uses-permission android:name=\"android.permission.NFC\" />"
+  echo "     <uses-feature android:name=\"android.hardware.nfc\" android:required=\"false\" />"
+fi
+
+# Add iOS NFC entitlement
+IOS_ENTITLEMENTS="ios/Runner/Runner.entitlements"
+if [ -f "$IOS_ENTITLEMENTS" ]; then
+  echo "→ iOS entitlements file found. Ensure NFC reading is enabled in Xcode."
+else
+  echo "→ iOS entitlements file not found. In Xcode, add 'Near Field Communication Tag Reading' capability."
+fi
+
+# Run analyzer
+echo "→ Running static analysis..."
+flutter analyze || echo "  ⚠️  Some lint warnings found (non-blocking)."
+
+# Run tests
+echo "→ Running tests..."
+flutter test || echo "  ⚠️  Some tests failed (check output)."
+
+echo ""
+echo "=== Setup Complete ==="
+echo ""
+echo "Next steps:"
+echo "  1. Open Android Studio / Xcode and verify platform configs"
+echo "  2. Set your API URL: --dart-define=API_BASE_URL=https://your-api.com/api"
+echo "  3. Build APK: ./build-apk.sh"
+echo "  4. Install on device: flutter install"

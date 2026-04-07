@@ -14,6 +14,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
+  String? _scannedCardUid;
 
   Future<void> _handleLogin() async {
     final email = _emailController.text.trim();
@@ -37,27 +38,40 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleNfcLogin() async {
     final nfcService = context.read<NfcService>();
     final isAvailable = await nfcService.isNfcAvailable();
-    
+
     if (!isAvailable) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('NFC is not available on this device')),
+          const SnackBar(
+            content: Text('NFC is not available on this device'),
+          ),
         );
       }
       return;
     }
 
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Hold your NFC card near the device...')),
     );
 
     final uid = await nfcService.scanNfcTag();
     if (uid != null && mounted) {
-      // In a real scenario, you'd send this UID to a specialized NFC login endpoint
-      // For now, we'll just show it
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('NFC Tag Scanned: $uid (Login not implemented yet)')),
-      );
+      setState(() => _scannedCardUid = uid);
+      // Pre-fill email hint and prompt for password.
+      // TODO: When backend adds an NFC auth endpoint
+      // (e.g. POST /api/auth/nfc-login with cardUid),
+      // replace this with a direct API call that returns a JWT.
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Card scanned: $uid\nEnter your email and password to log in.',
+            ),
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
     }
   }
 
@@ -85,10 +99,16 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 50),
               TextField(
                 controller: _emailController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Email',
-                  prefixIcon: Icon(Icons.email_outlined),
-                  border: OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.email_outlined),
+                  suffixIcon: _scannedCardUid != null
+                      ? Tooltip(
+                          message: 'Scanned: $_scannedCardUid',
+                          child: const Icon(Icons.nfc, color: Colors.green),
+                        )
+                      : null,
+                  border: const OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.emailAddress,
               ),
@@ -99,8 +119,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   labelText: 'Password',
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
-                    icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off),
-                    onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                    icon: Icon(
+                      _isPasswordVisible
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                    ),
+                    onPressed: () =>
+                        setState(() => _isPasswordVisible = !_isPasswordVisible),
                   ),
                   border: const OutlineInputBorder(),
                 ),
@@ -114,13 +139,19 @@ class _LoginScreenState extends State<LoginScreen> {
                   backgroundColor: Colors.blue,
                   foregroundColor: Colors.white,
                 ),
-                child: const Text('LOGIN', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                child: const Text(
+                  'LOGIN',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
               ),
               const SizedBox(height: 20),
               const Row(
                 children: [
                   Expanded(child: Divider()),
-                  Padding(padding: EdgeInsets.symmetric(horizontal: 10), child: Text('OR')),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 10),
+                    child: Text('OR'),
+                  ),
                   Expanded(child: Divider()),
                 ],
               ),
@@ -129,12 +160,21 @@ class _LoginScreenState extends State<LoginScreen> {
                 onPressed: _handleNfcLogin,
                 icon: const Icon(Icons.nfc),
                 label: const Text('Login with NFC Card'),
-                style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
               ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 }
