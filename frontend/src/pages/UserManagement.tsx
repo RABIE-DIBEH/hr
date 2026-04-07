@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search,
@@ -212,9 +212,14 @@ const UserManagement = () => {
 
   const displayError = mutationError || error;
 
-  // Redirect if not authorized (after all hooks)
+  // Redirect if not authorized (useEffect to avoid render-time side effect)
+  useEffect(() => {
+    if (!isHighRole) {
+      navigate('/dashboard');
+    }
+  }, [isHighRole, navigate]);
+
   if (!isHighRole) {
-    navigate('/dashboard');
     return null;
   }
 

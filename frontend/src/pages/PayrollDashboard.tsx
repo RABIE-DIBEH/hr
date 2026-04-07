@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -63,7 +63,6 @@ const PayrollDashboard = () => {
   const [advancesSubTab, setAdvancesSubTab] = useState<'pending' | 'approved' | 'delivered' | 'all'>('pending');
   const [pendingPage, setPendingPage] = useState(0);
   const [approvedPage, setApprovedPage] = useState(0);
-  const [approvedTotalAmount, setApprovedTotalAmount] = useState('0');
   const [deliveredPage, setDeliveredPage] = useState(0);
   const [allPage, setAllPage] = useState(0);
 
@@ -211,20 +210,26 @@ const PayrollDashboard = () => {
   const recruitmentTotalPages = recruitmentQuery.data?.totalPages ?? 0;
   const recruitmentTotalCount = recruitmentQuery.data?.totalCount ?? 0;
 
-  // Sync approvedTotalAmount from query data
-  if (approvedTotalAmountFromReport !== approvedTotalAmount) {
-    setApprovedTotalAmount(approvedTotalAmountFromReport);
-  }
-  // Reset approvedPage if out of range
-  if (approvedPage >= approvedTotalPages) setApprovedPage(0);
+  // Derive approvedTotalAmount from query data (no state sync needed)
+  const derivedApprovedTotalAmount = approvedTotalAmountFromReport;
 
-  // Handle query errors
-  const queriesWithError = [advancesQuery, historyQuery, employeesQuery, monthlyPayrollQuery, recruitmentQuery];
-  for (const q of queriesWithError) {
-    if (q.error && !loadError) {
-      setLoadError(extractApiError(q.error).message || 'تعذر تحميل البيانات');
+  // Reset approvedPage if out of range (useEffect to avoid render-time side effect)
+  useEffect(() => {
+    if (approvedPage >= approvedTotalPages && approvedTotalPages > 0) {
+      setApprovedPage(0);
     }
-  }
+  }, [approvedPage, approvedTotalPages]);
+
+  // Handle query errors (useEffect to avoid render-time side effect)
+  useEffect(() => {
+    const queriesWithError = [advancesQuery, historyQuery, employeesQuery, monthlyPayrollQuery, recruitmentQuery];
+    for (const q of queriesWithError) {
+      if (q.error && !loadError) {
+        setLoadError(extractApiError(q.error).message || 'تعذر تحميل البيانات');
+        break;
+      }
+    }
+  }, [advancesQuery, historyQuery, employeesQuery, monthlyPayrollQuery, recruitmentQuery, loadError]);
 
   // Mutation: Process recruitment request
   const processRecruitmentMutation = useMutation({
@@ -484,7 +489,7 @@ const PayrollDashboard = () => {
 
   const stats = [
     { label: 'سلف معلقة', value: String(pendingTotalCount), icon: Clock, color: 'text-orange-400', bg: 'bg-orange-500/10' },
-    { label: 'إجمالي السلف', value: (Number(approvedTotalAmount) || totalApprovedAmount).toLocaleString() + ' ر.س', icon: HandCoins, color: 'text-purple-400', bg: 'bg-purple-500/10' },
+    { label: 'إجمالي السلف', value: (Number(derivedApprovedTotalAmount) || totalApprovedAmount).toLocaleString() + ' ر.س', icon: HandCoins, color: 'text-purple-400', bg: 'bg-purple-500/10' },
     { label: 'سجلات الرواتب', value: String(historyTotalCount), icon: History, color: 'text-green-400', bg: 'bg-green-500/10' },
   ];
 

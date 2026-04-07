@@ -47,9 +47,9 @@ const NFCClock = () => {
     setLoading(true);
     setError(false);
     setMessage('جاري التحقق من الهوية...');
-    
+
     try {
-      const response = await clockByNfc("04:23:1A:FF"); // Simulated Card UID
+      const response = await clockByNfc("TEST-NFC-UID-0001"); // Matches seeded backend test card
       setLoading(false);
       setSuccess(true);
       // After interceptor auto-unwrap, response.data is the inner Map: { result: "..." }
@@ -109,7 +109,7 @@ const NFCClock = () => {
           disabled={loading || success}
           className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-white/5 disabled:text-slate-500 py-4 rounded-2xl font-bold transition-all active:scale-95 shadow-lg shadow-blue-900/20"
         >
-          {loading ? 'جاري القراءة...' : 'محاكاة تمرير البطاقة (04:23:1A:FF)'}
+          {loading ? 'جاري القراءة...' : 'محاكاة تمرير البطاقة (TEST-NFC-UID-0001)'}
         </button>
 
         <button
