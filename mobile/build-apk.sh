@@ -11,6 +11,19 @@ if ! command -v flutter &>/dev/null; then
   exit 1
 fi
 
+# Check for platform directories
+if [ ! -d "android" ] || [ ! -d "ios" ]; then
+  echo "ERROR: Platform directories (android/, ios/) not found."
+  echo ""
+  echo "Please generate platform directories first:"
+  echo "  ./setup-mobile.sh"
+  echo ""
+  echo "Or manually run:"
+  echo "  flutter create --org com.hrms --project-name hrms_mobile ."
+  echo ""
+  exit 1
+fi
+
 flutter doctor --short
 echo ""
 
