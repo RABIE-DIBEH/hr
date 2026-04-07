@@ -62,8 +62,8 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose }) =>
             <Lock size={20} />
             <h2 className="text-xl font-bold">تغيير كلمة المرور</h2>
           </div>
-          <button onClick={onClose} className="hover:bg-white/10 p-1 rounded-lg transition-all">
-            <X size={20} />
+          <button onClick={onClose} aria-label="إغلاق" className="hover:bg-white/10 p-1 rounded-lg transition-all">
+            <X size={20} aria-label="إغلاق" />
           </button>
         </div>
 

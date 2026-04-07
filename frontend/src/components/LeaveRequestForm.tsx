@@ -116,6 +116,7 @@ const LeaveRequestForm = ({ onClose, onSuccess }: LeaveRequestFormProps) => {
           </div>
           <button
             onClick={onClose}
+            aria-label="إغلاق"
             className="text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-xl transition-all"
           >
             <X size={24} />

@@ -105,7 +105,7 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ me, onClose, onSucc
             onClick={onClose}
             className="bg-white/10 hover:bg-white/20 p-2 rounded-xl transition-all relative z-10"
           >
-            <X size={20} />
+            <X size={20} aria-label="إغلاق" />
           </button>
         </div>
 
