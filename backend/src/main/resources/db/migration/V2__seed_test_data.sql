@@ -7,8 +7,8 @@
 -- ============================================================
 
 -- ── Teams (skip if already exist) ──────────────────────────
-INSERT INTO Teams (Name) VALUES ('Engineering'), ('Marketing'), ('Sales')
-ON CONFLICT (Name) DO NOTHING;
+INSERT INTO Teams (name) VALUES ('Engineering'), ('Marketing'), ('Sales')
+ON CONFLICT (name) DO NOTHING;
 
 -- ── Roles reference (skip if already exist) ─────────────────
 -- RoleId:  1=ADMIN  2=HR  3=MANAGER  4=EMPLOYEE
@@ -19,7 +19,7 @@ ON CONFLICT (Name) DO NOTHING;
 -- BCrypt auto-migration kicks in on the very first login.
 -- After first login each password is upgraded to BCrypt.
 
-INSERT INTO Employees (FullName, Email, PasswordHash, RoleId, TeamId, ManagerId, BaseSalary, Status)
+INSERT INTO Employees (full_name, Email, PasswordHash, RoleId, TeamId, ManagerId, BaseSalary, Status)
 VALUES
   -- ┌─────────────────────────────────────────────────────────┐
   -- │  Role: ADMIN  (RoleId = 1)                              │
@@ -54,16 +54,16 @@ ON CONFLICT (Email) DO NOTHING;
 -- ── Sample NFC Card (linked to the test employee) ───────────
 -- Insert after employees so the EmployeeId FK is valid.
 -- The UID below is what you'd tap to simulate a clock-in.
-INSERT INTO NFC_Cards (Uid, EmployeeId, Status)
+INSERT INTO NFC_Cards (uid, employee_id, status)
 SELECT 'TEST-NFC-UID-0001', e.EmployeeId, 'Active'
 FROM   Employees e
 WHERE  e.Email = 'employee@hrms.com'
-ON CONFLICT (Uid) DO NOTHING;
+ON CONFLICT (uid) DO NOTHING;
 
 -- ── Sample Inbox Messages ────────────────────────────────────
 -- Messages for testing the inbox system
 -- Roles: EMPLOYEE, MANAGER, HR, ADMIN, SUPER_ADMIN
-INSERT INTO Inbox_Messages (Title, Message, TargetRole, SenderName, Priority, CreatedAt, ReadAt, Archived)
+INSERT INTO Inbox_Messages (title, message, target_role, sender_name, priority, created_at, read_at, archived)
 VALUES
   -- Messages for EMPLOYEE role
   ('مرحباً بك في النظام', 'نرحب بك في نظام إدارة الموارد البشرية. يمكنك الآن الوصول إلى لوحة التحكم الخاصة بك.', 'EMPLOYEE', 'نظام الإدارة', 'LOW', NOW() - INTERVAL 3 DAY, NOW() - INTERVAL 2 DAY, false),

@@ -12,7 +12,7 @@ COPY src ./src
 
 # Expose ports
 EXPOSE 8080
-EXPOSE 5005  # For remote debugging
+EXPOSE 5005
 
 # Run with hot reload
 CMD ["mvn", "spring-boot:run", "-Dspring-boot.run.jvmArguments=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"]
