@@ -1,0 +1,49 @@
+name: UAT Bug Report
+description: Capture a bug found during user acceptance testing.
+title: "[UAT] "
+labels:
+  - uat
+  - bug
+body:
+  - type: dropdown
+    id: role
+    attributes:
+      label: Role
+      options:
+        - Admin
+        - HR
+        - Manager
+        - Employee
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: dev / staging / production-like
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: 1. ... 2. ... 3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      placeholder: screenshots, logs, response payloads
