@@ -4,6 +4,28 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import Inbox from '../pages/Inbox';
 import * as api from '../services/api';
+import type { PaginatedList, InboxMessage } from '../services/api';
+
+const mockPaginated = <T,>(items: T[]): PaginatedList<T> => ({
+  items,
+  totalCount: items.length,
+  page: 0,
+  pageSize: 20,
+  totalPages: 1,
+  hasNext: false,
+});
+
+const mockMessage = (overrides: Partial<InboxMessage>): InboxMessage => ({
+  messageId: 1,
+  title: 'Test',
+  message: 'Content',
+  senderName: 'Admin',
+  targetRole: 'ALL',
+  priority: 'MEDIUM',
+  createdAt: new Date().toISOString(),
+  archived: false,
+  ...overrides,
+});
 
 vi.mock('../services/api', async () => {
   const actual = await vi.importActual('../services/api');
@@ -30,20 +52,20 @@ const createWrapper = () => {
 describe('Inbox', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(api.getCurrentEmployee).mockResolvedValue({ data: { employeeId: 1, roleName: 'EMPLOYEE' } } as any);
-    vi.mocked(api.getUnreadCount).mockResolvedValue({ data: { unreadCount: 5 } } as any);
+    vi.mocked(api.getCurrentEmployee).mockResolvedValue({
+      data: { employeeId: 1, roleName: 'EMPLOYEE' }
+    } as Awaited<ReturnType<typeof api.getCurrentEmployee>>);
+    vi.mocked(api.getUnreadCount).mockResolvedValue({
+      data: { unreadCount: 5 }
+    } as Awaited<ReturnType<typeof api.getUnreadCount>>);
   });
 
   it('renders messages from the inbox', async () => {
     vi.mocked(api.getInboxPage).mockResolvedValue({
-      data: {
-        items: [
-          { messageId: 101, title: 'Test Message', message: 'Hello World', senderName: 'Admin', priority: 'HIGH', createdAt: new Date().toISOString(), isRead: false }
-        ],
-        totalPages: 1,
-        totalCount: 1,
-      }
-    } as any);
+      data: mockPaginated([
+        mockMessage({ messageId: 101, title: 'Test Message', message: 'Hello World', senderName: 'Admin', priority: 'HIGH', isRead: false })
+      ])
+    } as Awaited<ReturnType<typeof api.getInboxPage>>);
 
     render(<Inbox />, { wrapper: createWrapper() });
 
@@ -55,8 +77,8 @@ describe('Inbox', () => {
 
   it('shows empty state when no messages are found', async () => {
     vi.mocked(api.getInboxPage).mockResolvedValue({
-      data: { items: [], totalPages: 0, totalCount: 0 }
-    } as any);
+      data: mockPaginated([])
+    } as Awaited<ReturnType<typeof api.getInboxPage>>);
 
     render(<Inbox />, { wrapper: createWrapper() });
 
@@ -67,20 +89,16 @@ describe('Inbox', () => {
 
   it('opens message thread when a message is clicked', async () => {
     vi.mocked(api.getInboxPage).mockResolvedValue({
-      data: {
-        items: [
-          { messageId: 101, title: 'Open Me', message: 'Content', senderName: 'Admin', priority: 'MEDIUM', createdAt: new Date().toISOString() }
-        ],
-        totalPages: 1,
-        totalCount: 1,
-      }
-    } as any);
+      data: mockPaginated([
+        mockMessage({ messageId: 101, title: 'Open Me', message: 'Content', senderName: 'Admin', priority: 'MEDIUM' })
+      ])
+    } as Awaited<ReturnType<typeof api.getInboxPage>>);
 
     vi.mocked(api.getMessageThread).mockResolvedValue({
       data: [
-        { messageId: 101, title: 'Open Me', message: 'Content', senderName: 'Admin', createdAt: new Date().toISOString() }
+        mockMessage({ messageId: 101, title: 'Open Me', message: 'Content', senderName: 'Admin' })
       ]
-    } as any);
+    } as Awaited<ReturnType<typeof api.getMessageThread>>);
 
     render(<Inbox />, { wrapper: createWrapper() });
 

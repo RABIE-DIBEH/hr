@@ -38,7 +38,7 @@ public class AdvanceRequestController {
      * Uses @Valid to validate AdvanceRequestDto fields via Bean Validation annotations
      */
     @PostMapping("/request")
-    public ResponseEntity<?> createRequest(@Valid @RequestBody AdvanceRequestDto dto,
+    public ResponseEntity<ApiResponse<IdResponseDto>> createRequest(@Valid @RequestBody AdvanceRequestDto dto,
                                            @AuthenticationPrincipal EmployeeUserDetails principal) {
         // Build advance request from DTO
         AdvanceRequest request = new AdvanceRequest.AdvanceRequestBuilder()
@@ -145,7 +145,7 @@ public class AdvanceRequestController {
      * Uses @Valid to validate ProcessAdvanceRequestDto fields
      */
     @PutMapping("/process/{advanceId:\\d+}")
-    public ResponseEntity<?> processRequest(@PathVariable Long advanceId,
+    public ResponseEntity<ApiResponse<StatusResponseDto>> processRequest(@PathVariable Long advanceId,
                                             @Valid @RequestBody ProcessAdvanceRequestDto dto,
                                             @AuthenticationPrincipal EmployeeUserDetails principal) {
         if (!hasAnyRole(principal, "MANAGER", "PAYROLL", "SUPER_ADMIN")) {
@@ -177,7 +177,7 @@ public class AdvanceRequestController {
      * Mark a payroll-approved advance request as delivered / paid (PAYROLL only)
      */
     @PutMapping("/deliver/{advanceId:\\d+}")
-    public ResponseEntity<?> deliverRequest(@PathVariable Long advanceId,
+    public ResponseEntity<ApiResponse<AdvanceDeliveryResponseDto>> deliverRequest(@PathVariable Long advanceId,
                                             @AuthenticationPrincipal EmployeeUserDetails principal) {
         if (!hasAnyRole(principal, "PAYROLL", "SUPER_ADMIN")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");

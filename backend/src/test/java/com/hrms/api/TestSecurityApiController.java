@@ -45,4 +45,19 @@ class TestSecurityApiController {
     ResponseEntity<String> deleteCard(@PathVariable Long employeeId) {
         return ResponseEntity.ok(String.valueOf(employeeId));
     }
+
+    @PostMapping("/api/recruitment/request")
+    ResponseEntity<String> recruitmentRequest() {
+        return ResponseEntity.ok("ok");
+    }
+
+    @GetMapping("/api/recruitment/pending")
+    ResponseEntity<String> recruitmentPending() {
+        return ResponseEntity.ok("ok");
+    }
+
+    @PutMapping("/api/recruitment/process/{id}")
+    ResponseEntity<String> recruitmentProcess(@PathVariable Long id) {
+        return ResponseEntity.ok(String.valueOf(id));
+    }
 }

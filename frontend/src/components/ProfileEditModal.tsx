@@ -66,12 +66,8 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ me, onClose, onSucc
       onSuccess(refreshed.data);
       setTimeout(() => onClose(), 1500);
     } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'response' in err) {
-        const response = (err as any).response;
-        setProfileError(response?.data?.message || 'فشل تحديث الملف الشخصي');
-      } else {
-        setProfileError('فشل تحديث الملف الشخصي');
-      }
+      const axiosError = err as { response?: { data?: { message?: string } } };
+      setProfileError(axiosError.response?.data?.message || 'فشل تحديث الملف الشخصي');
     } finally {
       setProfileSaving(false);
     }

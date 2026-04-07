@@ -2,6 +2,7 @@ package com.hrms.api;
 
 import com.hrms.api.dto.ApiResponse;
 import com.hrms.api.dto.CreateNfcDeviceRequest;
+import com.hrms.api.dto.DeviceStatusUpdateRequest;
 import com.hrms.api.dto.NfcDeviceResponseDto;
 import com.hrms.api.dto.PaginatedResponse;
 import com.hrms.api.dto.StatusResponseDto;
@@ -78,13 +79,8 @@ public class AdminController {
     @PutMapping("/devices/{deviceId}/status")
     public ResponseEntity<ApiResponse<NfcDeviceResponseDto>> updateDeviceStatus(
             @PathVariable String deviceId,
-            @RequestBody Map<String, String> body) {
-        String status = body.get("status");
-        if (status == null || status.isBlank()) {
-            throw new org.springframework.web.server.ResponseStatusException(
-                    org.springframework.http.HttpStatus.BAD_REQUEST, "Status is required");
-        }
-        NfcDevice updated = adminService.updateDeviceStatus(deviceId, status);
+            @Valid @RequestBody DeviceStatusUpdateRequest request) {
+        NfcDevice updated = adminService.updateDeviceStatus(deviceId, request.status());
         return ResponseEntity.ok(ApiResponse.success(
                 NfcDeviceResponseDto.from(updated),
                 "Device status updated successfully"

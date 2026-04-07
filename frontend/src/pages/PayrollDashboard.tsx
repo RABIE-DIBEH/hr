@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   HandCoins,
@@ -40,28 +41,20 @@ import {
   listEmployeesPage,
   getPendingRecruitmentRequestsPage,
   processRecruitmentRequest,
-  type EmployeeProfile,
-  type AdvanceRequest,
   type PayrollSlip,
-  type EmployeeSummary,
-  type RecruitmentRequest,
   type ProcessRecruitmentResponse,
-  type PayrollMonthlySummaryResponse,
 } from '../services/api';
+import { queryKeys } from '../services/queryKeys';
 import { extractApiError } from '../utils/errorHandler';
 
 const PayrollDashboard = () => {
-  const [me, setMe] = useState<EmployeeProfile | null>(null);
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'advances' | 'recruitment' | 'history' | 'calculate'>('advances');
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
 
   // Advances State
-  const [pendingAdvances, setPendingAdvances] = useState<AdvanceRequest[]>([]);
-  const [approvedAdvances, setApprovedAdvances] = useState<AdvanceRequest[]>([]);
-  const [deliveredAdvances, setDeliveredAdvances] = useState<AdvanceRequest[]>([]);
-  const [allAdvances, setAllAdvances] = useState<AdvanceRequest[]>([]);
   const [processingAdvance, setProcessingAdvance] = useState<number | null>(null);
   const [advanceNote, setAdvanceNote] = useState<string>('');
   const [selectedAdvanceId, setSelectedAdvanceId] = useState<number | null>(null);
@@ -69,41 +62,23 @@ const PayrollDashboard = () => {
   const [adjustedAdvanceReason, setAdjustedAdvanceReason] = useState<string>('');
   const [advancesSubTab, setAdvancesSubTab] = useState<'pending' | 'approved' | 'delivered' | 'all'>('pending');
   const [pendingPage, setPendingPage] = useState(0);
-  const [pendingTotalPages, setPendingTotalPages] = useState(0);
-  const [pendingTotalCount, setPendingTotalCount] = useState(0);
   const [approvedPage, setApprovedPage] = useState(0);
-  const [approvedTotalPages, setApprovedTotalPages] = useState(0);
-  const [approvedTotalCount, setApprovedTotalCount] = useState(0);
-  const [approvedTotalAmount, setApprovedTotalAmount] = useState('0');
   const [deliveredPage, setDeliveredPage] = useState(0);
-  const [deliveredTotalPages, setDeliveredTotalPages] = useState(0);
-  const [deliveredTotalCount, setDeliveredTotalCount] = useState(0);
   const [allPage, setAllPage] = useState(0);
-  const [allTotalPages, setAllTotalPages] = useState(0);
-  const [allTotalCount, setAllTotalCount] = useState(0);
 
   // History State
-  const [slips, setSlips] = useState<PayrollSlip[]>([]);
   const [historyPage, setHistoryPage] = useState(0);
-  const [historyTotalPages, setHistoryTotalPages] = useState(0);
-  const [historyTotalCount, setHistoryTotalCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSlip, setSelectedSlip] = useState<PayrollSlip | null>(null);
 
   // Calculate State
-  const [employees, setEmployees] = useState<EmployeeSummary[]>([]);
-  const [monthlyPayrollMap, setMonthlyPayrollMap] = useState<Record<number, PayrollSlip>>({});
-  const [monthlySummary, setMonthlySummary] = useState<PayrollMonthlySummaryResponse | null>(null);
   const [calculatingId, setCalculatingId] = useState<number | null>(null);
   const [calcFeedback, setCalcFeedback] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const [showConfirmCalc, setShowConfirmCalc] = useState<{ id?: number; name: string } | null>(null);
   const [payingId, setPayingId] = useState<number | null>(null);
 
   // Recruitment approvals (Stage 3: PENDING_PAYROLL)
-  const [pendingRecruitment, setPendingRecruitment] = useState<RecruitmentRequest[]>([]);
   const [recruitmentPage, setRecruitmentPage] = useState(0);
-  const [recruitmentTotalPages, setRecruitmentTotalPages] = useState(0);
-  const [recruitmentTotalCount, setRecruitmentTotalCount] = useState(0);
   const [processingRecruitment, setProcessingRecruitment] = useState<number | null>(null);
   const [recruitmentNote, setRecruitmentNote] = useState('');
   const [adjustedSalary, setAdjustedSalary] = useState('');
@@ -118,73 +93,68 @@ const PayrollDashboard = () => {
   const reportMonth = currentDate.getMonth() + 1;
   const reportYear = currentDate.getFullYear();
 
-  useEffect(() => {
-    getCurrentEmployee()
-      .then((res) => setMe(res.data))
-      .catch(() => setMe(null));
-  }, []);
+  // Query 1: Current employee (replaces first useEffect)
+  const { data: me } = useQuery({
+    queryKey: queryKeys.me,
+    queryFn: async () => {
+      const res = await getCurrentEmployee();
+      return res.data;
+    },
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
 
   const canManagePayroll = me?.roleName === 'PAYROLL'
     || me?.roleName === 'SUPER_ADMIN';
 
-  // Load Advances
-  const loadAdvancesData = async () => {
-    if (!canManagePayroll) return;
-    try {
+  // Query 2: Advances data (replaces part of second useEffect)
+  const advancesQuery = useQuery({
+    queryKey: queryKeys.payroll.advances(advancesSubTab, advancesSubTab === 'pending' ? pendingPage : advancesSubTab === 'approved' ? approvedPage : advancesSubTab === 'delivered' ? deliveredPage : allPage, reportMonth, reportYear),
+    queryFn: async () => {
+      if (!canManagePayroll) return null;
       const [pendingRes, reportRes, deliveredRes, allRes] = await Promise.all([
         getPendingAdvanceRequestsPage({ page: pendingPage, size: 10 }),
         getAdvanceApprovalReport(reportMonth, reportYear),
         getDeliveredAdvancesPage(reportMonth, reportYear, { page: deliveredPage, size: 10 }),
         getAllAdvanceRequestsPage({ page: allPage, size: 10 }),
       ]);
-      setPendingAdvances(pendingRes.data.items);
-      setPendingTotalPages(pendingRes.data.totalPages);
-      setPendingTotalCount(pendingRes.data.totalCount);
-      const report = reportRes.data;
-      setApprovedAdvances(report.items);
-      setApprovedTotalCount(report.totalCount);
-      setApprovedTotalAmount(String(report.totalAmount ?? 0));
-      const pages = Math.max(1, Math.ceil(report.items.length / 10));
-      setApprovedTotalPages(pages);
-      if (approvedPage >= pages) setApprovedPage(0);
-      setDeliveredAdvances(deliveredRes.data.items);
-      setDeliveredTotalPages(deliveredRes.data.totalPages);
-      setDeliveredTotalCount(deliveredRes.data.totalCount);
-      setAllAdvances(allRes.data.items);
-      setAllTotalPages(allRes.data.totalPages);
-      setAllTotalCount(allRes.data.totalCount);
-    } catch (err: unknown) {
-      setLoadError(extractApiError(err).message || 'تعذر تحميل بيانات السلف');
-    }
-  };
+      return {
+        pending: pendingRes.data,
+        report: reportRes.data,
+        delivered: deliveredRes.data,
+        all: allRes.data,
+      };
+    },
+    enabled: canManagePayroll && activeTab === 'advances',
+  });
 
-  // Load History
-  const loadHistoryData = async () => {
-    if (!canManagePayroll) return;
-    try {
+  // Query 3: History data (replaces part of second useEffect)
+  const historyQuery = useQuery({
+    queryKey: queryKeys.payroll.history(historyPage),
+    queryFn: async () => {
+      if (!canManagePayroll) return null;
       const res = await getAllPayrollHistoryPage({ page: historyPage, size: 10 });
-      setSlips(res.data.items);
-      setHistoryTotalPages(res.data.totalPages);
-      setHistoryTotalCount(res.data.totalCount);
-    } catch (err: unknown) {
-      setLoadError(extractApiError(err).message || 'تعذر تحميل سجل الرواتب');
-    }
-  };
+      return res.data;
+    },
+    enabled: canManagePayroll && activeTab === 'history',
+  });
 
-  // Load Employees for Calculation
-  const loadEmployeesForCalc = async () => {
-    if (!canManagePayroll) return;
-    try {
+  // Query 4: Employees for calculation (replaces part of second useEffect)
+  const employeesQuery = useQuery({
+    queryKey: queryKeys.payroll.employees,
+    queryFn: async () => {
+      if (!canManagePayroll) return null;
       const res = await listEmployeesPage({ page: 0, size: 100 });
-      setEmployees(res.data.items);
-    } catch (err: unknown) {
-      setLoadError(extractApiError(err).message || 'تعذر تحميل قائمة الموظفين');
-    }
-  };
+      return res.data.items;
+    },
+    enabled: canManagePayroll && activeTab === 'calculate',
+  });
 
-  const loadMonthlyPayrollForCalc = async () => {
-    if (!canManagePayroll) return;
-    try {
+  // Query 5: Monthly payroll for calculation (replaces part of second useEffect)
+  const monthlyPayrollQuery = useQuery({
+    queryKey: queryKeys.payroll.monthlyPayroll(reportMonth, reportYear),
+    queryFn: async () => {
+      if (!canManagePayroll) return null;
       const [slipsRes, summaryRes] = await Promise.all([
         getMonthlyPayrollPage(reportMonth, reportYear, { page: 0, size: 250 }),
         getPayrollMonthlySummary(reportMonth, reportYear),
@@ -193,43 +163,83 @@ const PayrollDashboard = () => {
       for (const slip of slipsRes.data.items) {
         map[slip.employeeId] = slip;
       }
-      setMonthlyPayrollMap(map);
-      setMonthlySummary(summaryRes.data);
-    } catch (err: unknown) {
-      // Not fatal to calculation UI; user can still calculate.
-      setLoadError(extractApiError(err).message || 'تعذر تحميل بيانات الرواتب للشهر المحدد');
-    }
-  };
+      return { map, summary: summaryRes.data };
+    },
+    enabled: canManagePayroll && activeTab === 'calculate',
+  });
 
-  const loadRecruitmentData = async () => {
-    if (!canManagePayroll) return;
-    try {
+  // Query 6: Recruitment data (replaces part of second useEffect)
+  const recruitmentQuery = useQuery({
+    queryKey: queryKeys.payroll.recruitment(recruitmentPage),
+    queryFn: async () => {
+      if (!canManagePayroll) return null;
       const res = await getPendingRecruitmentRequestsPage({ page: recruitmentPage, size: 10 });
-      setPendingRecruitment(res.data.items);
-      setRecruitmentTotalPages(res.data.totalPages);
-      setRecruitmentTotalCount(res.data.totalCount);
-    } catch (err: unknown) {
-      setLoadError(extractApiError(err).message || 'تعذر تحميل طلبات التوظيف');
-    }
-  };
+      return res.data;
+    },
+    enabled: canManagePayroll && activeTab === 'recruitment',
+  });
 
+  // Derive state from queries
+  const pendingAdvances = advancesQuery.data?.pending?.items ?? [];
+  const pendingTotalPages = advancesQuery.data?.pending?.totalPages ?? 0;
+  const pendingTotalCount = advancesQuery.data?.pending?.totalCount ?? 0;
+
+  const reportData = advancesQuery.data?.report;
+  const approvedAdvances = reportData?.items ?? [];
+  const approvedTotalCount = reportData?.totalCount ?? 0;
+  const approvedTotalAmountFromReport = String(reportData?.totalAmount ?? 0);
+  const approvedTotalPages = Math.max(1, Math.ceil((approvedAdvances.length ?? 0) / 10));
+
+  const deliveredAdvances = advancesQuery.data?.delivered?.items ?? [];
+  const deliveredTotalPages = advancesQuery.data?.delivered?.totalPages ?? 0;
+  const deliveredTotalCount = advancesQuery.data?.delivered?.totalCount ?? 0;
+
+  const allAdvances = advancesQuery.data?.all?.items ?? [];
+  const allTotalPages = advancesQuery.data?.all?.totalPages ?? 0;
+  const allTotalCount = advancesQuery.data?.all?.totalCount ?? 0;
+
+  const slips = historyQuery.data?.items ?? [];
+  const historyTotalPages = historyQuery.data?.totalPages ?? 0;
+  const historyTotalCount = historyQuery.data?.totalCount ?? 0;
+
+  const employees = employeesQuery.data ?? [];
+  const monthlyPayrollMap = monthlyPayrollQuery.data?.map ?? {};
+  const monthlySummary = monthlyPayrollQuery.data?.summary ?? null;
+
+  const pendingRecruitment = recruitmentQuery.data?.items ?? [];
+  const recruitmentTotalPages = recruitmentQuery.data?.totalPages ?? 0;
+  const recruitmentTotalCount = recruitmentQuery.data?.totalCount ?? 0;
+
+  // Derive approvedTotalAmount from query data (no state sync needed)
+  const derivedApprovedTotalAmount = approvedTotalAmountFromReport;
+
+  // Reset approvedPage if out of range (useEffect to avoid render-time side effect)
   useEffect(() => {
-    if (activeTab === 'advances') void loadAdvancesData();
-    if (activeTab === 'recruitment') void loadRecruitmentData();
-    if (activeTab === 'history') void loadHistoryData();
-    if (activeTab === 'calculate') {
-      void loadEmployeesForCalc();
-      void loadMonthlyPayrollForCalc();
+    if (approvedPage >= approvedTotalPages && approvedTotalPages > 0) {
+      setApprovedPage(0);
     }
-  }, [activeTab, pendingPage, approvedPage, deliveredPage, allPage, historyPage, recruitmentPage, canManagePayroll, reportMonth, reportYear]);
+  }, [approvedPage, approvedTotalPages]);
 
-  const handleProcessRecruitment = async (requestId: number, status: 'Approved' | 'Rejected') => {
-    setProcessingRecruitment(requestId);
-    try {
+  // Handle query errors (useEffect to avoid render-time side effect)
+  useEffect(() => {
+    const queriesWithError = [advancesQuery, historyQuery, employeesQuery, monthlyPayrollQuery, recruitmentQuery];
+    for (const q of queriesWithError) {
+      if (q.error && !loadError) {
+        setLoadError(extractApiError(q.error).message || 'تعذر تحميل البيانات');
+        break;
+      }
+    }
+  }, [advancesQuery, historyQuery, employeesQuery, monthlyPayrollQuery, recruitmentQuery, loadError]);
+
+  // Mutation: Process recruitment request
+  const processRecruitmentMutation = useMutation({
+    mutationFn: async ({ requestId, status }: { requestId: number; status: 'Approved' | 'Rejected' }) => {
       const salaryNum = adjustedSalary ? parseFloat(adjustedSalary) : undefined;
       const res = await processRecruitmentRequest(requestId, status, recruitmentNote || undefined, salaryNum);
-      const data: ProcessRecruitmentResponse = res.data;
-
+      return res.data as ProcessRecruitmentResponse;
+    },
+    onMutate: ({ requestId }) => setProcessingRecruitment(requestId),
+    onSuccess: (data, { status }) => {
       if (status === 'Approved' && data.username && data.password) {
         setCreatedCredentials({
           username: data.username ?? '',
@@ -238,18 +248,17 @@ const PayrollDashboard = () => {
           employeeName: data.request?.fullName ?? '',
         });
       }
-
       setRecruitmentNote('');
       setAdjustedSalary('');
       setSelectedRecruitmentId(null);
-      void loadRecruitmentData();
-    } catch (err: unknown) {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.payroll.recruitment(recruitmentPage) });
+    },
+    onError: (err: unknown) => {
       const msg = err instanceof Error ? err.message : 'فشل معالجة طلب التوظيف';
       setLoadError(msg);
-    } finally {
-      setProcessingRecruitment(null);
-    }
-  };
+    },
+    onSettled: () => setProcessingRecruitment(null),
+  });
 
   const handlePrevMonth = () => {
     setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
@@ -262,12 +271,12 @@ const PayrollDashboard = () => {
   const handleDownloadPayroll = async (type: 'pdf' | 'excel') => {
     setIsDownloading(true);
     try {
-      const response = type === 'pdf' 
+      const response = type === 'pdf'
         ? await downloadPayrollPdf(reportMonth, reportYear)
         : await downloadPayrollExcel(reportMonth, reportYear);
-      
-      const blob = new Blob([response.data], { 
-        type: type === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+
+      const blob = new Blob([response.data], {
+        type: type === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -284,53 +293,57 @@ const PayrollDashboard = () => {
     }
   };
 
-  const handleProcessAdvance = async (advanceId: number, status: 'Approved' | 'Rejected') => {
-    setProcessingAdvance(advanceId);
-    try {
+  // Mutation: Process advance request
+  const processAdvanceMutation = useMutation({
+    mutationFn: async ({ advanceId, status }: { advanceId: number; status: 'Approved' | 'Rejected' }) => {
       const amountNum = adjustedAdvanceAmount.trim() ? Number(adjustedAdvanceAmount) : undefined;
-      await processAdvanceRequest(
+      return processAdvanceRequest(
         advanceId,
         status,
         advanceNote || undefined,
         Number.isFinite(amountNum) ? amountNum : undefined,
         adjustedAdvanceReason || undefined,
       );
+    },
+    onMutate: ({ advanceId }) => setProcessingAdvance(advanceId),
+    onSuccess: () => {
       setAdvanceNote('');
       setSelectedAdvanceId(null);
       setAdjustedAdvanceAmount('');
       setAdjustedAdvanceReason('');
-      void loadAdvancesData();
-    } catch (err: unknown) {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.payroll.root });
+    },
+    onError: (err: unknown) => {
       setLoadError(extractApiError(err).message || 'فشل معالجة طلب السلفة');
-    } finally {
-      setProcessingAdvance(null);
-    }
-  };
+    },
+    onSettled: () => setProcessingAdvance(null),
+  });
 
-  const handleDeliverAdvance = async (advanceId: number) => {
-    setProcessingAdvance(advanceId);
-    try {
-      await deliverAdvanceRequest(advanceId);
-      void loadAdvancesData();
-    } catch (err: unknown) {
+  // Mutation: Deliver advance
+  const deliverAdvanceMutation = useMutation({
+    mutationFn: (advanceId: number) => deliverAdvanceRequest(advanceId),
+    onMutate: (advanceId) => setProcessingAdvance(advanceId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.payroll.root });
+    },
+    onError: (err: unknown) => {
       setLoadError(extractApiError(err).message || 'فشل تعليم طلب السلفة كـ تم التسليم');
-    } finally {
-      setProcessingAdvance(null);
-    }
-  };
+    },
+    onSettled: () => setProcessingAdvance(null),
+  });
 
-  const handleDeliverAllApproved = async () => {
-    if (!window.confirm(`تأكيد: تسليم جميع السلف المعتمدة لشهر ${reportMonth}/${reportYear}؟`)) return;
-    setProcessingAdvance(-1);
-    try {
-      await deliverAllApprovedAdvances(reportMonth, reportYear);
-      void loadAdvancesData();
-    } catch (err: unknown) {
+  // Mutation: Deliver all approved advances
+  const deliverAllAdvancesMutation = useMutation({
+    mutationFn: () => deliverAllApprovedAdvances(reportMonth, reportYear),
+    onMutate: () => setProcessingAdvance(-1),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.payroll.root });
+    },
+    onError: (err: unknown) => {
       setLoadError(extractApiError(err).message || 'فشل تسليم جميع السلف المعتمدة');
-    } finally {
-      setProcessingAdvance(null);
-    }
-  };
+    },
+    onSettled: () => setProcessingAdvance(null),
+  });
 
   const handleDownloadAdvanceReportCsv = async () => {
     try {
@@ -377,60 +390,98 @@ const PayrollDashboard = () => {
     }
   };
 
-  const handleRunCalculation = async (empId?: number) => {
-    setCalculatingId(empId ?? -1); // -1 for "All"
-    setCalcFeedback(null);
-    setShowConfirmCalc(null);
-    try {
+  // Mutation: Calculate payroll
+  const calculatePayrollMutation = useMutation({
+    mutationFn: async (empId?: number) => {
       if (empId === undefined || empId === -1) {
-        // Batch calculation for all employees
         const res = await calculateAllPayroll(reportMonth, reportYear);
-        const data = res.data;
-        const successCount = data.successCount;
-        const errorCount = data.errorCount;
+        return { type: 'all' as const, data: res.data };
+      }
+      await calculatePayroll(reportMonth, reportYear, empId);
+      return { type: 'single' as const };
+    },
+    onMutate: (empId) => setCalculatingId(empId ?? -1),
+    onSuccess: (result) => {
+      if (result.type === 'all') {
+        const { successCount, errorCount } = result.data;
         setCalcFeedback({
           msg: `تم احتساب ${successCount} موظف بنجاح${errorCount > 0 ? `، ${errorCount} خطأ` : ''}`,
           type: 'success',
         });
       } else {
-        await calculatePayroll(reportMonth, reportYear, empId);
         setCalcFeedback({ msg: 'تم احتساب الراتب بنجاح', type: 'success' });
       }
-      void loadMonthlyPayrollForCalc();
-      if (activeTab === 'history') void loadHistoryData();
-    } catch (err: unknown) {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.payroll.monthlyPayroll(reportMonth, reportYear) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.payroll.history(historyPage) });
+    },
+    onError: (err: unknown) => {
       const msg = extractApiError(err).message || 'فشل احتساب الراتب';
       setCalcFeedback({ msg, type: 'error' });
-    } finally {
+    },
+    onSettled: () => {
       setCalculatingId(null);
-    }
-  };
+    },
+  });
 
-  const handlePayPayroll = async (employeeId: number) => {
-    setPayingId(employeeId);
-    try {
-      await markPayrollPaid(reportMonth, reportYear, employeeId);
-      void loadMonthlyPayrollForCalc();
-      if (activeTab === 'history') void loadHistoryData();
-    } catch (err: unknown) {
+  // Mutation: Pay single payroll
+  const payPayrollMutation = useMutation({
+    mutationFn: (employeeId: number) => markPayrollPaid(reportMonth, reportYear, employeeId),
+    onMutate: (employeeId) => setPayingId(employeeId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.payroll.monthlyPayroll(reportMonth, reportYear) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.payroll.history(historyPage) });
+    },
+    onError: (err: unknown) => {
       setLoadError(extractApiError(err).message || 'فشل تسليم الراتب');
-    } finally {
-      setPayingId(null);
-    }
+    },
+    onSettled: () => setPayingId(null),
+  });
+
+  // Mutation: Pay all payroll
+  const payAllPayrollMutation = useMutation({
+    mutationFn: () => markAllPayrollPaid(reportMonth, reportYear),
+    onMutate: () => setPayingId(-1),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.payroll.monthlyPayroll(reportMonth, reportYear) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.payroll.history(historyPage) });
+    },
+    onError: (err: unknown) => {
+      setLoadError(extractApiError(err).message || 'فشل تسليم الرواتب للكل');
+    },
+    onSettled: () => setPayingId(null),
+  });
+
+  // Wrapper handlers for JSX (call mutations)
+  const handleProcessRecruitment = (requestId: number, status: 'Approved' | 'Rejected') => {
+    processRecruitmentMutation.mutate({ requestId, status });
   };
 
-  const handlePayAllPayroll = async () => {
+  const handleProcessAdvance = (advanceId: number, status: 'Approved' | 'Rejected') => {
+    processAdvanceMutation.mutate({ advanceId, status });
+  };
+
+  const handleDeliverAdvance = (advanceId: number) => {
+    deliverAdvanceMutation.mutate(advanceId);
+  };
+
+  const handleDeliverAllApproved = () => {
+    if (!window.confirm(`تأكيد: تسليم جميع السلف المعتمدة لشهر ${reportMonth}/${reportYear}؟`)) return;
+    deliverAllAdvancesMutation.mutate();
+  };
+
+  const handleRunCalculation = (empId?: number) => {
+    setCalcFeedback(null);
+    setShowConfirmCalc(null);
+    calculatePayrollMutation.mutate(empId);
+  };
+
+  const handlePayPayroll = (employeeId: number) => {
+    payPayrollMutation.mutate(employeeId);
+  };
+
+  const handlePayAllPayroll = () => {
     if (!window.confirm(`تأكيد: تسليم جميع الرواتب لشهر ${reportMonth}/${reportYear}؟`)) return;
-    setPayingId(-1);
-    try {
-      await markAllPayrollPaid(reportMonth, reportYear);
-      void loadMonthlyPayrollForCalc();
-      if (activeTab === 'history') void loadHistoryData();
-    } catch (err: unknown) {
-      setLoadError(extractApiError(err).message || 'فشل تسليم الرواتب للكل');
-    } finally {
-      setPayingId(null);
-    }
+    payAllPayrollMutation.mutate();
   };
 
   const totalApprovedAmount = approvedAdvances
@@ -438,7 +489,7 @@ const PayrollDashboard = () => {
 
   const stats = [
     { label: 'سلف معلقة', value: String(pendingTotalCount), icon: Clock, color: 'text-orange-400', bg: 'bg-orange-500/10' },
-    { label: 'إجمالي السلف', value: (Number(approvedTotalAmount) || totalApprovedAmount).toLocaleString() + ' ر.س', icon: HandCoins, color: 'text-purple-400', bg: 'bg-purple-500/10' },
+    { label: 'إجمالي السلف', value: (Number(derivedApprovedTotalAmount) || totalApprovedAmount).toLocaleString() + ' ر.س', icon: HandCoins, color: 'text-purple-400', bg: 'bg-purple-500/10' },
     { label: 'سجلات الرواتب', value: String(historyTotalCount), icon: History, color: 'text-green-400', bg: 'bg-green-500/10' },
   ];
 

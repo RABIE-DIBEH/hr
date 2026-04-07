@@ -217,3 +217,132 @@ SELECT * FROM Leave_Requests;
 | **File paths** | Always use forward slashes in code — Windows handles them fine |
 | **Port conflicts** | Change in `application.properties` or `vite.config.ts` if needed |
 | **Maven wrapper** | Use `mvnw.cmd` on Windows, `./mvnw` on Linux |
+
+---
+
+## 10. Windows-Specific Troubleshooting
+
+### Common Windows Issues & Solutions
+
+#### 1. **PostgreSQL "psql" command not found**
+- **Solution**: Add PostgreSQL to PATH:
+  1. Open "Edit the system environment variables"
+  2. Click "Environment Variables"
+  3. Under "System variables", find "Path" and click "Edit"
+  4. Add: `C:\Program Files\PostgreSQL\15\bin` (adjust version if different)
+  5. Restart Command Prompt/PowerShell
+
+#### 2. **Maven "mvn" command not found**
+- **Solution**: Install Maven and add to PATH, or use the wrapper:
+  ```cmd
+  # Use Maven wrapper (recommended)
+  mvnw.cmd spring-boot:run
+  
+  # Or install Maven globally
+  # Download from https://maven.apache.org/download.cgi
+  # Add to PATH: C:\apache-maven-3.9.6\bin
+  ```
+
+#### 3. **Java 21 not recognized**
+- **Solution**: Set JAVA_HOME environment variable:
+  ```cmd
+  setx JAVA_HOME "C:\Program Files\Java\jdk-21"
+  setx PATH "%PATH%;%JAVA_HOME%\bin"
+  ```
+  Restart terminal after setting.
+
+#### 4. **Port 8080 already in use**
+- **Solution**: Find and kill process using port 8080:
+  ```cmd
+  netstat -ano | findstr :8080
+  taskkill /PID <PID> /F
+  ```
+  Or change backend port in `backend/src/main/resources/application.properties`:
+  ```properties
+  server.port=8081
+  ```
+
+#### 5. **Node.js/npm command not found**
+- **Solution**: Reinstall Node.js with "Add to PATH" option checked, or use nvm-windows:
+  ```powershell
+  # Install nvm-windows from https://github.com/coreybutler/nvm-windows
+  nvm install 18
+  nvm use 18
+  ```
+
+#### 6. **File path issues (backslashes vs forward slashes)**
+- **Solution**: Always use forward slashes in code, Windows handles them fine:
+  ```java
+  // Good
+  String path = "src/main/resources/application.properties";
+  
+  // Avoid
+  String path = "src\\main\\resources\\application.properties";
+  ```
+
+#### 7. **Git line ending warnings**
+- **Solution**: Configure Git for Windows:
+  ```cmd
+  git config --global core.autocrlf true
+  git config --global core.safecrlf warn
+  ```
+
+#### 8. **Docker Desktop not starting**
+- **Solution**:
+  1. Ensure Windows Subsystem for Linux 2 (WSL2) is installed
+  2. Enable Hyper-V in Windows Features
+  3. Restart computer after Docker installation
+  4. Run Docker Desktop as Administrator if needed
+
+#### 9. **Environment variables not loading**
+- **Solution**: Create `.env` file in `backend/` directory (not `.env.local`):
+  ```cmd
+  cd backend
+  copy .env.example .env
+  ```
+  Spring Boot loads `.env` automatically.
+
+#### 10. **Firewall blocking connections**
+- **Solution**: Add firewall rules for:
+  - PostgreSQL (port 5432)
+  - Backend (port 8080) 
+  - Frontend (port 5173)
+  
+  Or temporarily disable firewall for testing (not recommended for production).
+
+### Quick Windows Test Commands
+
+```cmd
+# Verify installations
+java -version
+mvn -version
+node --version
+npm --version
+psql --version
+docker --version
+
+# Test database connection
+psql -U postgres -c "SELECT version();"
+
+# Quick backend test
+cd backend
+mvnw.cmd clean compile
+
+# Quick frontend test  
+cd frontend
+npm install
+npx tsc --noEmit
+```
+
+### Windows PowerShell Alternatives
+
+```powershell
+# Generate JWT_SECRET
+[System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes((New-Guid).ToString() + (New-Guid).ToString())) | % { $_.Substring(0, 44) }
+
+# Check running processes on port
+Get-NetTCPConnection -LocalPort 8080 | Select-Object OwningProcess
+
+# Kill process by PID
+Stop-Process -Id <PID> -Force
+```

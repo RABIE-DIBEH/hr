@@ -9,6 +9,7 @@ import com.hrms.core.repositories.SystemLogRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
@@ -43,6 +44,7 @@ public class AdminService {
         return deviceRepository.findAll(pageable);
     }
 
+    @Transactional
     public void logSystemEvent(String action, String user, String status) {
         SystemLog log = SystemLog.builder()
                 .action(action)
@@ -89,11 +91,13 @@ public class AdminService {
         );
     }
 
+    @Transactional
     public void clearAllLogs(String user) {
         logRepository.deleteAll();
         logSystemEvent("Clear Audit Logs", user, "Success");
     }
 
+    @Transactional
     public NfcDevice addNfcDevice(CreateNfcDeviceRequest request) {
         NfcDevice device = NfcDevice.builder()
                 .deviceId(request.deviceId())
@@ -110,6 +114,7 @@ public class AdminService {
         return deviceRepository.save(device);
     }
 
+    @Transactional
     public NfcDevice updateDeviceStatus(String deviceId, String status) {
         NfcDevice device = deviceRepository.findById(deviceId)
                 .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
@@ -119,6 +124,7 @@ public class AdminService {
         return deviceRepository.save(device);
     }
 
+    @Transactional
     public void deleteDevice(String deviceId) {
         if (!deviceRepository.existsById(deviceId)) {
             throw new org.springframework.web.server.ResponseStatusException(
@@ -128,6 +134,7 @@ public class AdminService {
         logSystemEvent("Delete NFC Device " + deviceId, "Admin", "Success");
     }
 
+    @Transactional
     public String triggerBackup(String requester) {
         logSystemEvent("Database Backup Created", requester, "Success");
         return "Backup created securely. Timestamp: " + LocalDateTime.now();

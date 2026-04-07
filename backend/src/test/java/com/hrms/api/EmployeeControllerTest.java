@@ -30,6 +30,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -222,6 +223,53 @@ class EmployeeControllerTest {
                 .build();
 
         mockMvc.perform(delete("/api/employees/3"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void resetPassword_Allowed_ReturnsTypedResponse() throws Exception {
+        com.hrms.api.dto.PasswordResetResponse response = new com.hrms.api.dto.PasswordResetResponse(
+                2L, "Target Employee", "target@hrms.com", "NewPassword123", 1L, "HR Admin"
+        );
+
+        when(employeeDirectoryService.resetEmployeePassword(eq(2L), eq(1L))).thenReturn(response);
+
+        mockMvc = MockMvcBuilders.standaloneSetup(new EmployeeController(employeeDirectoryService, employeeRepository))
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .setCustomArgumentResolvers(new AuthenticationPrincipalResolver(hrPrincipal))
+                .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
+                .build();
+
+        mockMvc.perform(post("/api/employees/2/reset-password"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.employeeId").value(2))
+                .andExpect(jsonPath("$.data.fullName").value("Target Employee"))
+                .andExpect(jsonPath("$.data.email").value("target@hrms.com"))
+                .andExpect(jsonPath("$.data.newPassword").value("NewPassword123"))
+                .andExpect(jsonPath("$.data.resetBy").value(1))
+                .andExpect(jsonPath("$.data.resetByName").value("HR Admin"));
+
+        verify(employeeDirectoryService).resetEmployeePassword(eq(2L), eq(1L));
+    }
+
+    @Test
+    void resetPassword_NonManager_Returns403() throws Exception {
+        Employee regularEmployee = Employee.builder()
+                .employeeId(2L)
+                .fullName("Regular Employee")
+                .email("regular@hrms.com")
+                .passwordHash("secret")
+                .status("Active")
+                .build();
+        EmployeeUserDetails employeePrincipal = new EmployeeUserDetails(regularEmployee, "EMPLOYEE", "General");
+
+        mockMvc = MockMvcBuilders.standaloneSetup(new EmployeeController(employeeDirectoryService, employeeRepository))
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .setCustomArgumentResolvers(new AuthenticationPrincipalResolver(employeePrincipal))
+                .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
+                .build();
+
+        mockMvc.perform(post("/api/employees/3/reset-password"))
                 .andExpect(status().isForbidden());
     }
 

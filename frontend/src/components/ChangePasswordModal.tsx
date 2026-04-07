@@ -35,12 +35,8 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose }) =>
       setSuccess(true);
       setTimeout(() => onClose(), 2000);
     } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'response' in err) {
-        const response = (err as any).response;
-        setError(response?.data?.message || 'فشل تغيير كلمة المرور');
-      } else {
-        setError('فشل تغيير كلمة المرور');
-      }
+      const axiosError = err as { response?: { data?: { message?: string } } };
+      setError(axiosError.response?.data?.message || 'فشل تغيير كلمة المرور');
     } finally {
       setLoading(false);
     }

@@ -22,6 +22,8 @@ import {
 } from '../services/api';
 import { getRole, getPayload } from '../services/auth';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../services/queryKeys';
 import { extractApiError } from '../utils/errorHandler';
 
 const roleLabel = (role: string) => {
@@ -63,6 +65,7 @@ const statusColors: Record<string, string> = {
 
 const UserManagement = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const userRole = getRole() || '';
   const isHighRole = ['HR', 'ADMIN', 'SUPER_ADMIN'].includes(userRole);
   const isManager = userRole === 'MANAGER';
@@ -70,12 +73,9 @@ const UserManagement = () => {
   const isDevUser = currentUserEmail === 'dev@hrms.com';
   const canManagePasswords = isDevUser || isHighRole || isManager;
 
-  const [employees, setEmployees] = useState<EmployeeSummary[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
-  const [error, setError] = useState<string | null>(null);
 
   // Modal state
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeSummary | null>(null);
@@ -83,7 +83,6 @@ const UserManagement = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showResetPassword, setShowResetPassword] = useState(false);
-  const [actionLoading, setActionLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [resetPasswordResult, setResetPasswordResult] = useState<{ password: string; name: string } | null>(null);
 
@@ -101,24 +100,62 @@ const UserManagement = () => {
     employmentStatus: null,
   });
 
-  const loadEmployees = async () => {
-    setLoading(true);
-    setError(null);
-    try {
+  // React Query for employees list (always called, even if user isn't authorized)
+  const { data: employees = [], isPending, error: queryError } = useQuery({
+    queryKey: queryKeys.users.list,
+    queryFn: async () => {
       const res = await listEmployees();
-      setEmployees(res.data);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'فشل في تحميل بيانات الموظفين';
-      setError(msg);
-    } finally {
-      setLoading(false);
-    }
-  };
+      return res.data;
+    },
+    enabled: isHighRole, // Only fetch if user has permission
+  });
 
-  useEffect(() => {
-    if (isHighRole) void loadEmployees();
-    else navigate('/dashboard');
-  }, [isHighRole, navigate]);
+  const error = queryError
+    ? (queryError instanceof Error ? queryError.message : 'فشل في تحميل بيانات الموظفين')
+    : null;
+
+  const [mutationError, setMutationError] = useState<string | null>(null);
+
+  // Mutation: Update employee
+  const updateMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: number; payload: EmployeeAdminUpdatePayload }) =>
+      updateEmployee(id, payload),
+    onSuccess: () => {
+      setSuccessMessage('تم تحديث بيانات الموظف بنجاح');
+      setShowEditModal(false);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.users.list });
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : 'فشل في التحديث';
+      setMutationError(msg);
+    },
+  });
+
+  // Mutation: Delete (terminate) employee
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => deleteEmployee(id),
+    onSuccess: (res) => {
+      setSuccessMessage(res.data ? `تم إنهاء الموظف ${res.data.fullName} بنجاح` : 'تم إنهاء الموظف بنجاح');
+      setShowDeleteConfirm(false);
+      setSelectedEmployee(null);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.users.list });
+    },
+    onError: (err: unknown) => {
+      setMutationError(extractApiError(err).message || 'فشل في الحذف');
+    },
+  });
+
+  // Mutation: Reset password
+  const resetPasswordMutation = useMutation({
+    mutationFn: (id: number) => resetEmployeePassword(id),
+    onSuccess: (res) => {
+      setResetPasswordResult({ password: res.data.newPassword, name: res.data.fullName });
+      setSuccessMessage(`تم إعادة تعيين كلمة المرور للموظف ${res.data.fullName}`);
+    },
+    onError: (err: unknown) => {
+      setMutationError(extractApiError(err).message || 'فشل في إعادة تعيين كلمة المرور');
+    },
+  });
 
   const filtered = employees.filter((emp) => {
     const matchesSearch =
@@ -135,7 +172,7 @@ const UserManagement = () => {
     setShowViewModal(true);
   };
 
-  const handleEdit = async (emp: EmployeeSummary) => {
+  const handleEdit = (emp: EmployeeSummary) => {
     setSelectedEmployee(emp);
     setEditForm({
       fullName: emp.fullName,
@@ -152,57 +189,39 @@ const UserManagement = () => {
     setShowEditModal(true);
   };
 
-  const handleSaveEdit = async () => {
+  const handleSaveEdit = () => {
     if (!selectedEmployee) return;
-    setActionLoading(true);
-    try {
-      await updateEmployee(selectedEmployee.employeeId, editForm);
-      setSuccessMessage('تم تحديث بيانات الموظف بنجاح');
-      setShowEditModal(false);
-      await loadEmployees();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'فشل في التحديث';
-      setError(msg);
-    } finally {
-      setActionLoading(false);
-    }
+    updateMutation.mutate({ id: selectedEmployee.employeeId, payload: editForm });
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!selectedEmployee) return;
-    setActionLoading(true);
-    try {
-      const res = await deleteEmployee(selectedEmployee.employeeId);
-      setSuccessMessage(res.data ? `تم إنهاء الموظف ${res.data.fullName} بنجاح` : 'تم إنهاء الموظف بنجاح');
-      setShowDeleteConfirm(false);
-      setSelectedEmployee(null);
-      await loadEmployees();
-    } catch (err: unknown) {
-      setError(extractApiError(err).message || 'فشل في الحذف');
-    } finally {
-      setActionLoading(false);
-    }
+    deleteMutation.mutate(selectedEmployee.employeeId);
   };
 
-  const handleResetPassword = async () => {
+  const handleResetPassword = () => {
     if (!selectedEmployee) return;
-    setActionLoading(true);
     setResetPasswordResult(null);
-    try {
-      const res = await resetEmployeePassword(selectedEmployee.employeeId);
-      setResetPasswordResult({ password: res.data.newPassword, name: res.data.fullName });
-      setSuccessMessage(`تم إعادة تعيين كلمة المرور للموظف ${res.data.fullName}`);
-    } catch (err: unknown) {
-      setError(extractApiError(err).message || 'فشل في إعادة تعيين كلمة المرور');
-    } finally {
-      setActionLoading(false);
-    }
+    resetPasswordMutation.mutate(selectedEmployee.employeeId);
   };
 
   const clearMessages = () => {
     setSuccessMessage(null);
-    setError(null);
+    setMutationError(null);
   };
+
+  const displayError = mutationError || error;
+
+  // Redirect if not authorized (useEffect to avoid render-time side effect)
+  useEffect(() => {
+    if (!isHighRole) {
+      navigate('/dashboard');
+    }
+  }, [isHighRole, navigate]);
+
+  if (!isHighRole) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white" dir="rtl">
@@ -219,14 +238,14 @@ const UserManagement = () => {
             <button onClick={clearMessages} className="text-green-200 text-sm mt-1 hover:text-white">إغلاق</button>
           </motion.div>
         )}
-        {error && (
+        {displayError && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-red-600 text-white px-6 py-3 rounded-xl shadow-lg max-w-md"
           >
-            <p className="font-bold">{error}</p>
+            <p className="font-bold">{displayError}</p>
             <button onClick={clearMessages} className="text-red-200 text-sm mt-1 hover:text-white">إغلاق</button>
           </motion.div>
         )}
@@ -289,7 +308,7 @@ const UserManagement = () => {
         </div>
 
         {/* Table */}
-        {loading ? (
+        {isPending ? (
           <div className="text-center py-12 text-slate-500">جارِ التحميل...</div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-12 text-slate-500">لا توجد نتائج</div>
@@ -388,7 +407,7 @@ const UserManagement = () => {
         )}
 
         {/* Footer count */}
-        {!loading && (
+        {!isPending && (
           <div className="mt-4 text-slate-500 text-sm">
             عرض {filtered.length} من أصل {employees.length} موظف
           </div>
@@ -563,10 +582,10 @@ const UserManagement = () => {
                 </button>
                 <button
                   onClick={handleSaveEdit}
-                  disabled={actionLoading}
+                  disabled={updateMutation.isPending}
                   className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold text-white transition-colors disabled:opacity-50"
                 >
-                  {actionLoading ? 'جارِ الحفظ...' : 'حفظ التغييرات'}
+                  {updateMutation.isPending ? 'جارِ الحفظ...' : 'حفظ التغييرات'}
                 </button>
               </div>
             </motion.div>
@@ -614,10 +633,10 @@ const UserManagement = () => {
                 </button>
                 <button
                   onClick={handleDelete}
-                  disabled={actionLoading}
+                  disabled={deleteMutation.isPending}
                   className="flex-[2] py-3 bg-red-600 hover:bg-red-700 rounded-xl font-bold text-white transition-colors disabled:opacity-50"
                 >
-                  {actionLoading ? 'جارِ الإنهاء...' : 'تأكيد الإنهاء'}
+                  {deleteMutation.isPending ? 'جارِ الإنهاء...' : 'تأكيد الإنهاء'}
                 </button>
               </div>
             </motion.div>
@@ -665,10 +684,10 @@ const UserManagement = () => {
                     </button>
                     <button
                       onClick={handleResetPassword}
-                      disabled={actionLoading}
+                      disabled={resetPasswordMutation.isPending}
                       className="flex-[2] py-3 bg-yellow-600 hover:bg-yellow-700 rounded-xl font-bold text-white transition-colors disabled:opacity-50"
                     >
-                      {actionLoading ? 'جارِ التعيين...' : 'تأكيد إعادة التعيين'}
+                      {resetPasswordMutation.isPending ? 'جارِ التعيين...' : 'تأكيد إعادة التعيين'}
                     </button>
                   </div>
                 </>

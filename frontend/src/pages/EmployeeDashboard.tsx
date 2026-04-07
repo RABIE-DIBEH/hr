@@ -20,11 +20,12 @@ import CurrentDateTimePanel from '../components/CurrentDateTimePanel';
 import AdvanceRequestForm from '../components/AdvanceRequestForm';
 import LeaveRequestForm from '../components/LeaveRequestForm';
 import ProfileEditModal from '../components/ProfileEditModal';
+import { TableSkeleton } from '../components/Skeleton';
 import {
-  getCurrentEmployee, 
-  getMyAdvanceRequests, 
-  getMyPayrollSlipsPage, 
-  getMyAttendancePage, 
+  getCurrentEmployee,
+  getMyAdvanceRequests,
+  getMyPayrollSlipsPage,
+  getMyAttendancePage,
   getMyLeaveRequests
 } from '../services/api';
 import { queryKeys } from '../services/queryKeys';
@@ -254,7 +255,22 @@ const EmployeeDashboard = () => {
           <section className="bg-luxury-surface rounded-[2.5rem] p-8 shadow-sm border border-white/5 overflow-hidden">
             <h2 className="text-xl font-bold text-white mb-6 tracking-tight arabic-text">طلبات السلف الحالية</h2>
             {loadingAdvances ? (
-              <div className="text-center py-6 text-slate-500">جاري التحميل...</div>
+              <div className="space-y-4">
+                <div className="bg-white/5 p-5 rounded-[2rem] border border-white/5">
+                  <div className="flex justify-between items-center mb-3">
+                    <div className="h-6 w-24 bg-slate-700 rounded animate-pulse" />
+                    <div className="h-5 w-20 bg-slate-700 rounded animate-pulse" />
+                  </div>
+                  <div className="h-4 w-full bg-slate-700 rounded animate-pulse" />
+                </div>
+                <div className="bg-white/5 p-5 rounded-[2rem] border border-white/5">
+                  <div className="flex justify-between items-center mb-3">
+                    <div className="h-6 w-24 bg-slate-700 rounded animate-pulse" />
+                    <div className="h-5 w-20 bg-slate-700 rounded animate-pulse" />
+                  </div>
+                  <div className="h-4 w-full bg-slate-700 rounded animate-pulse" />
+                </div>
+              </div>
             ) : myAdvances.length === 0 ? (
               <div className="text-center py-10 opacity-40">
                 <HandCoins size={40} className="mx-auto mb-3" />
@@ -293,7 +309,22 @@ const EmployeeDashboard = () => {
           <section className="bg-luxury-surface rounded-[2.5rem] p-8 shadow-sm border border-white/5 overflow-hidden">
             <h2 className="text-xl font-bold text-white mb-6 tracking-tight arabic-text">طلبات الإجازة</h2>
             {loadingLeaves ? (
-              <div className="text-center py-6 text-slate-500">جاري التحميل...</div>
+              <div className="space-y-4">
+                <div className="bg-white/5 p-5 rounded-[2rem] border border-white/5">
+                  <div className="flex justify-between items-center mb-3">
+                    <div className="h-5 w-28 bg-slate-700 rounded animate-pulse" />
+                    <div className="h-5 w-20 bg-slate-700 rounded animate-pulse" />
+                  </div>
+                  <div className="h-4 w-3/4 bg-slate-700 rounded animate-pulse" />
+                </div>
+                <div className="bg-white/5 p-5 rounded-[2rem] border border-white/5">
+                  <div className="flex justify-between items-center mb-3">
+                    <div className="h-5 w-28 bg-slate-700 rounded animate-pulse" />
+                    <div className="h-5 w-20 bg-slate-700 rounded animate-pulse" />
+                  </div>
+                  <div className="h-4 w-3/4 bg-slate-700 rounded animate-pulse" />
+                </div>
+              </div>
             ) : myLeaves.length === 0 ? (
               <div className="text-center py-10 opacity-40">
                 <Calendar size={40} className="mx-auto mb-3" />
@@ -418,7 +449,7 @@ const EmployeeDashboard = () => {
 
         <div className="space-y-4">
           {loadingAttendance ? (
-            <div className="text-center py-8 text-slate-500">جاري التحميل...</div>
+            <TableSkeleton rows={3} />
           ) : latestAttendance.length === 0 ? (
             <div className="text-center py-8 text-slate-500">لا يوجد سجلات حضور حتى الآن</div>
           ) : (
@@ -507,7 +538,14 @@ const EmployeeDashboard = () => {
               </div>
 
               {loadingDayDetails ? (
-                <div className="text-center py-8 text-slate-400">جاري التحميل...</div>
+                <div className="space-y-4">
+                  <div className="h-6 w-48 bg-slate-700 rounded animate-pulse" />
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="h-20 bg-slate-700 rounded animate-pulse" />
+                    <div className="h-20 bg-slate-700 rounded animate-pulse" />
+                    <div className="h-20 bg-slate-700 rounded animate-pulse" />
+                  </div>
+                </div>
               ) : !todayRecord ? (
                 <div className="text-center py-8 text-slate-400">لا توجد بيانات دوام لهذا اليوم</div>
               ) : (

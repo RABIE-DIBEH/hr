@@ -23,6 +23,9 @@ export const queryKeys = {
   attendance: {
     root: ['attendance'] as const,
     logs: (page: number) => ['attendance', 'logs', page] as const,
+    hrMonthlyRoot: ['attendance', 'hr-monthly'] as const,
+    hrMonthly: (month: number, year: number, page: number) =>
+      ['attendance', 'hr-monthly', month, year, page] as const,
   },
   manager: {
     root: ['manager'] as const,
@@ -56,5 +59,22 @@ export const queryKeys = {
     logs: (page: number) => ['admin', 'logs', page] as const,
     devicesRoot: ['admin', 'devices'] as const,
     devices: (page: number) => ['admin', 'devices', page] as const,
+  },
+  users: {
+    root: ['users'] as const,
+    list: ['users', 'list'] as const,
+  },
+  payroll: {
+    root: ['payroll'] as const,
+    advances: (subTab: string, page: number, month: number, year: number) =>
+      ['payroll', 'advances', subTab, page, month, year] as const,
+    history: (page: number) => ['payroll', 'history', page] as const,
+    employees: ['payroll', 'employees'] as const,
+    monthlyPayroll: (month: number, year: number) => ['payroll', 'monthly', month, year] as const,
+    recruitment: (page: number) => ['payroll', 'recruitment', page] as const,
+  },
+  expenses: {
+    employees: ['expenses', 'employees'] as const,
+    payrollHistory: ['expenses', 'payroll-history'] as const,
   },
 };

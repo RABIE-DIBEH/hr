@@ -29,7 +29,7 @@ public class AttendanceController {
     }
 
     @PostMapping("/nfc-clock")
-    public ResponseEntity<?> clockByNfc(
+    public ResponseEntity<ApiResponse<StatusResponseDto>> clockByNfc(
             @Valid @RequestBody NfcClockRequest request,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
 
@@ -46,7 +46,8 @@ public class AttendanceController {
     @PutMapping("/report-fraud/{recordId}")
     public ResponseEntity<ApiResponse<StatusResponseDto>> reportFraud(
             @PathVariable Long recordId,
-            @RequestBody FraudReportRequest request,
+
+            @Valid @RequestBody FraudReportRequest request,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
 
         return attendanceService.reportFraud(recordId, request.noteOrDefault(), principal)
@@ -82,7 +83,8 @@ public class AttendanceController {
     @PutMapping("/verify/{recordId}")
     public ResponseEntity<ApiResponse<StatusResponseDto>> verifyRecord(
             @PathVariable Long recordId,
-            @RequestBody(required = false) FraudReportRequest request,
+
+            @Valid @RequestBody(required = false) FraudReportRequest request,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
 
         String note = (request != null && request.noteOrDefault() != null) ? request.noteOrDefault() : "Verified via Dashboard";

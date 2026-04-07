@@ -1,36 +1,67 @@
 COMPOSE ?= docker compose
 
-.PHONY: help up-dev down-dev restart-dev logs ps build verify verify-backend verify-frontend verify-compose
+.PHONY: help build up up-dev down restart-dev logs logs-backend logs-frontend logs-db clean test test-frontend verify verify-backend verify-frontend verify-compose status ps shell-backend shell-frontend shell-db db-backup db-restore health
 
 help:
-	@echo "Available targets:"
-	@echo "  make up-dev           Build and start the local stack"
-	@echo "  make down-dev         Stop and remove the local stack"
-	@echo "  make restart-dev      Restart the local stack"
-	@echo "  make logs             Stream service logs"
-	@echo "  make ps               Show service status"
-	@echo "  make build            Build backend and frontend images"
-	@echo "  make verify           Run local CI-style checks"
-	@echo "  make verify-backend   Run backend Maven verification"
-	@echo "  make verify-frontend  Run frontend lint, tests, and build"
-	@echo "  make verify-compose   Validate docker-compose.yml"
+	@echo "HRMS Docker Management Commands:"
+	@echo ""
+	@echo "  build            - Build all Docker images"
+	@echo "  up               - Start all services in detached mode"
+	@echo "  up-dev           - Start services with live reload (development)"
+	@echo "  down             - Stop and remove all containers"
+	@echo "  restart-dev      - Restart the local development stack"
+	@echo "  logs             - View logs from all services"
+	@echo "  logs-backend     - View backend logs"
+	@echo "  logs-frontend    - View frontend logs"
+	@echo "  logs-db          - View database logs"
+	@echo "  clean            - Remove all containers, volumes, and images"
+	@echo "  test             - Run backend tests"
+	@echo "  test-frontend    - Run frontend tests"
+	@echo "  verify           - Run local CI-style checks"
+	@echo "  verify-backend   - Run backend Maven verification"
+	@echo "  verify-frontend  - Run frontend lint, tests, and build"
+	@echo "  verify-compose   - Validate docker-compose.yml"
+	@echo "  status / ps      - Show container status"
+	@echo "  shell-backend    - Open shell in backend container"
+	@echo "  shell-frontend   - Open shell in frontend container"
+	@echo "  shell-db         - Open psql shell in database"
+	@echo "  health           - Check service health"
+	@echo ""
+
+build:
+	$(COMPOSE) build
+
+up:
+	$(COMPOSE) up -d
 
 up-dev:
-	$(COMPOSE) up --build -d
+	$(COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml up -d
 
-down-dev:
+down:
 	$(COMPOSE) down --remove-orphans
 
-restart-dev: down-dev up-dev
+restart-dev: down up-dev
 
 logs:
 	$(COMPOSE) logs -f --tail=200
 
-ps:
-	$(COMPOSE) ps
+logs-backend:
+	$(COMPOSE) logs -f backend
 
-build:
-	$(COMPOSE) build
+logs-frontend:
+	$(COMPOSE) logs -f frontend
+
+logs-db:
+	$(COMPOSE) logs -f postgres
+
+clean:
+	$(COMPOSE) down -v --rmi all --remove-orphans
+
+test:
+	cd backend && mvn test
+
+test-frontend:
+	cd frontend && npm run test:run
 
 verify: verify-backend verify-frontend verify-compose
 
@@ -42,3 +73,30 @@ verify-frontend:
 
 verify-compose:
 	$(COMPOSE) config
+
+status:
+	$(COMPOSE) ps
+
+ps:
+	$(COMPOSE) ps
+
+shell-backend:
+	$(COMPOSE) exec backend sh
+
+shell-frontend:
+	$(COMPOSE) exec frontend sh
+
+shell-db:
+	$(COMPOSE) exec postgres psql -U hrms_user -d hrms
+
+db-backup:
+	$(COMPOSE) exec postgres pg_dump -U hrms_user hrms > backup.sql
+
+db-restore:
+	@echo "Usage: docker compose exec -T postgres psql -U hrms_user -d hrms < backup_file.sql"
+
+health:
+	@echo "Checking services health..."
+	@echo "Backend: $$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8081/api/health || echo "DOWN")"
+	@echo "Frontend: $$(curl -s -o /dev/null -w "%{http_code}" http://localhost:80 || echo "DOWN")"
+	@echo "Database: $$(docker compose exec postgres pg_isready -U hrms_user -d hrms >/dev/null 2>&1 && echo "UP" || echo "DOWN")"

@@ -4,6 +4,16 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import EmployeeDashboard from '../pages/EmployeeDashboard';
 import * as api from '../services/api';
+import type { PaginatedList } from '../services/api';
+
+const mockPaginated = <T,>(items: T[]): PaginatedList<T> => ({
+  items,
+  totalCount: items.length,
+  page: 0,
+  pageSize: 20,
+  totalPages: 1,
+  hasNext: false,
+});
 
 // Mock the API services
 vi.mock('../services/api', async () => {
@@ -39,7 +49,7 @@ const createWrapper = () => {
 describe('EmployeeDashboard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Default mocks
     vi.mocked(api.getCurrentEmployee).mockResolvedValue({
       data: {
@@ -51,12 +61,12 @@ describe('EmployeeDashboard', () => {
         baseSalary: '5000',
         status: 'Active'
       }
-    } as any);
-    
-    vi.mocked(api.getMyAdvanceRequests).mockResolvedValue({ data: [] } as any);
-    vi.mocked(api.getMyLeaveRequests).mockResolvedValue({ data: [] } as any);
-    vi.mocked(api.getMyPayrollSlipsPage).mockResolvedValue({ data: { items: [], totalPages: 0, totalCount: 0 } } as any);
-    vi.mocked(api.getMyAttendancePage).mockResolvedValue({ data: { items: [], totalPages: 0, totalCount: 0 } } as any);
+    } as Awaited<ReturnType<typeof api.getCurrentEmployee>>);
+
+    vi.mocked(api.getMyAdvanceRequests).mockResolvedValue({ data: [] } as Awaited<ReturnType<typeof api.getMyAdvanceRequests>>);
+    vi.mocked(api.getMyLeaveRequests).mockResolvedValue({ data: [] } as Awaited<ReturnType<typeof api.getMyLeaveRequests>>);
+    vi.mocked(api.getMyPayrollSlipsPage).mockResolvedValue({ data: mockPaginated([]) } as Awaited<ReturnType<typeof api.getMyPayrollSlipsPage>>);
+    vi.mocked(api.getMyAttendancePage).mockResolvedValue({ data: mockPaginated([]) } as Awaited<ReturnType<typeof api.getMyAttendancePage>>);
   });
 
   it('renders loading states initially', async () => {
@@ -98,14 +108,10 @@ describe('EmployeeDashboard', () => {
 
   it('shows unverified attendance warning if data is present', async () => {
     vi.mocked(api.getMyAttendancePage).mockResolvedValue({
-      data: {
-        items: [
-          { recordId: 1, checkIn: '2024-05-20T09:00:00', status: 'Present', isVerifiedByManager: false }
-        ],
-        totalPages: 1,
-        totalCount: 1
-      }
-    } as any);
+      data: mockPaginated([
+        { recordId: 1, checkIn: '2024-05-20T09:00:00', status: 'Present', isVerifiedByManager: false }
+      ])
+    } as Awaited<ReturnType<typeof api.getMyAttendancePage>>);
 
     render(<EmployeeDashboard />, { wrapper: createWrapper() });
     

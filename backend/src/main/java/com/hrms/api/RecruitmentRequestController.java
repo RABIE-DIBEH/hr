@@ -37,7 +37,7 @@ public class RecruitmentRequestController {
      * Submit a new recruitment request (HR only)
      */
     @PostMapping("/request")
-    public ResponseEntity<?> createRequest(@Valid @RequestBody RecruitmentRequestDto dto,
+    public ResponseEntity<ApiResponse<IdResponseDto>> createRequest(@Valid @RequestBody RecruitmentRequestDto dto,
                                            @AuthenticationPrincipal EmployeeUserDetails principal) {
         if (!hasAnyRole(principal, "HR", "SUPER_ADMIN")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only HR can create recruitment requests");
