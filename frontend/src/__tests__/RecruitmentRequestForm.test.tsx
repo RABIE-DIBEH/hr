@@ -84,7 +84,9 @@ describe('RecruitmentRequestForm', () => {
   });
 
   it('submits the form successfully with valid data', async () => {
-    vi.mocked(api.submitRecruitmentRequest).mockResolvedValue({ data: { success: true } } as any);
+    vi.mocked(api.submitRecruitmentRequest).mockResolvedValue({
+      data: { id: 1 }
+    } as Awaited<ReturnType<typeof api.submitRecruitmentRequest>>);
     
     render(<RecruitmentRequestForm onClose={mockOnClose} onSuccess={mockOnSuccess} />);
     

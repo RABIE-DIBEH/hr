@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render } from '@testing-library/react';
 import { MemoryRouter, Routes, Route, useLocation } from 'react-router-dom';
-import type { Location } from 'react-router-dom';
 import ProtectedRoute from '../components/ProtectedRoute';
 import * as auth from '../services/auth';
 
@@ -16,15 +15,12 @@ vi.mock('../services/auth', () => ({
 const mockAuth = vi.mocked(auth);
 
 const renderWithRouter = (ui: React.ReactElement, initialRoute = '/') => {
-  let currentLocation: Location | null = null;
-
   const LocationDisplay = () => {
     const location = useLocation();
-    currentLocation = location;
     return <div data-testid="location-display">{location.pathname}</div>;
   };
 
-  const { container, rerender, ...rest } = render(
+  const { container, ...rest } = render(
     <MemoryRouter initialEntries={[initialRoute]}>
       <Routes>
         <Route path="/" element={ui} />
@@ -36,7 +32,7 @@ const renderWithRouter = (ui: React.ReactElement, initialRoute = '/') => {
   return {
     ...rest,
     container,
-    getLocation: () => currentLocation,
+    getLocation: () => container.querySelector('[data-testid="location-display"]')?.textContent ?? initialRoute,
   };
 };
 
