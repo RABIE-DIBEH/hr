@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, type Easing } from 'framer-motion';
 
 interface SkeletonProps {
   className?: string;
@@ -7,12 +7,6 @@ interface SkeletonProps {
   variant?: 'text' | 'circular' | 'rectangular' | 'pulse';
   count?: number;
 }
-
-const baseAnimation = {
-  initial: { opacity: 0.4 },
-  animate: { opacity: [0.4, 0.8, 0.4] },
-  transition: { duration: 1.5, repeat: Infinity, ease: 'easeInOut' },
-};
 
 const Skeleton = ({ className = '', width, height, variant = 'rectangular', count = 1 }: SkeletonProps) => {
   const variants = {
@@ -29,7 +23,9 @@ const Skeleton = ({ className = '', width, height, variant = 'rectangular', coun
       {items.map((_, index) => (
         <motion.div
           key={index}
-          {...baseAnimation}
+          initial={{ opacity: 0.4 }}
+          animate={{ opacity: [0.4, 0.8, 0.4] }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' as Easing }}
           className={`bg-slate-700 ${variants[variant]} ${className}`}
           style={{ width, height }}
         />

@@ -1,21 +1,22 @@
 version: '3.8'
 
 services:
-  database:
-    image: postgres:15-alpine
-    container_name: hrms-db
+  postgres:
+    image: postgres:16-alpine
+    container_name: hrms-postgres
     environment:
-      POSTGRES_DB: hrms_db
-      POSTGRES_USER: ${DB_USERNAME:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-admin123}
+      POSTGRES_DB: hrms
+      POSTGRES_USER: hrms_user
+      POSTGRES_PASSWORD: hrms_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/src/main/resources/db/migration:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432"
-    volumes:
-      - ./database/schema.sql:/docker-entrypoint-initdb.d/1-schema.sql
-      - ./database/seed_test_data.sql:/docker-entrypoint-initdb.d/2-seed.sql
-      - db-data:/var/lib/postgresql/data
+    networks:
+      - hrms-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d hrms_db"]
+      test: ["CMD-SHELL", "pg_isready -U hrms_user -d hrms"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -26,15 +27,25 @@ services:
       dockerfile: Dockerfile
     container_name: hrms-backend
     environment:
-      - DB_URL=jdbc:postgresql://database:5432/hrms_db
-      - DB_USERNAME=${DB_USERNAME:-postgres}
-      - DB_PASSWORD=${DB_PASSWORD:-admin123}
-      - JWT_SECRET=${JWT_SECRET:-vErY_Str0ng_Loc@l_Dev_Secret_32Chars!!}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/hrms
+      SPRING_DATASOURCE_USERNAME: hrms_user
+      SPRING_DATASOURCE_PASSWORD: hrms_password
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
+      SPRING_PROFILES_ACTIVE: docker
     ports:
       - "8080:8080"
     depends_on:
-      database:
+      postgres:
         condition: service_healthy
+    networks:
+      - hrms-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   frontend:
     build:
@@ -45,6 +56,14 @@ services:
       - "80:80"
     depends_on:
       - backend
+    networks:
+      - hrms-network
+    environment:
+      - VITE_API_BASE_URL=/api
 
 volumes:
-  db-data:
+  postgres_data:
+
+networks:
+  hrms-network:
+    driver: bridge

@@ -111,6 +111,41 @@ class SecurityConfigAccessRulesTest {
                 .andExpect(status().isOk());
     }
 
+    @Test
+    @WithMockUser(roles = "EMPLOYEE")
+    void recruitmentRequest_forbidsEmployeeRole() throws Exception {
+        mockMvc.perform(post("/api/recruitment/request"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "HR")
+    void recruitmentRequest_allowsHrRole() throws Exception {
+        mockMvc.perform(post("/api/recruitment/request"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "MANAGER")
+    void recruitmentGet_allowsManagerRole() throws Exception {
+        mockMvc.perform(get("/api/recruitment/pending"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "EMPLOYEE")
+    void recruitmentProcess_forbidsEmployeeRole() throws Exception {
+        mockMvc.perform(put("/api/recruitment/process/1"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "MANAGER")
+    void recruitmentProcess_allowsManagerRole() throws Exception {
+        mockMvc.perform(put("/api/recruitment/process/1"))
+                .andExpect(status().isOk());
+    }
+
     public static class TestSecurityBeans {
         @Bean
         @Primary
