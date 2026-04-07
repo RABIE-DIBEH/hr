@@ -15,7 +15,7 @@ FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
 # Create non-root user
-RUN addgroup -S spring && adduser -S spring -G spring
+RUN apk add --no-cache curl && addgroup -S spring && adduser -S spring -G spring
 USER spring:spring
 
 # Copy the JAR file from build stage
