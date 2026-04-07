@@ -102,8 +102,8 @@ hrms-pro/
 
 | Team Member | Responsibilities |
 |-------------|------------------|
-| **Person 1** | Backend + Database + Testing + Docker |
-| **Person 2** | Frontend + Mobile + Documentation + UI |
+| **Abdulkarim** | Backend + Database + Testing + Docker |
+| **Rabie** | Frontend + Mobile + Documentation + UI |
 
 ## 🔧 Key Features
 
