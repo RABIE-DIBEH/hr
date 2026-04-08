@@ -28,7 +28,10 @@
       "Bash(flutter *)",
       "Bash(chmod *)",
       "Bash(sed *)",
-      "Bash(tar *)"
+      "Bash(tar *)",
+      "Bash(sleep *)",
+      "Bash(cd *)",
+      "Bash(head *)"
     ]
   },
   "$version": 3

@@ -265,12 +265,14 @@ interface LoginResponse {
 }
 
 export const login = async (email: string, password: string) => {
+  // Use raw axios to avoid the ApiResponse auto-unwrap interceptor
+  // since login response structure is different
   const { data } = await axios.post<LoginResponse>(
     `${API_BASE_URL}/auth/login`,
     { email, password },
     { headers: { 'Content-Type': 'application/json' } }
   );
-  
+
   // Extract token from the nested data field in ApiResponse
   const token = data.data?.token;
   if (token) {

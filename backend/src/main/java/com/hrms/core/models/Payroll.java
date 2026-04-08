@@ -15,7 +15,11 @@ public class Payroll {
     @JoinColumn(name = "employee_id", nullable = false)
     private Employee employee;
 
+    // Escape "month" and "year" as they're reserved keywords in H2/SQL
+    @Column(name = "`month`", nullable = false)
     private int month;
+    
+    @Column(name = "`year`", nullable = false)
     private int year;
 
     @Column(precision = 10, scale = 2)
