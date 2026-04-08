@@ -9,7 +9,7 @@ class EnvConfig {
   /// Change this to your production/staging URL before building.
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://127.0.0.1:8082/api',
+    defaultValue: 'http://127.0.0.1:8080/api',
   );
 
   /// Whether the app is running in development mode.
