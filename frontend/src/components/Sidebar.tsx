@@ -14,6 +14,7 @@ import {
   UserCheck,
   Server,
   BriefcaseBusiness,
+  Building2,
 } from 'lucide-react';
 import { AUTH_TOKEN_KEY, getCurrentEmployee, logout, type EmployeeProfile } from '../services/api';
 import { getRole, isSuperAdmin } from '../services/auth';
@@ -34,6 +35,7 @@ const allMenuItems: MenuItem[] = [
   { path: '/ceo',       icon: BriefcaseBusiness, label: 'المدير التنفيذي', roles: ['ADMIN', 'SUPER_ADMIN'] },
   { path: '/leave-calendar', icon: Calendar,    label: 'تقويم الإجازات',   roles: ['HR', 'MANAGER', 'ADMIN', 'PAYROLL', 'SUPER_ADMIN', 'EMPLOYEE'] },
   { path: '/users',     icon: Users,           label: 'إدارة الموظفين',  roles: ['HR', 'ADMIN', 'SUPER_ADMIN'] },
+  { path: '/departments', icon: Building2,     label: 'إدارة الأقسام',    roles: ['HR', 'ADMIN', 'SUPER_ADMIN'] },
   { path: '/goals',     icon: Star,            label: 'النقاط' },
   { path: '/manager',   icon: Users,           label: 'إدارة الفريق',    roles: ['MANAGER', 'SUPER_ADMIN'] },
   { path: '/manager/team-attendance', icon: UserCheck, label: 'دوام الفريق اليوم', roles: ['MANAGER', 'SUPER_ADMIN'] },

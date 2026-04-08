@@ -17,8 +17,10 @@ import {
   updateEmployee,
   deleteEmployee,
   resetEmployeePassword,
+  getAllDepartments,
   type EmployeeSummary,
   type EmployeeAdminUpdatePayload,
+  type Department,
 } from '../services/api';
 import { getRole, getPayload } from '../services/auth';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -85,6 +87,14 @@ const UserManagement = () => {
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [resetPasswordResult, setResetPasswordResult] = useState<{ password: string; name: string } | null>(null);
+  const [departments, setDepartments] = useState<Department[]>([]);
+
+  // Fetch departments on mount
+  useEffect(() => {
+    if (isHighRole) {
+      getAllDepartments().then(setDepartments).catch(() => {});
+    }
+  }, [isHighRole]);
 
   // Edit form state
   const [editForm, setEditForm] = useState<EmployeeAdminUpdatePayload>({
@@ -94,6 +104,7 @@ const UserManagement = () => {
     address: '',
     nationalId: '',
     teamId: null,
+    departmentId: null,
     roleId: null,
     managerId: null,
     baseSalary: null,
@@ -181,6 +192,7 @@ const UserManagement = () => {
       address: emp.address || '',
       nationalId: emp.nationalId || '',
       teamId: emp.teamId,
+      departmentId: emp.departmentId,
       roleId: emp.roleId,
       managerId: null,
       baseSalary: emp.baseSalary,
@@ -322,6 +334,7 @@ const UserManagement = () => {
                     <th className="px-6 py-4 text-right font-bold">الاسم</th>
                     <th className="px-6 py-4 text-right font-bold">البريد</th>
                     <th className="px-6 py-4 text-right font-bold">الدور</th>
+                    <th className="px-6 py-4 text-right font-bold">الفريق</th>
                     <th className="px-6 py-4 text-right font-bold">القسم</th>
                     <th className="px-6 py-4 text-right font-bold">الحالة</th>
                     <th className="px-6 py-4 text-right font-bold">البطاقة</th>
@@ -348,6 +361,7 @@ const UserManagement = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-slate-300">{emp.teamName ?? '—'}</td>
+                      <td className="px-6 py-4 text-slate-300">{emp.departmentName ?? '—'}</td>
                       <td className="px-6 py-4">
                         <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${statusColors[emp.employmentStatus] || 'bg-slate-500/10 text-slate-400'}`}>
                           {emp.employmentStatus === 'Active' ? 'نشط' : emp.employmentStatus === 'Terminated' ? 'مُنهى' : emp.employmentStatus}
@@ -548,6 +562,19 @@ const UserManagement = () => {
                 <div className="border-t border-white/10 pt-4 mt-6">
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">حقول الإدارة المتقدمة</p>
                   <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-bold text-slate-300 mb-2">القسم</label>
+                      <select
+                        value={editForm.departmentId || ''}
+                        onChange={(e) => setEditForm({ ...editForm, departmentId: e.target.value ? Number(e.target.value) : null })}
+                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">بدون قسم</option>
+                        {departments.map((d) => (
+                          <option key={d.departmentId} value={d.departmentId}>{d.departmentName}{d.departmentCode ? ` (${d.departmentCode})` : ''}</option>
+                        ))}
+                      </select>
+                    </div>
                     <div>
                       <label className="block text-sm font-bold text-slate-300 mb-2">الحالة</label>
                       <select

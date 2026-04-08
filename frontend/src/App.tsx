@@ -25,6 +25,7 @@ const NFCClock = lazy(() => import('./pages/NFCClock'));
 const Goals = lazy(() => import('./pages/Goals'));
 const Inbox = lazy(() => import('./pages/Inbox'));
 const CEODashboard = lazy(() => import('./pages/CEODashboard'));
+const DepartmentManagement = lazy(() => import('./pages/DepartmentManagement'));
 
 const LazyPage = () => (
   <Layout>
@@ -103,6 +104,13 @@ function App() {
             <ProtectedRoute allowedRoles={['HR', 'ADMIN', 'SUPER_ADMIN']}>
               <Suspense fallback={<LazyPage />}>
                 <Layouted><UserManagement /></Layouted>
+              </Suspense>
+            </ProtectedRoute>
+          } />
+          <Route path="/departments" element={
+            <ProtectedRoute allowedRoles={['HR', 'ADMIN', 'SUPER_ADMIN']}>
+              <Suspense fallback={<LazyPage />}>
+                <Layouted><DepartmentManagement /></Layouted>
               </Suspense>
             </ProtectedRoute>
           } />
