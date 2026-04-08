@@ -8,7 +8,12 @@ class NfcService {
   NfcService(this._apiService);
 
   Future<bool> isNfcAvailable() async {
-    return await NfcManager.instance.isAvailable();
+    try {
+      return await NfcManager.instance.isAvailable();
+    } catch (e) {
+      // NFC plugin not available on this platform (e.g., Linux desktop)
+      return false;
+    }
   }
 
   /// Scans an NFC tag and returns its UID using a Completer for proper async handling.
