@@ -567,11 +567,11 @@ const UserManagement = () => {
                       <select
                         value={editForm.departmentId || ''}
                         onChange={(e) => setEditForm({ ...editForm, departmentId: e.target.value ? Number(e.target.value) : null })}
-                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-3 bg-zinc-800 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500"
                       >
-                        <option value="">بدون قسم</option>
+                        <option value="" className="bg-zinc-800 text-white">بدون قسم</option>
                         {departments.map((d) => (
-                          <option key={d.departmentId} value={d.departmentId}>{d.departmentName}{d.departmentCode ? ` (${d.departmentCode})` : ''}</option>
+                          <option key={d.departmentId} value={d.departmentId} className="bg-zinc-800 text-white">{d.departmentName}{d.departmentCode ? ` (${d.departmentCode})` : ''}</option>
                         ))}
                       </select>
                     </div>
@@ -580,11 +580,11 @@ const UserManagement = () => {
                       <select
                         value={editForm.employmentStatus || 'Active'}
                         onChange={(e) => setEditForm({ ...editForm, employmentStatus: e.target.value })}
-                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-3 bg-zinc-800 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500"
                       >
-                        <option value="Active">نشط</option>
-                        <option value="Inactive">غير نشط</option>
-                        <option value="Terminated">مُنهى</option>
+                        <option value="Active" className="bg-zinc-800 text-white">نشط</option>
+                        <option value="Inactive" className="bg-zinc-800 text-white">غير نشط</option>
+                        <option value="Terminated" className="bg-zinc-800 text-white">مُنهى</option>
                       </select>
                     </div>
                     <div>
