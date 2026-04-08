@@ -42,6 +42,10 @@ const ScrollToTop = () => {
   return null;
 };
 
+function Layouted({ children }: { children: React.ReactNode }) {
+  return <Layout>{children}</Layout>;
+}
+
 function App() {
   return (
     <ErrorBoundary>
@@ -55,69 +59,95 @@ function App() {
           {/* Role-specific dashboards */}
           <Route path="/dashboard" element={
             <ProtectedRoute allowedRoles={['EMPLOYEE', 'PAYROLL', 'SUPER_ADMIN']}>
-              <Suspense fallback={<LazyPage />}><EmployeeDashboard /></Suspense>
+              <Suspense fallback={<LazyPage />}>
+                <Layouted><EmployeeDashboard /></Layouted>
+              </Suspense>
             </ProtectedRoute>
           } />
           <Route path="/manager" element={
             <ProtectedRoute allowedRoles={['MANAGER']}>
-              <Suspense fallback={<LazyPage />}><ManagerDashboard /></Suspense>
+              <Suspense fallback={<LazyPage />}>
+                <Layouted><ManagerDashboard /></Layouted>
+              </Suspense>
             </ProtectedRoute>
           } />
           <Route path="/manager/team-attendance" element={
             <ProtectedRoute allowedRoles={['MANAGER']}>
-              <Suspense fallback={<LazyPage />}><TeamAttendance /></Suspense>
+              <Suspense fallback={<LazyPage />}>
+                <Layouted><TeamAttendance /></Layouted>
+              </Suspense>
             </ProtectedRoute>
           } />
           <Route path="/hr" element={
             <ProtectedRoute allowedRoles={['HR']}>
-              <Suspense fallback={<LazyPage />}><HRDashboard /></Suspense>
+              <Suspense fallback={<LazyPage />}>
+                <Layouted><HRDashboard /></Layouted>
+              </Suspense>
             </ProtectedRoute>
           } />
           <Route path="/hr/grid" element={
             <ProtectedRoute allowedRoles={['HR']}>
-              <Suspense fallback={<LazyPage />}><HRAttendanceGrid /></Suspense>
+              <Suspense fallback={<LazyPage />}>
+                <Layouted><HRAttendanceGrid /></Layouted>
+              </Suspense>
             </ProtectedRoute>
           } />
           <Route path="/payroll" element={
             <ProtectedRoute allowedRoles={['PAYROLL', 'SUPER_ADMIN']}>
-              <Suspense fallback={<LazyPage />}><PayrollDashboard /></Suspense>
+              <Suspense fallback={<LazyPage />}>
+                <Layouted><PayrollDashboard /></Layouted>
+              </Suspense>
             </ProtectedRoute>
           } />
           <Route path="/users" element={
             <ProtectedRoute allowedRoles={['HR', 'ADMIN', 'SUPER_ADMIN']}>
-              <Suspense fallback={<LazyPage />}><UserManagement /></Suspense>
+              <Suspense fallback={<LazyPage />}>
+                <Layouted><UserManagement /></Layouted>
+              </Suspense>
             </ProtectedRoute>
           } />
           <Route path="/admin" element={
             <ProtectedRoute allowedRoles={['ADMIN']}>
-              <Suspense fallback={<LazyPage />}><AdminDashboard /></Suspense>
+              <Suspense fallback={<LazyPage />}>
+                <Layouted><AdminDashboard /></Layouted>
+              </Suspense>
             </ProtectedRoute>
           } />
           <Route path="/ceo" element={
             <ProtectedRoute allowedRoles={['ADMIN', 'SUPER_ADMIN']}>
-              <Suspense fallback={<LazyPage />}><CEODashboard /></Suspense>
+              <Suspense fallback={<LazyPage />}>
+                <Layouted><CEODashboard /></Layouted>
+              </Suspense>
             </ProtectedRoute>
           } />
           <Route path="/admin/devices" element={
             <ProtectedRoute allowedRoles={['ADMIN', 'SUPER_ADMIN']}>
-              <Suspense fallback={<LazyPage />}><DeviceManagement /></Suspense>
+              <Suspense fallback={<LazyPage />}>
+                <Layouted><DeviceManagement /></Layouted>
+              </Suspense>
             </ProtectedRoute>
           } />
           <Route path="/leave-calendar" element={
             <ProtectedRoute allowedRoles={['HR', 'MANAGER', 'ADMIN', 'PAYROLL', 'SUPER_ADMIN', 'EMPLOYEE']}>
-              <Suspense fallback={<LazyPage />}><LeaveCalendar /></Suspense>
+              <Suspense fallback={<LazyPage />}>
+                <Layouted><LeaveCalendar /></Layouted>
+              </Suspense>
             </ProtectedRoute>
           } />
 
           {/* Shared protected pages */}
           <Route path="/attendance" element={
             <ProtectedRoute>
-              <Suspense fallback={<LazyPage />}><AttendanceLogs /></Suspense>
+              <Suspense fallback={<LazyPage />}>
+                <Layouted><AttendanceLogs /></Layouted>
+              </Suspense>
             </ProtectedRoute>
           } />
           <Route path="/clock" element={
             <ProtectedRoute>
-              <Suspense fallback={<LazyPage />}><NFCClock /></Suspense>
+              <Suspense fallback={<LazyPage />}>
+                <Layouted><NFCClock /></Layouted>
+              </Suspense>
             </ProtectedRoute>
           } />
           <Route path="/finance" element={
@@ -127,12 +157,16 @@ function App() {
           } />
           <Route path="/goals" element={
             <ProtectedRoute>
-              <Suspense fallback={<LazyPage />}><Goals /></Suspense>
+              <Suspense fallback={<LazyPage />}>
+                <Layouted><Goals /></Layouted>
+              </Suspense>
             </ProtectedRoute>
           } />
           <Route path="/inbox" element={
             <ProtectedRoute>
-              <Suspense fallback={<LazyPage />}><Inbox /></Suspense>
+              <Suspense fallback={<LazyPage />}>
+                <Layouted><Inbox /></Layouted>
+              </Suspense>
             </ProtectedRoute>
           } />
         </Routes>
