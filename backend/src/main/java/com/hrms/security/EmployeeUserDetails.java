@@ -14,11 +14,17 @@ public class EmployeeUserDetails implements UserDetails {
     private final List<GrantedAuthority> authorities;
     private final String roleName;
     private final String teamName;
+    private final String departmentName;
 
     public EmployeeUserDetails(Employee employee, String roleName, String teamName) {
+        this(employee, roleName, teamName, null);
+    }
+
+    public EmployeeUserDetails(Employee employee, String roleName, String teamName, String departmentName) {
         this.employee = employee;
         this.roleName = roleName;
         this.teamName = teamName;
+        this.departmentName = departmentName;
         this.authorities = List.of(new SimpleGrantedAuthority("ROLE_" + roleName));
     }
 
@@ -28,6 +34,14 @@ public class EmployeeUserDetails implements UserDetails {
 
     public String getTeamName() {
         return teamName;
+    }
+
+    public String getDepartmentName() {
+        return departmentName;
+    }
+
+    public Long getDepartmentId() {
+        return employee.getDepartmentId();
     }
 
     public Long getEmployeeId() {

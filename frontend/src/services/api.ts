@@ -638,6 +638,29 @@ export const downloadRecruitmentPdf = (month: number, year: number) =>
 export const downloadRecruitmentExcel = (month: number, year: number) =>
   api.get(`/reports/recruitment/excel?month=${month}&year=${year}`, { responseType: 'blob' });
 
+export interface Department {
+  departmentId: number;
+  name: string;
+  description?: string;
+  managerId?: number;
+  managerName?: string;
+  employeeCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface DepartmentCreateRequest {
+  name: string;
+  description?: string;
+  managerId?: number;
+}
+
+export interface DepartmentUpdateRequest {
+  name?: string;
+  description?: string;
+  managerId?: number;
+}
+
 export interface InboxMessage {
   messageId: number;
   title: string;
@@ -717,5 +740,39 @@ export const getConversation = (employeeId: number) =>
 
 export const getConversationPage = (employeeId: number, params?: PaginationParams) =>
   getPaginatedPage<InboxMessage>(`/inbox/conversation/${employeeId}`, params);
+
+// Department API
+export const getAllDepartments = () =>
+  getPaginatedItems<Department>('/departments');
+
+export const getAllDepartmentsPage = (params?: PaginationParams) =>
+  getPaginatedPage<Department>('/departments', params);
+
+export const getMyDepartment = () =>
+  api.get<Department>('/departments/my');
+
+export const getDepartmentById = (departmentId: number) =>
+  api.get<Department>(`/departments/${departmentId}`);
+
+export const createDepartment = (data: DepartmentCreateRequest) =>
+  api.post<Department>('/departments', data);
+
+export const updateDepartment = (departmentId: number, data: DepartmentUpdateRequest) =>
+  api.put<Department>(`/departments/${departmentId}`, data);
+
+export const deleteDepartment = (departmentId: number) =>
+  api.delete<{ status: string; message: string }>(`/departments/${departmentId}`);
+
+export const getDepartmentEmployees = (departmentId: number) =>
+  getPaginatedItems<EmployeeSummary>(`/departments/${departmentId}/employees`);
+
+export const getDepartmentEmployeesPage = (departmentId: number, params?: PaginationParams) =>
+  getPaginatedPage<EmployeeSummary>(`/departments/${departmentId}/employees`, params);
+
+export const assignEmployeeToDepartment = (employeeId: number, departmentId: number) =>
+  api.put<EmployeeProfile>(`/employees/${employeeId}/department`, { departmentId });
+
+export const getAvailableManagers = () =>
+  api.get<{ employeeId: number; fullName: string; email: string; currentDepartment?: string }[]>('/departments/available-managers');
 
 export default api;

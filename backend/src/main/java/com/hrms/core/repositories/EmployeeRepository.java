@@ -27,4 +27,12 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
            "LOWER(e.email) LIKE LOWER(CONCAT('%', :query, '%')) " +
            "ORDER BY e.fullName ASC")
     List<Employee> searchByQuery(@Param("query") String query);
+
+    // --- Department-scoped queries ---
+
+    List<Employee> findByDepartmentId(Long departmentId);
+
+    List<Employee> findByDepartmentIdAndStatus(Long departmentId, String status);
+
+    long countByDepartmentId(Long departmentId);
 }

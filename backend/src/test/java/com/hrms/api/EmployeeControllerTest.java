@@ -84,6 +84,7 @@ class EmployeeControllerTest {
         when(employeeDirectoryService.getProfile(eq(1L)))
                 .thenReturn(new com.hrms.api.dto.EmployeeProfileResponse(
                         1L, "Test User", "test@hrms.com", null, "General",
+                        null, null,
                         4L, "EMPLOYEE", null, null, "Active", null, null, null, null
                 ));
 
@@ -102,6 +103,7 @@ class EmployeeControllerTest {
         when(employeeDirectoryService.updateProfile(eq(1L), any(EmployeeProfileUpdate.class)))
                 .thenReturn(new com.hrms.api.dto.EmployeeProfileResponse(
                         1L, "Updated Name", "updated@hrms.com", null, "General",
+                        null, null,
                         4L, "EMPLOYEE", null, null, "Active", "0512345678", "Riyadh", "1234567890", null
                 ));
 
@@ -127,6 +129,7 @@ class EmployeeControllerTest {
         when(employeeDirectoryService.updateProfile(eq(1L), any(EmployeeProfileUpdate.class)))
                 .thenReturn(new com.hrms.api.dto.EmployeeProfileResponse(
                         1L, "Test User", "test@hrms.com", null, "General",
+                        null, null,
                         4L, "EMPLOYEE", null, null, "Active", null, null, null, null
                 ));
 

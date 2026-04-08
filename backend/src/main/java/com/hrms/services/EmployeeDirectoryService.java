@@ -6,9 +6,11 @@ import com.hrms.api.dto.EmployeeProfileResponse;
 import com.hrms.api.dto.EmployeeProfileUpdate;
 import com.hrms.api.dto.EmployeeSummaryResponse;
 import com.hrms.api.dto.PasswordResetResponse;
+import com.hrms.core.models.Department;
 import com.hrms.core.models.Employee;
 import com.hrms.core.models.Team;
 import com.hrms.core.models.UsersRole;
+import com.hrms.core.repositories.DepartmentRepository;
 import com.hrms.core.repositories.EmployeeRepository;
 import com.hrms.core.repositories.NFCCardRepository;
 import com.hrms.core.repositories.RoleRepository;
@@ -29,6 +31,7 @@ public class EmployeeDirectoryService {
     private final EmployeeRepository employeeRepository;
     private final TeamRepository teamRepository;
     private final RoleRepository roleRepository;
+    private final DepartmentRepository departmentRepository;
     private final NFCCardRepository nfcCardRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -36,11 +39,13 @@ public class EmployeeDirectoryService {
             EmployeeRepository employeeRepository,
             TeamRepository teamRepository,
             RoleRepository roleRepository,
+            DepartmentRepository departmentRepository,
             NFCCardRepository nfcCardRepository,
             PasswordEncoder passwordEncoder) {
         this.employeeRepository = employeeRepository;
         this.teamRepository = teamRepository;
         this.roleRepository = roleRepository;
+        this.departmentRepository = departmentRepository;
         this.nfcCardRepository = nfcCardRepository;
         this.passwordEncoder = passwordEncoder;
     }
@@ -51,6 +56,7 @@ public class EmployeeDirectoryService {
 
         String teamName = resolveTeamName(employee.getTeamId());
         String roleName = resolveRoleName(employee.getRoleId());
+        String departmentName = resolveDepartmentName(employee.getDepartmentId());
 
         return new EmployeeProfileResponse(
                 employee.getEmployeeId(),
@@ -58,6 +64,8 @@ public class EmployeeDirectoryService {
                 employee.getEmail(),
                 employee.getTeamId(),
                 teamName,
+                employee.getDepartmentId(),
+                departmentName,
                 employee.getRoleId(),
                 roleName,
                 employee.getManagerId(),
@@ -109,6 +117,7 @@ public class EmployeeDirectoryService {
     private EmployeeSummaryResponse toSummary(Employee employee) {
         String teamName = resolveTeamName(employee.getTeamId());
         String roleName = resolveRoleName(employee.getRoleId());
+        String departmentName = resolveDepartmentName(employee.getDepartmentId());
         return nfcCardRepository.findByEmployee_EmployeeId(employee.getEmployeeId())
                 .map(card -> new EmployeeSummaryResponse(
                         employee.getEmployeeId(),
@@ -116,6 +125,8 @@ public class EmployeeDirectoryService {
                         employee.getEmail(),
                         employee.getTeamId(),
                         teamName,
+                        employee.getDepartmentId(),
+                        departmentName,
                         card.getUid(),
                         true,
                         card.getStatus(),
@@ -133,6 +144,8 @@ public class EmployeeDirectoryService {
                         employee.getEmail(),
                         employee.getTeamId(),
                         teamName,
+                        employee.getDepartmentId(),
+                        departmentName,
                         null,
                         false,
                         null,
@@ -158,6 +171,13 @@ public class EmployeeDirectoryService {
             return "";
         }
         return roleRepository.findById(roleId).map(UsersRole::getRoleName).orElse("");
+    }
+
+    private String resolveDepartmentName(Long departmentId) {
+        if (departmentId == null) {
+            return null;
+        }
+        return departmentRepository.findById(departmentId).map(Department::getDepartmentName).orElse(null);
     }
 
     /**
@@ -187,6 +207,9 @@ public class EmployeeDirectoryService {
         // Admin-only fields
         if (update.teamId() != null) {
             employee.setTeamId(update.teamId());
+        }
+        if (update.departmentId() != null) {
+            employee.setDepartmentId(update.departmentId());
         }
         if (update.roleId() != null) {
             employee.setRoleId(update.roleId());

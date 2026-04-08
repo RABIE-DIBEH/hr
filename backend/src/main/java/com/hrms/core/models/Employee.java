@@ -23,6 +23,7 @@ public class Employee {
     private Long teamId;
     private Long roleId;
     private Long managerId;
+    private Long departmentId;
 
     @Column(precision = 12, scale = 2)
     private BigDecimal baseSalary;
@@ -51,7 +52,7 @@ public class Employee {
 
     public Employee() {}
 
-    public Employee(Long employeeId, String fullName, String email, String passwordHash, Long teamId, Long roleId, Long managerId, BigDecimal baseSalary, String status, String avatarUrl, String mobileNumber, String address, String nationalId, Double leaveBalanceDays, Double overtimeBalanceHours) {
+    public Employee(Long employeeId, String fullName, String email, String passwordHash, Long teamId, Long roleId, Long managerId, Long departmentId, BigDecimal baseSalary, String status, String avatarUrl, String mobileNumber, String address, String nationalId, Double leaveBalanceDays, Double overtimeBalanceHours) {
         this.employeeId = employeeId;
         this.fullName = fullName;
         this.email = email;
@@ -59,6 +60,7 @@ public class Employee {
         this.teamId = teamId;
         this.roleId = roleId;
         this.managerId = managerId;
+        this.departmentId = departmentId;
         this.baseSalary = baseSalary;
         this.status = status;
         this.avatarUrl = avatarUrl;
@@ -110,6 +112,8 @@ public class Employee {
     public void setNationalId(String nationalId) { this.nationalId = nationalId; }
     public String getAvatarUrl() { return avatarUrl; }
     public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
+    public Long getDepartmentId() { return departmentId; }
+    public void setDepartmentId(Long departmentId) { this.departmentId = departmentId; }
 
     // Full builder for compatibility
     public static class EmployeeBuilder {
@@ -120,6 +124,7 @@ public class Employee {
         private Long teamId;
         private Long roleId;
         private Long managerId;
+        private Long departmentId;
         private BigDecimal baseSalary;
         private String status = "Active";
         private String avatarUrl;
@@ -136,6 +141,7 @@ public class Employee {
         public EmployeeBuilder teamId(Long id) { this.teamId = id; return this; }
         public EmployeeBuilder roleId(Long id) { this.roleId = id; return this; }
         public EmployeeBuilder managerId(Long id) { this.managerId = id; return this; }
+        public EmployeeBuilder departmentId(Long id) { this.departmentId = id; return this; }
         public EmployeeBuilder baseSalary(BigDecimal salary) { this.baseSalary = salary; return this; }
         public EmployeeBuilder status(String status) { this.status = status; return this; }
         public EmployeeBuilder avatarUrl(String url) { this.avatarUrl = url; return this; }
@@ -146,7 +152,7 @@ public class Employee {
         public EmployeeBuilder overtimeBalanceHours(Double overtimeBalanceHours) { this.overtimeBalanceHours = overtimeBalanceHours; return this; }
 
         public Employee build() {
-            return new Employee(employeeId, fullName, email, passwordHash, teamId, roleId, managerId, baseSalary, status, avatarUrl, mobileNumber, address, nationalId, leaveBalanceDays, overtimeBalanceHours);
+            return new Employee(employeeId, fullName, email, passwordHash, teamId, roleId, managerId, departmentId, baseSalary, status, avatarUrl, mobileNumber, address, nationalId, leaveBalanceDays, overtimeBalanceHours);
         }
     }
 }

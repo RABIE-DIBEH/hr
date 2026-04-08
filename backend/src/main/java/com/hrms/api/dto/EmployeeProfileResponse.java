@@ -8,6 +8,8 @@ public record EmployeeProfileResponse(
         String email,
         Long teamId,
         String teamName,
+        Long departmentId,
+        String departmentName,
         Long roleId,
         String roleName,
         Long managerId,

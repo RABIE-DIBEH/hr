@@ -44,4 +44,11 @@ public record ApiResponse<T>(
     public static <T> ApiResponse<T> error(int status, String message) {
         return new ApiResponse<>(status, message, null, LocalDateTime.now());
     }
+
+    /**
+     * Create an error response with default 400 status
+     */
+    public static <T> ApiResponse<T> error(String message) {
+        return new ApiResponse<>(400, message, null, LocalDateTime.now());
+    }
 }

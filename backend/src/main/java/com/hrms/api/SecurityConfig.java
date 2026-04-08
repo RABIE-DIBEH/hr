@@ -132,6 +132,14 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/payroll/pay-all").hasAnyRole("PAYROLL", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/payroll/**").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")
                         
+                        // Department endpoints
+                        .requestMatchers(HttpMethod.GET, "/api/departments/my").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/departments").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN", "MANAGER")
+                        .requestMatchers(HttpMethod.GET, "/api/departments/**").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/departments").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/departments/**").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/departments/**").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
+
                         // Admin endpoints - ADMIN/SUPER_ADMIN only
                         .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                         

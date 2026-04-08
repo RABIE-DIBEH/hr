@@ -1,8 +1,10 @@
 package com.hrms.security;
 
+import com.hrms.core.models.Department;
 import com.hrms.core.models.Employee;
 import com.hrms.core.models.Team;
 import com.hrms.core.models.UsersRole;
+import com.hrms.core.repositories.DepartmentRepository;
 import com.hrms.core.repositories.EmployeeRepository;
 import com.hrms.core.repositories.RoleRepository;
 import com.hrms.core.repositories.TeamRepository;
@@ -17,13 +19,16 @@ public class EmployeeUserDetailsService implements UserDetailsService {
     private final EmployeeRepository employeeRepository;
     private final RoleRepository roleRepository;
     private final TeamRepository teamRepository;
+    private final DepartmentRepository departmentRepository;
 
-    public EmployeeUserDetailsService(EmployeeRepository employeeRepository, 
+    public EmployeeUserDetailsService(EmployeeRepository employeeRepository,
                                     RoleRepository roleRepository,
-                                    TeamRepository teamRepository) {
+                                    TeamRepository teamRepository,
+                                    DepartmentRepository departmentRepository) {
         this.employeeRepository = employeeRepository;
         this.roleRepository = roleRepository;
         this.teamRepository = teamRepository;
+        this.departmentRepository = departmentRepository;
     }
 
     @Override
@@ -45,6 +50,13 @@ public class EmployeeUserDetailsService implements UserDetailsService {
                     .orElse(null);
         }
 
-        return new EmployeeUserDetails(employee, role.getRoleName(), teamName);
+        String departmentName = null;
+        if (employee.getDepartmentId() != null) {
+            departmentName = departmentRepository.findById(employee.getDepartmentId())
+                    .map(Department::getDepartmentName)
+                    .orElse(null);
+        }
+
+        return new EmployeeUserDetails(employee, role.getRoleName(), teamName, departmentName);
     }
 }

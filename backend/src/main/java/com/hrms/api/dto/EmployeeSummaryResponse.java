@@ -8,6 +8,8 @@ public record EmployeeSummaryResponse(
         String email,
         Long teamId,
         String teamName,
+        Long departmentId,
+        String departmentName,
         String cardUid,
         boolean nfcLinked,
         String nfcStatus,

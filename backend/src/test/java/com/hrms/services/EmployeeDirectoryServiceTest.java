@@ -3,6 +3,7 @@ package com.hrms.services;
 import com.hrms.api.dto.EmployeeProfileResponse;
 import com.hrms.api.dto.EmployeeProfileUpdate;
 import com.hrms.core.models.Employee;
+import com.hrms.core.repositories.DepartmentRepository;
 import com.hrms.core.repositories.EmployeeRepository;
 import com.hrms.core.repositories.NFCCardRepository;
 import com.hrms.core.repositories.RoleRepository;
@@ -34,6 +35,9 @@ class EmployeeDirectoryServiceTest {
     private RoleRepository roleRepository;
 
     @Mock
+    private DepartmentRepository departmentRepository;
+
+    @Mock
     private NFCCardRepository nfcCardRepository;
 
     @Mock
@@ -44,7 +48,7 @@ class EmployeeDirectoryServiceTest {
     @BeforeEach
     void setUp() {
         service = new EmployeeDirectoryService(
-                employeeRepository, teamRepository, roleRepository, nfcCardRepository, passwordEncoder
+                employeeRepository, teamRepository, roleRepository, departmentRepository, nfcCardRepository, passwordEncoder
         );
     }
 

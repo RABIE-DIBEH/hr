@@ -30,6 +30,7 @@ public record EmployeeAdminUpdate(
         String avatarUrl,
 
         Long teamId,
+        Long departmentId,
         Long roleId,
         Long managerId,
         BigDecimal baseSalary,
