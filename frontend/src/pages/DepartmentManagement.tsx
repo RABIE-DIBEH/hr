@@ -6,7 +6,6 @@ import {
   Edit,
   Trash2,
   X,
-  Users,
 } from 'lucide-react';
 import {
   getAllDepartments,
