@@ -1,5 +1,10 @@
 export const queryKeys = {
   me: ['me'] as const,
+  departments: {
+    all: ['departments'] as const,
+    byId: (id: number) => ['departments', id] as const,
+    my: ['departments', 'my'] as const,
+  },
   employee: {
     root: ['employee'] as const,
     myAdvances: ['employee', 'my-advances'] as const,

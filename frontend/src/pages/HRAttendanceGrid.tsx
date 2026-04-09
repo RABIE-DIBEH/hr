@@ -48,7 +48,7 @@ const HRAttendanceGrid = () => {
     data: employeesData,
     error: employeesError,
   } = useQuery({
-    queryKey: ['hr-employees-list'],
+    queryKey: queryKeys.hr.employeesRoot,
     queryFn: async () => {
       const res = await listEmployeesPage({ page: 0, size: 100 });
       return res.data.items;
@@ -79,7 +79,7 @@ const HRAttendanceGrid = () => {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.attendance.hrMonthlyRoot });
-      void queryClient.invalidateQueries({ queryKey: ['hr-employees-list'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.hr.employeesRoot });
       closeCorrectionModal();
     },
     onError: (err: unknown) => {

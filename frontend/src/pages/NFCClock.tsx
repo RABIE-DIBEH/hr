@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { CreditCard, CheckCircle, Wifi, ShieldCheck, AlertCircle, Plus, X, Search } from 'lucide-react';
 import { clockByNfc, searchEmployees, assignEmployeeNfcCard } from '../services/api';
+import { queryKeys } from '../services/queryKeys';
 import { extractApiError } from '../utils/errorHandler';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const NFCClock = () => {
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('اقرب بطاقة NFC من القارئ');
   const [success, setSuccess] = useState(false);
@@ -35,6 +37,9 @@ const NFCClock = () => {
       setAssignResult({ success: true, message: `تم ربط البطاقة بـ ${selectedEmployee.fullName}` });
       setCardUid('');
       setSelectedEmployee(null);
+      // Invalidate HR dashboard and employee lists that cache NFC card data
+      void queryClient.invalidateQueries({ queryKey: queryKeys.hr.employeesRoot });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.users.root });
     } catch (err: unknown) {
       const apiError = extractApiError(err);
       setAssignResult({ success: false, message: apiError.message });
@@ -52,8 +57,13 @@ const NFCClock = () => {
       const response = await clockByNfc("TEST-NFC-UID-0001"); // Matches seeded backend test card
       setLoading(false);
       setSuccess(true);
-      // After interceptor auto-unwrap, response.data is the inner Map: { result: "..." }
       setMessage(response.data.result || response.data.message || 'تم التسجيل بنجاح');
+
+      // Invalidate attendance cache on all dashboards
+      void queryClient.invalidateQueries({ queryKey: queryKeys.employee.myAttendanceLatest });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.employee.myAttendanceToday });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.attendance.root });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.manager.todayAttendanceRoot });
 
       setTimeout(() => {
         setSuccess(false);
@@ -64,7 +74,7 @@ const NFCClock = () => {
       setError(true);
       const apiError = extractApiError(err);
       setMessage(apiError.message || 'خطأ في الاتصال بالخادم');
-      
+
       setTimeout(() => {
         setError(false);
         setMessage('اقرب بطاقة NFC من القارئ');

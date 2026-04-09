@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Building2,
   Plus,
@@ -14,17 +15,17 @@ import {
   deleteDepartment,
   type Department,
 } from '../services/api';
+import { queryKeys } from '../services/queryKeys';
 import { getRole } from '../services/auth';
 import { motion, AnimatePresence } from 'framer-motion';
 import { extractApiError } from '../utils/errorHandler';
 
 const DepartmentManagement = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const userRole = getRole() || '';
   const isHighRole = ['HR', 'ADMIN', 'SUPER_ADMIN'].includes(userRole);
 
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -38,26 +39,55 @@ const DepartmentManagement = () => {
     description: '',
   });
 
-  useEffect(() => {
-    if (!isHighRole) {
-      navigate('/dashboard');
-      return;
-    }
-    fetchDepartments();
-  }, [isHighRole, navigate]);
+  // React Query: fetch departments
+  const { data: departments = [], isLoading: loading } = useQuery({
+    queryKey: queryKeys.departments.all,
+    queryFn: () => getAllDepartments(),
+    enabled: isHighRole,
+  });
 
-  const fetchDepartments = async () => {
-    try {
-      setLoading(true);
-      const data = await getAllDepartments();
-      setDepartments(data);
-      setError(null);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'فشل في تحميل الأقسام');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // React Query: create department mutation
+  const createMutation = useMutation({
+    mutationFn: (data: Partial<Department>) => createDepartment(data),
+    onSuccess: (created) => {
+      setSuccess(`تم إنشاء قسم "${created.departmentName}" بنجاح`);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.departments.all });
+    },
+    onError: (err: unknown) => {
+      setError(extractApiError(err).message || 'فشل في الحفظ');
+    },
+  });
+
+  // React Query: update department mutation
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<Department> }) =>
+      updateDepartment(id, data),
+    onSuccess: (updated) => {
+      setSuccess(`تم تحديث قسم "${updated.departmentName}" بنجاح`);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.departments.all });
+    },
+    onError: (err: unknown) => {
+      setError(extractApiError(err).message || 'فشل في التحديث');
+    },
+  });
+
+  // React Query: delete department mutation
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => deleteDepartment(id),
+    onSuccess: (_data, id) => {
+      const dept = departments.find((d) => d.departmentId === id);
+      setSuccess(`تم حذف قسم "${dept?.departmentName}" بنجاح`);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.departments.all });
+    },
+    onError: (err: unknown) => {
+      setError(extractApiError(err).message || 'فشل في الحذف');
+    },
+  });
+
+  if (!isHighRole) {
+    navigate('/dashboard');
+    return null;
+  }
 
   const openCreate = () => {
     setEditingDept(null);
@@ -81,41 +111,25 @@ const DepartmentManagement = () => {
     setError(null);
     setSuccess(null);
 
-    try {
-      if (editingDept) {
-        await updateDepartment(editingDept.departmentId, formData);
-        setSuccess(`تم تحديث قسم "${formData.departmentName}" بنجاح`);
-      } else {
-        await createDepartment(formData);
-        setSuccess(`تم إنشاء قسم "${formData.departmentName}" بنجاح`);
-      }
-      setShowModal(false);
-      await fetchDepartments();
-    } catch (err: unknown) {
-      setError(extractApiError(err).message || 'فشل في الحفظ');
+    if (editingDept) {
+      updateMutation.mutate({ id: editingDept.departmentId, data: formData });
+    } else {
+      createMutation.mutate(formData);
     }
+    setShowModal(false);
   };
 
   const handleDelete = async (dept: Department) => {
     if (!confirm(`هل أنت متأكد من حذف قسم "${dept.departmentName}"؟ لا يمكن حذف قسم يحتوي على موظفين.`)) return;
     setError(null);
     setSuccess(null);
-
-    try {
-      await deleteDepartment(dept.departmentId);
-      setSuccess(`تم حذف قسم "${dept.departmentName}" بنجاح`);
-      await fetchDepartments();
-    } catch (err: unknown) {
-      setError(extractApiError(err).message || 'فشل في الحذف');
-    }
+    deleteMutation.mutate(dept.departmentId);
   };
 
   const clearMessages = () => {
     setError(null);
     setSuccess(null);
   };
-
-  if (!isHighRole) return null;
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white" dir="rtl">
@@ -306,9 +320,10 @@ const DepartmentManagement = () => {
                 <div className="flex gap-3 pt-4">
                   <button
                     type="submit"
-                    className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold transition-colors"
+                    disabled={createMutation.isPending || updateMutation.isPending}
+                    className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold transition-colors disabled:opacity-50"
                   >
-                    {editingDept ? 'تحديث' : 'إنشاء'}
+                    {(createMutation.isPending || updateMutation.isPending) ? 'جارِ الحفظ...' : (editingDept ? 'تحديث' : 'إنشاء')}
                   </button>
                   <button
                     type="button"

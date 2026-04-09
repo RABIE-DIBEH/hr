@@ -8,6 +8,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -98,7 +99,7 @@ class DepartmentServiceTest {
     void updateDepartment_NonExisting_ThrowsException() {
         when(departmentRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThrows(RuntimeException.class, () ->
+        assertThrows(ResponseStatusException.class, () ->
                 departmentService.updateDepartment(99L, new Department()));
     }
 
@@ -119,11 +120,11 @@ class DepartmentServiceTest {
         when(departmentRepository.findById(1L)).thenReturn(Optional.of(dept));
         when(employeeRepository.countByDepartmentId(1L)).thenReturn(5L);
 
-        RuntimeException ex = assertThrows(RuntimeException.class, () ->
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () ->
                 departmentService.deleteDepartment(1L));
 
-        assertTrue(ex.getMessage().contains("Cannot delete department"));
-        assertTrue(ex.getMessage().contains("5 employee(s)"));
+        assertTrue(ex.getReason().contains("Cannot delete department"));
+        assertTrue(ex.getReason().contains("5 employee(s)"));
         verify(departmentRepository, never()).delete(any());
     }
 
@@ -131,7 +132,7 @@ class DepartmentServiceTest {
     void deleteDepartment_NonExisting_ThrowsException() {
         when(departmentRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThrows(RuntimeException.class, () ->
+        assertThrows(ResponseStatusException.class, () ->
                 departmentService.deleteDepartment(99L));
     }
 

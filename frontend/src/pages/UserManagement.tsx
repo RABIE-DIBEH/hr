@@ -20,7 +20,6 @@ import {
   getAllDepartments,
   type EmployeeSummary,
   type EmployeeAdminUpdatePayload,
-  type Department,
 } from '../services/api';
 import { getRole, getPayload } from '../services/auth';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -87,14 +86,14 @@ const UserManagement = () => {
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [resetPasswordResult, setResetPasswordResult] = useState<{ password: string; name: string } | null>(null);
-  const [departments, setDepartments] = useState<Department[]>([]);
 
-  // Fetch departments on mount
-  useEffect(() => {
-    if (isHighRole) {
-      getAllDepartments().then(setDepartments).catch(() => {});
-    }
-  }, [isHighRole]);
+  // React Query for departments (shared with DepartmentManagement)
+  const { data: departments = [] } = useQuery({
+    queryKey: queryKeys.departments.all,
+    queryFn: () => getAllDepartments(),
+    enabled: isHighRole,
+    staleTime: 1000 * 60 * 5, // 5 minutes — departments rarely change
+  });
 
   // Edit form state
   const [editForm, setEditForm] = useState<EmployeeAdminUpdatePayload>({

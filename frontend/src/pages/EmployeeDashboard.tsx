@@ -46,7 +46,7 @@ const EmployeeDashboard = () => {
     queryFn: async () => (await getCurrentEmployee()).data,
   });
 
-  const { data: myDepartment, isLoading: loadingDepartment } = useQuery({
+  const { data: myDepartment, isLoading: _loadingDepartment } = useQuery({
     queryKey: queryKeys.employee.myDepartment,
     queryFn: async () => await getMyDepartment(),
     enabled: !!me,

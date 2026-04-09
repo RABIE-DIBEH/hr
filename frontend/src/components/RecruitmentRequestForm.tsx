@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { submitRecruitmentRequest, getNextEmployeeId, type RecruitmentRequest } from '../services/api';
+import { submitRecruitmentRequest, getNextEmployeeId, getAllDepartments, type RecruitmentRequest, type Department } from '../services/api';
 import { motion } from 'framer-motion';
 import { extractApiError } from '../utils/errorHandler';
 
@@ -16,6 +16,8 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [departmentsLoading, setDepartmentsLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -58,6 +60,23 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
       }
     };
     void fetchNextId();
+  }, []);
+
+  // Fetch departments on component mount
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      setDepartmentsLoading(true);
+      try {
+        const departments = await getAllDepartments();
+        setDepartments(departments);
+      } catch (err: unknown) {
+        console.error('Failed to fetch departments:', err);
+        // Departments will remain empty array
+      } finally {
+        setDepartmentsLoading(false);
+      }
+    };
+    void fetchDepartments();
   }, []);
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -541,17 +560,23 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                 <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-2">
                   القسم <span className="text-red-500">*</span>
                 </label>
-                <input
+                <select
                   id="department"
-                  type="text"
                   name="department"
                   value={formData.department}
                   onChange={handleChange}
-                  placeholder="مثال: تقنية المعلومات"
                   className={`w-full px-4 py-2 border rounded-lg bg-white text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                     errors.department ? 'border-red-500' : 'border-gray-300'
                   }`}
-                />
+                  disabled={departmentsLoading}
+                >
+                  <option value="">{departmentsLoading ? 'جاري تحميل الأقسام...' : 'اختر القسم'}</option>
+                  {departments.map((dept) => (
+                    <option key={dept.departmentId} value={dept.departmentName}>
+                      {dept.departmentName}
+                    </option>
+                  ))}
+                </select>
                 {errors.department && (
                   <p className="text-red-500 text-xs mt-1">{errors.department}</p>
                 )}

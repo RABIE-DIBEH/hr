@@ -35,7 +35,6 @@ import {
   downloadAttendanceExcel,
   downloadPayrollPdf,
   downloadPayrollExcel,
-  getMyDepartment,
   type EmployeeSummary,
   type LeaveRequest,
   type NfcCard,

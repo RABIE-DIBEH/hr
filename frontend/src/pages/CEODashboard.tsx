@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '../services/queryKeys';
 import {
   Bell,
   Briefcase,
@@ -146,12 +147,12 @@ const CEODashboard = () => {
   const reportYear = reportDate.getFullYear();
   const reportMonthId = `${reportYear}-${String(reportMonth).padStart(2, '0')}`;
 
-  const meQuery = useQuery({ queryKey: ['ceo', 'me'], queryFn: async () => (await getCurrentEmployee()).data });
-  const employeesQuery = useQuery({ queryKey: ['ceo', 'employees'], queryFn: async () => (await listEmployees()).data });
-  const attendanceQuery = useQuery({ queryKey: ['ceo', 'attendance', reportYear, reportMonth], queryFn: async () => (await getHrMonthlyAttendance(reportMonth, reportYear)).data });
-  const payrollQuery = useQuery({ queryKey: ['ceo', 'payroll'], queryFn: async () => (await getAllPayrollHistory()).data });
-  const advancesQuery = useQuery({ queryKey: ['ceo', 'advances'], queryFn: async () => (await getAllAdvanceRequests('DELIVERED')).data });
-  const alertsQuery = useQuery({ queryKey: ['ceo', 'alerts'], queryFn: async () => (await getHighPriorityMessages()).data });
+  const meQuery = useQuery({ queryKey: queryKeys.me, queryFn: async () => (await getCurrentEmployee()).data });
+  const employeesQuery = useQuery({ queryKey: queryKeys.hr.employeesRoot, queryFn: async () => (await listEmployees()).data });
+  const attendanceQuery = useQuery({ queryKey: queryKeys.attendance.hrMonthly(reportMonth, reportYear, 0), queryFn: async () => (await getHrMonthlyAttendance(reportMonth, reportYear)).data });
+  const payrollQuery = useQuery({ queryKey: queryKeys.payroll.history(0), queryFn: async () => (await getAllPayrollHistory()).data });
+  const advancesQuery = useQuery({ queryKey: ['payroll', 'advances'], queryFn: async () => (await getAllAdvanceRequests('DELIVERED')).data });
+  const alertsQuery = useQuery({ queryKey: queryKeys.inbox.list('HIGH', 0), queryFn: async () => (await getHighPriorityMessages()).data });
 
   const loading = meQuery.isLoading || employeesQuery.isLoading || attendanceQuery.isLoading || payrollQuery.isLoading || advancesQuery.isLoading || alertsQuery.isLoading;
   const error = meQuery.error || employeesQuery.error || attendanceQuery.error || payrollQuery.error || advancesQuery.error || alertsQuery.error;

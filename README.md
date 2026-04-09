@@ -9,6 +9,8 @@
 
 A modern Human Resources Management System with NFC-based attendance tracking, multi-role dashboards, and comprehensive HR workflows.
 
+![Dashboard Preview](./dashboard.png)
+
 ## 🚀 Quick Start (Windows Setup)
 
 ### 1. Prerequisites Installation

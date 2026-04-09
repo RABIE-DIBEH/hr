@@ -31,7 +31,9 @@
       "Bash(tar *)",
       "Bash(sleep *)",
       "Bash(cd *)",
-      "Bash(head *)"
+      "Bash(head *)",
+      "Bash(mkdir *)",
+      "Bash(pg_dump *)"
     ]
   },
   "$version": 3
