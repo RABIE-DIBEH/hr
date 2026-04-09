@@ -10,6 +10,11 @@ vi.mock('../services/api', async () => {
     ...actual,
     submitRecruitmentRequest: vi.fn(),
     getNextEmployeeId: vi.fn(() => Promise.resolve({ data: { id: 1001 } })),
+    getAllDepartments: vi.fn(() => Promise.resolve([
+      { departmentId: 1, departmentName: 'التقنية' },
+      { departmentId: 2, departmentName: 'المالية' },
+      { departmentId: 3, departmentName: 'الموارد البشرية' },
+    ])),
   };
 });
 
@@ -92,13 +97,20 @@ describe('RecruitmentRequestForm', () => {
     
     render(<RecruitmentRequestForm onClose={mockOnClose} onSuccess={mockOnSuccess} />);
     
+    // Wait for departments to load
+    await waitFor(() => {
+      expect(screen.getByText('اختر القسم')).toBeDefined();
+    });
+    
     fireEvent.change(screen.getByLabelText(/الاسم الثلاثي/), { target: { value: 'محمد علي حسن' } });
     fireEvent.change(screen.getByLabelText(/البريد الإلكتروني/), { target: { value: 'm.ali@example.com' } });
     fireEvent.change(screen.getByLabelText(/رقم الهوية الوطنية/), { target: { value: '1234567890' } });
     fireEvent.change(screen.getByLabelText(/العمر/), { target: { value: '30' } });
     fireEvent.change(screen.getByLabelText(/العنوان/), { target: { value: 'الرياض، العليا' } });
     fireEvent.change(screen.getByLabelText(/المسمى الوظيفي/), { target: { value: 'مطور واجهات' } });
-    fireEvent.change(screen.getByLabelText(/القسم/), { target: { value: 'التقنية' } });
+    // The department select uses departmentName as value, not departmentId
+    const departmentSelect = screen.getByLabelText(/القسم/);
+    fireEvent.change(departmentSelect, { target: { value: 'التقنية' } });
     fireEvent.change(screen.getByLabelText(/الراتب المتوقع/), { target: { value: '15000' } });
     fireEvent.change(screen.getByLabelText(/رقم الجوال/), { target: { value: '0512345678' } });
     
