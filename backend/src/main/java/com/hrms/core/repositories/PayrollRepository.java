@@ -59,4 +59,41 @@ public interface PayrollRepository extends JpaRepository<Payroll, Long> {
 
     @Query("SELECT COUNT(p) FROM Payroll p WHERE p.month = :month AND p.year = :year AND p.paid = true")
     long countPaidForMonth(@Param("month") int month, @Param("year") int year);
+
+    // --- Department-scoped payroll queries ---
+
+    @Query("SELECT p FROM Payroll p JOIN FETCH p.employee " +
+           "WHERE p.employee.departmentId = :departmentId " +
+           "ORDER BY p.year DESC, p.month DESC, p.employee.fullName ASC")
+    Page<Payroll> findByDepartmentId(@Param("departmentId") Long departmentId, Pageable pageable);
+
+    @Query("SELECT p FROM Payroll p JOIN FETCH p.employee " +
+           "WHERE p.employee.departmentId = :departmentId AND p.month = :month AND p.year = :year " +
+           "ORDER BY p.employee.fullName ASC")
+    Page<Payroll> findMonthlyPayrollPageByDepartment(
+            @Param("departmentId") Long departmentId,
+            @Param("month") int month,
+            @Param("year") int year,
+            Pageable pageable);
+
+    @Query("SELECT COALESCE(SUM(p.netSalary), 0) FROM Payroll p " +
+           "WHERE p.employee.departmentId = :departmentId AND p.month = :month AND p.year = :year")
+    java.math.BigDecimal sumNetSalaryForMonthByDepartment(
+            @Param("departmentId") Long departmentId,
+            @Param("month") int month,
+            @Param("year") int year);
+
+    @Query("SELECT COUNT(p) FROM Payroll p " +
+           "WHERE p.employee.departmentId = :departmentId AND p.month = :month AND p.year = :year")
+    long countForMonthByDepartment(
+            @Param("departmentId") Long departmentId,
+            @Param("month") int month,
+            @Param("year") int year);
+
+    @Query("SELECT COUNT(p) FROM Payroll p " +
+           "WHERE p.employee.departmentId = :departmentId AND p.month = :month AND p.year = :year AND p.paid = true")
+    long countPaidForMonthByDepartment(
+            @Param("departmentId") Long departmentId,
+            @Param("month") int month,
+            @Param("year") int year);
 }

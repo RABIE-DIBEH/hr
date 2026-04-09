@@ -94,7 +94,7 @@ public class LeaveController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot view pending requests for another manager");
         }
 
-        Page<LeaveRequest> page = leaveService.getPendingRequestsForManager(managerId, pageable);
+        Page<LeaveRequest> page = leaveService.getPendingRequestsForManager(managerId, pageable, principal);
         List<LeaveRequestResponse> responses = page.getContent().stream()
                 .map(LeaveRequestResponse::from)
                 .toList();

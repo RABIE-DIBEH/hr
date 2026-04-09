@@ -93,7 +93,7 @@ const formatDateOnly = (value?: string) => {
   return date.toLocaleDateString('ar-EG');
 };
 
-const getDepartmentName = (employee: EmployeeSummary) => employee.teamName?.trim() || 'غير محدد';
+const getDepartmentName = (employee: EmployeeSummary) => employee.departmentName?.trim() || employee.teamName?.trim() || 'غير محدد';
 
 const getMonthKey = (value?: string) => {
   if (!value) return '';

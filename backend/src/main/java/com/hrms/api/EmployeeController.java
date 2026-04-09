@@ -93,7 +93,7 @@ public class EmployeeController {
         if (!hasAnyRole(principal, "ROLE_MANAGER", "ROLE_SUPER_ADMIN")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only managers can view their team list");
         }
-        Page<EmployeeSummaryResponse> page = employeeDirectoryService.listDirectReports(principal.getEmployeeId(), pageable);
+        Page<EmployeeSummaryResponse> page = employeeDirectoryService.listDirectReports(principal.getEmployeeId(), pageable, principal);
         return ResponseEntity.ok(ApiResponse.success(
                 PaginatedResponse.of(page.getContent(), page.getTotalElements(), page.getNumber(), page.getSize()),
                 "Team members retrieved successfully"
@@ -108,7 +108,7 @@ public class EmployeeController {
         if (!hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN", "ROLE_PAYROLL")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Insufficient permissions");
         }
-        Page<EmployeeSummaryResponse> page = employeeDirectoryService.listAllSummaries(pageable);
+        Page<EmployeeSummaryResponse> page = employeeDirectoryService.listAllSummaries(pageable, principal);
         return ResponseEntity.ok(ApiResponse.success(
                 PaginatedResponse.of(page.getContent(), page.getTotalElements(), page.getNumber(), page.getSize()),
                 "All employees retrieved successfully"

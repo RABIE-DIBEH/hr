@@ -91,10 +91,19 @@ public class PayrollService {
 
     /**
      * Get all payroll records across all employees (HR/Admin only)
+     * If departmentId is provided, filters by department
      */
     @Transactional(readOnly = true)
     public Page<Payroll> getAllPayrollHistory(Pageable pageable) {
         return payrollRepository.findAllPayrollRecords(pageable);
+    }
+
+    /**
+     * Get all payroll records filtered by department
+     */
+    @Transactional(readOnly = true)
+    public Page<Payroll> getAllPayrollHistoryByDepartment(Long departmentId, Pageable pageable) {
+        return payrollRepository.findByDepartmentId(departmentId, pageable);
     }
 
     /**
@@ -129,9 +138,45 @@ public class PayrollService {
         );
     }
 
+    /**
+     * Calculate payroll for active employees in a specific department.
+     */
+    @Transactional
+    public PayrollBulkResult calculateAllMonthlyPayrollByDepartment(int month, int year, Long departmentId, String requester) {
+        List<Employee> deptEmployees = employeeRepository.findByDepartmentIdAndStatus(departmentId, "Active");
+        int successCount = 0;
+        int errorCount = 0;
+
+        for (Employee emp : deptEmployees) {
+            try {
+                calculateMonthlyPayroll(emp, month, year);
+                successCount++;
+            } catch (Exception e) {
+                errorCount++;
+            }
+        }
+
+        return new PayrollBulkResult(
+                month,
+                year,
+                deptEmployees.size(),
+                successCount,
+                errorCount,
+                requester
+        );
+    }
+
     @Transactional(readOnly = true)
     public Page<Payroll> getMonthlyPayroll(int month, int year, Pageable pageable) {
         return payrollRepository.findMonthlyPayrollPage(month, year, pageable);
+    }
+
+    /**
+     * Get monthly payroll filtered by department
+     */
+    @Transactional(readOnly = true)
+    public Page<Payroll> getMonthlyPayrollByDepartment(Long departmentId, int month, int year, Pageable pageable) {
+        return payrollRepository.findMonthlyPayrollPageByDepartment(departmentId, month, year, pageable);
     }
 
     @Transactional
@@ -172,5 +217,22 @@ public class PayrollService {
     @Transactional(readOnly = true)
     public long getPaidPayrollCountForMonth(int month, int year) {
         return payrollRepository.countPaidForMonth(month, year);
+    }
+
+    // --- Department-scoped summary methods ---
+
+    @Transactional(readOnly = true)
+    public java.math.BigDecimal getTotalNetSalaryForMonthByDepartment(Long departmentId, int month, int year) {
+        return payrollRepository.sumNetSalaryForMonthByDepartment(departmentId, month, year);
+    }
+
+    @Transactional(readOnly = true)
+    public long getPayrollCountForMonthByDepartment(Long departmentId, int month, int year) {
+        return payrollRepository.countForMonthByDepartment(departmentId, month, year);
+    }
+
+    @Transactional(readOnly = true)
+    public long getPaidPayrollCountForMonthByDepartment(Long departmentId, int month, int year) {
+        return payrollRepository.countPaidForMonthByDepartment(departmentId, month, year);
     }
 }

@@ -26,6 +26,15 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
     Page<AttendanceRecord> findRecentRecordsForManager(@Param("managerId") Long managerId, Pageable pageable);
 
     @Query("SELECT a FROM AttendanceRecord a " +
+           "WHERE a.employee.managerId = :managerId " +
+           "AND a.employee.departmentId = :departmentId " +
+           "AND CAST(a.checkIn AS date) = CURRENT_DATE " +
+           "ORDER BY a.checkIn DESC")
+    Page<AttendanceRecord> findRecentRecordsForManagerInDepartment(@Param("managerId") Long managerId, 
+                                                                   @Param("departmentId") Long departmentId, 
+                                                                   Pageable pageable);
+
+    @Query("SELECT a FROM AttendanceRecord a " +
            "WHERE CAST(a.checkIn AS date) = CURRENT_DATE " +
            "ORDER BY a.checkIn DESC")
     Page<AttendanceRecord> findAllRecentRecords(Pageable pageable);

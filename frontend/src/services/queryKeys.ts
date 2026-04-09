@@ -8,6 +8,7 @@ export const queryKeys = {
     myAttendanceToday: ['employee', 'my-attendance', 'today'] as const,
     myPayrollRoot: ['employee', 'my-payroll'] as const,
     myPayroll: (page: number) => ['employee', 'my-payroll', page] as const,
+    myDepartment: ['employee', 'my-department'] as const,
   },
   inbox: {
     root: ['inbox'] as const,

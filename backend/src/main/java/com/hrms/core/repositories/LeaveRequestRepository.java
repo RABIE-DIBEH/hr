@@ -20,6 +20,11 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequest, Long
     @Query("SELECT l FROM LeaveRequest l JOIN FETCH l.employee WHERE l.employee.managerId = :managerId AND l.status = 'PENDING_MANAGER'")
     Page<LeaveRequest> findPendingRequestsForManager(Long managerId, Pageable pageable);
 
+    @Query("SELECT l FROM LeaveRequest l JOIN FETCH l.employee WHERE l.employee.managerId = :managerId AND l.employee.departmentId = :departmentId AND l.status = 'PENDING_MANAGER'")
+    Page<LeaveRequest> findPendingRequestsForManagerInDepartment(@Param("managerId") Long managerId, 
+                                                                 @Param("departmentId") Long departmentId, 
+                                                                 Pageable pageable);
+
     @Query("SELECT l FROM LeaveRequest l JOIN FETCH l.employee WHERE l.status IN ('PENDING_HR', 'PENDING_MANAGER') " +
            "ORDER BY l.requestedAt DESC")
     Page<LeaveRequest> findPendingRequestsForHr(Pageable pageable);

@@ -15,7 +15,9 @@ import com.hrms.core.repositories.EmployeeRepository;
 import com.hrms.core.repositories.NFCCardRepository;
 import com.hrms.core.repositories.RoleRepository;
 import com.hrms.core.repositories.TeamRepository;
+import com.hrms.security.EmployeeUserDetails;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.security.SecureRandom;
+import java.util.List;
 
 @Service
 public class EmployeeDirectoryService {
@@ -78,15 +81,32 @@ public class EmployeeDirectoryService {
         );
     }
 
-    public Page<EmployeeSummaryResponse> listAllSummaries(Pageable pageable) {
+    public Page<EmployeeSummaryResponse> listAllSummaries(Pageable pageable, EmployeeUserDetails principal) {
+        // Check if manager has a department assigned
+        if (principal != null && principal.getAuthorities().stream().anyMatch(a -> "ROLE_MANAGER".equals(a.getAuthority())) 
+                && principal.getDepartmentId() != null) {
+            // Filter by department for managers
+            return employeeRepository.findByDepartmentId(principal.getDepartmentId(), pageable)
+                    .map(this::toSummary);
+        }
+        
+        // For HR/Admin/SuperAdmin or managers without department, return all
         return employeeRepository.findAll(pageable)
                 .map(this::toSummary);
     }
 
-    public Page<EmployeeSummaryResponse> listDirectReports(Long managerEmployeeId, Pageable pageable) {
+    public Page<EmployeeSummaryResponse> listDirectReports(Long managerEmployeeId, Pageable pageable, EmployeeUserDetails principal) {
+        // Check if manager has a department assigned
+        if (principal != null && principal.getAuthorities().stream().anyMatch(a -> "ROLE_MANAGER".equals(a.getAuthority())) 
+                && principal.getDepartmentId() != null) {
+            // Use the efficient repository method
+            return employeeRepository.findAllByManagerIdAndDepartmentId(
+                managerEmployeeId, principal.getDepartmentId(), pageable)
+                .map(this::toSummary);
+        }
+        
         return employeeRepository.findAllByManagerId(managerEmployeeId, pageable)
-                .map(this::toSummary)
-                ;
+                .map(this::toSummary);
     }
 
     @Transactional

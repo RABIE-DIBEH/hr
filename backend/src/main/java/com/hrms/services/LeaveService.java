@@ -179,7 +179,13 @@ public class LeaveService {
     }
 
     @Transactional(readOnly = true)
-    public Page<LeaveRequest> getPendingRequestsForManager(Long managerId, Pageable pageable) {
+    public Page<LeaveRequest> getPendingRequestsForManager(Long managerId, Pageable pageable, EmployeeUserDetails principal) {
+        // Check if manager has a department assigned
+        if (principal != null && principal.getAuthorities().stream().anyMatch(a -> "ROLE_MANAGER".equals(a.getAuthority())) 
+                && principal.getDepartmentId() != null) {
+            return leaveRequestRepository.findPendingRequestsForManagerInDepartment(
+                managerId, principal.getDepartmentId(), pageable);
+        }
         return leaveRequestRepository.findPendingRequestsForManager(managerId, pageable);
     }
 

@@ -26,7 +26,8 @@ import {
   getMyAdvanceRequests,
   getMyPayrollSlipsPage,
   getMyAttendancePage,
-  getMyLeaveRequests
+  getMyLeaveRequests,
+  getMyDepartment
 } from '../services/api';
 import { queryKeys } from '../services/queryKeys';
 
@@ -43,6 +44,12 @@ const EmployeeDashboard = () => {
   const { data: me } = useQuery({
     queryKey: queryKeys.me,
     queryFn: async () => (await getCurrentEmployee()).data,
+  });
+
+  const { data: myDepartment, isLoading: loadingDepartment } = useQuery({
+    queryKey: queryKeys.employee.myDepartment,
+    queryFn: async () => await getMyDepartment(),
+    enabled: !!me,
   });
 
   const { data: myAdvances = [], isLoading: loadingAdvances } = useQuery({
@@ -126,7 +133,7 @@ const EmployeeDashboard = () => {
               مرحباً، {me?.fullName ?? '…'} 👋
             </h1>
             <p className="text-slate-400 mt-1">
-              {[me?.teamName, me?.roleName].filter(Boolean).join(' | ') || 'عرض تقرير الدوام'}
+              {[myDepartment?.departmentName, me?.teamName, me?.roleName].filter(Boolean).join(' | ') || 'عرض تقرير الدوام'}
             </p>
           </div>
         </div>

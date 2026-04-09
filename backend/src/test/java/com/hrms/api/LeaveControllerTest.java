@@ -30,6 +30,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -47,6 +48,7 @@ class LeaveControllerTest {
     private EmployeeRepository employeeRepository;
 
     private MockMvc mockMvc;
+    private EmployeeUserDetails testPrincipal;
 
     @BeforeEach
     void setUp() {
@@ -57,7 +59,7 @@ class LeaveControllerTest {
                 .passwordHash("secret")
                 .status("Active")
                 .build();
-        EmployeeUserDetails principal = new EmployeeUserDetails(superAdmin, "SUPER_ADMIN", "Engineering");
+        testPrincipal = new EmployeeUserDetails(superAdmin, "SUPER_ADMIN", "Engineering");
 
         ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
@@ -65,7 +67,7 @@ class LeaveControllerTest {
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(
                         new PageableHandlerMethodArgumentResolver(),
-                        new AuthenticationPrincipalResolver(principal)
+                        new AuthenticationPrincipalResolver(testPrincipal)
                 )
                 .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
                 .build();
@@ -116,7 +118,7 @@ class LeaveControllerTest {
         leaveRequest.setDuration(1.0);
         leaveRequest.setStatus("PENDING_MANAGER");
 
-        when(leaveService.getPendingRequestsForManager(eq(25L), eq(PageRequest.of(0, 20))))
+        when(leaveService.getPendingRequestsForManager(eq(25L), eq(PageRequest.of(0, 20)), any()))
                 .thenReturn(new PageImpl<>(List.of(leaveRequest), PageRequest.of(0, 20), 1));
 
         mockMvc.perform(get("/api/leaves/manager/pending").param("managerId", "25"))
@@ -126,7 +128,7 @@ class LeaveControllerTest {
 
         ArgumentCaptor<org.springframework.data.domain.Pageable> pageableCaptor =
                 ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
-        verify(leaveService).getPendingRequestsForManager(eq(25L), pageableCaptor.capture());
+        verify(leaveService).getPendingRequestsForManager(eq(25L), pageableCaptor.capture(), any());
         assertEquals(20, pageableCaptor.getValue().getPageSize());
     }
 

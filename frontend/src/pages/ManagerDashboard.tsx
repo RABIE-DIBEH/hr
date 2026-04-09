@@ -33,6 +33,7 @@ import {
   reportFraud,
   downloadAttendancePdf,
   downloadAttendanceExcel,
+  getMyDepartment,
   type EmployeeSummary,
   type RecruitmentRequest,
   type AdvanceRequest,
@@ -84,6 +85,12 @@ const ManagerDashboard = () => {
     queryFn: async () => (await getCurrentEmployee()).data,
   });
   const me = meData ?? null;
+
+  const { data: myDepartment } = useQuery({
+    queryKey: queryKeys.employee.myDepartment,
+    queryFn: async () => await getMyDepartment(),
+    enabled: !!me,
+  });
 
   const canReviewCompanyRequests = me?.roleName === 'MANAGER'
     || me?.roleName === 'HR'
@@ -340,7 +347,7 @@ const ManagerDashboard = () => {
         <div>
           <h1 className="text-3xl font-bold text-white tracking-tight arabic-text">إدارة الفريق</h1>
           <p className="text-slate-400 mt-1">
-            {headerTeam} • بيانات مباشرة من الخادم
+            {[myDepartment?.departmentName, headerTeam].filter(Boolean).join(' • ')} • بيانات مباشرة من الخادم
           </p>
         </div>
         <div className="flex items-center gap-3">

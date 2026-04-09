@@ -130,9 +130,20 @@ public class AttendanceService {
                 "ROLE_HR".equals(a.getAuthority()) ||
                 "ROLE_ADMIN".equals(a.getAuthority()) ||
                 "ROLE_SUPER_ADMIN".equals(a.getAuthority()));
+        
         if (privileged) {
             return attendanceRepository.findAllRecentRecords(pageable).map(this::toDto);
         }
+        
+        // For MANAGERs, check if they have a department assigned
+        if (principal.getAuthorities().stream().anyMatch(a -> "ROLE_MANAGER".equals(a.getAuthority())) 
+                && principal.getDepartmentId() != null) {
+            // Filter by both manager AND department
+            return attendanceRepository.findRecentRecordsForManagerInDepartment(
+                managerId, principal.getDepartmentId(), pageable).map(this::toDto);
+        }
+        
+        // Regular manager without department assignment
         return attendanceRepository.findRecentRecordsForManager(managerId, pageable).map(this::toDto);
     }
 

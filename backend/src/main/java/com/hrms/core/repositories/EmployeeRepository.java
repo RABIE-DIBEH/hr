@@ -19,6 +19,8 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     Page<Employee> findAllByManagerId(Long managerId, Pageable pageable);
 
+    Page<Employee> findAllByManagerIdAndDepartmentId(Long managerId, Long departmentId, Pageable pageable);
+
     /**
      * Search employees by name or email (case-insensitive, partial match)
      */
@@ -31,6 +33,8 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     // --- Department-scoped queries ---
 
     List<Employee> findByDepartmentId(Long departmentId);
+
+    Page<Employee> findByDepartmentId(Long departmentId, Pageable pageable);
 
     List<Employee> findByDepartmentIdAndStatus(Long departmentId, String status);
 

@@ -197,7 +197,7 @@ class LeaveRequestServiceTest {
         when(leaveRequestRepository.findPendingRequestsForManager(eq(managerId), any(Pageable.class))).thenReturn(page);
 
         // When
-        Page<LeaveRequest> result = leaveService.getPendingRequestsForManager(managerId, pageable);
+        Page<LeaveRequest> result = leaveService.getPendingRequestsForManager(managerId, pageable, null);
 
         // Then
         assertNotNull(result);
