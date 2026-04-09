@@ -1,7 +1,6 @@
 backend/target/
 *.class
 node_modules/
-.env
 frontend/node_modules/
 frontend/dist/
 
