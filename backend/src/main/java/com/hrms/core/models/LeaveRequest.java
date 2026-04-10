@@ -1,6 +1,8 @@
 package com.hrms.core.models;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -13,6 +15,7 @@ public class LeaveRequest {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id", nullable = false)
+    @NotFound(action = NotFoundAction.IGNORE)
     private Employee employee;
 
     @Column(nullable = false)

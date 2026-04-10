@@ -8,12 +8,12 @@
 
 ## Backup
 
-- Manual backup: `./backup-daily.sh`
+- Manual backup: `./scripts/backup-daily.sh`
 - Retention: `RETENTION_DAYS` defaults to `7`
 - Suggested cron:
 
 ```cron
-0 2 * * * cd /opt/hrms && ./backup-daily.sh >> /var/log/hrms-backup.log 2>&1
+0 2 * * * cd /opt/hrms && ./scripts/backup-daily.sh >> /var/log/hrms-backup.log 2>&1
 ```
 
 ## Restore Verification
@@ -21,7 +21,7 @@
 - Validate a backup safely:
 
 ```bash
-./restore-verify.sh backups/hrms_YYYYMMDD_HHMMSS.sql
+./scripts/restore-verify.sh backups/hrms_YYYYMMDD_HHMMSS.sql
 ```
 
 This restores into a temporary database and drops it after verification.
@@ -31,7 +31,7 @@ This restores into a temporary database and drops it after verification.
 - Roll back to a known tag:
 
 ```bash
-./rollback.sh v0.9-stable
+./scripts/rollback.sh v0.9-stable
 ```
 
 The script checks out the tag in detached HEAD mode and rebuilds the stack.
@@ -41,7 +41,7 @@ The script checks out the tag in detached HEAD mode and rebuilds the stack.
 - Verify expected environment wiring:
 
 ```bash
-./check-env-parity.sh
+./scripts/check-env-parity.sh
 ```
 
 ## UAT Preparation
@@ -49,5 +49,5 @@ The script checks out the tag in detached HEAD mode and rebuilds the stack.
 - Generate role-based UAT checklist:
 
 ```bash
-./uat-role-scenarios.sh
+./scripts/uat-role-scenarios.sh
 ```

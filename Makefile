@@ -101,19 +101,19 @@ db-restore:
 	@echo "Usage: docker compose exec -T postgres psql -U hrms_user -d hrms < backup_file.sql"
 
 backup-daily:
-	./backup-daily.sh
+	./scripts/backup-daily.sh
 
 restore-verify:
-	@echo "Usage: ./restore-verify.sh <backup-file.sql>"
+	@echo "Usage: ./scripts/restore-verify.sh <backup-file.sql>"
 
 rollback:
-	@echo "Usage: ./rollback.sh <tag>"
+	@echo "Usage: ./scripts/rollback.sh <tag>"
 
 env-parity:
-	./check-env-parity.sh
+	./scripts/check-env-parity.sh
 
 uat:
-	./uat-role-scenarios.sh
+	./scripts/uat-role-scenarios.sh
 
 health:
 	@echo "Checking services health..."

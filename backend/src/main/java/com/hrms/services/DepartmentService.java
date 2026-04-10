@@ -1,12 +1,12 @@
 package com.hrms.services;
 
+import com.hrms.api.exception.BusinessException;
+import com.hrms.api.exception.ErrorCode;
 import com.hrms.core.models.Department;
 import com.hrms.core.repositories.DepartmentRepository;
 import com.hrms.core.repositories.EmployeeRepository;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -47,7 +47,7 @@ public class DepartmentService {
     @Transactional
     public Department updateDepartment(Long id, Department updates) {
         Department dept = departmentRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Department not found: " + id));
+                .orElseThrow(() -> new BusinessException(ErrorCode.DEPARTMENT_NOT_FOUND, "Department not found: " + id));
 
         if (updates.getDepartmentName() != null) {
             dept.setDepartmentName(updates.getDepartmentName());
@@ -68,11 +68,11 @@ public class DepartmentService {
     @Transactional
     public void deleteDepartment(Long id) {
         Department dept = departmentRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Department not found: " + id));
+                .orElseThrow(() -> new BusinessException(ErrorCode.DEPARTMENT_NOT_FOUND, "Department not found: " + id));
 
         long employeeCount = employeeRepository.countByDepartmentId(id);
         if (employeeCount > 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot delete department '" + dept.getDepartmentName()
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "Cannot delete department '" + dept.getDepartmentName()
                     + "' — it has " + employeeCount + " employee(s). Reassign them first.");
         }
 

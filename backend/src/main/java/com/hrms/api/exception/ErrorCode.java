@@ -1,0 +1,27 @@
+package com.hrms.api.exception;
+
+import org.springframework.http.HttpStatus;
+
+/**
+ * Stable machine-readable codes returned in {@link com.hrms.api.dto.ErrorResponse#errorCode}.
+ */
+public enum ErrorCode {
+    EMPLOYEE_NOT_FOUND(HttpStatus.NOT_FOUND),
+    EMPLOYEE_ALREADY_ARCHIVED(HttpStatus.BAD_REQUEST),
+    EMAIL_CONFLICT(HttpStatus.CONFLICT),
+    FORBIDDEN_OPERATION(HttpStatus.FORBIDDEN),
+    INVALID_NFC_CARD(HttpStatus.BAD_REQUEST),
+    ATTENDANCE_VALIDATION_ERROR(HttpStatus.BAD_REQUEST),
+    DEPARTMENT_NOT_FOUND(HttpStatus.NOT_FOUND),
+    VALIDATION_ERROR(HttpStatus.BAD_REQUEST);
+
+    private final HttpStatus httpStatus;
+
+    ErrorCode(HttpStatus httpStatus) {
+        this.httpStatus = httpStatus;
+    }
+
+    public HttpStatus getHttpStatus() {
+        return httpStatus;
+    }
+}

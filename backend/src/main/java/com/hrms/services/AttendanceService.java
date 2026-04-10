@@ -1,6 +1,8 @@
 package com.hrms.services;
 
 import com.hrms.api.dto.AttendanceRecordDto;
+import com.hrms.api.exception.BusinessException;
+import com.hrms.api.exception.ErrorCode;
 import com.hrms.core.models.AttendanceRecord;
 import com.hrms.core.models.Employee;
 import com.hrms.core.models.NFCCard;
@@ -10,10 +12,8 @@ import com.hrms.security.EmployeeUserDetails;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -40,6 +40,10 @@ public class AttendanceService {
         NFCCard card = nfcCard.get();
         if (!"Active".equals(card.getStatus())) {
             return "Error: Card is blocked or inactive.";
+        }
+
+        if (card.getEmployee() == null) {
+            return "Error: Card is not linked to an active employee.";
         }
 
         if (!canUseNfcCard(card, principal)) {
@@ -192,10 +196,10 @@ public class AttendanceService {
         LocalDateTime effectiveCheckOut = checkOut != null ? checkOut : record.getCheckOut();
 
         if (effectiveCheckIn == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "checkIn is required for manual correction");
+            throw new BusinessException(ErrorCode.ATTENDANCE_VALIDATION_ERROR, "checkIn is required for manual correction");
         }
         if (effectiveCheckOut != null && effectiveCheckOut.isBefore(effectiveCheckIn)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "checkOut must be after checkIn");
+            throw new BusinessException(ErrorCode.ATTENDANCE_VALIDATION_ERROR, "checkOut must be after checkIn");
         }
 
         record.setCheckIn(effectiveCheckIn);

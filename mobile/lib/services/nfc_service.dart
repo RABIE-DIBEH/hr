@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:dio/dio.dart';
 import 'package:nfc_manager/nfc_manager.dart';
 import 'api_service.dart';
 
@@ -80,15 +81,33 @@ class NfcService {
     }
   }
 
+  /// POSTs to `/api/attendance/nfc-clock` with `{ "cardUid": "<uid>" }`.
+  /// Returns a map with `ok` (bool), `message` (user-facing), and optional `rawStatus` from API.
   Future<Map<String, dynamic>> clockByNfc(String cardUid) async {
     try {
       final response = await _apiService.dio.post(
         '/attendance/nfc-clock',
         data: {'cardUid': cardUid},
       );
-      return response.data;
+      final data = response.data;
+      if (data is Map) {
+        final statusText = data['status']?.toString() ?? '';
+        return {
+          'ok': true,
+          'message': statusText.isEmpty ? 'Attendance recorded.' : statusText,
+          'rawStatus': statusText,
+        };
+      }
+      return {'ok': true, 'message': 'Attendance recorded.'};
+    } on DioException catch (e) {
+      String msg = e.message ?? 'Request failed';
+      final data = e.response?.data;
+      if (data is Map && data['message'] != null) {
+        msg = data['message'].toString();
+      }
+      return {'ok': false, 'message': msg};
     } catch (e) {
-      return {'status': 'Error', 'message': e.toString()};
+      return {'ok': false, 'message': e.toString()};
     }
   }
 }

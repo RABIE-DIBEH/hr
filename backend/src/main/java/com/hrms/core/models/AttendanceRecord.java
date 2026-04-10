@@ -1,6 +1,8 @@
 package com.hrms.core.models;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -14,6 +16,7 @@ public class AttendanceRecord {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id", nullable = false)
+    @NotFound(action = NotFoundAction.IGNORE)
     private Employee employee;
 
     private LocalDateTime checkIn;

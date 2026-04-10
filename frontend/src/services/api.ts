@@ -110,8 +110,14 @@ export interface EmployeeDeletionResponse {
   email: string;
   previousStatus: string;
   newStatus: string;
-  deletedBy: number;
-  deletedByName: string;
+  archivedBy: number;
+  archivedByName: string;
+  reason: string;
+  archivedAt: string;
+}
+
+export interface ArchiveEmployeePayload {
+  reason: string;
 }
 
 export interface PasswordResetResponse {
@@ -304,8 +310,8 @@ export const updateProfileMe = (data: EmployeeProfileUpdatePayload) =>
 export const updateEmployee = (employeeId: number, data: EmployeeAdminUpdatePayload) =>
   api.put<EmployeeProfile>(`/employees/${employeeId}`, data);
 
-export const deleteEmployee = (employeeId: number) =>
-  api.delete<EmployeeDeletionResponse>(`/employees/${employeeId}`);
+export const archiveEmployee = (employeeId: number, payload: ArchiveEmployeePayload) =>
+  api.post<EmployeeDeletionResponse>(`/employees/${employeeId}/archive`, payload);
 
 export const resetEmployeePassword = (employeeId: number) =>
   api.post<PasswordResetResponse>(`/employees/${employeeId}/reset-password`);

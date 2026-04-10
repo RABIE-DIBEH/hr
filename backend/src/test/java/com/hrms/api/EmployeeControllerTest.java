@@ -34,7 +34,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -269,12 +269,13 @@ class EmployeeControllerTest {
     }
 
     @Test
-    void deleteEmployee_Allowed_ReturnsTypedResponse() throws Exception {
+    void archiveEmployee_Allowed_ReturnsTypedResponse() throws Exception {
         com.hrms.api.dto.EmployeeDeletionResponse response = new com.hrms.api.dto.EmployeeDeletionResponse(
-                2L, "Target Employee", "target@hrms.com", "Active", "Terminated", 1L, "HR Admin"
+                2L, "Target Employee", "target@hrms.com", "Active", "Terminated", 1L, "HR Admin",
+                "End of contract", java.time.LocalDateTime.parse("2026-04-10T12:00:00")
         );
 
-        when(employeeDirectoryService.deleteEmployee(eq(2L), eq(1L))).thenReturn(response);
+        when(employeeDirectoryService.archiveEmployee(eq(2L), eq(1L), anyString())).thenReturn(response);
 
         mockMvc = MockMvcBuilders.standaloneSetup(new EmployeeController(employeeDirectoryService, employeeRepository))
                 .setControllerAdvice(new GlobalExceptionHandler())
@@ -282,7 +283,9 @@ class EmployeeControllerTest {
                 .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
                 .build();
 
-        mockMvc.perform(delete("/api/employees/2"))
+        mockMvc.perform(post("/api/employees/2/archive")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"reason\":\"End of contract\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.employeeId").value(2))
                 .andExpect(jsonPath("$.data.fullName").value("Target Employee"))
@@ -290,23 +293,25 @@ class EmployeeControllerTest {
                 .andExpect(jsonPath("$.data.previousStatus").value("Active"))
                 .andExpect(jsonPath("$.data.newStatus").value("Terminated"));
 
-        verify(employeeDirectoryService).deleteEmployee(eq(2L), eq(1L));
+        verify(employeeDirectoryService).archiveEmployee(eq(2L), eq(1L), eq("End of contract"));
     }
 
     @Test
-    void deleteEmployee_SelfDeletion_Returns400() throws Exception {
+    void archiveEmployee_SelfArchive_Returns403() throws Exception {
         mockMvc = MockMvcBuilders.standaloneSetup(new EmployeeController(employeeDirectoryService, employeeRepository))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(new AuthenticationPrincipalResolver(hrPrincipal))
                 .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
                 .build();
 
-        mockMvc.perform(delete("/api/employees/1"))
-                .andExpect(status().isBadRequest());
+        mockMvc.perform(post("/api/employees/1/archive")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"reason\":\"should not work\"}"))
+                .andExpect(status().isForbidden());
     }
 
     @Test
-    void deleteEmployee_NonAdmin_Returns403() throws Exception {
+    void archiveEmployee_NonAdmin_Returns403() throws Exception {
         Employee regularEmployee = Employee.builder()
                 .employeeId(2L)
                 .fullName("Regular Employee")
@@ -322,7 +327,9 @@ class EmployeeControllerTest {
                 .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
                 .build();
 
-        mockMvc.perform(delete("/api/employees/3"))
+        mockMvc.perform(post("/api/employees/3/archive")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"reason\":\"test reason here\"}"))
                 .andExpect(status().isForbidden());
     }
 

@@ -1,7 +1,9 @@
 package com.hrms.api.dto;
 
+import java.time.LocalDateTime;
+
 /**
- * Response DTO for employee soft-deletion (termination) operations.
+ * Response DTO for employee archive (soft-delete) operations.
  */
 public record EmployeeDeletionResponse(
         Long employeeId,
@@ -9,6 +11,8 @@ public record EmployeeDeletionResponse(
         String email,
         String previousStatus,
         String newStatus,
-        Long deletedBy,
-        String deletedByName
+        Long archivedBy,
+        String archivedByName,
+        String reason,
+        LocalDateTime archivedAt
 ) {}

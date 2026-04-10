@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import {
   Search,
@@ -15,7 +16,7 @@ import {
 import {
   listEmployees,
   updateEmployee,
-  deleteEmployee,
+  archiveEmployee,
   resetEmployeePassword,
   getAllDepartments,
   type EmployeeSummary,
@@ -26,17 +27,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../services/queryKeys';
 import { extractApiError } from '../utils/errorHandler';
-
-const roleLabel = (role: string) => {
-  const map: Record<string, string> = {
-    SUPER_ADMIN: 'مدير النظام الأعلى',
-    ADMIN: 'مدير النظام',
-    HR: 'الموارد البشرية',
-    MANAGER: 'مدير القسم',
-    EMPLOYEE: 'موظف',
-  };
-  return map[role] || role;
-};
 
 const roleIcon = (role: string) => {
   const map: Record<string, React.ComponentType<{ size?: number }>> = {
@@ -65,8 +55,10 @@ const statusColors: Record<string, string> = {
 };
 
 const UserManagement = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const roleLabel = (role: string) => t(`roles.${role}`, { defaultValue: role });
   const userRole = getRole() || '';
   const isHighRole = ['HR', 'ADMIN', 'SUPER_ADMIN'].includes(userRole);
   const isManager = userRole === 'MANAGER';
@@ -81,7 +73,8 @@ const UserManagement = () => {
   // Modal state
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeSummary | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
+  const [archiveReason, setArchiveReason] = useState('');
   const [showViewModal, setShowViewModal] = useState(false);
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -121,7 +114,7 @@ const UserManagement = () => {
   });
 
   const error = queryError
-    ? (queryError instanceof Error ? queryError.message : 'فشل في تحميل بيانات الموظفين')
+    ? (queryError instanceof Error ? queryError.message : t('users.loadError'))
     : null;
 
   const [mutationError, setMutationError] = useState<string | null>(null);
@@ -131,27 +124,28 @@ const UserManagement = () => {
     mutationFn: ({ id, payload }: { id: number; payload: EmployeeAdminUpdatePayload }) =>
       updateEmployee(id, payload),
     onSuccess: () => {
-      setSuccessMessage('تم تحديث بيانات الموظف بنجاح');
+      setSuccessMessage(t('users.successUpdated'));
       setShowEditModal(false);
       void queryClient.invalidateQueries({ queryKey: queryKeys.users.list });
     },
     onError: (err: unknown) => {
-      const msg = err instanceof Error ? err.message : 'فشل في التحديث';
+      const msg = err instanceof Error ? err.message : t('users.errorUpdate');
       setMutationError(msg);
     },
   });
 
-  // Mutation: Delete (terminate) employee
-  const deleteMutation = useMutation({
-    mutationFn: (id: number) => deleteEmployee(id),
+  const archiveMutation = useMutation({
+    mutationFn: ({ id, reason }: { id: number; reason: string }) => archiveEmployee(id, { reason }),
     onSuccess: (res) => {
-      setSuccessMessage(res.data ? `تم إنهاء الموظف ${res.data.fullName} بنجاح` : 'تم إنهاء الموظف بنجاح');
-      setShowDeleteConfirm(false);
+      const name = res.data?.fullName ?? '';
+      setSuccessMessage(t('users.successArchived', { name }));
+      setShowArchiveConfirm(false);
+      setArchiveReason('');
       setSelectedEmployee(null);
       void queryClient.invalidateQueries({ queryKey: queryKeys.users.list });
     },
     onError: (err: unknown) => {
-      setMutationError(extractApiError(err).message || 'فشل في الحذف');
+      setMutationError(extractApiError(err).message || t('users.errorArchive'));
     },
   });
 
@@ -205,9 +199,11 @@ const UserManagement = () => {
     updateMutation.mutate({ id: selectedEmployee.employeeId, payload: editForm });
   };
 
-  const handleDelete = () => {
+  const handleArchive = () => {
     if (!selectedEmployee) return;
-    deleteMutation.mutate(selectedEmployee.employeeId);
+    const r = archiveReason.trim();
+    if (r.length < 3) return;
+    archiveMutation.mutate({ id: selectedEmployee.employeeId, reason: r });
   };
 
   const handleResetPassword = () => {
@@ -246,7 +242,7 @@ const UserManagement = () => {
             className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white px-6 py-3 rounded-xl shadow-lg max-w-md"
           >
             <p className="font-bold">{successMessage}</p>
-            <button onClick={clearMessages} className="text-green-200 text-sm mt-1 hover:text-white">إغلاق</button>
+            <button onClick={clearMessages} className="text-green-200 text-sm mt-1 hover:text-white">{t('common.close')}</button>
           </motion.div>
         )}
         {displayError && (
@@ -257,7 +253,7 @@ const UserManagement = () => {
             className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-red-600 text-white px-6 py-3 rounded-xl shadow-lg max-w-md"
           >
             <p className="font-bold">{displayError}</p>
-            <button onClick={clearMessages} className="text-red-200 text-sm mt-1 hover:text-white">إغلاق</button>
+            <button onClick={clearMessages} className="text-red-200 text-sm mt-1 hover:text-white">{t('common.close')}</button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -270,8 +266,8 @@ const UserManagement = () => {
               <Users size={28} className="text-blue-400" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold">إدارة الموظفين</h1>
-              <p className="text-slate-400 mt-1">عرض، تعديل، وإنهاء حسابات الموظفين</p>
+              <h1 className="text-3xl font-bold">{t('users.title')}</h1>
+              <p className="text-slate-400 mt-1">{t('users.subtitle')}</p>
             </div>
           </div>
         </div>
@@ -286,7 +282,7 @@ const UserManagement = () => {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="بحث بالاسم أو البريد..."
+              placeholder={t('common.searchPlaceholder')}
               className="w-full pr-10 pl-4 py-3 bg-zinc-900 border border-white/10 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder:text-slate-600"
             />
           </div>
@@ -298,46 +294,46 @@ const UserManagement = () => {
               className="px-4 py-3 bg-zinc-900 border border-white/10 rounded-xl text-white"
             >
 
-              <option value="ALL">كل الأدوار</option>
-              <option value="SUPER_ADMIN">مدير النظام الأعلى</option>
-              <option value="ADMIN">مدير النظام</option>
-              <option value="HR">الموارد البشرية</option>
-              <option value="MANAGER">مدير القسم</option>
-              <option value="EMPLOYEE">موظف</option>
+              <option value="ALL">{t('users.allRoles')}</option>
+              <option value="SUPER_ADMIN">{t('roles.SUPER_ADMIN')}</option>
+              <option value="ADMIN">{t('roles.ADMIN')}</option>
+              <option value="HR">{t('roles.HR')}</option>
+              <option value="MANAGER">{t('roles.MANAGER')}</option>
+              <option value="EMPLOYEE">{t('roles.EMPLOYEE')}</option>
             </select>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="px-4 py-3 bg-zinc-900 border border-white/10 rounded-xl text-white"
             >
-              <option value="ALL">كل الحالات</option>
-              <option value="Active">نشط</option>
-              <option value="Inactive">غير نشط</option>
-              <option value="Terminated">مُنهى</option>
+              <option value="ALL">{t('status.all')}</option>
+              <option value="Active">{t('status.Active')}</option>
+              <option value="Inactive">{t('status.Inactive')}</option>
+              <option value="Terminated">{t('status.Terminated')}</option>
             </select>
           </div>
         </div>
 
         {/* Table */}
         {isPending ? (
-          <div className="text-center py-12 text-slate-500">جارِ التحميل...</div>
+          <div className="text-center py-12 text-slate-500">{t('common.loading')}</div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-12 text-slate-500">لا توجد نتائج</div>
+          <div className="text-center py-12 text-slate-500">{t('users.noResults')}</div>
         ) : (
           <div className="bg-zinc-900 border border-white/5 rounded-2xl overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-white/5 text-slate-400">
                   <tr>
-                    <th className="px-6 py-4 text-right font-bold">#</th>
-                    <th className="px-6 py-4 text-right font-bold">الاسم</th>
-                    <th className="px-6 py-4 text-right font-bold">البريد</th>
-                    <th className="px-6 py-4 text-right font-bold">الدور</th>
-                    <th className="px-6 py-4 text-right font-bold">الفريق</th>
-                    <th className="px-6 py-4 text-right font-bold">القسم</th>
-                    <th className="px-6 py-4 text-right font-bold">الحالة</th>
-                    <th className="px-6 py-4 text-right font-bold">البطاقة</th>
-                    <th className="px-6 py-4 text-right font-bold">إجراءات</th>
+                    <th className="px-6 py-4 text-right font-bold">{t('users.tableNum')}</th>
+                    <th className="px-6 py-4 text-right font-bold">{t('users.tableName')}</th>
+                    <th className="px-6 py-4 text-right font-bold">{t('users.tableEmail')}</th>
+                    <th className="px-6 py-4 text-right font-bold">{t('users.tableRole')}</th>
+                    <th className="px-6 py-4 text-right font-bold">{t('users.tableTeam')}</th>
+                    <th className="px-6 py-4 text-right font-bold">{t('users.tableDept')}</th>
+                    <th className="px-6 py-4 text-right font-bold">{t('users.tableStatus')}</th>
+                    <th className="px-6 py-4 text-right font-bold">{t('users.tableCard')}</th>
+                    <th className="px-6 py-4 text-right font-bold">{t('users.tableActions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -363,14 +359,18 @@ const UserManagement = () => {
                       <td className="px-6 py-4 text-slate-300">{emp.departmentName ?? '—'}</td>
                       <td className="px-6 py-4">
                         <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${statusColors[emp.employmentStatus] || 'bg-slate-500/10 text-slate-400'}`}>
-                          {emp.employmentStatus === 'Active' ? 'نشط' : emp.employmentStatus === 'Terminated' ? 'مُنهى' : emp.employmentStatus}
+                          {emp.employmentStatus === 'Active'
+                            ? t('status.Active')
+                            : emp.employmentStatus === 'Terminated'
+                              ? t('status.Terminated')
+                              : emp.employmentStatus}
                         </span>
                       </td>
                       <td className="px-6 py-4">
                         {emp.nfcLinked ? (
-                          <span className="text-green-400 text-xs font-bold">✓ مرتبط</span>
+                          <span className="text-green-400 text-xs font-bold">{t('users.nfcLinked')}</span>
                         ) : (
-                          <span className="text-slate-500 text-xs">—</span>
+                          <span className="text-slate-500 text-xs">{t('users.nfcNone')}</span>
                         )}
                       </td>
                       <td className="px-6 py-4">
@@ -378,7 +378,7 @@ const UserManagement = () => {
                           <button
                             onClick={() => handleView(emp)}
                             className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
-                            title="عرض"
+                            title={t('users.viewTitle')}
                           >
                             <Eye size={16} />
                           </button>
@@ -386,7 +386,7 @@ const UserManagement = () => {
                             <button
                               onClick={() => handleEdit(emp)}
                               className="p-2 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 hover:text-blue-300 transition-colors"
-                              title="تعديل"
+                              title={t('users.editTitle')}
                             >
                               <Edit size={16} />
                             </button>
@@ -395,16 +395,16 @@ const UserManagement = () => {
                             <button
                               onClick={() => { setSelectedEmployee(emp); setResetPasswordResult(null); setShowResetPassword(true); }}
                               className="p-2 rounded-lg bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 hover:text-yellow-300 transition-colors"
-                              title={isDevUser ? "إعادة تعيين كلمة المرور (Dev)" : "إعادة تعيين كلمة المرور"}
+                              title={isDevUser ? t('users.resetPwTitleDev') : t('users.resetPwTitle')}
                             >
                               <Key size={16} />
                             </button>
                           )}
                           {emp.employmentStatus !== 'Terminated' && (
                             <button
-                              onClick={() => { setSelectedEmployee(emp); setShowDeleteConfirm(true); }}
+                              onClick={() => { setSelectedEmployee(emp); setArchiveReason(''); setShowArchiveConfirm(true); }}
                               className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-colors"
-                              title="إنهاء"
+                              title={t('users.archiveTitle')}
                             >
                               <UserX size={16} />
                             </button>
@@ -422,7 +422,7 @@ const UserManagement = () => {
         {/* Footer count */}
         {!isPending && (
           <div className="mt-4 text-slate-500 text-sm">
-            عرض {filtered.length} من أصل {employees.length} موظف
+            {t('users.footerCount', { filtered: filtered.length, total: employees.length })}
           </div>
         )}
       </div>
@@ -622,50 +622,60 @@ const UserManagement = () => {
         )}
       </AnimatePresence>
 
-      {/* Delete Confirmation Modal */}
+      {/* Archive confirmation + reason */}
       <AnimatePresence>
-        {showDeleteConfirm && selectedEmployee && (
+        {showArchiveConfirm && selectedEmployee && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-            onClick={() => setShowDeleteConfirm(false)}
+            onClick={() => { setShowArchiveConfirm(false); setArchiveReason(''); }}
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl max-w-md w-full p-6 text-center"
+              className="bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl max-w-md w-full p-6 text-right"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center mx-auto text-4xl text-red-400 mb-4">
                 <UserX size={36} />
               </div>
-              <h2 className="text-2xl font-bold text-white mb-2">تأكيد الإنهاء</h2>
-              <p className="text-slate-400 mb-2">
-                هل أنت متأكد من إنهاء حساب الموظف التالي؟
+              <h2 className="text-2xl font-bold text-white mb-2 text-center">{t('users.archiveModalTitle')}</h2>
+              <p className="text-slate-400 mb-4 text-sm">
+                {t('users.archiveModalLead')}
               </p>
-              <div className="bg-white/5 rounded-xl p-4 mb-6">
+              <div className="bg-white/5 rounded-xl p-4 mb-4">
                 <p className="text-white font-bold text-lg">{selectedEmployee.fullName}</p>
                 <p className="text-slate-500 text-sm">{selectedEmployee.email} · {roleLabel(selectedEmployee.roleName)}</p>
               </div>
+              <label className="block text-sm font-bold text-slate-300 mb-2">{t('users.archiveModalReasonLabel')}</label>
+              <textarea
+                value={archiveReason}
+                onChange={(e) => setArchiveReason(e.target.value)}
+                rows={3}
+                placeholder={t('users.archiveModalReasonPlaceholder')}
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-slate-600 focus:ring-2 focus:ring-red-500 resize-none mb-4"
+              />
               <p className="text-yellow-500/80 text-xs mb-6">
-                ⚠️ سيتم تغيير الحالة إلى "مُنهى" وتعطيل بطاقة NFC المرتبطة. لا يمكن التراجع عن هذا الإجراء بسهولة.
+                {t('users.archiveModalHint')}
               </p>
               <div className="flex gap-3">
                 <button
-                  onClick={() => setShowDeleteConfirm(false)}
+                  type="button"
+                  onClick={() => { setShowArchiveConfirm(false); setArchiveReason(''); }}
                   className="flex-1 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-slate-300 transition-colors"
                 >
-                  إلغاء
+                  {t('common.cancel')}
                 </button>
                 <button
-                  onClick={handleDelete}
-                  disabled={deleteMutation.isPending}
+                  type="button"
+                  onClick={handleArchive}
+                  disabled={archiveMutation.isPending || archiveReason.trim().length < 3}
                   className="flex-[2] py-3 bg-red-600 hover:bg-red-700 rounded-xl font-bold text-white transition-colors disabled:opacity-50"
                 >
-                  {deleteMutation.isPending ? 'جارِ الإنهاء...' : 'تأكيد الإنهاء'}
+                  {archiveMutation.isPending ? t('users.archiveSubmitting') : t('users.archiveConfirm')}
                 </button>
               </div>
             </motion.div>

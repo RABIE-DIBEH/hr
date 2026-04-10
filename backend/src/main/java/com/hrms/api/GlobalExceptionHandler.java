@@ -1,6 +1,7 @@
 package com.hrms.api;
 
 import com.hrms.api.dto.ErrorResponse;
+import com.hrms.api.exception.BusinessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -18,6 +19,14 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    /** Domain exceptions with stable {@link com.hrms.api.exception.ErrorCode} values. */
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ErrorResponse> handleBusiness(BusinessException ex) {
+        HttpStatus status = ex.getErrorCode().getHttpStatus();
+        return ResponseEntity.status(status)
+                .body(ErrorResponse.of(status.value(), ex.getMessage(), ex.getErrorCode().name()));
+    }
 
     /** @Valid validation failures — returns a per-field error map. */
     @ExceptionHandler(MethodArgumentNotValidException.class)

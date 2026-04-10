@@ -1,6 +1,8 @@
 package com.hrms.core.models;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -13,6 +15,7 @@ public class Payroll {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id", nullable = false)
+    @NotFound(action = NotFoundAction.IGNORE)
     private Employee employee;
 
     // Escape "month" and "year" as they're reserved keywords in H2/SQL

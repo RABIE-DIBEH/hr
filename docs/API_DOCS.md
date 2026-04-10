@@ -48,10 +48,11 @@
 - **Query Params**: `q` (search query, min 2 chars)
 - **Response**: `ApiResponse<List<EmployeeSearchResult>>`
 
-### `DELETE /api/employees/{employeeId}`
-- **Description**: Soft-delete (terminate) an employee
+### `POST /api/employees/{employeeId}/archive`
+- **Description**: Archive (soft-delete) an employee — sets `deleted`, `deletedAt`, status terminated, writes `employee_deletion_logs`, deactivates NFC cards. Historical attendance/payroll rows remain.
+- **Request Body**: `ArchiveEmployeeRequest` — `{ "reason": "string" }` (required, 3–2000 chars)
 - **Authorization**: HR, ADMIN, SUPER_ADMIN
-- **Response**: `ApiResponse<EmployeeDeletionResponse>`
+- **Response**: `ApiResponse<EmployeeDeletionResponse>` (includes `reason`, `archivedAt`)
 
 ### `POST /api/employees/{employeeId}/reset-password`
 - **Description**: Reset employee password to random value
@@ -428,6 +429,10 @@ All report downloads are **binary file responses** (`Content-Disposition: attach
 - **Query Params**: `month`, `year`
 - **Authorization**: HR, ADMIN, SUPER_ADMIN
 - **Response**: Excel file download
+
+## Error format
+
+Structured errors use `ErrorResponse` with optional machine-readable `error` (e.g. `EMPLOYEE_NOT_FOUND`, `EMAIL_CONFLICT`). Domain failures may use this instead of ad-hoc messages only.
 
 ## Common Response Format
 

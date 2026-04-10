@@ -28,7 +28,18 @@ CREATE TABLE Employees (
     mobile_number VARCHAR(20),
     address VARCHAR(500),
     national_id VARCHAR(20),
-    avatar_url VARCHAR(500)
+    avatar_url VARCHAR(500),
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    deleted_at TIMESTAMP
+);
+
+-- 3b. Employee archive audit log
+CREATE TABLE IF NOT EXISTS employee_deletion_logs (
+    id BIGSERIAL PRIMARY KEY,
+    employee_id BIGINT NOT NULL,
+    performed_by_employee_id BIGINT NOT NULL,
+    reason VARCHAR(2000) NOT NULL,
+    deleted_at TIMESTAMP NOT NULL
 );
 
 -- 4. NFC Cards Table

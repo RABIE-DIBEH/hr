@@ -2,8 +2,11 @@ package com.hrms.services;
 
 import com.hrms.api.dto.EmployeeProfileResponse;
 import com.hrms.api.dto.EmployeeProfileUpdate;
+import com.hrms.api.exception.BusinessException;
+import com.hrms.api.exception.ErrorCode;
 import com.hrms.core.models.Employee;
 import com.hrms.core.repositories.DepartmentRepository;
+import com.hrms.core.repositories.EmployeeDeletionLogRepository;
 import com.hrms.core.repositories.EmployeeRepository;
 import com.hrms.core.repositories.NFCCardRepository;
 import com.hrms.core.repositories.RoleRepository;
@@ -14,7 +17,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
 
@@ -41,6 +43,9 @@ class EmployeeDirectoryServiceTest {
     private NFCCardRepository nfcCardRepository;
 
     @Mock
+    private EmployeeDeletionLogRepository employeeDeletionLogRepository;
+
+    @Mock
     private PasswordEncoder passwordEncoder;
 
     private EmployeeDirectoryService service;
@@ -48,7 +53,7 @@ class EmployeeDirectoryServiceTest {
     @BeforeEach
     void setUp() {
         service = new EmployeeDirectoryService(
-                employeeRepository, teamRepository, roleRepository, departmentRepository, nfcCardRepository, passwordEncoder
+                employeeRepository, teamRepository, roleRepository, departmentRepository, nfcCardRepository, employeeDeletionLogRepository, passwordEncoder
         );
     }
 
@@ -159,10 +164,10 @@ class EmployeeDirectoryServiceTest {
                 "Test User", "duplicate@hrms.com", null, null, null, null
         );
 
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+        BusinessException ex = assertThrows(BusinessException.class,
                 () -> service.updateProfile(1L, update));
 
-        assertEquals(409, ex.getStatusCode().value());
+        assertEquals(ErrorCode.EMAIL_CONFLICT, ex.getErrorCode());
         verify(employeeRepository, never()).save(any());
     }
 
@@ -200,9 +205,9 @@ class EmployeeDirectoryServiceTest {
                 "Name", "email@test.com", null, null, null, null
         );
 
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+        BusinessException ex = assertThrows(BusinessException.class,
                 () -> service.updateProfile(999L, update));
 
-        assertEquals(404, ex.getStatusCode().value());
+        assertEquals(ErrorCode.EMPLOYEE_NOT_FOUND, ex.getErrorCode());
     }
 }

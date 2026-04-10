@@ -3,6 +3,7 @@ package com.hrms.services;
 import com.hrms.api.dto.EmployeeSummaryResponse;
 import com.hrms.core.models.Employee;
 import com.hrms.core.repositories.DepartmentRepository;
+import com.hrms.core.repositories.EmployeeDeletionLogRepository;
 import com.hrms.core.repositories.EmployeeRepository;
 import com.hrms.core.repositories.NFCCardRepository;
 import com.hrms.core.repositories.RoleRepository;
@@ -61,6 +62,9 @@ class EmployeeDirectoryServiceDepartmentScopingTest {
     private NFCCardRepository nfcCardRepository;
 
     @Mock
+    private EmployeeDeletionLogRepository employeeDeletionLogRepository;
+
+    @Mock
     private PasswordEncoder passwordEncoder;
 
     private EmployeeDirectoryService service;
@@ -73,6 +77,7 @@ class EmployeeDirectoryServiceDepartmentScopingTest {
                 roleRepository,
                 departmentRepository,
                 nfcCardRepository,
+                employeeDeletionLogRepository,
                 passwordEncoder
         );
         when(nfcCardRepository.findByEmployee_EmployeeId(anyLong())).thenReturn(Optional.empty());

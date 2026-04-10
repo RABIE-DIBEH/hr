@@ -1,11 +1,15 @@
 package com.hrms.core.models;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "Employees")
+@SQLDelete(sql = "UPDATE Employees SET deleted = true, deleted_at = CURRENT_TIMESTAMP WHERE employee_id = ?")
+@SQLRestriction("deleted = false")
 public class Employee {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -50,9 +54,15 @@ public class Employee {
     @Column(name = "avatar_url")
     private String avatarUrl;
 
+    @Column(nullable = false)
+    private boolean deleted = false;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     public Employee() {}
 
-    public Employee(Long employeeId, String fullName, String email, String passwordHash, Long teamId, Long roleId, Long managerId, Long departmentId, BigDecimal baseSalary, String status, String avatarUrl, String mobileNumber, String address, String nationalId, Double leaveBalanceDays, Double overtimeBalanceHours) {
+    public Employee(Long employeeId, String fullName, String email, String passwordHash, Long teamId, Long roleId, Long managerId, Long departmentId, BigDecimal baseSalary, String status, String avatarUrl, String mobileNumber, String address, String nationalId, Double leaveBalanceDays, Double overtimeBalanceHours, boolean deleted, LocalDateTime deletedAt) {
         this.employeeId = employeeId;
         this.fullName = fullName;
         this.email = email;
@@ -69,6 +79,8 @@ public class Employee {
         this.nationalId = nationalId;
         this.leaveBalanceDays = leaveBalanceDays != null ? leaveBalanceDays : 21.0;
         this.overtimeBalanceHours = overtimeBalanceHours != null ? overtimeBalanceHours : 0.0;
+        this.deleted = deleted;
+        this.deletedAt = deletedAt;
     }
 
     public static EmployeeBuilder builder() {
@@ -115,6 +127,11 @@ public class Employee {
     public Long getDepartmentId() { return departmentId; }
     public void setDepartmentId(Long departmentId) { this.departmentId = departmentId; }
 
+    public boolean isDeleted() { return deleted; }
+    public void setDeleted(boolean deleted) { this.deleted = deleted; }
+    public LocalDateTime getDeletedAt() { return deletedAt; }
+    public void setDeletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; }
+
     // Full builder for compatibility
     public static class EmployeeBuilder {
         private Long employeeId;
@@ -133,6 +150,8 @@ public class Employee {
         private String nationalId;
         private Double leaveBalanceDays;
         private Double overtimeBalanceHours;
+        private boolean deleted = false;
+        private LocalDateTime deletedAt;
 
         public EmployeeBuilder employeeId(Long id) { this.employeeId = id; return this; }
         public EmployeeBuilder fullName(String name) { this.fullName = name; return this; }
@@ -150,9 +169,11 @@ public class Employee {
         public EmployeeBuilder nationalId(String nationalId) { this.nationalId = nationalId; return this; }
         public EmployeeBuilder leaveBalanceDays(Double leaveBalanceDays) { this.leaveBalanceDays = leaveBalanceDays; return this; }
         public EmployeeBuilder overtimeBalanceHours(Double overtimeBalanceHours) { this.overtimeBalanceHours = overtimeBalanceHours; return this; }
+        public EmployeeBuilder deleted(boolean deleted) { this.deleted = deleted; return this; }
+        public EmployeeBuilder deletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; return this; }
 
         public Employee build() {
-            return new Employee(employeeId, fullName, email, passwordHash, teamId, roleId, managerId, departmentId, baseSalary, status, avatarUrl, mobileNumber, address, nationalId, leaveBalanceDays, overtimeBalanceHours);
+            return new Employee(employeeId, fullName, email, passwordHash, teamId, roleId, managerId, departmentId, baseSalary, status, avatarUrl, mobileNumber, address, nationalId, leaveBalanceDays, overtimeBalanceHours, deleted, deletedAt);
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.hrms.api;
 
+import com.hrms.api.dto.ArchiveEmployeeRequest;
 import com.hrms.api.dto.EmployeeAdminUpdate;
 import com.hrms.api.dto.EmployeeDeletionResponse;
 import com.hrms.api.dto.EmployeeProfileResponse;
@@ -8,6 +9,8 @@ import com.hrms.api.dto.EmployeeSummaryResponse;
 import com.hrms.api.dto.ApiResponse;
 import com.hrms.api.dto.PaginatedResponse;
 import com.hrms.api.dto.PasswordResetResponse;
+import com.hrms.api.exception.BusinessException;
+import com.hrms.api.exception.ErrorCode;
 import com.hrms.core.models.Employee;
 import com.hrms.core.repositories.EmployeeRepository;
 import com.hrms.security.EmployeeUserDetails;
@@ -16,19 +19,16 @@ import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -75,7 +75,7 @@ public class EmployeeController {
             @PathVariable Long employeeId,
             @Valid @RequestBody EmployeeAdminUpdate update) {
         if (!hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN")) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only HR/Admin can update other employees");
+            throw new BusinessException(ErrorCode.FORBIDDEN_OPERATION, "Only HR/Admin can update other employees");
         }
 
 
@@ -91,7 +91,7 @@ public class EmployeeController {
             @AuthenticationPrincipal EmployeeUserDetails principal,
             @PageableDefault(size = 20) Pageable pageable) {
         if (!hasAnyRole(principal, "ROLE_MANAGER", "ROLE_SUPER_ADMIN")) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only managers can view their team list");
+            throw new BusinessException(ErrorCode.FORBIDDEN_OPERATION, "Only managers can view their team list");
         }
         Page<EmployeeSummaryResponse> page = employeeDirectoryService.listDirectReports(principal.getEmployeeId(), pageable, principal);
         return ResponseEntity.ok(ApiResponse.success(
@@ -106,7 +106,7 @@ public class EmployeeController {
             @PageableDefault(size = 20) Pageable pageable) {
         // Payroll needs employee list for monthly calculations and advance processing.
         if (!hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN", "ROLE_PAYROLL")) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Insufficient permissions");
+            throw new BusinessException(ErrorCode.FORBIDDEN_OPERATION, "Insufficient permissions");
         }
         Page<EmployeeSummaryResponse> page = employeeDirectoryService.listAllSummaries(pageable, principal);
         return ResponseEntity.ok(ApiResponse.success(
@@ -152,26 +152,26 @@ public class EmployeeController {
     ) {}
 
     /**
-     * DELETE /api/employees/{employeeId}
-     * Soft-delete an employee (HR/ADMIN/SUPER_ADMIN only).
-     * Sets status to "Terminated" instead of removing the record for audit trail.
+     * POST /api/employees/{employeeId}/archive
+     * Archive (soft-delete) an employee with a reason (HR/ADMIN/SUPER_ADMIN only).
      */
-    @DeleteMapping("/{employeeId}")
-    public ResponseEntity<ApiResponse<EmployeeDeletionResponse>> deleteEmployee(
+    @PostMapping("/{employeeId}/archive")
+    public ResponseEntity<ApiResponse<EmployeeDeletionResponse>> archiveEmployee(
             @PathVariable Long employeeId,
-            @AuthenticationPrincipal EmployeeUserDetails principal) {
+            @AuthenticationPrincipal EmployeeUserDetails principal,
+            @Valid @RequestBody ArchiveEmployeeRequest request) {
 
         if (!hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN")) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only HR/Admin can delete employees");
+            throw new BusinessException(ErrorCode.FORBIDDEN_OPERATION, "Only HR/Admin can archive employees");
         }
 
-        // Prevent self-deletion
         if (principal.getEmployeeId().equals(employeeId)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot delete your own account");
+            throw new BusinessException(ErrorCode.FORBIDDEN_OPERATION, "Cannot archive your own account");
         }
 
-        EmployeeDeletionResponse result = employeeDirectoryService.deleteEmployee(employeeId, principal.getEmployeeId());
-        return ResponseEntity.ok(ApiResponse.success(result, "Employee '" + result.fullName() + "' has been terminated successfully"));
+        EmployeeDeletionResponse result = employeeDirectoryService.archiveEmployee(
+                employeeId, principal.getEmployeeId(), request.reason());
+        return ResponseEntity.ok(ApiResponse.success(result, "Employee '" + result.fullName() + "' has been archived successfully"));
     }
 
     /**
@@ -188,7 +188,7 @@ public class EmployeeController {
         boolean isAuthorized = hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN", "ROLE_MANAGER");
 
         if (!isDev && !isAuthorized) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only dev@hrms.com or HR/Admin/Manager can reset passwords");
+            throw new BusinessException(ErrorCode.FORBIDDEN_OPERATION, "Only dev@hrms.com or HR/Admin/Manager can reset passwords");
         }
 
         PasswordResetResponse result = employeeDirectoryService.resetEmployeePassword(employeeId, principal.getEmployeeId());

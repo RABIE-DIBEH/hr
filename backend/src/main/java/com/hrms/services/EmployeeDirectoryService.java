@@ -6,11 +6,15 @@ import com.hrms.api.dto.EmployeeProfileResponse;
 import com.hrms.api.dto.EmployeeProfileUpdate;
 import com.hrms.api.dto.EmployeeSummaryResponse;
 import com.hrms.api.dto.PasswordResetResponse;
+import com.hrms.api.exception.BusinessException;
+import com.hrms.api.exception.ErrorCode;
 import com.hrms.core.models.Department;
 import com.hrms.core.models.Employee;
+import com.hrms.core.models.EmployeeDeletionLog;
 import com.hrms.core.models.Team;
 import com.hrms.core.models.UsersRole;
 import com.hrms.core.repositories.DepartmentRepository;
+import com.hrms.core.repositories.EmployeeDeletionLogRepository;
 import com.hrms.core.repositories.EmployeeRepository;
 import com.hrms.core.repositories.NFCCardRepository;
 import com.hrms.core.repositories.RoleRepository;
@@ -19,13 +23,12 @@ import com.hrms.security.EmployeeUserDetails;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -36,6 +39,7 @@ public class EmployeeDirectoryService {
     private final RoleRepository roleRepository;
     private final DepartmentRepository departmentRepository;
     private final NFCCardRepository nfcCardRepository;
+    private final EmployeeDeletionLogRepository employeeDeletionLogRepository;
     private final PasswordEncoder passwordEncoder;
 
     public EmployeeDirectoryService(
@@ -44,18 +48,20 @@ public class EmployeeDirectoryService {
             RoleRepository roleRepository,
             DepartmentRepository departmentRepository,
             NFCCardRepository nfcCardRepository,
+            EmployeeDeletionLogRepository employeeDeletionLogRepository,
             PasswordEncoder passwordEncoder) {
         this.employeeRepository = employeeRepository;
         this.teamRepository = teamRepository;
         this.roleRepository = roleRepository;
         this.departmentRepository = departmentRepository;
         this.nfcCardRepository = nfcCardRepository;
+        this.employeeDeletionLogRepository = employeeDeletionLogRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
     public EmployeeProfileResponse getProfile(Long employeeId) {
         Employee employee = employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.EMPLOYEE_NOT_FOUND, "Employee not found"));
 
         String teamName = resolveTeamName(employee.getTeamId());
         String roleName = resolveRoleName(employee.getRoleId());
@@ -83,13 +89,13 @@ public class EmployeeDirectoryService {
 
     public Page<EmployeeSummaryResponse> listAllSummaries(Pageable pageable, EmployeeUserDetails principal) {
         // Check if manager has a department assigned
-        if (principal != null && principal.getAuthorities().stream().anyMatch(a -> "ROLE_MANAGER".equals(a.getAuthority())) 
+        if (principal != null && principal.getAuthorities().stream().anyMatch(a -> "ROLE_MANAGER".equals(a.getAuthority()))
                 && principal.getDepartmentId() != null) {
             // Filter by department for managers
             return employeeRepository.findByDepartmentId(principal.getDepartmentId(), pageable)
                     .map(this::toSummary);
         }
-        
+
         // For HR/Admin/SuperAdmin or managers without department, return all
         return employeeRepository.findAll(pageable)
                 .map(this::toSummary);
@@ -97,14 +103,14 @@ public class EmployeeDirectoryService {
 
     public Page<EmployeeSummaryResponse> listDirectReports(Long managerEmployeeId, Pageable pageable, EmployeeUserDetails principal) {
         // Check if manager has a department assigned
-        if (principal != null && principal.getAuthorities().stream().anyMatch(a -> "ROLE_MANAGER".equals(a.getAuthority())) 
+        if (principal != null && principal.getAuthorities().stream().anyMatch(a -> "ROLE_MANAGER".equals(a.getAuthority()))
                 && principal.getDepartmentId() != null) {
             // Use the efficient repository method
             return employeeRepository.findAllByManagerIdAndDepartmentId(
-                managerEmployeeId, principal.getDepartmentId(), pageable)
-                .map(this::toSummary);
+                    managerEmployeeId, principal.getDepartmentId(), pageable)
+                    .map(this::toSummary);
         }
-        
+
         return employeeRepository.findAllByManagerId(managerEmployeeId, pageable)
                 .map(this::toSummary);
     }
@@ -112,13 +118,13 @@ public class EmployeeDirectoryService {
     @Transactional
     public EmployeeProfileResponse updateProfile(Long employeeId, EmployeeProfileUpdate update) {
         Employee employee = employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.EMPLOYEE_NOT_FOUND, "Employee not found"));
 
         // Ensure email uniqueness (exclude current employee)
         employeeRepository.findByEmailIgnoreCase(update.email())
                 .filter(existing -> !existing.getEmployeeId().equals(employeeId))
                 .ifPresent(existing -> {
-                    throw new ResponseStatusException(HttpStatus.CONFLICT, "البريد الإلكتروني مستخدم بالفعل");
+                    throw new BusinessException(ErrorCode.EMAIL_CONFLICT, "البريد الإلكتروني مستخدم بالفعل");
                 });
 
         employee.setFullName(update.fullName());
@@ -207,13 +213,13 @@ public class EmployeeDirectoryService {
     @Transactional
     public EmployeeProfileResponse updateEmployeeByAdmin(Long employeeId, EmployeeAdminUpdate update, Long updatedBy) {
         Employee employee = employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.EMPLOYEE_NOT_FOUND, "Employee not found"));
 
         // Ensure email uniqueness (exclude current employee)
         employeeRepository.findByEmailIgnoreCase(update.email())
                 .filter(existing -> !existing.getEmployeeId().equals(employeeId))
                 .ifPresent(existing -> {
-                    throw new ResponseStatusException(HttpStatus.CONFLICT, "البريد الإلكتروني مستخدم بالفعل");
+                    throw new BusinessException(ErrorCode.EMAIL_CONFLICT, "البريد الإلكتروني مستخدم بالفعل");
                 });
 
         // Basic profile fields
@@ -249,29 +255,35 @@ public class EmployeeDirectoryService {
     }
 
     /**
-     * Soft-delete an employee by setting status to "Terminated".
-     * This preserves audit trail (attendance records, payroll, etc.).
-     * Also deactivates any linked NFC cards.
+     * Archive (soft-delete) an employee: sets deleted flag, termination status, audit log, and deactivates NFC cards.
      */
     @Transactional
-    public EmployeeDeletionResponse deleteEmployee(Long employeeId, Long deletedBy) {
+    public EmployeeDeletionResponse archiveEmployee(Long employeeId, Long archivedBy, String reason) {
         Employee employee = employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.EMPLOYEE_NOT_FOUND, "Employee not found"));
 
-        if ("Terminated".equalsIgnoreCase(employee.getStatus())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Employee is already terminated");
+        if (employee.isDeleted() || "Terminated".equalsIgnoreCase(employee.getStatus())) {
+            throw new BusinessException(ErrorCode.EMPLOYEE_ALREADY_ARCHIVED, "Employee is already archived");
         }
 
         String previousStatus = employee.getStatus();
-        String deletedByName = employeeRepository.findById(deletedBy)
+        String archivedByName = employeeRepository.findById(archivedBy)
                 .map(Employee::getFullName)
                 .orElse("Unknown");
 
-        // Soft-delete: change status to Terminated
+        LocalDateTime archivedAt = LocalDateTime.now();
         employee.setStatus("Terminated");
+        employee.setDeleted(true);
+        employee.setDeletedAt(archivedAt);
         employeeRepository.save(employee);
 
-        // Deactivate linked NFC cards
+        employeeDeletionLogRepository.save(new EmployeeDeletionLog(
+                employee.getEmployeeId(),
+                archivedBy,
+                reason.trim(),
+                archivedAt
+        ));
+
         nfcCardRepository.findByEmployee_EmployeeId(employeeId)
                 .ifPresent(card -> {
                     card.setStatus("Inactive");
@@ -284,8 +296,10 @@ public class EmployeeDirectoryService {
                 employee.getEmail(),
                 previousStatus,
                 "Terminated",
-                deletedBy,
-                deletedByName
+                archivedBy,
+                archivedByName,
+                reason.trim(),
+                archivedAt
         );
     }
 
@@ -296,7 +310,7 @@ public class EmployeeDirectoryService {
     @Transactional
     public PasswordResetResponse resetEmployeePassword(Long employeeId, Long resetBy) {
         Employee employee = employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.EMPLOYEE_NOT_FOUND, "Employee not found"));
 
         // Generate secure random password
         String newPassword = generateSecurePassword();

@@ -9,7 +9,7 @@
 
 A modern Human Resources Management System with NFC-based attendance tracking, multi-role dashboards, and comprehensive HR workflows.
 
-![Dashboard Preview](./dashboard.png)
+![Dashboard Preview](./docs/assets/dashboard.png)
 
 ## 🚀 Quick Start (Windows Setup)
 
@@ -100,6 +100,9 @@ hrms-pro/
 │   └── Platform generation required (see mobile/README.md)
 ├── database/               # SQL schema and seed data
 ├── docker-compose.yml      # Multi-service container setup
+├── scripts/                # Operational & verification shell scripts (see Makefile)
+├── docs/assets/            # README images and static assets
+├── docs/history/           # Archived planning / test reports (not required to run the app)
 └── README.md               # This file
 ```
 
@@ -172,6 +175,7 @@ SELECT * FROM Leave_Requests WHERE status = 'Pending';
 | [AGENTS.md](./AGENTS.md) | Coding guidelines and patterns |
 | [STABILIZATION_PLAN.md](./STABILIZATION_PLAN.md) | Current stabilization roadmap |
 | [project structure.md](./project%20structure.md) | Detailed project structure |
+| [docs/history/](./docs/history/) | Archived sprint notes, patches, and test plans |
 
 ## 🐛 Troubleshooting
 

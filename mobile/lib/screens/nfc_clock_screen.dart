@@ -57,16 +57,18 @@ class _NfcClockScreenState extends State<NfcClockScreen> {
       });
 
       final result = await nfcService.clockByNfc(uid);
-      
+
       if (mounted) {
+        final ok = result['ok'] == true;
+        final msg = result['message']?.toString() ??
+            (ok ? 'Attendance recorded successfully!' : 'An error occurred.');
         setState(() {
           _isScanning = false;
-          _statusMessage = result['message'] ?? (result['status'] == 'Success' ? 'Attendance recorded successfully!' : 'An error occurred.');
-          _isError = result['status'] != 'Success';
+          _statusMessage = msg;
+          _isError = !ok;
         });
 
-        if (!_isError) {
-          // Close after 2 seconds on success
+        if (ok) {
           Future.delayed(const Duration(seconds: 2), () {
             if (mounted) Navigator.pop(context);
           });
