@@ -33,7 +33,8 @@
       "Bash(cd *)",
       "Bash(head *)",
       "Bash(mkdir *)",
-      "Bash(pg_dump *)"
+      "Bash(pg_dump *)",
+      "Bash(dart *)"
     ]
   },
   "$version": 3

@@ -79,7 +79,7 @@ Access at: **http://localhost:80** (frontend), **http://localhost:8080** (backen
 
 ```
 hrms-pro/
-├── backend/                 # Spring Boot backend (Java 21)
+├── backend/                 # Spring Boot backend (Java 21) - [README](./backend/README.md)
 │   ├── src/main/java/com/hrms/
 │   │   ├── api/            # Controllers + Security
 │   │   ├── core/           # Entities + Repositories
@@ -87,22 +87,30 @@ hrms-pro/
 │   │   └── security/       # JWT authentication
 │   ├── .env                # Local environment (not in git)
 │   └── pom.xml             # Maven dependencies
-├── frontend/               # React/TypeScript frontend
+├── frontend/               # React/TypeScript frontend - [README](./frontend/README.md)
 │   ├── src/
 │   │   ├── components/     # Reusable UI components
 │   │   ├── pages/          # Route-level pages
 │   │   ├── services/       # API integration
 │   │   └── utils/          # Helper functions
 │   └── package.json        # Node.js dependencies
-├── mobile/                 # Flutter mobile app
+├── mobile/                 # Flutter mobile app - [README](./mobile/README.md)
 │   ├── lib/                # Dart source code
 │   ├── build scripts/      # setup-mobile.sh, build-apk.sh
 │   └── Platform generation required (see mobile/README.md)
-├── database/               # SQL schema and seed data
+├── database/               # SQL schema and seed data - [README](./database/README.md)
 ├── docker-compose.yml      # Multi-service container setup
-├── scripts/                # Operational & verification shell scripts (see Makefile)
-├── docs/assets/            # README images and static assets
-├── docs/history/           # Archived planning / test reports (not required to run the app)
+├── scripts/                # Operational scripts - [README](./scripts/README.md)
+├── docs/                   # Documentation - [README](./docs/README.md)
+│   ├── API_DOCS.md         # API documentation
+│   ├── DEV_SETUP.md        # Development setup guide
+│   ├── AGENTS.md           # Coding guidelines
+│   ├── STABILIZATION_PLAN.md # Current roadmap
+│   ├── project structure.md # Architecture details
+│   ├── assets/             # Images and diagrams
+│   └── history/            # Archived planning documents
+├── monitoring/             # Monitoring configuration - [README](./monitoring/README.md)
+├── backups/                # Database backups - [README](./backups/README.md)
 └── README.md               # This file
 ```
 
@@ -168,13 +176,25 @@ SELECT * FROM Leave_Requests WHERE status = 'Pending';
 
 ## 📚 Documentation
 
+### Component Documentation
+Each major component has its own detailed README:
+- **[Backend Documentation](./backend/README.md)** - Spring Boot architecture, APIs, and deployment
+- **[Frontend Documentation](./frontend/README.md)** - React/TypeScript application details
+- **[Mobile App Documentation](./mobile/README.md)** - Flutter NFC application guide
+- **[Database Documentation](./database/README.md)** - Schema, seed data, and operations
+- **[Scripts Documentation](./scripts/README.md)** - Operational scripts and utilities
+- **[Monitoring Documentation](./monitoring/README.md)** - Observability and metrics
+- **[Backups Documentation](./backups/README.md)** - Database backup procedures
+- **[Main Documentation](./docs/README.md)** - Comprehensive project documentation
+
+### Core Documentation Files
 | Document | Purpose |
 |----------|---------|
-| [DEV_SETUP.md](./DEV_SETUP.md) | Detailed cross-platform setup guide |
-| [API_DOCS.md](./API_DOCS.md) | API endpoint documentation |
-| [AGENTS.md](./AGENTS.md) | Coding guidelines and patterns |
-| [STABILIZATION_PLAN.md](./STABILIZATION_PLAN.md) | Current stabilization roadmap |
-| [project structure.md](./project%20structure.md) | Detailed project structure |
+| [DEV_SETUP.md](./docs/DEV_SETUP.md) | Detailed cross-platform setup guide |
+| [API_DOCS.md](./docs/API_DOCS.md) | API endpoint documentation |
+| [AGENTS.md](./docs/AGENTS.md) | Coding guidelines and patterns |
+| [STABILIZATION_PLAN.md](./docs/STABILIZATION_PLAN.md) | Current stabilization roadmap |
+| [project structure.md](./docs/project%20structure.md) | Detailed project structure |
 | [docs/history/](./docs/history/) | Archived sprint notes, patches, and test plans |
 
 ## 🐛 Troubleshooting

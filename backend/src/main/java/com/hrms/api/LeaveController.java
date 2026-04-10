@@ -1,5 +1,6 @@
 package com.hrms.api;
 
+import com.hrms.api.dto.LeaveBalanceReportResponse;
 import com.hrms.api.dto.LeaveDecisionRequest;
 import com.hrms.api.dto.LeaveRequestDto;
 import com.hrms.api.dto.LeaveRequestResponse;
@@ -157,6 +158,22 @@ public class LeaveController {
                 .toList();
 
         return ResponseEntity.ok(ApiResponse.success(responses, "Calendar leaves retrieved successfully"));
+    }
+
+    /**
+     * GET /api/leaves/balance-report
+     * Leave Quota Report showing every employee's remaining paid days (HR/Admin only).
+     */
+    @GetMapping("/balance-report")
+    public ResponseEntity<ApiResponse<List<LeaveBalanceReportResponse>>> getLeaveBalanceReport(
+            @AuthenticationPrincipal EmployeeUserDetails principal) {
+
+        if (!hasAnyRole(principal, "ROLE_HR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+        }
+
+        List<LeaveBalanceReportResponse> report = leaveService.getLeaveBalanceReport();
+        return ResponseEntity.ok(ApiResponse.success(report, "Leave balance report retrieved successfully"));
     }
 
     private static boolean hasAnyRole(EmployeeUserDetails principal, String... roles) {

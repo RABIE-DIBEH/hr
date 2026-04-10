@@ -17,7 +17,13 @@
     "inactive": "غير نشط",
     "terminated": "مُنهى",
     "success": "نجاح",
-    "error": "خطأ"
+    "error": "خطأ",
+    "days": "يوم"
+  },
+  "dashboard": {
+    "leaveBalance": "رصيد الإجازات",
+    "lowBalance": "رصيد منخفض",
+    "availableBalance": "رصيد متاح"
   },
   "userManagement": {
     "title": "إدارة الموظفين",
@@ -74,12 +80,29 @@
     "confirmReset": "تأكيد إعادة التعيين",
     "resetPasswordDev": "إعادة تعيين كلمة المرور (Dev)"
   },
+  "leaves": {
+    "reportTitle": "تقرير أرصدة الإجازات",
+    "reportSubtitle": "متابعة الأيام المتبقية والمستخدمة لكل موظف",
+    "tableName": "الموظف",
+    "tableDept": "القسم",
+    "tableBalance": "الرصيد المتبقي",
+    "tableUsed": "المستخدم (هذا العام)",
+    "tableStatus": "الحالة",
+    "lowBalance": "رصيد منخفض",
+    "normalBalance": "رصيد كافٍ"
+  },
   "roles": {
     "SUPER_ADMIN": "مدير النظام الأعلى",
     "ADMIN": "مدير النظام",
     "HR": "الموارد البشرية",
     "MANAGER": "مدير القسم",
     "EMPLOYEE": "موظف"
+  },
+  "status": {
+    "all": "الكل",
+    "Active": "نشط",
+    "Inactive": "غير نشط",
+    "Terminated": "مُنهى"
   },
   "errors": {
     "loadEmployeesFailed": "فشل في تحميل بيانات الموظفين",

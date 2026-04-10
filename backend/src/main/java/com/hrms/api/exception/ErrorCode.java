@@ -13,7 +13,8 @@ public enum ErrorCode {
     INVALID_NFC_CARD(HttpStatus.BAD_REQUEST),
     ATTENDANCE_VALIDATION_ERROR(HttpStatus.BAD_REQUEST),
     DEPARTMENT_NOT_FOUND(HttpStatus.NOT_FOUND),
-    VALIDATION_ERROR(HttpStatus.BAD_REQUEST);
+    VALIDATION_ERROR(HttpStatus.BAD_REQUEST),
+    INSUFFICIENT_LEAVE_BALANCE(HttpStatus.BAD_REQUEST);
 
     private final HttpStatus httpStatus;
 

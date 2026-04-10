@@ -58,6 +58,7 @@ export interface EmployeeProfile {
   address?: string;
   nationalId?: string;
   avatarUrl?: string;
+  leaveBalanceDays?: number;
 }
 
 export interface EmployeeProfileUpdatePayload {
@@ -261,6 +262,16 @@ export interface LeaveRequest {
   status?: string;
   managerNote?: string;
   requestedAt?: string;
+}
+
+export interface LeaveBalanceReportResponse {
+  employeeId: number;
+  fullName: string;
+  email: string;
+  departmentName: string;
+  status: string;
+  leaveBalanceDays: number;
+  overtimeBalanceHours: number;
 }
 
 /** 
@@ -623,6 +634,9 @@ export const processLeaveRequest = (requestId: number, status: string, note?: st
 
 export const getLeaveCalendar = (start: string, end: string) =>
   api.get<LeaveRequest[]>(`/leaves/calendar?start=${start}&end=${end}`);
+
+export const getLeaveBalanceReport = () =>
+  api.get<LeaveBalanceReportResponse[]>('/leaves/balance-report');
 
 // Report API 
 export const downloadAttendancePdf = (month: number, year: number) =>

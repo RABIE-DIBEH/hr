@@ -69,6 +69,7 @@ export const queryKeys = {
   users: {
     root: ['users'] as const,
     list: ['users', 'list'] as const,
+    leaveBalanceReport: ['users', 'leave-balance-report'] as const,
   },
   payroll: {
     root: ['payroll'] as const,

@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:nfc_manager/nfc_manager.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'api_service.dart';
 
 class NfcService {
   final ApiService _apiService;
+  static const String _offlineScansKey = 'offline_nfc_scans';
 
   NfcService(this._apiService);
 
@@ -12,13 +15,10 @@ class NfcService {
     try {
       return await NfcManager.instance.isAvailable();
     } catch (e) {
-      // NFC plugin not available on this platform (e.g., Linux desktop)
       return false;
     }
   }
 
-  /// Scans an NFC tag and returns its UID using a Completer for proper async handling.
-  /// Returns null if no tag is found within the timeout (10 seconds).
   Future<String?> scanNfcTag() async {
     final completer = Completer<String?>();
     bool sessionStopped = false;
@@ -29,15 +29,7 @@ class NfcService {
         sessionStopped = true;
 
         try {
-          // UID extraction depends on tag type
-          final List<int> identifier = tag.data['isDep'] != null
-              ? tag.data['isDep']['identifier']
-              : tag.data['nfca'] != null
-                  ? tag.data['nfca']['identifier']
-                  : tag.data['mifare'] != null
-                      ? tag.data['mifare']['identifier']
-                      : [];
-
+          final identifier = _getIdentifier(tag);
           String? uid;
           if (identifier.isNotEmpty) {
             uid = identifier
@@ -49,65 +41,118 @@ class NfcService {
           await NfcManager.instance.stopSession();
           completer.complete(uid);
         } catch (e) {
-          if (!completer.isCompleted) {
-            completer.complete(null);
-          }
+          if (!completer.isCompleted) completer.complete(null);
         }
       });
 
-      // Timeout after 10 seconds
-      final timeout = Future<String?>.delayed(
-        const Duration(seconds: 10),
-        () => null,
-      );
-
+      final timeout = Future<String?>.delayed(const Duration(seconds: 10), () => null);
       final result = await Future.any<String?>([completer.future, timeout]);
-      if (result == null) {
-        if (!sessionStopped) {
-          sessionStopped = true;
-          await NfcManager.instance.stopSession();
-        }
-        return null;
+      
+      if (result == null && !sessionStopped) {
+        sessionStopped = true;
+        await NfcManager.instance.stopSession();
       }
       return result;
     } catch (e) {
       if (!sessionStopped) {
         sessionStopped = true;
-        try {
-          await NfcManager.instance.stopSession();
-        } catch (_) {}
+        try { await NfcManager.instance.stopSession(); } catch (_) {}
       }
       return null;
     }
   }
 
-  /// POSTs to `/api/attendance/nfc-clock` with `{ "cardUid": "<uid>" }`.
-  /// Returns a map with `ok` (bool), `message` (user-facing), and optional `rawStatus` from API.
+  List<int> _getIdentifier(NfcTag tag) {
+    if (tag.data['isDep'] != null) return List<int>.from(tag.data['isDep']['identifier']);
+    if (tag.data['nfca'] != null) return List<int>.from(tag.data['nfca']['identifier']);
+    if (tag.data['mifare'] != null) return List<int>.from(tag.data['mifare']['identifier']);
+    return [];
+  }
+
   Future<Map<String, dynamic>> clockByNfc(String cardUid) async {
     try {
       final response = await _apiService.dio.post(
         '/attendance/nfc-clock',
         data: {'cardUid': cardUid},
-      );
+      ).timeout(const Duration(seconds: 5));
+
       final data = response.data;
-      if (data is Map) {
-        final statusText = data['status']?.toString() ?? '';
+      return {
+        'ok': true,
+        'message': (data is Map && data['status'] != null) ? data['status'].toString() : 'Attendance recorded.',
+        'offline': false,
+      };
+    } on DioException catch (e) {
+      // Check for network connectivity issues
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.connectionError) {
+        await _saveOfflineScan(cardUid);
         return {
           'ok': true,
-          'message': statusText.isEmpty ? 'Attendance recorded.' : statusText,
-          'rawStatus': statusText,
+          'message': 'Saved offline. Will sync when back online.',
+          'offline': true,
         };
       }
-      return {'ok': true, 'message': 'Attendance recorded.'};
-    } on DioException catch (e) {
-      String msg = e.message ?? 'Request failed';
+      
+      String msg = 'Request failed';
       final data = e.response?.data;
-      if (data is Map && data['message'] != null) {
-        msg = data['message'].toString();
-      }
-      return {'ok': false, 'message': msg};
+      if (data is Map && data['message'] != null) msg = data['message'].toString();
+      return {'ok': false, 'message': msg, 'offline': false};
     } catch (e) {
-      return {'ok': false, 'message': e.toString()};
+      await _saveOfflineScan(cardUid);
+      return {
+        'ok': true,
+        'message': 'Saved offline due to error.',
+        'offline': true,
+      };
     }
+  }
+
+  Future<void> _saveOfflineScan(String cardUid) async {
+    final prefs = await SharedPreferences.getInstance();
+    final scans = prefs.getStringList(_offlineScansKey) ?? [];
+    final scanData = jsonEncode({
+      'cardUid': cardUid,
+      'timestamp': DateTime.now().toIso8601String(),
+    });
+    scans.add(scanData);
+    await prefs.setStringList(_offlineScansKey, scans);
+  }
+
+  Future<int> syncOfflineScans() async {
+    final prefs = await SharedPreferences.getInstance();
+    final scans = prefs.getStringList(_offlineScansKey) ?? [];
+    if (scans.isEmpty) return 0;
+
+    int successCount = 0;
+    final List<String> remainingScans = [];
+
+    for (final scanJson in scans) {
+      try {
+        final scan = jsonDecode(scanJson);
+        final response = await _apiService.dio.post(
+          '/attendance/nfc-clock',
+          data: {'cardUid': scan['cardUid']},
+        ).timeout(const Duration(seconds: 5));
+        
+        if (response.statusCode == 200) {
+          successCount++;
+        } else {
+          remainingScans.add(scanJson);
+        }
+      } catch (e) {
+        remainingScans.add(scanJson);
+      }
+    }
+
+    await prefs.setStringList(_offlineScansKey, remainingScans);
+    return successCount;
+  }
+
+  Future<int> getOfflineCount() async {
+    final prefs = await SharedPreferences.getInstance();
+    return (prefs.getStringList(_offlineScansKey) ?? []).length;
   }
 }

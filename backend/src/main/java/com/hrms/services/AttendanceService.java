@@ -23,10 +23,14 @@ public class AttendanceService {
 
     private final AttendanceRecordRepository attendanceRepository;
     private final NFCCardRepository nfcCardRepository;
+    private final com.hrms.core.repositories.SystemLogRepository systemLogRepository;
 
-    public AttendanceService(AttendanceRecordRepository attendanceRepository, NFCCardRepository nfcCardRepository) {
+    public AttendanceService(AttendanceRecordRepository attendanceRepository, 
+                             NFCCardRepository nfcCardRepository,
+                             com.hrms.core.repositories.SystemLogRepository systemLogRepository) {
         this.attendanceRepository = attendanceRepository;
         this.nfcCardRepository = nfcCardRepository;
+        this.systemLogRepository = systemLogRepository;
     }
 
     @Transactional
@@ -192,6 +196,8 @@ public class AttendanceService {
         }
 
         AttendanceRecord record = found.get();
+        String oldValues = String.format("In: %s, Out: %s", record.getCheckIn(), record.getCheckOut());
+
         LocalDateTime effectiveCheckIn = checkIn != null ? checkIn : record.getCheckIn();
         LocalDateTime effectiveCheckOut = checkOut != null ? checkOut : record.getCheckOut();
 
@@ -220,7 +226,19 @@ public class AttendanceService {
         record.setManualAdjustmentReason(reason);
         record.setManagerNotes(reason);
 
-        return Optional.of(attendanceRepository.save(record));
+        AttendanceRecord saved = attendanceRepository.save(record);
+
+        // Audit Log
+        String newValues = String.format("In: %s, Out: %s, Reason: %s", saved.getCheckIn(), saved.getCheckOut(), reason);
+        systemLogRepository.save(com.hrms.core.models.SystemLog.builder()
+            .actorId(principal.getEmployeeId())
+            .targetId(saved.getEmployee().getEmployeeId())
+            .actionType("ATTENDANCE_CORRECTION")
+            .oldValue(oldValues)
+            .newValue(newValues)
+            .build());
+
+        return Optional.of(saved);
     }
 
     @Transactional(readOnly = true)

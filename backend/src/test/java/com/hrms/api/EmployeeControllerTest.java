@@ -91,7 +91,7 @@ class EmployeeControllerTest {
                 .thenReturn(new com.hrms.api.dto.EmployeeProfileResponse(
                         1L, "Test User", "test@hrms.com", null, "General",
                         null, null,
-                        4L, "EMPLOYEE", null, null, "Active", null, null, null, null
+                        4L, "EMPLOYEE", null, null, "Active", null, null, null, null, 21.0
                 ));
 
         mockMvc.perform(get("/api/employees/me"))
@@ -110,7 +110,7 @@ class EmployeeControllerTest {
                 .thenReturn(new com.hrms.api.dto.EmployeeProfileResponse(
                         1L, "Updated Name", "updated@hrms.com", null, "General",
                         null, null,
-                        4L, "EMPLOYEE", null, null, "Active", "0512345678", "Riyadh", "1234567890", null
+                        4L, "EMPLOYEE", null, null, "Active", "0512345678", "Riyadh", "1234567890", null, 21.0
                 ));
 
         mockMvc.perform(put("/api/employees/me")
@@ -136,7 +136,7 @@ class EmployeeControllerTest {
                 .thenReturn(new com.hrms.api.dto.EmployeeProfileResponse(
                         1L, "Test User", "test@hrms.com", null, "General",
                         null, null,
-                        4L, "EMPLOYEE", null, null, "Active", null, null, null, null
+                        4L, "EMPLOYEE", null, null, "Active", null, null, null, null, 21.0
                 ));
 
         mockMvc.perform(put("/api/employees/me")
@@ -184,7 +184,7 @@ class EmployeeControllerTest {
                         2L, "Target User", "target@hrms.com", 1L, "Team A",
                         3L, "Engineering",
                         2L, "EMPLOYEE", 5L, BigDecimal.valueOf(5000), "Active",
-                        "0512345678", "Riyadh", "1234567890", null
+                        "0512345678", "Riyadh", "1234567890", null, 21.0
                 ));
 
         mockMvc = MockMvcBuilders.standaloneSetup(new EmployeeController(employeeDirectoryService, employeeRepository))

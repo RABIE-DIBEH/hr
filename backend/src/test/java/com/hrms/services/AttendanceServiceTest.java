@@ -4,6 +4,7 @@ import com.hrms.core.models.AttendanceRecord;
 import com.hrms.core.models.Employee;
 import com.hrms.core.repositories.AttendanceRecordRepository;
 import com.hrms.core.repositories.NFCCardRepository;
+import com.hrms.core.repositories.SystemLogRepository;
 import com.hrms.security.EmployeeUserDetails;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,9 @@ public class AttendanceServiceTest {
 
     @Mock
     private NFCCardRepository nfcCardRepository;
+
+    @Mock
+    private SystemLogRepository systemLogRepository;
 
     @InjectMocks
     private AttendanceService attendanceService;

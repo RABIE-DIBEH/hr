@@ -27,10 +27,19 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    final success = await context.read<AuthProvider>().login(email, password);
-    if (!success && mounted) {
+    final result = await context.read<AuthProvider>().login(email, password);
+    if (!mounted) return;
+
+    if (result['ok'] != true) {
+      final error = result['error'] ?? 'Invalid credentials';
+      final isOffline = result['offline'] == true;
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid credentials')),
+        SnackBar(
+          content: Text(isOffline ? '⚠️ $error' : '❌ $error'),
+          backgroundColor: isOffline ? Colors.orange.shade800 : Colors.red.shade800,
+          duration: const Duration(seconds: 4),
+        ),
       );
     }
   }

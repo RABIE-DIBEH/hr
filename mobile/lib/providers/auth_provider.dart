@@ -32,19 +32,19 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> login(String email, String password) async {
+  Future<Map<String, dynamic>> login(String email, String password) async {
     _isLoading = true;
     notifyListeners();
 
-    final success = await _authService.login(email, password);
-    if (success) {
+    final result = await _authService.login(email, password);
+    if (result['ok'] == true) {
       _isAuthenticated = true;
       _userClaims = await _authService.getDecodedToken();
     }
 
     _isLoading = false;
     notifyListeners();
-    return success;
+    return result;
   }
 
   Future<void> logout() async {

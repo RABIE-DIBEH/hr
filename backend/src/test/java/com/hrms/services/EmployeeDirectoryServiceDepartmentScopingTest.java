@@ -7,6 +7,7 @@ import com.hrms.core.repositories.EmployeeDeletionLogRepository;
 import com.hrms.core.repositories.EmployeeRepository;
 import com.hrms.core.repositories.NFCCardRepository;
 import com.hrms.core.repositories.RoleRepository;
+import com.hrms.core.repositories.SystemLogRepository;
 import com.hrms.core.repositories.TeamRepository;
 import com.hrms.security.EmployeeUserDetails;
 import org.junit.jupiter.api.BeforeEach;
@@ -65,6 +66,9 @@ class EmployeeDirectoryServiceDepartmentScopingTest {
     private EmployeeDeletionLogRepository employeeDeletionLogRepository;
 
     @Mock
+    private SystemLogRepository systemLogRepository;
+
+    @Mock
     private PasswordEncoder passwordEncoder;
 
     private EmployeeDirectoryService service;
@@ -78,6 +82,7 @@ class EmployeeDirectoryServiceDepartmentScopingTest {
                 departmentRepository,
                 nfcCardRepository,
                 employeeDeletionLogRepository,
+                systemLogRepository,
                 passwordEncoder
         );
         when(nfcCardRepository.findByEmployee_EmployeeId(anyLong())).thenReturn(Optional.empty());

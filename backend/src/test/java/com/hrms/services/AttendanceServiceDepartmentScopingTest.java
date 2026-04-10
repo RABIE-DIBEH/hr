@@ -5,6 +5,7 @@ import com.hrms.core.models.AttendanceRecord;
 import com.hrms.core.models.Employee;
 import com.hrms.core.repositories.AttendanceRecordRepository;
 import com.hrms.core.repositories.NFCCardRepository;
+import com.hrms.core.repositories.SystemLogRepository;
 import com.hrms.security.EmployeeUserDetails;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,6 +40,9 @@ class AttendanceServiceDepartmentScopingTest {
 
     @Mock
     private NFCCardRepository nfcCardRepository;
+
+    @Mock
+    private SystemLogRepository systemLogRepository;
 
     private AttendanceService attendanceService;
 
@@ -78,7 +82,7 @@ class AttendanceServiceDepartmentScopingTest {
 
     @BeforeEach
     void setUp() {
-        attendanceService = new AttendanceService(attendanceRepository, nfcCardRepository);
+        attendanceService = new AttendanceService(attendanceRepository, nfcCardRepository, systemLogRepository);
     }
 
     // ═══════════════════════════════════════════

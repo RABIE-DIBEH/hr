@@ -45,12 +45,14 @@ public class AdminService {
     }
 
     @Transactional
-    public void logSystemEvent(String action, String user, String status) {
+    public void logSystemEvent(String actionType, Long actorId, Long targetId, String oldValue, String newValue) {
         SystemLog log = SystemLog.builder()
-                .action(action)
-                .originUser(user)
+                .actionType(actionType)
+                .actorId(actorId)
+                .targetId(targetId)
+                .oldValue(oldValue)
+                .newValue(newValue)
                 .timestamp(LocalDateTime.now())
-                .status(status)
                 .build();
         logRepository.save(log);
     }
@@ -94,7 +96,7 @@ public class AdminService {
     @Transactional
     public void clearAllLogs(String user) {
         logRepository.deleteAll();
-        logSystemEvent("Clear Audit Logs", user, "Success");
+        logSystemEvent("Clear Audit Logs", null, null, null, null);
     }
 
     @Transactional
@@ -110,7 +112,7 @@ public class AdminService {
         if (device.getStatus() == null) device.setStatus("Offline");
         if (device.getSystemLoad() == null) device.setSystemLoad("0%");
 
-        logSystemEvent("Add NFC Device " + device.getDeviceId(), "Admin", "Success");
+        logSystemEvent("Add NFC Device " + device.getDeviceId(), null, null, null, null);
         return deviceRepository.save(device);
     }
 
@@ -120,7 +122,7 @@ public class AdminService {
                 .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
                         org.springframework.http.HttpStatus.NOT_FOUND, "Device not found"));
         device.setStatus(status);
-        logSystemEvent("Update NFC Device " + deviceId + " -> " + status, "Admin", "Success");
+        logSystemEvent("Update NFC Device " + deviceId + " -> " + status, null, null, null, null);
         return deviceRepository.save(device);
     }
 
@@ -131,12 +133,12 @@ public class AdminService {
                     org.springframework.http.HttpStatus.NOT_FOUND, "Device not found");
         }
         deviceRepository.deleteById(deviceId);
-        logSystemEvent("Delete NFC Device " + deviceId, "Admin", "Success");
+        logSystemEvent("Delete NFC Device " + deviceId, null, null, null, null);
     }
 
     @Transactional
     public String triggerBackup(String requester) {
-        logSystemEvent("Database Backup Created", requester, "Success");
+        logSystemEvent("Database Backup Created", null, null, null, null);
         return "Backup created securely. Timestamp: " + LocalDateTime.now();
     }
 }

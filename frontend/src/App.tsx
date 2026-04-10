@@ -26,6 +26,7 @@ const Goals = lazy(() => import('./pages/Goals'));
 const Inbox = lazy(() => import('./pages/Inbox'));
 const CEODashboard = lazy(() => import('./pages/CEODashboard'));
 const DepartmentManagement = lazy(() => import('./pages/DepartmentManagement'));
+const LeaveBalanceReport = lazy(() => import('./pages/LeaveBalanceReport'));
 
 const LazyPage = () => (
   <Layout>
@@ -83,6 +84,13 @@ function App() {
             <ProtectedRoute allowedRoles={['HR']}>
               <Suspense fallback={<LazyPage />}>
                 <Layouted><HRDashboard /></Layouted>
+              </Suspense>
+            </ProtectedRoute>
+          } />
+          <Route path="/hr/leave-report" element={
+            <ProtectedRoute allowedRoles={['HR', 'ADMIN', 'SUPER_ADMIN']}>
+              <Suspense fallback={<LazyPage />}>
+                <Layouted><LeaveBalanceReport /></Layouted>
               </Suspense>
             </ProtectedRoute>
           } />

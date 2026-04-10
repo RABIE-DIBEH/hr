@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -32,6 +33,7 @@ import {
 import { queryKeys } from '../services/queryKeys';
 
 const EmployeeDashboard = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showAdvanceForm, setShowAdvanceForm] = useState(false);
@@ -204,10 +206,14 @@ const EmployeeDashboard = () => {
             <div className="w-12 h-12 bg-orange-500/20 rounded-2xl flex items-center justify-center mb-4 text-orange-400 group-hover:scale-110 transition-transform">
               <ArrowUpRight size={24} />
             </div>
-            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">رصيد الإجازات</p>
-            <h3 className="text-2xl font-black text-white">14 يوم</h3>
-            <div className="mt-3 flex items-center gap-1.5 text-[10px] font-bold text-orange-400 bg-orange-500/10 w-fit px-2.5 py-1 rounded-full uppercase">
-              Valid until Dec 2026
+            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">{t('dashboard.leaveBalance')}</p>
+            <h3 className="text-2xl font-black text-white">{me?.leaveBalanceDays?.toFixed(1) ?? 21.0} {t('common.days')}</h3>
+            <div className={`mt-3 flex items-center gap-1.5 text-[10px] font-bold w-fit px-2.5 py-1 rounded-full uppercase ${
+              me?.leaveBalanceDays && me.leaveBalanceDays < 5 
+                ? 'text-red-400 bg-red-500/10' 
+                : 'text-orange-400 bg-orange-500/10'
+            }`}>
+              {me?.leaveBalanceDays && me.leaveBalanceDays < 5 ? t('dashboard.lowBalance') : t('dashboard.availableBalance')}
             </div>
           </div>
         </motion.div>

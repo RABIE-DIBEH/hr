@@ -143,6 +143,11 @@ Department data is stored on employees and exposed via `/api/departments`. Listi
 - **Authorization**: MANAGER or HR/ADMIN
 - **Response**: `ApiResponse<LeaveRequestResponse>`
 
+### `GET /api/leaves/balance-report`
+- **Description**: Get leave balance report for all employees
+- **Authorization**: HR, ADMIN, SUPER_ADMIN
+- **Response**: `ApiResponse<List<LeaveBalanceReportResponse>>`
+
 ## Payroll
 
 ### `POST /api/payroll/calculate`
@@ -331,6 +336,12 @@ Department data is stored on employees and exposed via `/api/departments`. Listi
 ### `POST /api/admin/backup`
 - **Description**: Trigger system backup
 - **Response**: `ApiResponse<StatusResponseDto>`
+
+### `GET /api/admin/audit-logs`
+- **Description**: Get system audit logs (salary changes, role changes, attendance corrections)
+- **Query Params**: `page`, `size`
+- **Authorization**: ADMIN, SUPER_ADMIN
+- **Response**: `ApiResponse<PaginatedResponse<SystemLog>>`
 
 ## Inbox & Notifications
 

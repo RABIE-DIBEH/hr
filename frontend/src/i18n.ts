@@ -4,11 +4,15 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 
 // Import translations
 import arTranslations from './locales/ar.json';
+import enTranslations from './locales/en.json';
 
 // the translations
 const resources = {
   ar: {
     translation: arTranslations
+  },
+  en: {
+    translation: enTranslations
   }
 };
 

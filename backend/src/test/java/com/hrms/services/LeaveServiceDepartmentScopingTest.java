@@ -49,11 +49,14 @@ class LeaveServiceDepartmentScopingTest {
     @Mock
     private EmailService emailService;
 
+    @Mock
+    private com.hrms.core.repositories.DepartmentRepository departmentRepository;
+
     private LeaveService leaveService;
 
     @BeforeEach
     void setUp() {
-        leaveService = new LeaveService(leaveRequestRepository, employeeRepository, inboxService, emailService);
+        leaveService = new LeaveService(leaveRequestRepository, employeeRepository, inboxService, emailService, departmentRepository);
     }
 
     private Employee managerEmployee(Long id, Long departmentId) {

@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
@@ -14,6 +15,7 @@ import {
   FileText,
   ChevronLeft,
   ChevronRight,
+  Calendar,
 } from 'lucide-react';
 import PaginationControls from '../components/PaginationControls';
 import CurrentDateTimePanel from '../components/CurrentDateTimePanel';
@@ -44,6 +46,7 @@ import { queryKeys } from '../services/queryKeys';
 import { extractApiError } from '../utils/errorHandler';
 
 const HRDashboard = () => {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const employeePage = 0;
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -377,9 +380,9 @@ const HRDashboard = () => {
               <span className="text-white font-bold text-xs min-w-[100px] text-center">
                 {reportDate.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' })}
               </span>
-              <button 
-                onClick={handleNextMonth} 
-                disabled={reportDate >= new Date()} 
+              <button
+                onClick={handleNextMonth}
+                disabled={reportDate >= new Date()}
                 className="text-slate-400 hover:text-white disabled:opacity-30 transition-colors"
               >
                 <ChevronLeft size={18} />
@@ -387,7 +390,7 @@ const HRDashboard = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {/* Attendance Reports */}
             <div className="bg-white/5 p-6 rounded-2xl border border-white/5">
               <h3 className="text-white font-bold mb-4 flex items-center gap-2">
@@ -458,6 +461,20 @@ const HRDashboard = () => {
                   Excel
                 </button>
               </div>
+            </div>
+
+            {/* Leave Balance Report */}
+            <div className="bg-white/5 p-6 rounded-2xl border border-white/5">
+              <h3 className="text-white font-bold mb-4 flex items-center gap-2">
+                <Calendar size={16} className="text-purple-400" />
+                أرصدة الإجازات
+              </h3>
+              <button 
+                onClick={() => navigate('/hr/leave-report')}
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg font-bold transition-all text-xs"
+              >
+                عرض التقرير التفاعلي
+              </button>
             </div>
           </div>
         </motion.div>

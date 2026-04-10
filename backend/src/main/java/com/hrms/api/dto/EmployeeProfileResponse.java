@@ -18,5 +18,6 @@ public record EmployeeProfileResponse(
         String mobileNumber,
         String address,
         String nationalId,
-        String avatarUrl
+        String avatarUrl,
+        Double leaveBalanceDays
 ) {}

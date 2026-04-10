@@ -3,6 +3,7 @@ package com.hrms.services;
 import com.hrms.api.dto.LeaveRequestDto;
 import com.hrms.core.models.Employee;
 import com.hrms.core.models.LeaveRequest;
+import com.hrms.core.repositories.DepartmentRepository;
 import com.hrms.core.repositories.EmployeeRepository;
 import com.hrms.core.repositories.LeaveRequestRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,11 +41,14 @@ class LeaveRequestServiceTest {
     @Mock
     private EmailService emailService;
 
+    @Mock
+    private com.hrms.core.repositories.DepartmentRepository departmentRepository;
+
     private LeaveService leaveService;
 
     @BeforeEach
     void setUp() {
-        leaveService = new LeaveService(leaveRequestRepository, employeeRepository, inboxService, emailService);
+        leaveService = new LeaveService(leaveRequestRepository, employeeRepository, inboxService, emailService, departmentRepository);
     }
 
     @Test

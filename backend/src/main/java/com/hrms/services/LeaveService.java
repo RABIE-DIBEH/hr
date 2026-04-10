@@ -1,7 +1,12 @@
 package com.hrms.services;
 
+import com.hrms.api.dto.LeaveBalanceReportResponse;
+import com.hrms.api.exception.BusinessException;
+import com.hrms.api.exception.ErrorCode;
+import com.hrms.core.models.Department;
 import com.hrms.core.models.Employee;
 import com.hrms.core.models.LeaveRequest;
+import com.hrms.core.repositories.DepartmentRepository;
 import com.hrms.core.repositories.EmployeeRepository;
 import com.hrms.core.repositories.LeaveRequestRepository;
 import com.hrms.security.EmployeeUserDetails;
@@ -21,19 +26,37 @@ public class LeaveService {
     private final EmployeeRepository employeeRepository;
     private final InboxService inboxService;
     private final EmailService emailService;
+    private final DepartmentRepository departmentRepository;
 
     public LeaveService(LeaveRequestRepository leaveRequestRepository,
                         EmployeeRepository employeeRepository,
                         InboxService inboxService,
-                        EmailService emailService) {
+                        EmailService emailService,
+                        DepartmentRepository departmentRepository) {
         this.leaveRequestRepository = leaveRequestRepository;
         this.employeeRepository = employeeRepository;
         this.inboxService = inboxService;
         this.emailService = emailService;
+        this.departmentRepository = departmentRepository;
     }
 
     @Transactional
     public LeaveRequest submitRequest(Employee employee, LeaveRequest requestData) {
+        // Validation: Ensure employee has enough balance
+        if ("HOURLY".equalsIgnoreCase(requestData.getLeaveType()) || "ساعية".equals(requestData.getLeaveType())) {
+            double available = employee.getOvertimeBalanceHours() != null ? employee.getOvertimeBalanceHours() : 0.0;
+            if (available < requestData.getDuration()) {
+                throw new BusinessException(ErrorCode.INSUFFICIENT_LEAVE_BALANCE,
+                    "Insufficient overtime balance (Required: " + requestData.getDuration() + ", Available: " + available + ")");
+            }
+        } else {
+            double available = employee.getLeaveBalanceDays() != null ? employee.getLeaveBalanceDays() : 0.0;
+            if (available < requestData.getDuration()) {
+                throw new BusinessException(ErrorCode.INSUFFICIENT_LEAVE_BALANCE,
+                    "Insufficient leave balance (Required: " + requestData.getDuration() + ", Available: " + available + ")");
+            }
+        }
+
         requestData.setEmployee(employee);
         
         // If employee has no manager (null or 0), it goes straight to HR
@@ -206,5 +229,31 @@ public class LeaveService {
         } else {
             return leaveRequestRepository.findEmployeeLeavesInRange(employeeId, start, end);
         }
+    }
+
+    /**
+     * Get leave balance report for all employees (HR/Admin view).
+     * Shows each employee's remaining paid leave days and overtime hours.
+     */
+    @Transactional(readOnly = true)
+    public java.util.List<LeaveBalanceReportResponse> getLeaveBalanceReport() {
+        return employeeRepository.findAll().stream()
+                .map(emp -> {
+                    String deptName = emp.getDepartmentId() != null
+                            ? departmentRepository.findById(emp.getDepartmentId())
+                                    .map(Department::getDepartmentName)
+                                    .orElse("Unknown")
+                            : "Unassigned";
+                    return new LeaveBalanceReportResponse(
+                            emp.getEmployeeId(),
+                            emp.getFullName(),
+                            emp.getEmail(),
+                            deptName,
+                            emp.getStatus(),
+                            emp.getLeaveBalanceDays() != null ? emp.getLeaveBalanceDays() : 0.0,
+                            emp.getOvertimeBalanceHours() != null ? emp.getOvertimeBalanceHours() : 0.0
+                    );
+                })
+                .toList();
     }
 }

@@ -11,6 +11,7 @@ import com.hrms.api.exception.ErrorCode;
 import com.hrms.core.models.Department;
 import com.hrms.core.models.Employee;
 import com.hrms.core.models.EmployeeDeletionLog;
+import com.hrms.core.models.SystemLog;
 import com.hrms.core.models.Team;
 import com.hrms.core.models.UsersRole;
 import com.hrms.core.repositories.DepartmentRepository;
@@ -18,6 +19,7 @@ import com.hrms.core.repositories.EmployeeDeletionLogRepository;
 import com.hrms.core.repositories.EmployeeRepository;
 import com.hrms.core.repositories.NFCCardRepository;
 import com.hrms.core.repositories.RoleRepository;
+import com.hrms.core.repositories.SystemLogRepository;
 import com.hrms.core.repositories.TeamRepository;
 import com.hrms.security.EmployeeUserDetails;
 import org.springframework.data.domain.Page;
@@ -27,6 +29,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -40,6 +43,7 @@ public class EmployeeDirectoryService {
     private final DepartmentRepository departmentRepository;
     private final NFCCardRepository nfcCardRepository;
     private final EmployeeDeletionLogRepository employeeDeletionLogRepository;
+    private final com.hrms.core.repositories.SystemLogRepository systemLogRepository;
     private final PasswordEncoder passwordEncoder;
 
     public EmployeeDirectoryService(
@@ -49,6 +53,7 @@ public class EmployeeDirectoryService {
             DepartmentRepository departmentRepository,
             NFCCardRepository nfcCardRepository,
             EmployeeDeletionLogRepository employeeDeletionLogRepository,
+            com.hrms.core.repositories.SystemLogRepository systemLogRepository,
             PasswordEncoder passwordEncoder) {
         this.employeeRepository = employeeRepository;
         this.teamRepository = teamRepository;
@@ -56,6 +61,7 @@ public class EmployeeDirectoryService {
         this.departmentRepository = departmentRepository;
         this.nfcCardRepository = nfcCardRepository;
         this.employeeDeletionLogRepository = employeeDeletionLogRepository;
+        this.systemLogRepository = systemLogRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -83,7 +89,8 @@ public class EmployeeDirectoryService {
                 employee.getMobileNumber(),
                 employee.getAddress(),
                 employee.getNationalId(),
-                employee.getAvatarUrl()
+                employee.getAvatarUrl(),
+                employee.getLeaveBalanceDays()
         );
     }
 
@@ -199,6 +206,11 @@ public class EmployeeDirectoryService {
         return roleRepository.findById(roleId).map(UsersRole::getRoleName).orElse("");
     }
 
+    private String resolveRoleNameById(Long roleId) {
+        if (roleId == null) return "None";
+        return roleRepository.findById(roleId).map(UsersRole::getRoleName).orElse("Unknown");
+    }
+
     private String resolveDepartmentName(Long departmentId) {
         if (departmentId == null) {
             return null;
@@ -222,6 +234,10 @@ public class EmployeeDirectoryService {
                     throw new BusinessException(ErrorCode.EMAIL_CONFLICT, "البريد الإلكتروني مستخدم بالفعل");
                 });
 
+        // Track changes for logging
+        String oldRole = resolveRoleNameById(employee.getRoleId());
+        java.math.BigDecimal oldSalary = employee.getBaseSalary();
+
         // Basic profile fields
         employee.setFullName(update.fullName());
         employee.setEmail(update.email());
@@ -237,20 +253,50 @@ public class EmployeeDirectoryService {
         if (update.departmentId() != null) {
             employee.setDepartmentId(update.departmentId());
         }
-        if (update.roleId() != null) {
+        
+        boolean roleChanged = false;
+        if (update.roleId() != null && !update.roleId().equals(employee.getRoleId())) {
             employee.setRoleId(update.roleId());
+            roleChanged = true;
         }
+        
         if (update.managerId() != null) {
             employee.setManagerId(update.managerId());
         }
-        if (update.baseSalary() != null) {
+        
+        boolean salaryChanged = false;
+        if (update.baseSalary() != null && (oldSalary == null || oldSalary.compareTo(update.baseSalary()) != 0)) {
             employee.setBaseSalary(update.baseSalary());
+            salaryChanged = true;
         }
+        
         if (update.employmentStatus() != null && !update.employmentStatus().isBlank()) {
             employee.setStatus(update.employmentStatus());
         }
 
         employeeRepository.save(employee);
+
+        // Audit Logs
+        if (roleChanged) {
+            String newRole = resolveRoleNameById(employee.getRoleId());
+            systemLogRepository.save(com.hrms.core.models.SystemLog.builder()
+                .actorId(updatedBy)
+                .targetId(employeeId)
+                .actionType("ROLE_CHANGE")
+                .oldValue(oldRole)
+                .newValue(newRole)
+                .build());
+        }
+        if (salaryChanged) {
+            systemLogRepository.save(com.hrms.core.models.SystemLog.builder()
+                .actorId(updatedBy)
+                .targetId(employeeId)
+                .actionType("SALARY_CHANGE")
+                .oldValue(oldSalary != null ? oldSalary.toString() : "0")
+                .newValue(update.baseSalary().toString())
+                .build());
+        }
+
         return getProfile(employeeId);
     }
 

@@ -46,6 +46,9 @@ class EmployeeDirectoryServiceTest {
     private EmployeeDeletionLogRepository employeeDeletionLogRepository;
 
     @Mock
+    private com.hrms.core.repositories.SystemLogRepository systemLogRepository;
+
+    @Mock
     private PasswordEncoder passwordEncoder;
 
     private EmployeeDirectoryService service;
@@ -53,7 +56,7 @@ class EmployeeDirectoryServiceTest {
     @BeforeEach
     void setUp() {
         service = new EmployeeDirectoryService(
-                employeeRepository, teamRepository, roleRepository, departmentRepository, nfcCardRepository, employeeDeletionLogRepository, passwordEncoder
+                employeeRepository, teamRepository, roleRepository, departmentRepository, nfcCardRepository, employeeDeletionLogRepository, systemLogRepository, passwordEncoder
         );
     }
 
