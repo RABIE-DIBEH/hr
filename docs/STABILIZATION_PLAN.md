@@ -209,8 +209,8 @@ Review and convert these endpoints from `Map<String, Object>` to typed DTOs:
 
 ### 6.2 Merge
 
-- [ ] Merge `stabilization-phase` → `main`
-- [ ] Create release tag: `git tag v0.8-stable`
+- [x] Merge `stabilization-phase` → `main`
+- [x] Create release tag: `git tag v0.8-stable`
 - [ ] Push tags: `git push origin v0.8-stable`
 
 ### 6.3 Update Checklists
@@ -275,6 +275,6 @@ Once stabilization is complete:
 
 ---
 
-**Last Updated**: April 7, 2026  
-**Status**: Phases 0-5 ✅ COMPLETE | Phase 6 🔄 IN PROGRESS (Ready for merge to main)  
-**Next Step**: Merge `stabilization-phase` → `main` and create v0.8-stable tag
+**Last Updated**: April 10, 2026  
+**Status**: Phases 0-6 ✅ COMPLETE | **Merge completed locally**  
+**Next Step**: Push `main` and `v0.8-stable` tag to remote when network connectivity is restored
