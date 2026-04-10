@@ -38,5 +38,7 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     List<Employee> findByDepartmentIdAndStatus(Long departmentId, String status);
 
+    List<Employee> findByDepartmentIdIsNull();
+
     long countByDepartmentId(Long departmentId);
 }

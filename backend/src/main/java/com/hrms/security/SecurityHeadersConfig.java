@@ -63,6 +63,7 @@ public class SecurityHeadersConfig extends OncePerRequestFilter {
         String path = request.getServletPath();
         return path.startsWith("/swagger-ui") || 
                path.startsWith("/v3/api-docs") ||
+               path.startsWith("/h2-console") ||
                path.startsWith("/webjars");
     }
 }

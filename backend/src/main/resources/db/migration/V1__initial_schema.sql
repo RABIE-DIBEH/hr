@@ -28,7 +28,9 @@ CREATE TABLE Employees (
     mobile_number VARCHAR(20),
     address VARCHAR(500),
     national_id VARCHAR(20),
-    avatar_url VARCHAR(500)
+    avatar_url VARCHAR(500),
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    deleted_at TIMESTAMP
 );
 
 -- 4. NFC Cards Table

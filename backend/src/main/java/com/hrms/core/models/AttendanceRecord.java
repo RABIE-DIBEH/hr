@@ -16,7 +16,6 @@ public class AttendanceRecord {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id", nullable = false)
-    @NotFound(action = NotFoundAction.IGNORE)
     private Employee employee;
 
     private LocalDateTime checkIn;

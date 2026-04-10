@@ -19,7 +19,7 @@ ON CONFLICT (name) DO NOTHING;
 -- BCrypt auto-migration kicks in on the very first login.
 -- After first login each password is upgraded to BCrypt.
 
-INSERT INTO Employees (full_name, Email, PasswordHash, RoleId, TeamId, ManagerId, BaseSalary, Status)
+INSERT INTO Employees (full_name, email, password_hash, role_id, team_id, manager_id, base_salary, status)
 VALUES
   -- ┌─────────────────────────────────────────────────────────┐
   -- │  Role: ADMIN  (RoleId = 1)                              │
@@ -56,15 +56,15 @@ VALUES
   -- └─────────────────────────────────────────────────────────┘
   ('Payroll Specialist', 'payroll@hrms.com', 'Payroll@1234', 6, NULL, NULL, 10000.00, 'Active')
 
-ON CONFLICT (Email) DO NOTHING;
+ON CONFLICT (email) DO NOTHING;
 
 -- ── Sample NFC Card (linked to the test employee) ───────────
 -- Insert after employees so the EmployeeId FK is valid.
 -- The UID below is what you'd tap to simulate a clock-in.
 INSERT INTO NFC_Cards (uid, employee_id, status)
-SELECT 'TEST-NFC-UID-0001', e.EmployeeId, 'Active'
+SELECT 'TEST-NFC-UID-0001', e.employee_id, 'Active'
 FROM   Employees e
-WHERE  e.Email = 'employee@hrms.com'
+WHERE  e.email = 'employee@hrms.com'
 ON CONFLICT (uid) DO NOTHING;
 
 -- ── Sample Inbox Messages ────────────────────────────────────

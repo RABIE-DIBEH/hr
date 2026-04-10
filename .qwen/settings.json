@@ -35,7 +35,8 @@
       "Bash(mkdir *)",
       "Bash(pg_dump *)",
       "Bash(dart *)",
-      "Bash(java *)"
+      "Bash(java *)",
+      "Bash(netstat *)"
     ]
   },
   "$version": 3

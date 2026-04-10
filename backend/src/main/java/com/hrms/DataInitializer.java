@@ -11,6 +11,7 @@ import com.hrms.core.repositories.TeamRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -25,15 +26,18 @@ public class DataInitializer implements CommandLineRunner {
     private final TeamRepository teamRepository;
     private final EmployeeRepository employeeRepository;
     private final DepartmentRepository departmentRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public DataInitializer(RoleRepository roleRepository,
                            TeamRepository teamRepository,
                            EmployeeRepository employeeRepository,
-                           DepartmentRepository departmentRepository) {
+                           DepartmentRepository departmentRepository,
+                           PasswordEncoder passwordEncoder) {
         this.roleRepository = roleRepository;
         this.teamRepository = teamRepository;
         this.employeeRepository = employeeRepository;
         this.departmentRepository = departmentRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -147,10 +151,12 @@ public class DataInitializer implements CommandLineRunner {
 
     private Employee seedUser(String fullName, String email, String password, Long roleId, BigDecimal salary, Long managerId, Long departmentId) {
         if (employeeRepository.findByEmail(email).isEmpty()) {
+            // Hash the password before saving
+            String passwordHash = passwordEncoder.encode(password);
             Employee employee = Employee.builder()
                     .fullName(fullName)
                     .email(email)
-                    .passwordHash(password)
+                    .passwordHash(passwordHash)
                     .roleId(roleId)
                     .managerId(managerId)
                     .departmentId(departmentId)
@@ -177,10 +183,8 @@ public class DataInitializer implements CommandLineRunner {
             return;
         }
         
-        // Find all employees without a department
-        List<Employee> employeesWithoutDept = employeeRepository.findAll().stream()
-                .filter(emp -> emp.getDepartmentId() == null)
-                .toList();
+        // Find all employees without a department - use a more efficient query
+        List<Employee> employeesWithoutDept = employeeRepository.findByDepartmentIdIsNull();
         
         if (!employeesWithoutDept.isEmpty()) {
             for (Employee emp : employeesWithoutDept) {

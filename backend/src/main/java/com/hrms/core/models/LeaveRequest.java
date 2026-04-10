@@ -15,7 +15,6 @@ public class LeaveRequest {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id", nullable = false)
-    @NotFound(action = NotFoundAction.IGNORE)
     private Employee employee;
 
     @Column(nullable = false)

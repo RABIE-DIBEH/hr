@@ -15,7 +15,6 @@ public class Payroll {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id", nullable = false)
-    @NotFound(action = NotFoundAction.IGNORE)
     private Employee employee;
 
     // Escape "month" and "year" as they're reserved keywords in H2/SQL

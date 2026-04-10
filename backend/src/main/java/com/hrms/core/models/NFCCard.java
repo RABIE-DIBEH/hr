@@ -17,7 +17,6 @@ public class NFCCard {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id", nullable = false)
-    @NotFound(action = NotFoundAction.IGNORE)
     private Employee employee;
 
     private String status = "Active";

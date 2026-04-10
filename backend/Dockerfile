@@ -14,8 +14,9 @@ RUN mvn clean package -DskipTests
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
-# Create non-root user
-RUN apk add --no-cache curl && addgroup -S spring && adduser -S spring -G spring
+# Create non-root user and logs directory
+RUN apk add --no-cache curl && addgroup -S spring && adduser -S spring -G spring && \
+    mkdir -p /app/logs && chown spring:spring /app/logs
 USER spring:spring
 
 # Copy the JAR file from build stage

@@ -186,7 +186,7 @@ public class LeaveService {
 
     private boolean canProcessLeave(Employee requester, EmployeeUserDetails principal) {
         for (var a : principal.getAuthorities()) {
-            if ("ROLE_ADMIN".equals(a.getAuthority()) || "ROLE_HR".equals(a.getAuthority())) {
+            if ("ROLE_ADMIN".equals(a.getAuthority()) || "ROLE_HR".equals(a.getAuthority()) || "ROLE_SUPER_ADMIN".equals(a.getAuthority())) {
                 return true;
             }
             if ("ROLE_MANAGER".equals(a.getAuthority())) {
