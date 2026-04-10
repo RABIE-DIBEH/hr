@@ -1,0 +1,20 @@
+# متطلبات RABIE&RADOO معالج كشوف الرواتب
+# RABIE&RADOO Payroll Processor Requirements
+
+# المتطلبات الأساسية - Essential Requirements
+pandas>=2.0.0              # معالجة البيانات والجداول
+openpyxl>=3.1.2            # قراءة وكتابة ملفات Excel
+Pillow>=10.0.0             # معالجة الصور والأيقونات
+
+# متطلبات Windows - Windows Requirements  
+pywin32>=306; platform_system == "Windows"  # مكتبات Windows API
+
+# المتطلبات الاختيارية - Optional Requirements
+# pygame>=2.0.0              # الأصوات والمؤثرات الصوتية (اختياري - SSL issues)
+
+# ملاحظات - Notes:
+# tkinter مدمج مع Python (للواجهة الرسومية)
+# tkinter comes bundled with Python (for GUI)
+
+# في حالة مشاكل التثبيت، يمكن استخدام النسخة الآمنة بدون pygame
+# If installation issues occur, safe version without pygame can be used
