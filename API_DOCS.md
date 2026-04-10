@@ -64,6 +64,42 @@
 - **Authorization**: HR, ADMIN, SUPER_ADMIN
 - **Response**: `ApiResponse<EmployeeProfileResponse>`
 
+## Departments
+
+Department data is stored on employees and exposed via `/api/departments`. Listing is **role-scoped in the controller**: HR/Admin/Super Admin receive all departments; managers receive only departments they manage.
+
+### `GET /api/departments/my`
+- **Description**: Get the current user’s department (from their profile)
+- **Authorization**: Any authenticated user
+- **Response**: `ApiResponse<Department>` — 404 if the user has no department assigned
+
+### `GET /api/departments`
+- **Description**: List departments (filtered by role — see section intro)
+- **Authorization**: HR, ADMIN, SUPER_ADMIN, MANAGER
+- **Response**: `ApiResponse<List<Department>>`
+
+### `GET /api/departments/{id}`
+- **Description**: Get one department by ID
+- **Authorization**: HR, ADMIN, SUPER_ADMIN
+- **Response**: `ApiResponse<Department>`
+
+### `POST /api/departments`
+- **Description**: Create a department (`departmentName` required)
+- **Request Body**: `Department` JSON (e.g. `departmentName`, optional fields as supported by the entity)
+- **Authorization**: HR, ADMIN, SUPER_ADMIN
+- **Response**: `ApiResponse<Department>` (201 Created)
+
+### `PUT /api/departments/{id}`
+- **Description**: Update a department
+- **Request Body**: `Department` JSON
+- **Authorization**: HR, ADMIN, SUPER_ADMIN
+- **Response**: `ApiResponse<Department>`
+
+### `DELETE /api/departments/{id}`
+- **Description**: Delete a department (fails if employees are still assigned)
+- **Authorization**: HR, ADMIN, SUPER_ADMIN
+- **Response**: `ApiResponse<Void>`
+
 ## Attendance & NFC
 
 ### `POST /api/attendance/nfc-clock`
@@ -343,17 +379,55 @@
 
 ## Reports
 
-### `GET /api/reports/attendance`
-- **Description**: Generate attendance report
-- **Query Params**: `employeeId`, `startDate`, `endDate`, `format` (pdf/excel)
-- **Authorization**: HR, ADMIN, SUPER_ADMIN, MANAGER
-- **Response**: File download (PDF/Excel) or JSON
+All report downloads are **binary file responses** (`Content-Disposition: attachment`). Each endpoint takes **`month`** and **`year`** (integers) only. Data covers the **whole organization for that calendar month** — there is **no `departmentId` or department filter** on these routes. For department-scoped views, use other APIs (e.g. recruitment pending with optional `department` query) or export then filter client-side.
 
-### `GET /api/reports/payroll`
-- **Description**: Generate payroll report
-- **Query Params**: `month`, `year`, `format` (pdf/excel)
+### `GET /api/reports/attendance/pdf`
+- **Description**: Attendance PDF for the given month/year
+- **Query Params**: `month`, `year`
+- **Authorization**: HR, ADMIN, SUPER_ADMIN, MANAGER
+- **Response**: `application/pdf` file download
+
+### `GET /api/reports/attendance/excel`
+- **Description**: Attendance Excel (`.xlsx`) for the given month/year
+- **Query Params**: `month`, `year`
+- **Authorization**: HR, ADMIN, SUPER_ADMIN, MANAGER
+- **Response**: Excel file download
+
+### `GET /api/reports/payroll/pdf`
+- **Description**: Payroll PDF for the given month/year
+- **Query Params**: `month`, `year`
 - **Authorization**: PAYROLL, SUPER_ADMIN
-- **Response**: File download (PDF/Excel) or JSON
+- **Response**: `application/pdf` file download
+
+### `GET /api/reports/payroll/excel`
+- **Description**: Payroll Excel for the given month/year
+- **Query Params**: `month`, `year`
+- **Authorization**: PAYROLL, SUPER_ADMIN
+- **Response**: Excel file download
+
+### `GET /api/reports/leave/pdf`
+- **Description**: Leave PDF for the given month/year
+- **Query Params**: `month`, `year`
+- **Authorization**: HR, ADMIN, SUPER_ADMIN
+- **Response**: `application/pdf` file download
+
+### `GET /api/reports/leave/excel`
+- **Description**: Leave Excel for the given month/year
+- **Query Params**: `month`, `year`
+- **Authorization**: HR, ADMIN, SUPER_ADMIN
+- **Response**: Excel file download
+
+### `GET /api/reports/recruitment/pdf`
+- **Description**: Recruitment PDF for the given month/year
+- **Query Params**: `month`, `year`
+- **Authorization**: HR, ADMIN, SUPER_ADMIN
+- **Response**: `application/pdf` file download
+
+### `GET /api/reports/recruitment/excel`
+- **Description**: Recruitment Excel for the given month/year
+- **Query Params**: `month`, `year`
+- **Authorization**: HR, ADMIN, SUPER_ADMIN
+- **Response**: Excel file download
 
 ## Common Response Format
 
@@ -425,11 +499,11 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 | Role | Access Level |
 |------|--------------|
-| **EMPLOYEE** | Personal data, own requests |
-| **MANAGER** | Team management, approvals |
-| **HR** | Employee records, recruitment |
-| **PAYROLL** | Salary calculations, advances |
-| **ADMIN** | System configuration |
+| **EMPLOYEE** | Personal data, own requests; `GET /api/departments/my` |
+| **MANAGER** | Team management, approvals; scoped `GET /api/departments` (managed departments only) |
+| **HR** | Employee records, recruitment; full department list and CRUD |
+| **PAYROLL** | Salary calculations, advances; payroll reports |
+| **ADMIN** | System configuration; department CRUD |
 | **SUPER_ADMIN** | Full system access |
 
 *Last Updated: April 2026*

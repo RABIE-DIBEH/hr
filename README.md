@@ -114,10 +114,12 @@ hrms-pro/
 
 ### Core HR Functions
 - **Employee Management** - CRUD operations, role assignment
+- **Departments** - Org units with role-scoped listing (managers see departments they manage; HR/Admin see all). Employees can read their own department via `/api/departments/my`.
 - **Attendance Tracking** - NFC-based clock in/out, manual adjustments
-- **Leave Management** - Request, approval, balance tracking
+- **Leave Management** - Request, approval, balance tracking (balances update when HR approves)
 - **Payroll Processing** - Salary calculation, deductions, reporting
 - **Recruitment Workflow** - Candidate to employee conversion
+- **Exports** - Attendance, payroll, leave, and recruitment reports as PDF or Excel (month/year). These exports are **organization-wide for the period**, not filtered by department (see [API_DOCS.md](./API_DOCS.md#reports)).
 
 ### Role-Based Dashboards
 - **Admin Dashboard** - System monitoring, user management, backups
@@ -210,10 +212,15 @@ The backend provides Swagger UI for API documentation:
 
 Key API endpoints:
 - `POST /api/auth/login` - User authentication
+- `GET /api/departments/my` - Current user’s department
+- `GET /api/departments` - Department list (role-scoped)
 - `POST /api/attendance/nfc-clock` - NFC attendance tracking
 - `POST /api/leaves/request` - Leave request submission
 - `POST /api/payroll/calculate` - Payroll calculation
 - `GET /api/employees` - Employee directory
+- `GET /api/reports/attendance/pdf` (and `/excel`) - Monthly attendance export (see API_DOCS for all report routes)
+
+Spring Security is configured in `backend/src/main/java/com/hrms/api/SecurityConfig.java` (not a separate `security/SecurityConfig` package). JWT helpers live under `com.hrms.security`.
 
 ## 📊 Technology Stack
 
