@@ -104,9 +104,7 @@ class ApiService {
   }
 
   /// Stream of connectivity changes
-  Stream<ConnectivityResult> get connectivityStream => _connectivity.onConnectivityChanged.map(
-        (result) => result is List ? result.first : result,
-      );
+  Stream<ConnectivityResult> get connectivityStream => _connectivity.onConnectivityChanged;
 
   Dio get dio => _dio;
   FlutterSecureStorage get storage => _storage;
