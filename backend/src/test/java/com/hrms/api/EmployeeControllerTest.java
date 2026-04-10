@@ -2,6 +2,7 @@ package com.hrms.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.hrms.api.dto.EmployeeAdminUpdate;
 import com.hrms.api.dto.EmployeeProfileUpdate;
 import com.hrms.core.models.Employee;
 import com.hrms.core.repositories.EmployeeRepository;
@@ -18,6 +19,10 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import java.math.BigDecimal;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
@@ -26,6 +31,7 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -169,6 +175,97 @@ class EmployeeControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void updateEmployeeByAdmin_Hr_SetsDepartmentId_ReturnsProfile() throws Exception {
+        when(employeeDirectoryService.updateEmployeeByAdmin(eq(2L), any(EmployeeAdminUpdate.class), eq(1L)))
+                .thenReturn(new com.hrms.api.dto.EmployeeProfileResponse(
+                        2L, "Target User", "target@hrms.com", 1L, "Team A",
+                        3L, "Engineering",
+                        2L, "EMPLOYEE", 5L, BigDecimal.valueOf(5000), "Active",
+                        "0512345678", "Riyadh", "1234567890", null
+                ));
+
+        mockMvc = MockMvcBuilders.standaloneSetup(new EmployeeController(employeeDirectoryService, employeeRepository))
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .setCustomArgumentResolvers(new AuthenticationPrincipalResolver(hrPrincipal))
+                .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
+                .build();
+
+        String body = """
+                {
+                  "fullName": "Target User",
+                  "email": "target@hrms.com",
+                  "mobileNumber": "0512345678",
+                  "address": "Riyadh",
+                  "nationalId": "1234567890",
+                  "avatarUrl": null,
+                  "teamId": 1,
+                  "departmentId": 3,
+                  "roleId": 2,
+                  "managerId": 5,
+                  "baseSalary": 5000,
+                  "employmentStatus": "Active"
+                }
+                """;
+
+        mockMvc.perform(put("/api/employees/2")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.departmentId").value(3))
+                .andExpect(jsonPath("$.data.departmentName").value("Engineering"));
+
+        ArgumentCaptor<EmployeeAdminUpdate> captor = ArgumentCaptor.forClass(EmployeeAdminUpdate.class);
+        verify(employeeDirectoryService).updateEmployeeByAdmin(eq(2L), captor.capture(), eq(1L));
+        assertEquals(3L, captor.getValue().departmentId());
+    }
+
+    @Test
+    void updateEmployeeByAdmin_EmployeeRole_Returns403() throws Exception {
+        String body = """
+                {
+                  "fullName": "Target User",
+                  "email": "target@hrms.com",
+                  "mobileNumber": "0512345678",
+                  "departmentId": 3,
+                  "employmentStatus": "Active"
+                }
+                """;
+
+        mockMvc.perform(put("/api/employees/3")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isForbidden());
+
+        verify(employeeDirectoryService, never()).updateEmployeeByAdmin(any(), any(), any());
+    }
+
+    @Test
+    void updateEmployeeByAdmin_InvalidEmail_Returns400() throws Exception {
+        mockMvc = MockMvcBuilders.standaloneSetup(new EmployeeController(employeeDirectoryService, employeeRepository))
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .setCustomArgumentResolvers(new AuthenticationPrincipalResolver(hrPrincipal))
+                .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
+                .build();
+
+        String body = """
+                {
+                  "fullName": "Target User",
+                  "email": "not-valid-email",
+                  "mobileNumber": "0512345678",
+                  "departmentId": 3,
+                  "employmentStatus": "Active"
+                }
+                """;
+
+        mockMvc.perform(put("/api/employees/2")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+
+        verify(employeeDirectoryService, never()).updateEmployeeByAdmin(any(), any(), any());
     }
 
     @Test

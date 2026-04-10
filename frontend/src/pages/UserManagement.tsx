@@ -88,7 +88,7 @@ const UserManagement = () => {
   const [resetPasswordResult, setResetPasswordResult] = useState<{ password: string; name: string } | null>(null);
 
   // React Query for departments (shared with DepartmentManagement)
-  const { data: departments = [] } = useQuery({
+  const { data: departments = [], isLoading: departmentsLoading } = useQuery({
     queryKey: queryKeys.departments.all,
     queryFn: () => getAllDepartments(),
     enabled: isHighRole,
@@ -567,8 +567,11 @@ const UserManagement = () => {
                         value={editForm.departmentId || ''}
                         onChange={(e) => setEditForm({ ...editForm, departmentId: e.target.value ? Number(e.target.value) : null })}
                         className="w-full px-4 py-3 bg-zinc-800 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500"
+                        disabled={departmentsLoading}
                       >
-                        <option value="" className="bg-zinc-800 text-white">بدون قسم</option>
+                        <option value="" className="bg-zinc-800 text-white">
+                          {departmentsLoading ? 'جاري تحميل الأقسام...' : 'بدون قسم'}
+                        </option>
                         {departments.map((d) => (
                           <option key={d.departmentId} value={d.departmentId} className="bg-zinc-800 text-white">{d.departmentName}{d.departmentCode ? ` (${d.departmentCode})` : ''}</option>
                         ))}
