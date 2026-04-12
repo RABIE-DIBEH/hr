@@ -179,6 +179,7 @@ class PayrollPythonParityTest {
         PayrollFormulaEngine.PayrollResult r = engine.calculate(
             new BigDecimal("5000"),
             new BigDecimal("160"),
+            new BigDecimal("20"),
             BigDecimal.ZERO
         );
 
