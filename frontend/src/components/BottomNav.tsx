@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { 
   Wallet, 
   Star, 
@@ -8,11 +9,12 @@ import {
 import { motion } from 'framer-motion';
 
 const BottomNav = () => {
+  const { t } = useTranslation();
   const navItems = [
-    { path: '/finance', icon: Wallet, label: 'إدارة المرتبات' },
+    { path: '/finance', icon: Wallet, label: t('bottomNav.payrollManagement') },
     { path: '/', icon: null, label: '' }, // Placeholder for FAB
-    { path: '/goals', icon: Star, label: 'النقاط' },
-    { path: '/dashboard', icon: LayoutDashboard, label: 'الرئيسية' },
+    { path: '/inbox', icon: Star, label: t('bottomNav.messages') },
+    { path: '/dashboard', icon: LayoutDashboard, label: t('bottomNav.home') },
   ];
 
   return (
@@ -21,7 +23,7 @@ const BottomNav = () => {
         {/* Floating Action Button */}
         <div className="absolute left-1/2 -top-12 -translate-x-1/2">
           <motion.button 
-            onClick={() => alert('قريباً...')}
+            onClick={() => alert(t('bottomNav.comingSoon'))}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             className="w-16 h-16 rounded-full gold-gradient shadow-[0_8px_30px_rgb(212,175,55,0.3)] flex items-center justify-center text-black border-4 border-luxury-bg"

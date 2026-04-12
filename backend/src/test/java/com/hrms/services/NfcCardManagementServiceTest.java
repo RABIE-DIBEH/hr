@@ -1,5 +1,7 @@
 package com.hrms.services;
 
+import com.hrms.api.exception.BusinessException;
+import com.hrms.api.exception.ErrorCode;
 import com.hrms.core.models.Employee;
 import com.hrms.core.models.NFCCard;
 import com.hrms.core.repositories.EmployeeRepository;
@@ -9,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -19,8 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static org.springframework.http.HttpStatus.CONFLICT;
 
 @ExtendWith(MockitoExtension.class)
 class NfcCardManagementServiceTest {
@@ -45,11 +44,11 @@ class NfcCardManagementServiceTest {
         when(nfcCardRepository.findByUid("NEW-UID")).thenReturn(Optional.empty());
         when(nfcCardRepository.findByEmployee_EmployeeId(5L)).thenReturn(Optional.of(new NFCCard()));
 
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+        BusinessException ex = assertThrows(BusinessException.class,
                 () -> nfcCardManagementService.assignCard(5L, "NEW-UID"));
 
-        assertEquals(CONFLICT, ex.getStatusCode());
-        assertEquals("Employee already has an NFC card. Use replace instead.", ex.getReason());
+        assertEquals(ErrorCode.INVALID_NFC_CARD, ex.getErrorCode());
+        assertEquals("Employee already has an NFC card. Use replace instead.", ex.getMessage());
     }
 
     @Test
@@ -70,11 +69,10 @@ class NfcCardManagementServiceTest {
         NFCCard card = new NFCCard();
         when(nfcCardRepository.findByEmployee_EmployeeId(5L)).thenReturn(Optional.of(card));
 
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+        BusinessException ex = assertThrows(BusinessException.class,
                 () -> nfcCardManagementService.updateStatus(5L, "paused"));
 
-        assertEquals(BAD_REQUEST, ex.getStatusCode());
-        assertEquals("Invalid NFC card status. Allowed values: ACTIVE, INACTIVE, BLOCKED", ex.getReason());
+        assertEquals(ErrorCode.INVALID_NFC_CARD, ex.getErrorCode());
     }
 
     private Employee employee(Long employeeId) {

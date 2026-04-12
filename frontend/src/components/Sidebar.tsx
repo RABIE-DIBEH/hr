@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   LayoutDashboard,
   Users,
@@ -8,7 +9,6 @@ import {
   LogOut,
   ShieldCheck,
   Settings,
-  Star,
   Bell,
   Calendar,
   UserCheck,
@@ -30,24 +30,25 @@ interface MenuItem {
 }
 
 const allMenuItems: MenuItem[] = [
-  { path: '/dashboard', icon: LayoutDashboard, label: 'لوحة التحكم',     roles: ['EMPLOYEE', 'PAYROLL', 'SUPER_ADMIN'] },
-  { path: '/payroll',   icon: LayoutDashboard, label: 'لوحة الرواتب',     roles: ['PAYROLL', 'SUPER_ADMIN'] },
-  { path: '/ceo',       icon: BriefcaseBusiness, label: 'المدير التنفيذي', roles: ['ADMIN', 'SUPER_ADMIN'] },
-  { path: '/leave-calendar', icon: Calendar,    label: 'تقويم الإجازات',   roles: ['HR', 'MANAGER', 'ADMIN', 'PAYROLL', 'SUPER_ADMIN', 'EMPLOYEE'] },
-  { path: '/users',     icon: Users,           label: 'إدارة الموظفين',  roles: ['HR', 'ADMIN', 'SUPER_ADMIN'] },
-  { path: '/departments', icon: Building2,     label: 'إدارة الأقسام',    roles: ['HR', 'ADMIN', 'SUPER_ADMIN'] },
-  { path: '/goals',     icon: Star,            label: 'النقاط' },
-  { path: '/manager',   icon: Users,           label: 'إدارة الفريق',    roles: ['MANAGER', 'SUPER_ADMIN'] },
-  { path: '/manager/team-attendance', icon: UserCheck, label: 'دوام الفريق اليوم', roles: ['MANAGER', 'SUPER_ADMIN'] },
-  { path: '/hr',        icon: ShieldCheck,     label: 'الموارد البشرية',  roles: ['HR', 'SUPER_ADMIN'] },
-  { path: '/admin',     icon: Settings,        label: 'مدير النظام',     roles: ['ADMIN', 'SUPER_ADMIN'] },
-  { path: '/admin/devices', icon: Server,      label: 'أجهزة NFC',       roles: ['ADMIN', 'SUPER_ADMIN'] },
-  { path: '/clock',     icon: CreditCard,      label: 'جهاز البصمة' },
-  { path: '/attendance', icon: Clock,           label: 'سجل حضوري' },
-  { path: '/inbox',     icon: Bell,            label: 'صندوق الرسائل' },
+  { path: '/dashboard', icon: LayoutDashboard, label: 'sidebar.dashboard',     roles: ['EMPLOYEE', 'PAYROLL', 'SUPER_ADMIN'] },
+  { path: '/payroll',   icon: LayoutDashboard, label: 'sidebar.payrollDashboard',     roles: ['PAYROLL', 'SUPER_ADMIN'] },
+  { path: '/ceo',       icon: BriefcaseBusiness, label: 'sidebar.ceoDashboard', roles: ['ADMIN', 'SUPER_ADMIN'] },
+  { path: '/leave-calendar', icon: Calendar,    label: 'sidebar.leaveCalendar',   roles: ['HR', 'MANAGER', 'ADMIN', 'PAYROLL', 'SUPER_ADMIN', 'EMPLOYEE'] },
+  { path: '/users',     icon: Users,           label: 'sidebar.userManagement',  roles: ['HR', 'ADMIN', 'SUPER_ADMIN'] },
+  { path: '/departments', icon: Building2,     label: 'sidebar.departmentManagement',    roles: ['HR', 'ADMIN', 'SUPER_ADMIN'] },
+
+  { path: '/manager',   icon: Users,           label: 'sidebar.teamManagement',    roles: ['MANAGER', 'SUPER_ADMIN'] },
+  { path: '/manager/team-attendance', icon: UserCheck, label: 'sidebar.teamAttendance', roles: ['MANAGER', 'SUPER_ADMIN'] },
+  { path: '/hr',        icon: ShieldCheck,     label: 'sidebar.hrManagement',  roles: ['HR', 'SUPER_ADMIN'] },
+  { path: '/admin',     icon: Settings,        label: 'sidebar.adminManagement',     roles: ['ADMIN', 'SUPER_ADMIN'] },
+  { path: '/admin/devices', icon: Server,      label: 'sidebar.nfcDevices',       roles: ['ADMIN', 'SUPER_ADMIN'] },
+  { path: '/clock',     icon: CreditCard,      label: 'sidebar.clockDevice' },
+  { path: '/attendance', icon: Clock,           label: 'sidebar.attendanceLog' },
+  { path: '/inbox',     icon: Bell,            label: 'sidebar.inbox' },
 ];
 
 const Sidebar = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [me, setMe] = useState<EmployeeProfile | null>(null);
 
@@ -91,7 +92,7 @@ const Sidebar = () => {
           <div className="bg-luxury-primary p-2 rounded-lg shadow-[0_0_15px_rgba(106,13,173,0.4)]">
             <ShieldCheck size={24} className="text-white" />
           </div>
-          <span className="font-bold text-xl tracking-tight text-white">نظام الموارد</span>
+          <span className="font-bold text-xl tracking-tight text-white">{t('sidebar.systemName')}</span>
         </div>
         <NavLink to="/inbox" className="p-2 rounded-lg hover:bg-white/10 transition-all">
           <NotificationBadge />
@@ -114,7 +115,7 @@ const Sidebar = () => {
             `}
           >
             <item.icon size={20} />
-            <span>{item.label}</span>
+            <span>{t(item.label)}</span>
           </NavLink>
         ))}
       </nav>
@@ -126,9 +127,9 @@ const Sidebar = () => {
               {initials}
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-semibold truncate text-white">{me?.fullName ?? 'جاري التحميل…'}</p>
+              <p className="text-sm font-semibold truncate text-white">{me?.fullName ?? t('sidebar.loading')}</p>
               <p className="text-xs text-white/40 truncate">
-                {superAdmin ? '🔑 Super Admin' : (me?.roleName ?? '—')}
+                {superAdmin ? t('sidebar.superAdmin') : (me?.roleName ?? '—')}
               </p>
             </div>
           </div>
@@ -137,7 +138,7 @@ const Sidebar = () => {
             onClick={handleLogout}
             className="flex items-center gap-2 text-xs text-red-400/80 hover:text-red-400 transition-colors w-full justify-start mt-1 py-1.5 px-2 rounded-lg hover:bg-red-500/10"
           >
-            <LogOut size={14} /> تسجيل الخروج
+            <LogOut size={14} /> {t('sidebar.logout')}
           </button>
         </div>
       </div>

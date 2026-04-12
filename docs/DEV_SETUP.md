@@ -35,7 +35,7 @@ CREATE DATABASE hrms_db;
 ```
 Then run the schema:
 ```cmd
-psql -U postgres -d hrms_db -f database\schema.sql
+psql -U postgres -d hrms_db -f database\master_schema_v1.sql
 ```
 
 ### Fedora/Linux
@@ -47,7 +47,7 @@ sudo systemctl enable --now postgresql
 sudo -u postgres psql -c "CREATE DATABASE hrms_db;"
 sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD 'admin123';"
 
-psql -U postgres -d hrms_db -f database/schema.sql
+psql -U postgres -d hrms_db -f database/master_schema_v1.sql
 ```
 
 ### Seed Test Data (both platforms)
@@ -55,12 +55,12 @@ After the schema, load the test users:
 
 **Windows:**
 ```cmd
-psql -U postgres -d hrms_db -f database\seed_test_data.sql
+psql -U postgres -d hrms_db -f database\master_seed_v1.sql
 ```
 
 **Fedora/Linux:**
 ```bash
-psql -U postgres -d hrms_db -f database/seed_test_data.sql
+psql -U postgres -d hrms_db -f database/master_seed_v1.sql
 ```
 
 ---

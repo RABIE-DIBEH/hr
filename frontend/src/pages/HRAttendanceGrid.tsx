@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
@@ -26,6 +27,7 @@ import { extractApiError } from '../utils/errorHandler';
 import { getPayrollStatusMeta, getReviewStatusMeta } from '../components/attendanceStatus';
 
 const HRAttendanceGrid = () => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [selectedRecord, setSelectedRecord] = useState<AttendanceRecord | null>(null);
   const [correctionCheckIn, setCorrectionCheckIn] = useState('');
@@ -92,8 +94,8 @@ const HRAttendanceGrid = () => {
   const records = recordsData?.items ?? [];
   const totalPages = recordsData?.totalPages ?? 0;
   const totalCount = recordsData?.totalCount ?? 0;
-  const loadError = employeesError ? 'تعذر تحميل البيانات المركزية للحضور. تأكد من صلاحيات HR.' :
-                    recordsError ? 'تعذر تحميل سجلات الحضور. تأكد من صلاحيات HR.' : null;
+  const loadError = employeesError ? t('attendanceGrid.loadError.employees') :
+                    recordsError ? t('attendanceGrid.loadError.records') : null;
 
   // Loading state derived from queries
   
@@ -128,7 +130,7 @@ const HRAttendanceGrid = () => {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Download failed', error);
-      alert('فشل تحميل التقرير. يرجى المحاولة مرة أخرى.');
+      alert(t('attendanceGrid.downloadFailed'));
     } finally {
       setIsDownloading(false);
     }
@@ -184,14 +186,14 @@ const HRAttendanceGrid = () => {
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'present': return 'حضور';
-      case 'absent': return 'غياب';
-      case 'fraud': return 'مخالفة';
-      case 'suspicious': return 'نشاط مشبوه';
-      case 'late-or-incomplete': return 'نقص ساعات';
-      case 'weekend': return 'عطلة';
-      case 'neutral': return '—';
-      default: return '—';
+      case 'present': return t('attendanceGrid.statusLabels.present');
+      case 'absent': return t('attendanceGrid.statusLabels.absent');
+      case 'fraud': return t('attendanceGrid.statusLabels.fraud');
+      case 'suspicious': return t('attendanceGrid.statusLabels.suspicious');
+      case 'late-or-incomplete': return t('attendanceGrid.statusLabels.lateOrIncomplete');
+      case 'weekend': return t('attendanceGrid.statusLabels.weekend');
+      case 'neutral': return t('attendanceGrid.statusLabels.neutral');
+      default: return t('attendanceGrid.statusLabels.neutral');
     }
   };
 
@@ -235,7 +237,7 @@ const HRAttendanceGrid = () => {
       return;
     }
     if (!correctionReason.trim()) {
-      setCorrectionFeedback('سبب التصحيح مطلوب.');
+      setCorrectionFeedback(t('attendanceGrid.correctionReasonRequired'));
       return;
     }
 
@@ -252,13 +254,13 @@ const HRAttendanceGrid = () => {
   return (
     <div className="w-full">
       <header className="mb-10 flex justify-between items-center bg-luxury-surface p-6 rounded-3xl border border-white/5">
-        <div>
-          <h1 className="text-3xl font-black text-white tracking-tight arabic-text flex items-center gap-3">
-            <Calendar className="text-blue-500" size={32} />
-            شاشة الحضور والانصراف المركزية
-          </h1>
-          <p className="text-slate-400 mt-2">عرض جدولي يضم جميع الموظفين وسجلات حضورهم</p>
-        </div>
+                  <div>
+            <h1 className="text-3xl font-black text-white tracking-tight arabic-text flex items-center gap-3">
+              <Calendar className="text-blue-500" size={32} />
+              {t('attendanceGrid.title')}
+            </h1>
+            <p className="text-slate-400 mt-2">{t('attendanceGrid.subtitle')}</p>
+          </div>
         <div className="flex gap-4 items-center">
           <div className="flex items-center gap-4 bg-white/5 px-6 py-3 rounded-xl">
             <button onClick={handlePrevMonth} className="hover:text-blue-400 transition-colors">
@@ -282,7 +284,7 @@ const HRAttendanceGrid = () => {
               className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-blue-500/20 transition-all"
             >
               <FileText size={18} />
-              {isDownloading ? 'جارٍ التحميل...' : 'تصدير PDF'}
+              {isDownloading ? t('attendanceGrid.downloading') : t('attendanceGrid.exportPdf')}
             </button>
             <button 
               onClick={() => handleDownloadAttendance('excel')}
@@ -290,7 +292,7 @@ const HRAttendanceGrid = () => {
               className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-800 text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition-all"
             >
               <FileSpreadsheet size={18} />
-              {isDownloading ? 'جارٍ التحميل...' : 'تصدير Excel'}
+              {isDownloading ? t('attendanceGrid.downloading') : t('attendanceGrid.exportExcel')}
             </button>
           </div>
         </div>
@@ -303,11 +305,11 @@ const HRAttendanceGrid = () => {
       )}
 
       <div className="flex gap-4 mb-6">
-        <span className="flex items-center gap-2 text-xs font-bold text-slate-400"><div className="w-3 h-3 rounded bg-green-500/80"></div> حضور كامل</span>
-        <span className="flex items-center gap-2 text-xs font-bold text-slate-400"><div className="w-3 h-3 rounded bg-red-500/80"></div> غياب</span>
-        <span className="flex items-center gap-2 text-xs font-bold text-slate-400"><div className="w-3 h-3 rounded bg-yellow-500/80"></div> نقص بساعات العمل</span>
-        <span className="flex items-center gap-2 text-xs font-bold text-slate-400"><div className="w-3 h-3 rounded bg-purple-500/80"></div> نشاط مشبوه (تحذير تلقائي)</span>
-        <span className="flex items-center gap-2 text-xs font-bold text-slate-400"><div className="w-3 h-3 rounded bg-orange-500/80"></div> مخالفة / احتيال</span>
+        <span className="flex items-center gap-2 text-xs font-bold text-slate-400"><div className="w-3 h-3 rounded bg-green-500/80"></div> {t('attendanceGrid.legend.present')}</span>
+        <span className="flex items-center gap-2 text-xs font-bold text-slate-400"><div className="w-3 h-3 rounded bg-red-500/80"></div> {t('attendanceGrid.legend.absent')}</span>
+        <span className="flex items-center gap-2 text-xs font-bold text-slate-400"><div className="w-3 h-3 rounded bg-yellow-500/80"></div> {t('attendanceGrid.legend.lateOrIncomplete')}</span>
+        <span className="flex items-center gap-2 text-xs font-bold text-slate-400"><div className="w-3 h-3 rounded bg-purple-500/80"></div> {t('attendanceGrid.legend.suspicious')}</span>
+        <span className="flex items-center gap-2 text-xs font-bold text-slate-400"><div className="w-3 h-3 rounded bg-orange-500/80"></div> {t('attendanceGrid.legend.fraud')}</span>
       </div>
 
       <motion.div
@@ -321,7 +323,7 @@ const HRAttendanceGrid = () => {
               <tr>
                 <th className="p-4 text-right sticky right-0 bg-[#0f0a1a] z-30 shadow-[inset_-1px_0_0_rgba(255,255,255,0.05)] w-48 min-w-[180px]">
                   <div className="flex items-center gap-2 text-slate-300 font-bold">
-                    <Users size={14} /> اسم الموظف
+                    <Users size={14} /> {t('attendanceGrid.employeeName')}
                   </div>
                 </th>
                 {daysArray.map((day) => (
@@ -343,7 +345,7 @@ const HRAttendanceGrid = () => {
                     return (
                       <td key={day} className="p-0.5 border-l border-white/5">
                         <div 
-                          title={`${emp.fullName} - اليوم ${day} - ${getStatusLabel(status)}`}
+                          title={`${emp.fullName} - ${t('attendanceGrid.day')} ${day} - ${getStatusLabel(status)}`}
                           className={`w-full h-7 rounded flex items-center justify-center cursor-default transition-all hover:brightness-125 border ${colorClass}`}
                         >
                           {status === 'neutral' ? '-' : ''}
@@ -356,7 +358,7 @@ const HRAttendanceGrid = () => {
             </tbody>
           </table>
           {employees.length === 0 && !loadError && (
-             <div className="p-12 text-center text-slate-500">لا يوجد موظفين مسجلين حالياً.</div>
+             <div className="p-12 text-center text-slate-500">{t('attendanceGrid.noEmployees')}</div>
           )}
         </div>
       </motion.div>
@@ -370,29 +372,29 @@ const HRAttendanceGrid = () => {
       <section className="mt-8 overflow-hidden rounded-3xl border border-white/5 bg-luxury-surface">
         <div className="flex items-center justify-between border-b border-white/5 p-6">
           <div>
-            <h2 className="text-xl font-bold text-white">سجلات الشهر الحالية</h2>
+            <h2 className="text-xl font-bold text-white">{t('attendanceGrid.currentMonthRecords')}</h2>
             <p className="mt-1 text-sm text-slate-400">
-              تعرض هذه القائمة حالة المراجعة والرواتب بشكل صريح مع إمكانية التصحيح اليدوي.
+              {t('attendanceGrid.recordsDescription')}
             </p>
           </div>
           <div className="rounded-2xl bg-white/5 px-4 py-3 text-xs font-bold text-slate-300">
-            {totalCount} سجل في الصفحة الحالية
+            {t('attendanceGrid.recordsCount', { count: totalCount })}
           </div>
         </div>
 
         {records.length === 0 ? (
-          <div className="p-10 text-center text-slate-500">لا توجد سجلات حضور لهذا الشهر.</div>
+          <div className="p-10 text-center text-slate-500">{t('attendanceGrid.noRecords')}</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-right">
               <thead className="bg-white/5 text-[11px] font-black uppercase tracking-[0.15em] text-slate-400">
                 <tr>
-                  <th className="p-5">الموظف</th>
-                  <th className="p-5">التاريخ</th>
-                  <th className="p-5">الحضور</th>
-                  <th className="p-5">المراجعة</th>
-                  <th className="p-5">الرواتب</th>
-                  <th className="p-5">الإجراء</th>
+                  <th className="p-5">{t('attendanceGrid.tableHeaders.employee')}</th>
+                  <th className="p-5">{t('attendanceGrid.tableHeaders.date')}</th>
+                  <th className="p-5">{t('attendanceGrid.tableHeaders.attendance')}</th>
+                  <th className="p-5">{t('attendanceGrid.tableHeaders.review')}</th>
+                  <th className="p-5">{t('attendanceGrid.tableHeaders.payroll')}</th>
+                  <th className="p-5">{t('attendanceGrid.tableHeaders.action')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -416,10 +418,10 @@ const HRAttendanceGrid = () => {
                       <td className="p-5 text-sm text-slate-300">
                         <div>{new Date(record.checkIn).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}</div>
                         <div className="mt-1 text-xs text-slate-500">
-                          خروج: {record.checkOut ? new Date(record.checkOut).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }) : '—'}
+                          {t('attendanceGrid.checkOut')}: {record.checkOut ? new Date(record.checkOut).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }) : '—'}
                         </div>
                         <div className="mt-1 text-xs text-slate-500">
-                          الساعات: {record.workHours ?? '—'}
+                          {t('attendanceGrid.hours')}: {record.workHours ?? '—'}
                         </div>
                       </td>
                       <td className="p-5">
@@ -439,11 +441,11 @@ const HRAttendanceGrid = () => {
                           className="inline-flex items-center gap-2 rounded-xl border border-sky-500/20 bg-sky-500/10 px-4 py-2 text-sm font-bold text-sky-300 transition-all hover:bg-sky-500/20"
                         >
                           <PencilLine size={16} />
-                          تصحيح يدوي
+                          {t('attendanceGrid.manualCorrection')}
                         </button>
                         {record.manualAdjustmentReason && (
                           <p className="mt-2 max-w-xs text-xs text-slate-500">
-                            السبب الأخير: {record.manualAdjustmentReason}
+                            {t('attendanceGrid.lastReason')}: {record.manualAdjustmentReason}
                           </p>
                         )}
                       </td>
@@ -461,9 +463,9 @@ const HRAttendanceGrid = () => {
           <div className="w-full max-w-2xl rounded-[2rem] border border-white/10 bg-[#110d18] p-8 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-black text-white">تصحيح سجل حضور</h2>
+                <h2 className="text-2xl font-black text-white">{t('attendanceGrid.correctionModal.title')}</h2>
                 <p className="mt-2 text-sm text-slate-400">
-                  {selectedRecord.employeeName} • سجل رقم {selectedRecord.recordId}
+                  {selectedRecord.employeeName} • {t('attendanceGrid.correctionModal.recordId', { id: selectedRecord.recordId })}
                 </p>
               </div>
               <button
@@ -478,7 +480,7 @@ const HRAttendanceGrid = () => {
 
             <div className="mt-6 grid gap-5 md:grid-cols-2">
               <label className="block">
-                <span className="mb-2 block text-sm font-bold text-slate-300">وقت الدخول</span>
+                <span className="mb-2 block text-sm font-bold text-slate-300">{t('attendanceGrid.correctionModal.checkInTime')}</span>
                 <input
                   type="datetime-local"
                   value={correctionCheckIn}
@@ -487,7 +489,7 @@ const HRAttendanceGrid = () => {
                 />
               </label>
               <label className="block">
-                <span className="mb-2 block text-sm font-bold text-slate-300">وقت الخروج</span>
+                <span className="mb-2 block text-sm font-bold text-slate-300">{t('attendanceGrid.correctionModal.checkOutTime')}</span>
                 <input
                   type="datetime-local"
                   value={correctionCheckOut}
@@ -498,13 +500,13 @@ const HRAttendanceGrid = () => {
             </div>
 
             <label className="mt-5 block">
-              <span className="mb-2 block text-sm font-bold text-slate-300">سبب التصحيح</span>
+              <span className="mb-2 block text-sm font-bold text-slate-300">{t('attendanceGrid.correctionModal.reason')}</span>
               <textarea
                 value={correctionReason}
                 onChange={(event) => setCorrectionReason(event.target.value)}
                 rows={4}
                 className="w-full resize-none rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition-all focus:border-sky-500/50"
-                placeholder="مثال: نسي الموظف تسجيل الخروج وتمت المراجعة مع المشرف"
+                placeholder={t('attendanceGrid.correctionModal.reasonPlaceholder')}
               />
             </label>
 
@@ -517,7 +519,7 @@ const HRAttendanceGrid = () => {
               />
               <span className="flex items-center gap-2">
                 <ShieldCheck size={16} className="text-sky-300" />
-                اعتماد السجل مباشرة للرواتب
+                {t('attendanceGrid.correctionModal.approveForPayroll')}
               </span>
             </label>
 
@@ -534,7 +536,7 @@ const HRAttendanceGrid = () => {
                 disabled={correctionMutation.isPending}
                 className="rounded-2xl border border-white/10 px-5 py-3 text-sm font-bold text-slate-300 transition-all hover:bg-white/5 disabled:opacity-50"
               >
-                إلغاء
+                {t('common.cancel')}
               </button>
               <button
                 type="button"
@@ -542,7 +544,7 @@ const HRAttendanceGrid = () => {
                 disabled={correctionMutation.isPending}
                 className="rounded-2xl bg-sky-600 px-5 py-3 text-sm font-bold text-white transition-all hover:bg-sky-700 disabled:opacity-50"
               >
-                {correctionMutation.isPending ? 'جارٍ الحفظ...' : 'حفظ التصحيح'}
+                {correctionMutation.isPending ? t('attendanceGrid.correctionModal.saving') : t('attendanceGrid.correctionModal.saveCorrection')}
               </button>
             </div>
           </div>

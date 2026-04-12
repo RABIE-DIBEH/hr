@@ -1,6 +1,6 @@
 # AGENTS.md - HRMS Project Guidelines
 
-**Last Updated**: April 2026 | **Status**: Active project guidance, partially updated
+**Last Updated**: April 2026 | **Status**: Active project guidance, updated with Phase 9.5 migrations
 
 ## Project Overview
 Human Resources Management System (HRMS) with NFC-based attendance tracking and multi-role dashboard system.
@@ -8,20 +8,16 @@ Human Resources Management System (HRMS) with NFC-based attendance tracking and 
 - **Frontend**: React 19, TypeScript, Vite, Tailwind CSS v4
 - **Mobile**: Flutter (planned, minimal scaffolding)
 - **Authentication**: JWT + Spring Security with role-based access control
-- **Database**: PostgreSQL with JPA/Hibernate ORM
+- **Database**: PostgreSQL (Master Schema v1 consolidated)
 
 ## Directory Structure
 ```
 backend/src/main/java/com/hrms/
-├── api/                    # Controllers + SecurityConfig
-├── core/models/             # JPA entities
+├── api/                    # Controllers, SecurityConfig, GlobalExceptionHandler
+├── api/dto/                # Request/Response DTOs (ErrorResponse, ApiResponse, etc.)
+├── core/models/            # JPA entities
 ├── core/repositories/      # Spring Data JPA interfaces
 └── services/               # Business logic
-
-frontend/src/
-├── components/             # Reusable UI (Sidebar, BottomNav)
-├── pages/                  # Route-level page components
-└── services/api.ts         # Axios instance + API functions
 ```
 
 ## Build / Lint / Test Commands
@@ -29,7 +25,7 @@ frontend/src/
 ### Backend (run from `backend/`)
 ```bash
 mvn clean compile           # Compile Java sources
-mvn spring-boot:run        # Start dev server (port 8080)
+mvn spring-boot:run        # Start dev server (port 8080/8082)
 mvn clean package            # Build JAR
 mvn test                    # Run backend tests
 mvn test -Dtest=ClassName   # Run single test class
@@ -97,18 +93,15 @@ public class AuthController {
 - Example: `Employee.java` has `managerId` (FK), `teamId` (FK), `departmentId` (FK)
 
 **Error Handling**
-- ✅ **Already implemented**: `GlobalExceptionHandler.java` with `@ControllerAdvice` handles:
-  - `ValidationException` → 400 with field errors
-  - `ResponseStatusException` → explicit HTTP status from service logic
-  - `AccessDeniedException` → 403 (security check failures)
-- **Current gap**: Inconsistent response formats (some controllers return `Map<String, Object>`, others use DTOs)
-- **Roadmap**: Create standardized `ApiResponse<T>` wrapper for all endpoints (see below)
+- ✅ **Standardized Error Responses**: All API errors return machine-readable JSON format via `ErrorResponse.java`.
+- ✅ **Domain Exceptions**: Use `BusinessException` with `ErrorCode` (e.g., `ErrorCode.ADVANCE_NOT_FOUND`).
+- ✅ **GlobalExceptionHandler.java**: Handles `BusinessException`, `MethodArgumentNotValidException`, `AccessDeniedException`, and generic `Exception`.
+- Format: `{ "status": 404, "message": "...", "error": "DOMAIN_CODE", "timestamp": "..." }`
+- **Roadmap**: Continue standardizing success responses to use `ApiResponse<T>` wrapper.
 
 **Validation**
-- ✅ **Already in place**: `@Valid` + Bean Validation annotations on DTOs (`@NotBlank`, `@NotNull`, `@Email`)
-- Examples: `LoginRequest.java`, `LeaveRequestDto.java`, `NfcClockRequest.java`
-- **Current gap**: Some endpoints (RecruitmentRequest, AdvanceRequest) still accept `Map<String, Object>` instead of DTOs
-- **Roadmap**: Migrate all Map-based requests to typed DTOs
+- ✅ **Bean Validation**: Use `@Valid` + `@NotBlank`, `@NotNull`, `@Email` on DTOs.
+- ✅ **DTO Migration**: RecruitmentRequest, AdvanceRequest, Inbox, and Nfc Card endpoints migrated to typed DTOs.
 
 **Security & Authentication**
 - ✅ JWT filter implemented: `JwtAuthenticationFilter.java` (OncePerRequestFilter)
@@ -127,6 +120,8 @@ These patterns are **actively used and verified** across the codebase. Reference
 | Pattern | Example File | Key Lines |
 |---------|--------------|-----------|
 | **DTO with Validation** | `LoginRequest.java` | Uses records with `@Email`, `@NotBlank` annotations |
+| **Error Response** | `ErrorResponse.java` | Standard record for all API errors |
+| **Domain Exceptions** | `ErrorCode.java` | Centralized enum with HTTP statuses |
 | **Service Layer** | `AuthService.java` | Shows @Transactional, password upgrade, BCrypt usage |
 | **Controllers** | `EmployeeController.java` | Response DTOs, role checks, clean response structure |
 | **Exception Handling** | `GlobalExceptionHandler.java` | @ControllerAdvice catches and formats errors |
@@ -213,7 +208,7 @@ These patterns are **actively used and verified** across the codebase. Reference
 1. Use DTOs for request/response bodies (see `LoginRequest.java` pattern)
 2. Apply `@Valid` on `@RequestBody` parameter
 3. Return `ResponseEntity<DTO>` with explicit status codes
-4. For errors, throw `ResponseStatusException` (GlobalExceptionHandler catches it)
+4. Throw `BusinessException(ErrorCode.X)` for domain errors (GlobalExceptionHandler catches it)
 5. Inject dependencies via constructor with `final` fields
 
 **When writing a new service:**
@@ -265,7 +260,7 @@ These patterns are **actively used and verified** across the codebase. Reference
 
 ### Response Format Strategy (Under Development)
 
-Currently inconsistent—some endpoints return `Map<String, Object>`, others use DTOs. **Roadmap: standardize all responses to use:**
+Currently standardized for errors via `ErrorResponse.java`. **Roadmap: standardize success responses to use:**
 ```java
 record ApiResponse<T>(
     int status,
@@ -292,24 +287,24 @@ record PaginatedResponse<T>(List<T> items, int total, int page, int pageSize) {}
 
 | Category | Issue | Severity | Affected Files | Recommended Fix |
 |----------|-------|----------|-----------------|-----------------|
-| **Request Format** | Some legacy notes are outdated; current recruitment and advance endpoints use DTOs | 🟡 | Review docs before assuming gaps | Keep docs aligned with code |
-| **Response Format** | Mixed return types (Map vs DTO vs Entity) | 🔴 | Various controllers | Standardize to ApiResponse<T> wrapper |
+| **Request Format** | Some legacy notes were outdated; migration to typed DTOs complete | 🟡 | Controllers | Migration confirmed |
+| **Response Format** | Standardized for errors; roadmap for success responses | 🔴 | Various controllers | Standardize to ApiResponse<T> wrapper |
 | **Pagination** | No pagination on list endpoints | 🟡 | All `/api/**` list endpoints | Add PageRequest/PageResponse pattern |
-| **Logging** | Some legacy notes mention `System.out.println`, but AuthService/DataInitializer are already on SLF4J | 🟡 | Review remaining services opportunistically | Keep logging consistent |
+| **Logging** | Legacy notes mention System.out.println; project uses SLF4J | 🟡 | Services | Keep SLF4J consistency |
 | **Data Fetching** | No React Query/SWR (potential duplicate requests) | 🟡 | api.ts | Consider adding React Query |
-| **Secrets** | Secrets must now be supplied via env or local `.env` | 🟡 | `backend/.env` local only | Keep `.env` out of git |
-| **Endpoint Security** | Legacy note was outdated; role-based guards are already configured | 🟡 | SecurityConfig.java | Add coverage tests when changing rules |
+| **Secrets** | Secrets supplied via env or local `.env` | 🟡 | `backend/.env` local only | Keep `.env` out of git |
+| **Endpoint Security** | Role-based guards and GlobalExceptionHandler in place | 🟡 | SecurityConfig.java | Validated in Phase 9.5 |
 | **Form Validation Sync** | Rules duplicated frontend/backend | 🟡 | LeaveRequestForm, etc. | Document sync strategy |
 | **Error Boundaries** | No error boundaries on all pages | 🟡 | Dashboard pages | Wrap pages in ErrorBoundary |
 
 ## Backend
 - ✅ Constructor injection consistently applied
-- ✅ DTOs + @Valid pattern in place (LoginRequest exemplar)
-- ✅ GlobalExceptionHandler working
-- ✅ JWT authentication functional
+- ✅ DTOs + @Valid pattern in place
+- ✅ GlobalExceptionHandler + ErrorResponse working
+- ✅ JWT authentication + Role-based access functional
 - ✅ @Transactional on write operations
-- ⚠️ Some endpoints bypass DTOs (Map-based requests need fixing)
-- ⚠️ Responses not standardized
+- ✅ BusinessException + ErrorCode migration complete
+- ✅ Master Schema v1 consolidated
 
 ## Frontend
 - ✅ Strict TypeScript enabled
@@ -330,7 +325,9 @@ record PaginatedResponse<T>(List<T> items, int total, int page, int pageSize) {}
 ## Future Improvements (Roadmap)
 1. ✅ **Done**: GlobalExceptionHandler, JWT auth, `@Valid` validation, constructor injection pattern
 2. ✅ **Done**: secrets moved to env-backed config and endpoint security enforced
-3. ⚠️ **In Progress**: standardize response DTOs and remaining pagination consistency
-4. 📋 **Medium Priority**: expand backend tests and add frontend test tooling
-5. 📋 **Medium Priority**: implement React Query/SWR for data fetching, add centralized form error handler
-6. 🎯 **Future**: DB migrations (Liquibase/Flyway), request/response logging, type-safe validation sharing
+3. ✅ **Done**: Standardized error responses and BusinessException migration
+4. ✅ **Done**: Master schema consolidation and idempotent seed data
+5. ⚠️ **In Progress**: standardize success responses using ApiResponse consistency
+6. 📋 **Medium Priority**: expand backend tests and add frontend test tooling
+7. 📋 **Medium Priority**: implement React Query/SWR for data fetching, add centralized form error handler
+8. 🎯 **Future**: DB migrations (Liquibase/Flyway), request/response logging, type-safe validation sharing

@@ -1,6 +1,8 @@
 package com.hrms.api;
 
 import com.hrms.api.dto.*;
+import com.hrms.api.exception.BusinessException;
+import com.hrms.api.exception.ErrorCode;
 import com.hrms.core.models.AdvanceRequest;
 import com.hrms.core.models.Employee;
 import com.hrms.core.repositories.EmployeeRepository;
@@ -14,7 +16,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -56,7 +57,7 @@ public class AdvanceRequestController {
                     )
             );
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+            throw new BusinessException(ErrorCode.ADVANCE_INVALID_STATE, e.getMessage());
         }
     }
 
@@ -72,7 +73,7 @@ public class AdvanceRequestController {
             @PageableDefault(size = 20) Pageable pageable) {
         
         if (!hasAnyRole(principal, "MANAGER", "PAYROLL", "SUPER_ADMIN")) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+            throw new BusinessException(ErrorCode.FORBIDDEN_OPERATION, "Access denied");
         }
 
         Page<AdvanceRequest> page = advanceRequestService.getPendingRequestsForRole(principal.getRoleName(), pageable);
@@ -117,7 +118,7 @@ public class AdvanceRequestController {
             @PageableDefault(size = 20) Pageable pageable) {
         
         if (!hasAnyRole(principal, "HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+            throw new BusinessException(ErrorCode.FORBIDDEN_OPERATION, "Access denied");
         }
 
         Page<AdvanceRequest> page;
@@ -149,7 +150,7 @@ public class AdvanceRequestController {
                                             @Valid @RequestBody ProcessAdvanceRequestDto dto,
                                             @AuthenticationPrincipal EmployeeUserDetails principal) {
         if (!hasAnyRole(principal, "MANAGER", "PAYROLL", "SUPER_ADMIN")) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+            throw new BusinessException(ErrorCode.FORBIDDEN_OPERATION, "Access denied");
         }
 
         try {
@@ -166,9 +167,9 @@ public class AdvanceRequestController {
                     "Advance request processed successfully"
             ));
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+            throw new BusinessException(ErrorCode.ADVANCE_NOT_FOUND, e.getMessage());
         } catch (IllegalStateException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+            throw new BusinessException(ErrorCode.ADVANCE_INVALID_STATE, e.getMessage());
         }
     }
 
@@ -180,7 +181,7 @@ public class AdvanceRequestController {
     public ResponseEntity<ApiResponse<AdvanceDeliveryResponseDto>> deliverRequest(@PathVariable Long advanceId,
                                             @AuthenticationPrincipal EmployeeUserDetails principal) {
         if (!hasAnyRole(principal, "PAYROLL", "SUPER_ADMIN")) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+            throw new BusinessException(ErrorCode.FORBIDDEN_OPERATION, "Access denied");
         }
 
         try {
@@ -193,9 +194,9 @@ public class AdvanceRequestController {
                     "Advance request marked as delivered successfully"
             ));
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+            throw new BusinessException(ErrorCode.ADVANCE_NOT_FOUND, e.getMessage());
         } catch (IllegalStateException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+            throw new BusinessException(ErrorCode.ADVANCE_INVALID_STATE, e.getMessage());
         }
     }
 
@@ -208,7 +209,7 @@ public class AdvanceRequestController {
             @AuthenticationPrincipal EmployeeUserDetails principal,
             @PageableDefault(size = 20) Pageable pageable) {
         if (!hasAnyRole(principal, "PAYROLL", "SUPER_ADMIN")) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+            throw new BusinessException(ErrorCode.FORBIDDEN_OPERATION, "Access denied");
         }
 
         Page<AdvanceRequest> page = advanceRequestService.getApprovedAwaitingDelivery(pageable);
@@ -233,7 +234,7 @@ public class AdvanceRequestController {
             @AuthenticationPrincipal EmployeeUserDetails principal,
             @PageableDefault(size = 20) Pageable pageable) {
         if (!hasAnyRole(principal, "PAYROLL", "SUPER_ADMIN")) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+            throw new BusinessException(ErrorCode.FORBIDDEN_OPERATION, "Access denied");
         }
 
         Page<AdvanceRequest> page = advanceRequestService.getDeliveredForSalaryMonthYear(month, year, pageable);
@@ -257,7 +258,7 @@ public class AdvanceRequestController {
             @RequestParam int year,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
         if (!hasAnyRole(principal, "PAYROLL", "SUPER_ADMIN")) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+            throw new BusinessException(ErrorCode.FORBIDDEN_OPERATION, "Access denied");
         }
 
         int deliveredCount = advanceRequestService.deliverAllApprovedAwaitingDelivery(month, year, principal.getEmployeeId());
@@ -277,7 +278,7 @@ public class AdvanceRequestController {
             @RequestParam int year,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
         if (!hasAnyRole(principal, "PAYROLL", "SUPER_ADMIN")) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+            throw new BusinessException(ErrorCode.FORBIDDEN_OPERATION, "Access denied");
         }
 
         List<AdvanceRequest> approved = advanceRequestService.getApprovedAwaitingDeliveryForMonth(month, year);
@@ -313,7 +314,7 @@ public class AdvanceRequestController {
         
         Optional<AdvanceRequest> optional = advanceRequestService.getRequestById(advanceId);
         if (optional.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Advance request not found");
+            throw new BusinessException(ErrorCode.ADVANCE_NOT_FOUND, "Advance request not found");
         }
 
         AdvanceRequest request = optional.get();
@@ -321,7 +322,7 @@ public class AdvanceRequestController {
         // Check access: requester can view, or HR/ADMIN can view all
         if (!request.getEmployeeId().equals(principal.getEmployeeId()) 
                 && !hasAnyRole(principal, "HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+            throw new BusinessException(ErrorCode.FORBIDDEN_OPERATION, "Access denied");
         }
 
         return ResponseEntity.ok(ApiResponse.success(toResponse(request), "Advance request retrieved successfully"));

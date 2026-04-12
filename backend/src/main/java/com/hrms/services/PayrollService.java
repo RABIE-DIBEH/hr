@@ -1,13 +1,15 @@
 package com.hrms.services;
 
 import com.hrms.api.dto.PayrollBulkResult;
+import com.hrms.api.exception.BusinessException;
+import com.hrms.api.exception.ErrorCode;
 import com.hrms.core.models.AttendanceRecord;
 import com.hrms.core.models.Employee;
 import com.hrms.core.models.Payroll;
 import com.hrms.core.repositories.AttendanceRecordRepository;
 import com.hrms.core.repositories.EmployeeRepository;
 import com.hrms.core.repositories.PayrollRepository;
-import com.hrms.services.AdvanceRequestService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -26,6 +28,9 @@ public class PayrollService {
     private final AdvanceRequestService advanceRequestService;
     private final EmployeeRepository employeeRepository;
 
+    @Value("${app.payroll.locked:false}")
+    private boolean payrollLocked;
+
     public PayrollService(AttendanceRecordRepository attendanceRepository,
                           PayrollRepository payrollRepository,
                           AdvanceRequestService advanceRequestService,
@@ -36,8 +41,24 @@ public class PayrollService {
         this.employeeRepository = employeeRepository;
     }
 
+    public boolean isPayrollLocked() {
+        return payrollLocked;
+    }
+
+    /**
+     * Guard that throws PAYROLL_LOCKED whenever the engine is frozen.
+     * Called at the top of every calculation method.
+     */
+    private void assertPayrollUnlocked() {
+        if (payrollLocked) {
+            throw new BusinessException(ErrorCode.PAYROLL_LOCKED,
+                    "Payroll engine is locked pending formula verification (May 2026). Set app.payroll.locked=false to re-enable.");
+        }
+    }
+
     @Transactional
     public Payroll calculateMonthlyPayroll(Employee employee, int month, int year) {
+        assertPayrollUnlocked();
         List<AttendanceRecord> records = attendanceRepository.findMonthlyRecordsByPayrollStatuses(
                 employee.getEmployeeId(),
                 month,
@@ -112,6 +133,7 @@ public class PayrollService {
      */
     @Transactional
     public PayrollBulkResult calculateAllMonthlyPayroll(int month, int year, String requester) {
+        assertPayrollUnlocked();
         List<Employee> allEmployees = employeeRepository.findAll();
         int successCount = 0;
         int errorCount = 0;
@@ -143,6 +165,7 @@ public class PayrollService {
      */
     @Transactional
     public PayrollBulkResult calculateAllMonthlyPayrollByDepartment(int month, int year, Long departmentId, String requester) {
+        assertPayrollUnlocked();
         List<Employee> deptEmployees = employeeRepository.findByDepartmentIdAndStatus(departmentId, "Active");
         int successCount = 0;
         int errorCount = 0;

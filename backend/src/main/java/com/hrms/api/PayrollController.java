@@ -181,7 +181,14 @@ public class PayrollController {
         BigDecimal total = payrollService.getTotalNetSalaryForMonth(month, year);
         long totalSlips = payrollService.getPayrollCountForMonth(month, year);
         long paidSlips = payrollService.getPaidPayrollCountForMonth(month, year);
-        PayrollMonthlySummaryResponse res = new PayrollMonthlySummaryResponse(month, year, totalSlips, paidSlips, total);
+        PayrollMonthlySummaryResponse res = new PayrollMonthlySummaryResponse(
+                month,
+                year,
+                totalSlips,
+                paidSlips,
+                total,
+                payrollService.isPayrollLocked()
+        );
         return ResponseEntity.ok(ApiResponse.success(res, "Payroll summary retrieved successfully"));
     }
 

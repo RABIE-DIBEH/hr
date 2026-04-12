@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, X, Save, Upload, AlertCircle, Lock, Key } from 'lucide-react';
 import { updateProfileMe, getCurrentEmployee, type EmployeeProfile, type EmployeeProfileUpdatePayload } from '../services/api';
@@ -14,6 +15,7 @@ interface ProfileEditModalProps {
 const EDITABLE_ROLES = ['SUPER_ADMIN', 'ADMIN', 'HR', 'MANAGER'];
 
 const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ me, onClose, onSuccess }) => {
+  const { t } = useTranslation();
   const currentRole = getRole();
   const canEditIdentity = currentRole ? EDITABLE_ROLES.includes(currentRole) : false;
   const [profileForm, setProfileForm] = useState<EmployeeProfileUpdatePayload>({
@@ -39,7 +41,7 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ me, onClose, onSucc
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 1024 * 1024) {
-        setProfileError('حجم الصورة يجب أن لا يتجاوز 1 ميجابايت');
+        setProfileError(t('profileEdit.imageSizeError'));
         return;
       }
       
@@ -67,7 +69,7 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ me, onClose, onSucc
       setTimeout(() => onClose(), 1500);
     } catch (err: unknown) {
       const axiosError = err as { response?: { data?: { message?: string } } };
-      setProfileError(axiosError.response?.data?.message || 'فشل تحديث الملف الشخصي');
+      setProfileError(axiosError.response?.data?.message || t('profileEdit.updateFailed'));
     } finally {
       setProfileSaving(false);
     }
@@ -97,15 +99,15 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ me, onClose, onSucc
               <User size={24} />
             </div>
             <div>
-              <h2 className="text-2xl font-black tracking-tight">تعديل البروفايل</h2>
-              <p className="text-blue-100/70 text-sm">تحديث بياناتك الشخصية وصورتك</p>
+              <h2 className="text-2xl font-black tracking-tight">{t('profileEdit.title')}</h2>
+              <p className="text-blue-100/70 text-sm">{t('profileEdit.subtitle')}</p>
             </div>
           </div>
           <button
             onClick={onClose}
             className="bg-white/10 hover:bg-white/20 p-2 rounded-xl transition-all relative z-10"
           >
-            <X size={20} aria-label="إغلاق" />
+            <X size={20} aria-label={t('common.close')} />
           </button>
         </div>
 
@@ -113,8 +115,8 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ me, onClose, onSucc
         <form onSubmit={handleProfileSubmit} className="p-8 space-y-6">
           <div className="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/10 mb-2">
             <div>
-              <p className="text-white font-bold text-sm">كلمة المرور</p>
-              <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black">أمن الحساب</p>
+              <p className="text-white font-bold text-sm">{t('profileEdit.password')}</p>
+              <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black">{t('profileEdit.accountSecurity')}</p>
             </div>
             <button
               type="button"
@@ -122,7 +124,7 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ me, onClose, onSucc
               className="bg-purple-600/10 hover:bg-purple-600 text-purple-400 hover:text-white px-4 py-2 rounded-xl text-xs font-bold transition-all border border-purple-500/20 flex items-center gap-2"
             >
               <Key size={14} />
-              تغيير كلمة المرور
+              {t('profileEdit.changePassword')}
             </button>
           </div>
 
@@ -143,7 +145,7 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ me, onClose, onSucc
               animate={{ opacity: 1, scale: 1 }}
               className="bg-green-500/10 border border-green-500/20 text-green-400 p-4 rounded-2xl text-sm font-bold flex items-center gap-3"
             >
-              ✓ تم التحديث بنجاح! جاري الإغلاق...
+              {t('profileEdit.updateSuccess')}
             </motion.div>
           )}
 
@@ -163,8 +165,8 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ me, onClose, onSucc
               </label>
             </div>
             <div className="text-center">
-              <p className="text-white font-bold text-sm">الصورة الشخصية</p>
-              <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-widest font-black">PNG, JPG up to 1MB</p>
+              <p className="text-white font-bold text-sm">{t('profileEdit.profilePicture')}</p>
+              <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-widest font-black">{t('profileEdit.imageFormat')}</p>
             </div>
           </div>
 
@@ -172,7 +174,7 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ me, onClose, onSucc
             {/* Full Name */}
             <div className="md:col-span-2">
               <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 px-1">
-                الاسم الكامل <span className="text-red-500">*</span>
+                {t('profileEdit.fullName')} <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <input
@@ -194,7 +196,7 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ me, onClose, onSucc
             {/* Email */}
             <div className="md:col-span-2">
               <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 px-1">
-                البريد الإلكتروني <span className="text-red-500">*</span>
+                {t('profileEdit.email')} <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <input
@@ -216,14 +218,14 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ me, onClose, onSucc
             {/* Mobile Number */}
             <div>
               <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 px-1">
-                رقم الجوال
+                {t('profileEdit.mobileNumber')}
               </label>
               <input
                 type="text"
                 name="mobileNumber"
                 value={profileForm.mobileNumber ?? ''}
                 onChange={handleProfileChange}
-                placeholder="05XXXXXXXX"
+                placeholder={t('profileEdit.mobilePlaceholder')}
                 maxLength={10}
                 className="w-full px-5 py-3.5 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all outline-none font-mono"
               />
@@ -232,7 +234,7 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ me, onClose, onSucc
             {/* National ID */}
             <div>
               <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 px-1">
-                رقم الهوية
+                {t('profileEdit.nationalId')}
               </label>
               <div className="relative">
                 <input
@@ -241,7 +243,7 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ me, onClose, onSucc
                   value={profileForm.nationalId ?? ''}
                   onChange={handleProfileChange}
                   readOnly={!canEditIdentity}
-                  placeholder="10 أرقام"
+                  placeholder={t('profileEdit.nationalIdPlaceholder')}
                   maxLength={10}
                   className={`w-full px-5 py-3.5 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all outline-none font-mono ${
                     !canEditIdentity ? 'cursor-not-allowed opacity-60' : ''
@@ -256,14 +258,14 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ me, onClose, onSucc
             {/* Address */}
             <div className="md:col-span-2">
               <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 px-1">
-                العنوان
+                {t('profileEdit.address')}
               </label>
               <input
                 type="text"
                 name="address"
                 value={profileForm.address ?? ''}
                 onChange={handleProfileChange}
-                placeholder="المدينة، الحي"
+                placeholder={t('profileEdit.addressPlaceholder')}
                 className="w-full px-5 py-3.5 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all outline-none"
               />
             </div>
@@ -277,7 +279,7 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ me, onClose, onSucc
               className="flex-1 px-6 py-4 border border-white/10 text-slate-400 rounded-2xl font-bold hover:bg-white/5 transition-all disabled:opacity-50"
               disabled={profileSaving}
             >
-              إلغاء
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
@@ -289,7 +291,7 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ me, onClose, onSucc
               ) : (
                 <>
                   <Save size={20} />
-                  <span>حفظ التغييرات</span>
+                  <span>{t('profileEdit.saveChanges')}</span>
                 </>
               )}
             </button>

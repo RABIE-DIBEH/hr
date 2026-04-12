@@ -22,7 +22,6 @@ const DeviceManagement = lazy(() => import('./pages/DeviceManagement'));
 const LeaveCalendar = lazy(() => import('./pages/LeaveCalendar'));
 const AttendanceLogs = lazy(() => import('./pages/AttendanceLogs'));
 const NFCClock = lazy(() => import('./pages/NFCClock'));
-const Goals = lazy(() => import('./pages/Goals'));
 const Inbox = lazy(() => import('./pages/Inbox'));
 const CEODashboard = lazy(() => import('./pages/CEODashboard'));
 const DepartmentManagement = lazy(() => import('./pages/DepartmentManagement'));
@@ -169,13 +168,6 @@ function App() {
           <Route path="/finance" element={
             <ProtectedRoute allowedRoles={['PAYROLL', 'SUPER_ADMIN']}>
               <Navigate to="/payroll" replace />
-            </ProtectedRoute>
-          } />
-          <Route path="/goals" element={
-            <ProtectedRoute>
-              <Suspense fallback={<LazyPage />}>
-                <Layouted><Goals /></Layouted>
-              </Suspense>
             </ProtectedRoute>
           } />
           <Route path="/inbox" element={

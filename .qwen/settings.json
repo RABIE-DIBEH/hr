@@ -36,7 +36,9 @@
       "Bash(pg_dump *)",
       "Bash(dart *)",
       "Bash(java *)",
-      "Bash(netstat *)"
+      "Bash(netstat *)",
+      "Bash(docker info)",
+      "Bash(docker run *)"
     ]
   },
   "$version": 3

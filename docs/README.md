@@ -181,8 +181,8 @@ npm install
 npm run dev
 
 # Setup database
-psql -U postgres -d hrms_db -f database/schema.sql
-psql -U postgres -d hrms_db -f database/seed_test_data.sql
+psql -U postgres -d hrms_db -f database/master_schema_v1.sql
+psql -U postgres -d hrms_db -f database/master_seed_v1.sql
 ```
 
 ### 2. Testing

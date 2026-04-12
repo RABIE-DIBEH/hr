@@ -98,11 +98,12 @@ describe('EmployeeDashboard', () => {
 
   it('renders main dashboard sections', async () => {
     render(<EmployeeDashboard />, { wrapper: createWrapper() });
-    
+
     await waitFor(() => {
-      expect(screen.getByText((_, element) => element?.tagName.toLowerCase() === 'p' && element?.textContent?.includes('ساعات الشهر') === true)).toBeDefined();
-      expect(screen.getByText((_, element) => element?.tagName.toLowerCase() === 'p' && element?.textContent?.includes('رصيد الإجازات') === true)).toBeDefined();
-      expect(screen.getByText((_, element) => element?.tagName.toLowerCase() === 'p' && element?.textContent?.includes('الراتب المتوقع') === true)).toBeDefined();
+      // "ساعات الشهر" is hardcoded Arabic, "dashboard.leaveBalance" returns key since i18n isn't initialized
+      expect(screen.getByText('ساعات الشهر')).toBeDefined();
+      expect(screen.getByText((_, element) => element?.tagName.toLowerCase() === 'p' && element?.textContent?.includes('dashboard.leaveBalance') === true)).toBeDefined();
+      expect(screen.getByText('الراتب المتوقع')).toBeDefined();
     });
   });
 

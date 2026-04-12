@@ -50,38 +50,39 @@ describe('Sidebar', () => {
   it('renders basic navigation items for all users', () => {
     setupMocks('EMPLOYEE');
     renderSidebar();
-    
-    expect(screen.getByText((_, element) => element?.tagName.toLowerCase() === 'span' && element?.textContent?.includes('لوحة التحكم') === true)).toBeDefined();
-    expect(screen.getByText((_, element) => element?.tagName.toLowerCase() === 'span' && element?.textContent?.includes('سجل حضور') === true)).toBeDefined();
-    expect(screen.getByText((_, element) => element?.tagName.toLowerCase() === 'span' && element?.textContent?.includes('الرسائل') === true)).toBeDefined();
+
+    // i18n is not initialized in tests, so t() returns raw keys
+    expect(screen.getByText('sidebar.dashboard')).toBeDefined();
+    expect(screen.getByText('sidebar.attendanceLog')).toBeDefined();
+    expect(screen.getByText('sidebar.inbox')).toBeDefined();
   });
 
   it('hides admin and hr links from regular employees', () => {
     setupMocks('EMPLOYEE');
     renderSidebar();
-    
-    expect(screen.queryByText((_, element) => element?.tagName.toLowerCase() === 'span' && element?.textContent?.includes('مدير النظام') === true)).toBeNull();
-    expect(screen.queryByText((_, element) => element?.tagName.toLowerCase() === 'span' && element?.textContent?.includes('الموارد البشرية') === true)).toBeNull();
+
+    expect(screen.queryByText('sidebar.adminManagement')).toBeNull();
+    expect(screen.queryByText('sidebar.hrManagement')).toBeNull();
   });
 
   it('shows HR links to HR users', () => {
     setupMocks('HR');
     renderSidebar();
-    
-    expect(screen.getByText((_, element) => element?.tagName.toLowerCase() === 'span' && element?.textContent?.includes('الموارد البشرية') === true)).toBeDefined();
+
+    expect(screen.getByText('sidebar.hrManagement')).toBeDefined();
   });
 
   it('shows Admin links to Admin users', () => {
     setupMocks('ADMIN');
     renderSidebar();
-    
-    expect(screen.getByText((_, element) => element?.tagName.toLowerCase() === 'span' && element?.textContent?.includes('مدير النظام') === true)).toBeDefined();
+
+    expect(screen.getByText('sidebar.adminManagement')).toBeDefined();
   });
 
   it('shows Manager links to Managers', () => {
     setupMocks('MANAGER');
     renderSidebar();
-    
-    expect(screen.getByText((_, element) => element?.tagName.toLowerCase() === 'span' && element?.textContent?.includes('إدارة الفريق') === true)).toBeDefined();
+
+    expect(screen.getByText('sidebar.teamManagement')).toBeDefined();
   });
 });

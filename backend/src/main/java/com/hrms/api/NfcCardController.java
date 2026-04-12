@@ -6,6 +6,8 @@ import com.hrms.api.dto.NfcCardResponseDto;
 import com.hrms.api.dto.ReplaceNfcCardRequest;
 import com.hrms.api.dto.StatusResponseDto;
 import com.hrms.api.dto.UpdateNfcCardStatusRequest;
+import com.hrms.api.exception.BusinessException;
+import com.hrms.api.exception.ErrorCode;
 import com.hrms.services.NfcCardManagementService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -36,8 +38,7 @@ public class NfcCardController {
                         NfcCardResponseDto.from(card),
                         "NFC card retrieved successfully"
                 )))
-                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(ApiResponse.error(404, "No NFC card found for employee")));
+                .orElseThrow(() -> new BusinessException(ErrorCode.NFC_CARD_NOT_FOUND, "No NFC card found for employee"));
     }
 
     @PostMapping("/employees/{employeeId}")

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -28,13 +29,14 @@ import { queryKeys } from '../services/queryKeys';
 type FilterType = 'all' | 'unread' | 'high-priority' | 'archived' | 'sent';
 
 const Inbox = () => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const filters: Array<{ value: FilterType; label: string; icon?: React.ReactNode }> = [
-    { value: 'all', label: 'الكل' },
-    { value: 'unread', label: 'غير المقروءة' },
-    { value: 'high-priority', label: 'ذات الأولوية' },
-    { value: 'sent', label: 'المرسلة', icon: <Send size={14} /> },
-    { value: 'archived', label: 'الأرشيف', icon: <FolderOpen size={14} /> },
+    { value: 'all', label: t('inbox.filters.all') },
+    { value: 'unread', label: t('inbox.filters.unread') },
+    { value: 'high-priority', label: t('inbox.filters.highPriority') },
+    { value: 'sent', label: t('inbox.filters.sent'), icon: <Send size={14} /> },
+    { value: 'archived', label: t('inbox.filters.archived'), icon: <FolderOpen size={14} /> },
   ];
 
   const [filter, setFilter] = useState<FilterType>('all');
@@ -149,7 +151,7 @@ const Inbox = () => {
   const handleMarkAllAsRead = () => markAllReadMutation.mutate();
   const handleArchive = (messageId: number) => archiveMutation.mutate(messageId);
   const handleDelete = (messageId: number) => {
-    if (!window.confirm('هل أنت متأكد من حذف هذه الرسالة نهائياً؟')) return;
+    if (!window.confirm(t('inbox.actions.confirmDelete'))) return;
     deleteMutation.mutate(messageId);
   };
 
@@ -218,20 +220,20 @@ const Inbox = () => {
       setSelectedIds(new Set());
       queryClient.invalidateQueries({ queryKey: queryKeys.inbox.root });
     } catch {
-      alert('فشل في أرشفة الرسائل المحددة.');
+      alert(t('inbox.status.bulkArchiveFailed'));
     }
   };
 
   const handleBulkDelete = async () => {
     if (selectedIds.size === 0) return;
-    if (!window.confirm(`هل أنت متأكد من حذف ${selectedIds.size} رسالة نهائياً؟`)) return;
+    if (!window.confirm(t('inbox.actions.confirmBulkDelete', { count: selectedIds.size }))) return;
     try {
       await Promise.all(Array.from(selectedIds).map((id) => deleteMessage(id)));
       setSelectedIds(new Set());
       queryClient.invalidateQueries({ queryKey: queryKeys.inbox.root });
       queryClient.invalidateQueries({ queryKey: queryKeys.inbox.unreadCount });
     } catch {
-      alert('فشل في حذف الرسائل المحددة.');
+      alert(t('inbox.status.bulkDeleteFailed'));
     }
   };
 
@@ -249,9 +251,9 @@ const Inbox = () => {
 
   const priorityLabel = (priority: string) => {
     switch (priority) {
-      case 'HIGH': return '⚠️ عالية';
-      case 'MEDIUM': return '📌 متوسطة';
-      case 'LOW': return '✓ منخفضة';
+      case 'HIGH': return t('inbox.priorityLabels.HIGH');
+      case 'MEDIUM': return t('inbox.priorityLabels.MEDIUM');
+      case 'LOW': return t('inbox.priorityLabels.LOW');
       default: return priority;
     }
   };
@@ -272,9 +274,9 @@ const Inbox = () => {
               <Bell size={28} className="text-luxury-primary" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-white">صندوق الرسائل</h1>
+              <h1 className="text-3xl font-bold text-white">{t('inbox.title')}</h1>
               <p className="text-slate-400 text-sm mt-1">
-                {totalCount} رسالة في هذا الصنف
+                {t('inbox.subtitle', { count: totalCount })}
               </p>
             </div>
           </div>
@@ -285,14 +287,14 @@ const Inbox = () => {
               className="bg-luxury-primary/20 hover:bg-luxury-primary/30 text-luxury-primary border border-luxury-primary/30 px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 disabled:opacity-50"
             >
               <CheckCheck size={16} />
-              <span>تحديد الكل كمقروء</span>
+              <span>{t('inbox.actions.markAllRead')}</span>
             </button>
             <button
               onClick={() => setShowCompose(true)}
               className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
             >
               <MessageSquare size={16} />
-              <span>رسالة جديدة</span>
+              <span>{t('inbox.actions.newMessage')}</span>
             </button>
           </div>
         </div>
@@ -328,23 +330,23 @@ const Inbox = () => {
               {allSelected ? <SquareCheck size={20} /> : <Square size={20} />}
             </button>
             <span className="text-luxury-primary text-sm font-semibold">
-              {selectedIds.size} رسالة محددة
+              {t('inbox.actions.bulkActions.selected', { count: selectedIds.size })}
             </span>
           </div>
           <div className="flex gap-2">
             {filter !== 'archived' && filter !== 'sent' && (
               <button onClick={handleBulkArchive}
                 className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all">
-                <Archive size={16} /> أرشفة
+                <Archive size={16} /> {t('inbox.actions.bulkActions.archive')}
               </button>
             )}
             <button onClick={handleBulkDelete}
               className="bg-red-500/20 hover:bg-red-500/30 text-red-400 px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all">
-              <Trash2 size={16} /> حذف
+              <Trash2 size={16} /> {t('inbox.actions.bulkActions.delete')}
             </button>
             <button onClick={() => setSelectedIds(new Set())}
               className="bg-white/5 hover:bg-white/10 text-slate-400 px-3 py-2 rounded-lg text-sm transition-all">
-              إلغاء
+              {t('inbox.actions.bulkActions.cancel')}
             </button>
           </div>
         </motion.div>
@@ -353,7 +355,7 @@ const Inbox = () => {
       {/* Error */}
       {isError && (
         <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-lg mb-6 flex items-center gap-2">
-          <AlertCircle size={20} /> خطأ في تحميل الرسائل
+          <AlertCircle size={20} /> {t('inbox.status.error')}
         </div>
       )}
 
@@ -361,12 +363,12 @@ const Inbox = () => {
       {loading ? (
         <div className="text-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border border-luxury-primary border-t-transparent mx-auto mb-4"></div>
-          <p className="text-slate-400">جاري تحميل الرسائل...</p>
+          <p className="text-slate-400">{t('inbox.status.loading')}</p>
         </div>
       ) : messages.length === 0 ? (
         <div className="text-center py-12">
           <Bell size={48} className="text-slate-500 mx-auto mb-4 opacity-50" />
-          <p className="text-slate-400 text-lg">لا توجد رسائل</p>
+          <p className="text-slate-400 text-lg">{t('inbox.status.noMessages')}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -407,9 +409,9 @@ const Inbox = () => {
                           <h3 className="font-bold text-white text-lg">{message.title}</h3>
                           <p className="text-xs text-slate-400 mt-0.5">
                             {isSent ? (
-                              <>إلى: <span className="text-slate-300 font-semibold">موظف #{message.replyTo || message.messageId}</span></>
+                              <>{t('inbox.labels.to')} <span className="text-slate-300 font-semibold">{t('inbox.labels.employee', { id: message.replyTo || message.messageId })}</span></>
                             ) : (
-                              <>من: <span className="text-slate-300 font-semibold">{message.senderName}</span></>
+                              <>{t('inbox.labels.from')} <span className="text-slate-300 font-semibold">{message.senderName}</span></>
                             )}
                           </p>
                         </div>
@@ -427,7 +429,7 @@ const Inbox = () => {
                         <p className="text-xs text-slate-500">{formatDate(message.createdAt)}</p>
                         {message.replyCount != null && message.replyCount > 0 && (
                           <span className="text-xs text-slate-500 flex items-center gap-1">
-                            <Reply size={12} /> {message.replyCount} ردود
+                            <Reply size={12} /> {t('inbox.labels.replies', { count: message.replyCount })}
                           </span>
                         )}
                       </div>
@@ -441,25 +443,25 @@ const Inbox = () => {
                         <button
                           onClick={() => setExpandedMessage(isExpanded ? null : message.messageId)}
                           className="p-2 hover:bg-blue-500/20 rounded-lg text-slate-400 hover:text-blue-400 transition-all"
-                          title="عرض الردود"
+                          title={t('inbox.actions.viewReplies')}
                         >
                           {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                         </button>
                       )}
                       {!message.readAt && !message.isRead && (
                         <button onClick={() => handleMarkAsRead(message.messageId)}
-                          className="p-2 hover:bg-luxury-primary/20 rounded-lg text-slate-400 hover:text-luxury-primary transition-all" title="مقروء">
+                          className="p-2 hover:bg-luxury-primary/20 rounded-lg text-slate-400 hover:text-luxury-primary transition-all" title={t('inbox.actions.read')}>
                           <Check size={18} />
                         </button>
                       )}
                       {filter !== 'archived' && filter !== 'sent' && (
                         <button onClick={() => handleArchive(message.messageId)}
-                          className="p-2 hover:bg-blue-500/20 rounded-lg text-slate-400 hover:text-blue-400 transition-all" title="أرشفة">
+                          className="p-2 hover:bg-blue-500/20 rounded-lg text-slate-400 hover:text-blue-400 transition-all" title={t('inbox.actions.archive')}>
                           <Archive size={18} />
                         </button>
                       )}
                       <button onClick={() => handleDelete(message.messageId)}
-                        className="p-2 hover:bg-red-500/20 rounded-lg text-slate-400 hover:text-red-400 transition-all" title="حذف">
+                        className="p-2 hover:bg-red-500/20 rounded-lg text-slate-400 hover:text-red-400 transition-all" title={t('inbox.actions.delete')}>
                         <Trash2 size={18} />
                       </button>
                     </div>
@@ -483,7 +485,7 @@ const Inbox = () => {
                                 {reply.senderName} • {formatDate(reply.createdAt)}
                               </span>
                               {reply.senderEmployeeId === me?.employeeId && (
-                                <span className="text-xs text-emerald-400">أنت</span>
+                                <span className="text-xs text-emerald-400">{t('inbox.labels.you')}</span>
                               )}
                             </div>
                             <p className="text-slate-300 text-sm break-words">{reply.message}</p>
@@ -497,7 +499,7 @@ const Inbox = () => {
                             value={replyText}
                             onChange={(e) => setReplyText(e.target.value)}
                             onKeyDown={(e) => { if (e.key === 'Enter' && replyText.trim()) handleReply(message.messageId); }}
-                            placeholder="اكتب ردك..."
+                            placeholder={t('inbox.labels.writeReply')}
                             className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-luxury-primary/50"
                           />
                           <button
@@ -546,7 +548,7 @@ const Inbox = () => {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
                   <MessageSquare size={20} className="text-luxury-primary" />
-                  رسالة جديدة
+                  {t('inbox.actions.compose')}
                 </h2>
                 <button onClick={() => setShowCompose(false)} className="text-slate-400 hover:text-white transition-colors">
                   <X size={20} />
@@ -555,13 +557,13 @@ const Inbox = () => {
 
               <div className="space-y-4">
                 <div className="relative">
-                  <label className="block text-sm font-medium text-slate-300 mb-1">المستلم</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">{t('inbox.actions.recipient')}</label>
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => handleSearchEmployees(e.target.value)}
                     onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
-                    placeholder="ابحث بالاسم أو البريد..."
+                    placeholder={t('inbox.actions.searchPlaceholder')}
                     className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white placeholder:text-slate-500 focus:outline-none focus:border-luxury-primary/50"
                   />
                   {selectedEmployee && (
@@ -591,26 +593,26 @@ const Inbox = () => {
                     </div>
                   )}
                   {searching && (
-                    <p className="text-xs text-slate-500 mt-1">جاري البحث...</p>
+                    <p className="text-xs text-slate-500 mt-1">{t('inbox.status.searching')}</p>
                   )}
                   {selectedEmployee && (
                     <p className="text-xs text-emerald-400 mt-1">
-                      ✓ {selectedEmployee.name} (#{selectedEmployee.id})
+                      {t('inbox.status.selected', { name: selectedEmployee.name, id: selectedEmployee.id })}
                     </p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">العنوان</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">{t('inbox.actions.subject')}</label>
                   <input
                     type="text"
                     value={composeTitle}
                     onChange={(e) => setComposeTitle(e.target.value)}
-                    placeholder="عنوان الرسالة"
+                    placeholder={t('inbox.actions.subject')}
                     className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white placeholder:text-slate-500 focus:outline-none focus:border-luxury-primary/50"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">الأولوية</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">{t('inbox.actions.priority')}</label>
                   <div className="flex gap-2">
                     {(['LOW', 'MEDIUM', 'HIGH'] as const).map((p) => (
                       <button
@@ -622,19 +624,19 @@ const Inbox = () => {
                               : p === 'MEDIUM' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
                               : 'bg-green-500/20 text-green-400 border-green-500/30'
                             : 'bg-white/5 text-slate-400 border border-white/10'
-                        }`}
+                        }`                        }
                       >
-                        {p === 'HIGH' ? 'عالية' : p === 'MEDIUM' ? 'متوسطة' : 'منخفضة'}
+                        {p === 'HIGH' ? t('inbox.actions.priorityHigh') : p === 'MEDIUM' ? t('inbox.actions.priorityMedium') : t('inbox.actions.priorityLow')}
                       </button>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">الرسالة</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">{t('inbox.actions.message')}</label>
                   <textarea
                     value={composeMessage}
                     onChange={(e) => setComposeMessage(e.target.value)}
-                    placeholder="محتوى الرسالة..."
+                    placeholder={t('inbox.actions.messagePlaceholder')}
                     rows={4}
                     className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white placeholder:text-slate-500 focus:outline-none focus:border-luxury-primary/50 resize-none"
                   />
@@ -642,12 +644,12 @@ const Inbox = () => {
                 <div className="flex gap-3 justify-end pt-2">
                   <button onClick={() => setShowCompose(false)}
                     className="px-4 py-2 border border-white/10 text-slate-400 rounded-lg hover:bg-white/5 transition-all">
-                    إلغاء
+                    {t('inbox.actions.cancel')}
                   </button>
                   <button onClick={handleCompose} disabled={sendMutation.isPending || !selectedEmployee || !composeTitle || !composeMessage}
                     className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg transition-all flex items-center gap-2">
                     <Send size={16} />
-                    {sendMutation.isPending ? 'جاري الإرسال...' : 'إرسال'}
+                    {sendMutation.isPending ? t('inbox.actions.sending') : t('inbox.actions.send')}
                   </button>
                 </div>
               </div>

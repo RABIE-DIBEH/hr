@@ -2,6 +2,8 @@ package com.hrms.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hrms.api.dto.AssignNfcCardRequest;
+import com.hrms.api.exception.BusinessException;
+import com.hrms.api.exception.ErrorCode;
 import com.hrms.core.models.Employee;
 import com.hrms.core.models.NFCCard;
 import com.hrms.services.NfcCardManagementService;
@@ -14,7 +16,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -22,7 +23,6 @@ import java.util.Optional;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
-import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -88,13 +88,14 @@ class NfcCardControllerTest {
     @Test
     void assignCard_ReturnsConflictWhenUidAlreadyAssigned() throws Exception {
         when(nfcCardManagementService.assignCard(eq(7L), anyString()))
-                .thenThrow(new ResponseStatusException(CONFLICT, "UID is already assigned to another card"));
+                .thenThrow(new BusinessException(ErrorCode.INVALID_NFC_CARD, "UID is already assigned to another card"));
 
         mockMvc.perform(post("/api/nfc-cards/employees/7")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new AssignNfcCardRequest("UID-100"))))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.status").value(409))
-                .andExpect(jsonPath("$.message").value("UID is already assigned to another card"));
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("UID is already assigned to another card"))
+                .andExpect(jsonPath("$.error").value("INVALID_NFC_CARD"));
     }
 }

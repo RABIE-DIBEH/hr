@@ -27,9 +27,9 @@ Achieve 100% translation coverage for the entire application UI.
 Clean up the fragmented SQL migration history to simplify deployment.
 
 *   **Action:** 
-    *   Consolidate all patches (`add_departments`, `soft_delete`, etc.) into a single, unified `database/schema.sql`.
-    *   Create a clean `database/seed_production.sql` with only the essential system roles and one SuperAdmin account.
-    *   Update `Makefile` and `DEV_SETUP.md` to reflect the new single-script setup process.
+    *   ~~Consolidate all patches (`add_departments`, `soft_delete`, etc.) into a single, unified schema.~~ ✅ **DONE** → `database/master_schema_v1.sql`
+    *   ~~Create a clean seed file.~~ ✅ **DONE** → `database/master_seed_v1.sql`
+    *   ~~Update `DEV_SETUP.md` to reflect the new single-script setup process.~~ ✅ **DONE**
 *   **Goal:** A new developer must be able to set up the DB by running exactly one command.
 
 ## 📱 Task 4: Mobile Background Sync & UX (Agent B)
@@ -63,7 +63,7 @@ Implement safeguards against unauthorized or premature system actions.
 3.  Apply UI "Lock" to Payroll calculation buttons.
 
 ### **Agent C: The Orchestrator (Gemini CLI)**
-1.  Verify DB setup with the consolidated `schema.sql`.
+1.  Verify DB setup with the consolidated `master_schema_v1.sql`.
 2.  Final build verification (`mvn verify` + `npm run build`).
 3.  Perform a "Full English" vs "Full Arabic" UI audit.
 

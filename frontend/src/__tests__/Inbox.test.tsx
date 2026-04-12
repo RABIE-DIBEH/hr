@@ -83,7 +83,8 @@ describe('Inbox', () => {
     render(<Inbox />, { wrapper: createWrapper() });
 
     await waitFor(() => {
-      expect(screen.getByText((content) => content.includes('لا توجد رسائل'))).toBeDefined();
+      // i18n is not initialized in tests, so t() returns raw key
+      expect(screen.getByText('inbox.status.noMessages')).toBeDefined();
     });
   });
 

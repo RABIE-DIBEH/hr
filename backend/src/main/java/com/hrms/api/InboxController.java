@@ -1,6 +1,8 @@
 package com.hrms.api;
 
 import com.hrms.api.dto.*;
+import com.hrms.api.exception.BusinessException;
+import com.hrms.api.exception.ErrorCode;
 import com.hrms.core.models.InboxMessage;
 import com.hrms.security.EmployeeUserDetails;
 import com.hrms.services.InboxService;
@@ -12,7 +14,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -131,7 +132,7 @@ public class InboxController {
         try {
             message = inboxService.markAsRead(messageId, role, employeeId);
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+            throw new BusinessException(ErrorCode.INBOX_NOT_FOUND, e.getMessage());
         }
         
         return ResponseEntity.ok(ApiResponse.success(
@@ -195,9 +196,9 @@ public class InboxController {
         try {
             inboxService.archiveMessage(messageId, role, employeeId);
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+            throw new BusinessException(ErrorCode.INBOX_NOT_FOUND, e.getMessage());
         } catch (org.springframework.security.access.AccessDeniedException e) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+            throw new BusinessException(ErrorCode.INBOX_FORBIDDEN, e.getMessage());
         }
 
         return ResponseEntity.ok(ApiResponse.success(
@@ -215,10 +216,9 @@ public class InboxController {
             @Valid @RequestBody SendInboxMessageDto dto,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
         
-        // Check authorization
+        // Check authorization — note: roles here come with "ROLE_" prefix from Spring Security authorities
         if (!hasAnyRole(principal, "ROLE_ADMIN", "ROLE_SUPER_ADMIN")) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
-                    "Only admins can send messages");
+            throw new BusinessException(ErrorCode.FORBIDDEN_OPERATION, "Only admins can send messages");
         }
         
         InboxMessage message;
@@ -262,9 +262,9 @@ public class InboxController {
         try {
             inboxService.deleteMessage(messageId, role, employeeId);
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+            throw new BusinessException(ErrorCode.INBOX_NOT_FOUND, e.getMessage());
         } catch (org.springframework.security.access.AccessDeniedException e) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+            throw new BusinessException(ErrorCode.INBOX_FORBIDDEN, e.getMessage());
         }
 
         return ResponseEntity.ok(ApiResponse.success(
@@ -312,7 +312,7 @@ public class InboxController {
         try {
             inboxService.markAsRead(messageId, role, employeeId);
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+            throw new BusinessException(ErrorCode.INBOX_NOT_FOUND, e.getMessage());
         }
 
         List<InboxMessage> replies = inboxService.getReplies(messageId);

@@ -176,7 +176,10 @@ class _NfcClockScreenState extends State<NfcClockScreen> {
                   child: const Text('TRY AGAIN', style: TextStyle(fontWeight: FontWeight.bold)),
                 )
               else
-                const Text('Redirecting...', style: TextStyle(color: Colors.white70)),
+                const Padding(
+                  padding: EdgeInsets.only(top: 20),
+                  child: Text('Redirecting...', style: TextStyle(color: Colors.white70)),
+                ),
             ],
           ),
         ),
@@ -217,22 +220,140 @@ class _NfcClockScreenState extends State<NfcClockScreen> {
             colors: [Colors.blue.shade900, Colors.black],
           ),
         ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildScannerIcon(),
-              const SizedBox(height: 50),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 50),
-                child: Text(
-                  _statusMessage ?? 'Initialize...',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.w300),
+        child: Stack(
+          children: [
+            if (_offlineCount > 0)
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 60,
+                left: 16,
+                right: 16,
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: const Duration(milliseconds: 600),
+                  builder: (context, value, child) => Opacity(
+                    opacity: value,
+                    child: Transform.translate(
+                      offset: Offset(0, 10 * (1 - value)),
+                      child: child,
+                    ),
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.orange.shade900.withOpacity(0.6),
+                          Colors.deepOrange.shade900.withOpacity(0.4),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: Colors.orangeAccent.withOpacity(0.4), width: 1.5),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.orangeAccent.withOpacity(0.15),
+                          blurRadius: 20,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        // Pulsing indicator dot
+                        _PulsingDot(color: Colors.orangeAccent),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: Colors.orangeAccent.withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      '$_offlineCount',
+                                      style: const TextStyle(
+                                        color: Colors.orangeAccent,
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Flexible(
+                                    child: Text(
+                                      'scans pending sync',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Scans saved offline — tap to sync now',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.5),
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        if (!_isSyncing)
+                          Material(
+                            color: Colors.orangeAccent.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(14),
+                            child: InkWell(
+                              onTap: _syncScans,
+                              borderRadius: BorderRadius.circular(14),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: const [
+                                    Icon(Icons.cloud_upload_outlined, color: Colors.white, size: 16),
+                                    SizedBox(width: 6),
+                                    Text('SYNC', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          )
+                        else
+                          const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.orangeAccent)),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ],
-          ),
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildScannerIcon(),
+                  const SizedBox(height: 50),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 50),
+                    child: Text(
+                      _statusMessage ?? 'Initialize...',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.w300),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -263,6 +384,56 @@ class _NfcClockScreenState extends State<NfcClockScreen> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// A small animated pulsing dot to draw attention to the pending sync banner.
+class _PulsingDot extends StatefulWidget {
+  final Color color;
+  const _PulsingDot({required this.color});
+
+  @override
+  State<_PulsingDot> createState() => _PulsingDotState();
+}
+
+class _PulsingDotState extends State<_PulsingDot> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (_, __) => Container(
+        width: 10,
+        height: 10,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: widget.color.withOpacity(0.5 + 0.5 * _controller.value),
+          boxShadow: [
+            BoxShadow(
+              color: widget.color.withOpacity(0.3 * _controller.value),
+              blurRadius: 8,
+              spreadRadius: 2 * _controller.value,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

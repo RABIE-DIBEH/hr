@@ -577,6 +577,7 @@ export interface PayrollMonthlySummaryResponse {
   totalSlips: number;
   paidSlips: number;
   totalNetSalary: number;
+  isLocked: boolean;
 }
 
 export const getMonthlyPayrollPage = (month: number, year: number, params?: PaginationParams) =>

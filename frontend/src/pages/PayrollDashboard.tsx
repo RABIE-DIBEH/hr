@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -48,6 +49,7 @@ import { queryKeys } from '../services/queryKeys';
 import { extractApiError } from '../utils/errorHandler';
 
 const PayrollDashboard = () => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'advances' | 'recruitment' | 'history' | 'calculate'>('advances');
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -225,7 +227,7 @@ const PayrollDashboard = () => {
     const queriesWithError = [advancesQuery, historyQuery, employeesQuery, monthlyPayrollQuery, recruitmentQuery];
     for (const q of queriesWithError) {
       if (q.error && !loadError) {
-        setLoadError(extractApiError(q.error).message || 'تعذر تحميل البيانات');
+        setLoadError(extractApiError(q.error).message || t('common.error'));
         break;
       }
     }
@@ -254,7 +256,7 @@ const PayrollDashboard = () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.payroll.recruitment(recruitmentPage) });
     },
     onError: (err: unknown) => {
-      const msg = err instanceof Error ? err.message : 'فشل معالجة طلب التوظيف';
+      const msg = err instanceof Error ? err.message : t('common.error');
       setLoadError(msg);
     },
     onSettled: () => setProcessingRecruitment(null),
@@ -287,7 +289,7 @@ const PayrollDashboard = () => {
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch {
-      alert('فشل تحميل تقرير الرواتب');
+      alert(t('common.error'));
     } finally {
       setIsDownloading(false);
     }
@@ -314,7 +316,7 @@ const PayrollDashboard = () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.payroll.root });
     },
     onError: (err: unknown) => {
-      setLoadError(extractApiError(err).message || 'فشل معالجة طلب السلفة');
+      setLoadError(extractApiError(err).message || t('common.error'));
     },
     onSettled: () => setProcessingAdvance(null),
   });
@@ -327,7 +329,7 @@ const PayrollDashboard = () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.payroll.root });
     },
     onError: (err: unknown) => {
-      setLoadError(extractApiError(err).message || 'فشل تعليم طلب السلفة كـ تم التسليم');
+      setLoadError(extractApiError(err).message || t('common.error'));
     },
     onSettled: () => setProcessingAdvance(null),
   });
@@ -340,7 +342,7 @@ const PayrollDashboard = () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.payroll.root });
     },
     onError: (err: unknown) => {
-      setLoadError(extractApiError(err).message || 'فشل تسليم جميع السلف المعتمدة');
+      setLoadError(extractApiError(err).message || t('common.error'));
     },
     onSettled: () => setProcessingAdvance(null),
   });
@@ -386,7 +388,7 @@ const PayrollDashboard = () => {
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch (err: unknown) {
-      alert(extractApiError(err).message || 'فشل تحميل تقرير السلف');
+      alert(extractApiError(err).message || t('common.error'));
     }
   };
 
@@ -405,17 +407,17 @@ const PayrollDashboard = () => {
       if (result.type === 'all') {
         const { successCount, errorCount } = result.data;
         setCalcFeedback({
-          msg: `تم احتساب ${successCount} موظف بنجاح${errorCount > 0 ? `، ${errorCount} خطأ` : ''}`,
+          msg: `${successCount} calculated successfully${errorCount > 0 ? `, ${errorCount} errors` : ''}`,
           type: 'success',
         });
       } else {
-        setCalcFeedback({ msg: 'تم احتساب الراتب بنجاح', type: 'success' });
+        setCalcFeedback({ msg: t('common.success'), type: 'success' });
       }
       void queryClient.invalidateQueries({ queryKey: queryKeys.payroll.monthlyPayroll(reportMonth, reportYear) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.payroll.history(historyPage) });
     },
     onError: (err: unknown) => {
-      const msg = extractApiError(err).message || 'فشل احتساب الراتب';
+      const msg = extractApiError(err).message || t('common.error');
       setCalcFeedback({ msg, type: 'error' });
     },
     onSettled: () => {
@@ -432,7 +434,7 @@ const PayrollDashboard = () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.payroll.history(historyPage) });
     },
     onError: (err: unknown) => {
-      setLoadError(extractApiError(err).message || 'فشل تسليم الراتب');
+      setLoadError(extractApiError(err).message || t('common.error'));
     },
     onSettled: () => setPayingId(null),
   });
@@ -446,7 +448,7 @@ const PayrollDashboard = () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.payroll.history(historyPage) });
     },
     onError: (err: unknown) => {
-      setLoadError(extractApiError(err).message || 'فشل تسليم الرواتب للكل');
+      setLoadError(extractApiError(err).message || t('common.error'));
     },
     onSettled: () => setPayingId(null),
   });
@@ -465,7 +467,7 @@ const PayrollDashboard = () => {
   };
 
   const handleDeliverAllApproved = () => {
-    if (!window.confirm(`تأكيد: تسليم جميع السلف المعتمدة لشهر ${reportMonth}/${reportYear}؟`)) return;
+    if (!window.confirm(t('common.confirm'))) return;
     deliverAllAdvancesMutation.mutate();
   };
 
@@ -480,7 +482,7 @@ const PayrollDashboard = () => {
   };
 
   const handlePayAllPayroll = () => {
-    if (!window.confirm(`تأكيد: تسليم جميع الرواتب لشهر ${reportMonth}/${reportYear}؟`)) return;
+    if (!window.confirm(t('common.confirm'))) return;
     payAllPayrollMutation.mutate();
   };
 
@@ -488,9 +490,9 @@ const PayrollDashboard = () => {
     .reduce((sum, a) => sum + (typeof a.amount === 'number' ? a.amount : Number(a.amount ?? 0)), 0);
 
   const stats = [
-    { label: 'سلف معلقة', value: String(pendingTotalCount), icon: Clock, color: 'text-orange-400', bg: 'bg-orange-500/10' },
-    { label: 'إجمالي السلف', value: (Number(derivedApprovedTotalAmount) || totalApprovedAmount).toLocaleString() + ' ر.س', icon: HandCoins, color: 'text-purple-400', bg: 'bg-purple-500/10' },
-    { label: 'سجلات الرواتب', value: String(historyTotalCount), icon: History, color: 'text-green-400', bg: 'bg-green-500/10' },
+    { label: t('payroll.stats.pendingAdvances'), value: String(pendingTotalCount), icon: Clock, color: 'text-orange-400', bg: 'bg-orange-500/10' },
+    { label: t('payroll.stats.totalAdvances'), value: (Number(derivedApprovedTotalAmount) || totalApprovedAmount).toLocaleString() + ' ' + t('advanceRequest.currencySymbol'), icon: HandCoins, color: 'text-purple-400', bg: 'bg-purple-500/10' },
+    { label: t('payroll.stats.payrollRecords'), value: String(historyTotalCount), icon: History, color: 'text-green-400', bg: 'bg-green-500/10' },
   ];
 
   return (
@@ -498,10 +500,10 @@ const PayrollDashboard = () => {
       <header className="mb-10 flex justify-between items-end">
         <div>
           <h1 className="text-3xl font-black text-white tracking-tight arabic-text">
-            إدارة الرواتب
+            {t('payroll.title')}
           </h1>
           <p className="text-slate-400 mt-2">
-            إدارة شاملة للسلف المالية، احتساب الرواتب، وسجلات الصرف
+            {t('payroll.subtitle')}
           </p>
         </div>
         <div className="flex items-center gap-3 bg-purple-500/10 px-6 py-3 rounded-2xl border border-purple-500/20">
@@ -547,9 +549,9 @@ const PayrollDashboard = () => {
               <div>
                 <h3 className="text-xl font-bold text-white flex items-center gap-3">
                   <FileText className="text-purple-500" size={24} />
-                  تقارير الرواتب الشهرية
+                  {t('payroll.stats.monthlyReports')}
                 </h3>
-                <p className="text-slate-400 text-sm mt-1">تصدير ملخص الرواتب لجميع الموظفين حسب الشهر</p>
+                <p className="text-slate-400 text-sm mt-1">{t('payroll.stats.exportDescription')}</p>
               </div>
               <div className="flex flex-wrap items-center gap-4">
                 <div className="flex items-center gap-3 bg-white/5 px-5 py-2 rounded-xl border border-white/5">
@@ -574,7 +576,7 @@ const PayrollDashboard = () => {
                     className="bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all text-sm"
                   >
                     <FileText size={16} />
-                    {isDownloading ? '...' : 'تصدير PDF'}
+                    {isDownloading ? '...' : t('attendanceGrid.exportPdf')}
                   </button>
                   <button 
                     onClick={() => handleDownloadPayroll('excel')}
@@ -582,7 +584,7 @@ const PayrollDashboard = () => {
                     className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-800 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all text-sm"
                   >
                     <FileSpreadsheet size={16} />
-                    {isDownloading ? '...' : 'تصدير Excel'}
+                    {isDownloading ? '...' : t('attendanceGrid.exportExcel')}
                   </button>
                 </div>
               </div>
@@ -598,7 +600,7 @@ const PayrollDashboard = () => {
               }`}
             >
               <HandCoins size={18} />
-              السلف المالية
+              {t('payroll.tabs.advances')}
             </button>
             <button
               onClick={() => setActiveTab('recruitment')}
@@ -607,7 +609,7 @@ const PayrollDashboard = () => {
               }`}
             >
               <UserPlus size={18} />
-              التوظيف
+              {t('payroll.tabs.recruitment')}
             </button>
             <button
               onClick={() => setActiveTab('calculate')}
@@ -616,7 +618,7 @@ const PayrollDashboard = () => {
               }`}
             >
               <Calculator size={18} />
-              احتساب الرواتب
+              {t('payroll.tabs.calculate')}
             </button>
             <button
               onClick={() => setActiveTab('history')}
@@ -625,7 +627,7 @@ const PayrollDashboard = () => {
               }`}
             >
               <History size={18} />
-              سجل الرواتب
+              {t('payroll.tabs.history')}
             </button>
           </div>
 
@@ -643,32 +645,32 @@ const PayrollDashboard = () => {
 	                    onClick={() => setAdvancesSubTab('pending')}
 	                    className={`pb-4 px-4 font-bold transition-all ${advancesSubTab === 'pending' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-slate-500'}`}
 	                  >
-	                    بانتظار اعتماد الرواتب ({pendingTotalCount})
+	                    {t('payroll.advances.pendingTab')} ({pendingTotalCount})
 	                  </button>
 	                  <button
 	                    onClick={() => setAdvancesSubTab('approved')}
 	                    className={`pb-4 px-4 font-bold transition-all ${advancesSubTab === 'approved' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-slate-500'}`}
 	                  >
-	                    معتمدة بانتظار التسليم ({approvedTotalCount})
+	                    {t('payroll.advances.approved')} ({approvedTotalCount})
 	                  </button>
 	                  <button
 	                    onClick={() => setAdvancesSubTab('delivered')}
 	                    className={`pb-4 px-4 font-bold transition-all ${advancesSubTab === 'delivered' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-slate-500'}`}
 	                  >
-	                    سجل التسليمات ({deliveredTotalCount})
+	                    {t('payroll.advances.delivered')} ({deliveredTotalCount})
 	                  </button>
 	                  <button
 	                    onClick={() => setAdvancesSubTab('all')}
 	                    className={`pb-4 px-4 font-bold transition-all ${advancesSubTab === 'all' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-slate-500'}`}
 	                  >
-	                    جميع السجلات ({allTotalCount})
+	                    {t('payroll.advances.all')} ({allTotalCount})
 	                  </button>
 	                </div>
 	
 	                <div className="bg-luxury-surface rounded-[2.5rem] border border-white/5 overflow-hidden">
 	                  {advancesSubTab === 'pending' ? (
 	                    pendingAdvances.length === 0 ? (
-	                      <div className="p-20 text-center text-slate-500">لا توجد طلبات سلف بانتظار اعتماد الرواتب.</div>
+	                      <div className="p-20 text-center text-slate-500">{t('payroll.advances.pending')}</div>
 	                    ) : (
 	                      <div className="divide-y divide-white/5">
 	                        {pendingAdvances.map(advance => (
@@ -685,11 +687,11 @@ const PayrollDashboard = () => {
 	                                  </p>
 	                                  <div className="mt-4 flex gap-8">
 	                                    <div>
-	                                      <p className="text-slate-500 text-xs font-bold uppercase mb-1">المبلغ</p>
-	                                      <p className="text-purple-300 font-black text-lg">{advance.amount} ر.س</p>
+	                                      <p className="text-slate-500 text-xs font-bold uppercase mb-1">{t('payroll.advances.amount')}</p>
+	                                      <p className="text-purple-300 font-black text-lg">{advance.amount} {t('advanceRequest.currencySymbol')}</p>
 	                                    </div>
 	                                    <div>
-	                                      <p className="text-slate-500 text-xs font-bold uppercase mb-1">السبب</p>
+	                                      <p className="text-slate-500 text-xs font-bold uppercase mb-1">{t('payroll.advances.reason')}</p>
 	                                      <p className="text-slate-300 text-sm">{advance.reason || '—'}</p>
 	                                    </div>
 	                                  </div>
@@ -701,20 +703,20 @@ const PayrollDashboard = () => {
 		                                    <input
 		                                      type="number"
 		                                      inputMode="decimal"
-		                                      placeholder="تعديل المبلغ (اختياري)"
+		                                      placeholder={t('payroll.advances.amount')}
 		                                      value={adjustedAdvanceAmount}
 		                                      onChange={(e) => setAdjustedAdvanceAmount(e.target.value)}
 		                                      className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white"
 		                                    />
 		                                    <input
 		                                      type="text"
-		                                      placeholder="تعديل السبب (اختياري)"
+		                                      placeholder={t('payroll.advances.reason')}
 		                                      value={adjustedAdvanceReason}
 		                                      onChange={(e) => setAdjustedAdvanceReason(e.target.value)}
 		                                      className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white"
 		                                    />
 		                                    <textarea
-		                                      placeholder="ملاحظة الاعتماد/الرفض..."
+		                                      placeholder={t('payroll.recruitment.notePlaceholder')}
 		                                      value={advanceNote}
 		                                      onChange={(e) => setAdvanceNote(e.target.value)}
 	                                      className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm text-white resize-none h-20"
@@ -725,14 +727,14 @@ const PayrollDashboard = () => {
 	                                        disabled={processingAdvance === advance.advanceId}
 	                                        className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-xl text-sm disabled:opacity-50"
 	                                      >
-	                                        اعتماد نهائي
+	                                        {t('payroll.recruitment.approveFinal')}
 	                                      </button>
 	                                      <button
 	                                        onClick={() => handleProcessAdvance(advance.advanceId!, 'Rejected')}
 	                                        disabled={processingAdvance === advance.advanceId}
 	                                        className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-xl text-sm disabled:opacity-50"
 	                                      >
-	                                        رفض
+	                                        {t('payroll.recruitment.reject')}
 	                                      </button>
 	                                    </div>
 	                                  </div>
@@ -746,7 +748,7 @@ const PayrollDashboard = () => {
 		                                    }}
 		                                    className="w-full bg-white/5 hover:bg-white/10 text-white font-bold py-4 rounded-2xl border border-white/5 transition-all"
 		                                  >
-		                                    اتخاذ قرار
+		                                    {t('payroll.advances.decision')}
 		                                  </button>
 	                                )}
 	                              </div>
@@ -759,28 +761,28 @@ const PayrollDashboard = () => {
                     <>
 	                      <div className="p-6 border-b border-white/5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
 	                        <div>
-	                          <p className="text-white font-bold">معتمدة بانتظار التسليم</p>
-	                          <p className="text-slate-400 text-xs mt-1">يمكنك استخراج تقرير ثم تسليم السلف (فردي أو جماعي).</p>
+	                          <p className="text-white font-bold">{t('payroll.advances.approved')}</p>
+	                          <p className="text-slate-400 text-xs mt-1">{t('payroll.advances.approved')}</p>
 	                        </div>
 	                        <div className="flex flex-wrap gap-2">
 	                          <button
 	                            onClick={handleDownloadAdvanceReportCsv}
 	                            className="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-xl font-bold border border-white/10 text-sm"
 	                          >
-	                            تنزيل تقرير CSV
+	                            {t('attendanceGrid.downloading', 'Download Report')}
 	                          </button>
 	                          <button
 	                            onClick={handleDeliverAllApproved}
 	                            disabled={approvedTotalCount === 0 || processingAdvance !== null}
 	                            className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-900 text-white px-4 py-2 rounded-xl font-bold text-sm"
 	                          >
-	                            تسليم الكل ({reportMonth}/{reportYear})
+	                            {t('payroll.calculate.payAll', { month: reportMonth, year: reportYear })}
 	                          </button>
 	                        </div>
 	                      </div>
 
                       {approvedAdvances.length === 0 ? (
-		                        <div className="p-20 text-center text-slate-500">لا توجد سلف معتمدة بانتظار التسليم.</div>
+		                        <div className="p-20 text-center text-slate-500">{t('payroll.advances.noDelivered')}</div>
 		                      ) : (
 		                        <div className="divide-y divide-white/5">
 		                          {approvedAdvances.slice(approvedPage * 10, approvedPage * 10 + 10).map((adv) => (
@@ -799,15 +801,15 @@ const PayrollDashboard = () => {
 	                              </div>
 	                              <div className="flex items-center justify-between md:justify-end gap-4">
 	                                <div className="text-right">
-	                                  <p className="text-slate-500 text-xs font-bold uppercase mb-1">المبلغ</p>
-	                                  <p className="text-emerald-200 font-black text-xl">{adv.amount} ر.س</p>
+	                                  <p className="text-slate-500 text-xs font-bold uppercase mb-1">{t('payroll.advances.amount')}</p>
+	                                  <p className="text-emerald-200 font-black text-xl">{adv.amount} {t('advanceRequest.currencySymbol')}</p>
 	                                </div>
 	                                <button
 	                                  onClick={() => handleDeliverAdvance(adv.advanceId!)}
 	                                  disabled={processingAdvance === adv.advanceId}
 	                                  className="bg-purple-600 hover:bg-purple-700 disabled:bg-purple-900 text-white font-bold px-6 py-3 rounded-2xl"
 	                                >
-	                                  {processingAdvance === adv.advanceId ? '...' : 'تم التسليم'}
+	                                  {processingAdvance === adv.advanceId ? '...' : t('payroll.advances.deliver')}
 	                                </button>
 	                              </div>
 	                            </div>
@@ -819,29 +821,29 @@ const PayrollDashboard = () => {
                     <>
                       <div className="p-6 border-b border-white/5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                         <div>
-                          <p className="text-white font-bold">سجل التسليمات</p>
-                          <p className="text-slate-400 text-xs mt-1">يعرض كل السلف التي تم تسليمها ضمن شهر الراتب المحدد ({reportMonth}/{reportYear}).</p>
+                          <p className="text-white font-bold">{t('payroll.advances.deliveryLog')}</p>
+                          <p className="text-slate-400 text-xs mt-1">{t('payroll.advances.deliveryLogSubtitle', { month: reportMonth, year: reportYear })}</p>
                         </div>
                       </div>
 
                       {deliveredAdvances.length === 0 ? (
-                        <div className="p-20 text-center text-slate-500">لا توجد سلف تم تسليمها لهذا الشهر.</div>
+                        <div className="p-20 text-center text-slate-500">{t('payroll.advances.noDelivered')}</div>
                       ) : (
                         <div className="overflow-x-auto">
                           <table className="w-full text-right">
                             <thead className="bg-white/5 text-slate-400 text-[11px] font-black uppercase tracking-wider">
                               <tr>
-                                <th className="p-6">الموظف</th>
-                                <th className="p-6">المبلغ</th>
-                                <th className="p-6">تاريخ التسليم</th>
-                                <th className="p-6">ملاحظة</th>
+                                <th className="p-6">{t('payroll.advances.employee')}</th>
+                                <th className="p-6">{t('payroll.advances.amount')}</th>
+                                <th className="p-6">{t('payroll.advances.deliveryDate')}</th>
+                                <th className="p-6">{t('payroll.advances.note')}</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5 text-sm">
                               {deliveredAdvances.map((adv) => (
                                 <tr key={adv.advanceId} className="hover:bg-white/[0.02]">
                                   <td className="p-6 font-bold text-slate-100">{adv.employeeName}</td>
-                                  <td className="p-6 text-blue-300 font-bold">{adv.amount} ر.س</td>
+                                  <td className="p-6 text-blue-300 font-bold">{adv.amount} {t('advanceRequest.currencySymbol')}</td>
                                   <td className="p-6 text-slate-500">{adv.paidAt ? new Date(adv.paidAt).toLocaleString('ar-SA') : '—'}</td>
                                   <td className="p-6 text-slate-400">{adv.hrNote || '—'}</td>
                                 </tr>
@@ -856,11 +858,11 @@ const PayrollDashboard = () => {
                       <table className="w-full text-right">
 	                        <thead className="bg-white/5 text-slate-400 text-[11px] font-black uppercase tracking-wider">
 	                          <tr>
-	                            <th className="p-6">الموظف</th>
-	                            <th className="p-6">المبلغ</th>
-	                            <th className="p-6">الحالة</th>
-	                            <th className="p-6">التاريخ</th>
-	                            <th className="p-6">المعالج</th>
+	                            <th className="p-6">{t('payroll.advances.employee')}</th>
+	                            <th className="p-6">{t('payroll.advances.amount')}</th>
+	                            <th className="p-6">{t('payroll.advances.status')}</th>
+	                            <th className="p-6">{t('payroll.advances.date')}</th>
+	                            <th className="p-6">{t('payroll.advances.processor')}</th>
 	                          </tr>
 	                        </thead>
 	                        <tbody className="divide-y divide-white/5 text-sm">
@@ -872,16 +874,11 @@ const PayrollDashboard = () => {
 	                              status === 'DELIVERED' ? 'bg-blue-500/10 text-blue-400' :
 	                              status === 'PENDING_PAYROLL' ? 'bg-purple-500/10 text-purple-400' :
 	                              'bg-orange-500/10 text-orange-400';
-	                            const statusLabel =
-	                              status === 'APPROVED' ? 'معتمد' :
-	                              status === 'REJECTED' ? 'مرفوض' :
-	                              status === 'DELIVERED' ? 'تم التسليم' :
-	                              status === 'PENDING_PAYROLL' ? 'بانتظار الرواتب' :
-	                              'بانتظار المدير';
+	                            const statusLabel = t(`payroll.advances.statusLabels.${status || 'PENDING_MANAGER'}`);
 	                            return (
 	                              <tr key={adv.advanceId} className="hover:bg-white/[0.02]">
 	                                <td className="p-6 font-bold text-slate-100">{adv.employeeName}</td>
-	                                <td className="p-6 text-purple-300 font-bold">{adv.amount} ر.س</td>
+	                                <td className="p-6 text-purple-300 font-bold">{adv.amount} {t('advanceRequest.currencySymbol')}</td>
 	                                <td className="p-6">
 	                                  <span className={`px-3 py-1 rounded-lg font-bold text-xs ${statusClass}`}>
 	                                    {statusLabel}
@@ -913,16 +910,16 @@ const PayrollDashboard = () => {
               <div className="bg-luxury-surface rounded-[2.5rem] border border-white/5 overflow-hidden">
                 <div className="p-8 border-b border-white/5 flex items-center justify-between">
                   <div>
-                    <h3 className="text-xl font-bold text-white arabic-text">اعتماد طلبات التوظيف (Payroll)</h3>
-                    <p className="text-slate-400 text-sm mt-1">المرحلة الأخيرة: تحديد الراتب النهائي وإنشاء الموظف</p>
+                    <h3 className="text-xl font-bold text-white arabic-text">{t('payroll.recruitment.title')}</h3>
+                    <p className="text-slate-400 text-sm mt-1">{t('payroll.recruitment.subtitle')}</p>
                   </div>
                   <div className="text-slate-400 text-sm">
-                    إجمالي الطلبات: <span className="text-white font-bold">{recruitmentTotalCount}</span>
+                    {t('payroll.recruitment.totalRequests', { count: recruitmentTotalCount })}
                   </div>
                 </div>
 
                 {pendingRecruitment.length === 0 ? (
-                  <div className="p-20 text-center text-slate-500">لا توجد طلبات توظيف بانتظار اعتماد الرواتب حالياً.</div>
+                  <div className="p-20 text-center text-slate-500">{t('payroll.recruitment.noRequests')}</div>
                 ) : (
                   <div className="divide-y divide-white/5">
                     {pendingRecruitment.map((req) => (
@@ -933,17 +930,17 @@ const PayrollDashboard = () => {
                             <p className="text-slate-500 text-sm mt-1">{req.email}</p>
                             <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
                               <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
-                                <p className="text-slate-500 text-xs font-bold uppercase mb-1">الوظيفة</p>
+                                <p className="text-slate-500 text-xs font-bold uppercase mb-1">{t('payroll.recruitment.job')}</p>
                                 <p className="text-slate-200 font-bold">{req.jobDescription}</p>
                               </div>
                               <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
-                                <p className="text-slate-500 text-xs font-bold uppercase mb-1">القسم</p>
+                                <p className="text-slate-500 text-xs font-bold uppercase mb-1">{t('payroll.recruitment.department')}</p>
                                 <p className="text-slate-200 font-bold">{req.department}</p>
                               </div>
                               <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
-                                <p className="text-slate-500 text-xs font-bold uppercase mb-1">الراتب المتوقع (آخر قيمة)</p>
+                                <p className="text-slate-500 text-xs font-bold uppercase mb-1">{t('payroll.recruitment.expectedSalary')}</p>
                                 <p className="text-purple-200 font-black text-lg">
-                                  {typeof req.expectedSalary === 'number' ? req.expectedSalary.toLocaleString() : req.expectedSalary} ر.س
+                                  {typeof req.expectedSalary === 'number' ? req.expectedSalary.toLocaleString() : req.expectedSalary} {t('advanceRequest.currencySymbol')}
                                 </p>
                               </div>
                             </div>
@@ -953,13 +950,13 @@ const PayrollDashboard = () => {
                             {selectedRecruitmentId === req.requestId ? (
                               <div className="space-y-3 p-4 bg-white/5 rounded-2xl border border-white/5">
                                 <input
-                                  placeholder="الراتب النهائي (اختياري)"
+                                  placeholder={t('payroll.recruitment.finalSalaryPlaceholder')}
                                   value={adjustedSalary}
                                   onChange={(e) => setAdjustedSalary(e.target.value)}
                                   className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm text-white"
                                 />
                                 <textarea
-                                  placeholder="ملاحظة الاعتماد..."
+                                  placeholder={t('payroll.recruitment.notePlaceholder')}
                                   value={recruitmentNote}
                                   onChange={(e) => setRecruitmentNote(e.target.value)}
                                   className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm text-white resize-none h-20"
@@ -970,14 +967,14 @@ const PayrollDashboard = () => {
                                     disabled={processingRecruitment === req.requestId}
                                     className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-xl text-sm disabled:opacity-50"
                                   >
-                                    اعتماد نهائي
+                                    {t('payroll.recruitment.approveFinal')}
                                   </button>
                                   <button
                                     onClick={() => handleProcessRecruitment(req.requestId!, 'Rejected')}
                                     disabled={processingRecruitment === req.requestId}
                                     className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-xl text-sm disabled:opacity-50"
                                   >
-                                    رفض
+                                    {t('payroll.recruitment.reject')}
                                   </button>
                                 </div>
                                 <button
@@ -988,7 +985,7 @@ const PayrollDashboard = () => {
                                   }}
                                   className="w-full bg-white/5 hover:bg-white/10 text-white font-bold py-2 rounded-xl text-sm border border-white/10"
                                 >
-                                  إلغاء
+                                  {t('common.cancel')}
                                 </button>
                               </div>
                             ) : (
@@ -1000,7 +997,7 @@ const PayrollDashboard = () => {
                                 }}
                                 className="w-full bg-white/5 hover:bg-white/10 text-white font-bold py-4 rounded-2xl border border-white/5 transition-all"
                               >
-                                اتخاذ قرار (Stage 3)
+                                {t('payroll.recruitment.decision')}
                               </button>
                             )}
                           </div>
@@ -1023,48 +1020,53 @@ const PayrollDashboard = () => {
               <div className="space-y-6">
                 <div className="bg-purple-600/10 border border-purple-500/20 p-6 rounded-3xl flex justify-between items-center">
                   <div>
-                    <h4 className="text-white font-bold text-lg">احتساب رواتب الشهر لجميع الموظفين</h4>
-                    <p className="text-slate-400 text-sm mt-1">سيتم معالجة ساعات العمل المعتمدة وتحويلها إلى رواتب قابلة للصرف</p>
+                    <h4 className="text-white font-bold text-lg">{t('payroll.calculate.bannerTitle')}</h4>
+                    <p className="text-slate-400 text-sm mt-1">{t('payroll.calculate.bannerSubtitle')}</p>
+                    {monthlySummary?.isLocked && (
+                      <p className="text-orange-400 text-xs font-bold mt-2 flex items-center gap-2">
+                        <AlertCircle size={14} /> {t('payroll.calculate.engineLockedWarning')}
+                      </p>
+                    )}
                   </div>
                   <button
-                    onClick={() => setShowConfirmCalc({ name: 'جميع الموظفين' })}
-                    disabled={calculatingId !== null}
-                    className="bg-purple-600 hover:bg-purple-700 text-white font-bold px-8 py-4 rounded-2xl shadow-xl shadow-purple-500/20 disabled:opacity-50 transition-all flex items-center gap-3"
+                    onClick={() => setShowConfirmCalc({ name: t('payroll.calculate.bannerTitle') })}
+                    disabled={calculatingId !== null || monthlySummary?.isLocked}
+                    className="bg-purple-600 hover:bg-purple-700 text-white font-bold px-8 py-4 rounded-2xl shadow-xl shadow-purple-500/20 disabled:opacity-50 disabled:bg-slate-800 transition-all flex items-center gap-3"
                   >
                     {calculatingId === -1 ? <Clock className="animate-spin" /> : <Calculator />}
-                    احتساب الكل ({reportMonth}/{reportYear})
+                    {t('payroll.calculate.calculateAll', { month: reportMonth, year: reportYear })}
                   </button>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-luxury-surface rounded-3xl border border-white/5 p-6">
-                    <p className="text-slate-400 text-xs font-black uppercase">إجمالي الرواتب (أساسي)</p>
+                    <p className="text-slate-400 text-xs font-black uppercase">{t('payroll.calculate.totalBaseSalary')}</p>
                     <p className="text-white font-black text-2xl mt-2">
-                      {employees.reduce((sum, e) => sum + Number(e.baseSalary ?? 0), 0).toLocaleString()} ر.س
+                      {employees.reduce((sum, e) => sum + Number(e.baseSalary ?? 0), 0).toLocaleString()} {t('advanceRequest.currencySymbol')}
                     </p>
-                    <p className="text-slate-500 text-xs mt-2">مجموع الرواتب الأساسية للموظفين النشطين.</p>
+                    <p className="text-slate-500 text-xs mt-2">{t('payroll.calculate.totalBaseSalarySub')}</p>
                   </div>
                   <div className="bg-luxury-surface rounded-3xl border border-white/5 p-6">
-                    <p className="text-slate-400 text-xs font-black uppercase">إجمالي الرواتب المحتسبة (الصافي)</p>
+                    <p className="text-slate-400 text-xs font-black uppercase">{t('payroll.calculate.totalNetSalary')}</p>
                     <p className="text-emerald-200 font-black text-2xl mt-2">
-                      {(monthlySummary?.totalNetSalary ?? 0).toLocaleString()} ر.س
+                      {(monthlySummary?.totalNetSalary ?? 0).toLocaleString()} {t('advanceRequest.currencySymbol')}
                     </p>
-                    <p className="text-slate-500 text-xs mt-2">يعتمد على الرواتب التي تم احتسابها لهذا الشهر.</p>
+                    <p className="text-slate-500 text-xs mt-2">{t('payroll.calculate.totalNetSalarySub')}</p>
                   </div>
                   <div className="bg-luxury-surface rounded-3xl border border-white/5 p-6 flex flex-col justify-between">
                     <div>
-                      <p className="text-slate-400 text-xs font-black uppercase">تسليم الرواتب</p>
+                      <p className="text-slate-400 text-xs font-black uppercase">{t('payroll.calculate.disbursement')}</p>
                       <p className="text-white font-black text-2xl mt-2">
                         {monthlySummary ? `${monthlySummary.paidSlips}/${monthlySummary.totalSlips}` : '—'}
                       </p>
-                      <p className="text-slate-500 text-xs mt-2">عدد الرواتب التي تم تعليمها كـ تم التسليم.</p>
+                      <p className="text-slate-500 text-xs mt-2">{t('payroll.calculate.disbursementSub')}</p>
                     </div>
                     <button
                       onClick={handlePayAllPayroll}
                       disabled={payingId !== null || !monthlySummary || monthlySummary.totalSlips === 0 || monthlySummary.paidSlips === monthlySummary.totalSlips}
                       className="mt-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-900 text-white font-black py-3 rounded-2xl"
                     >
-                      {payingId === -1 ? '...' : `تسليم الرواتب للكل (${reportMonth}/${reportYear})`}
+                      {payingId === -1 ? '...' : t('payroll.calculate.payAll', { month: reportMonth, year: reportYear })}
                     </button>
                   </div>
                 </div>
@@ -1077,12 +1079,12 @@ const PayrollDashboard = () => {
 
                 <div className="bg-luxury-surface rounded-[2.5rem] border border-white/5 overflow-hidden">
                   <div className="p-6 border-b border-white/5 flex justify-between items-center">
-                    <h5 className="text-white font-bold">احتساب فردي للموظفين</h5>
+                    <h5 className="text-white font-bold">{t('payroll.calculate.individualTitle')}</h5>
                     <div className="relative w-64">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
                       <input
                         type="text"
-                        placeholder="بحث عن موظف..."
+                        placeholder={t('payroll.calculate.searchPlaceholder')}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-xs text-white w-full"
@@ -1093,10 +1095,10 @@ const PayrollDashboard = () => {
                     <table className="w-full text-right">
                       <thead className="bg-white/5 text-slate-400 text-[11px] font-black uppercase">
                         <tr>
-                          <th className="p-6">الموظف</th>
-                          <th className="p-6">الراتب الأساسي</th>
-                          <th className="p-6">الحالة</th>
-                          <th className="p-6">الإجراء</th>
+                          <th className="p-6">{t('payroll.calculate.tableEmployee')}</th>
+                          <th className="p-6">{t('payroll.calculate.tableSalary')}</th>
+                          <th className="p-6">{t('payroll.calculate.tableStatus')}</th>
+                          <th className="p-6">{t('payroll.calculate.tableAction')}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5">
@@ -1105,31 +1107,31 @@ const PayrollDashboard = () => {
                           .map(emp => (
                           <tr key={emp.employeeId} className="hover:bg-white/[0.02]">
                             <td className="p-6 font-bold text-slate-100">{emp.fullName}</td>
-                            <td className="p-6 text-slate-300 font-bold">{emp.baseSalary} ر.س</td>
+                            <td className="p-6 text-slate-300 font-bold">{emp.baseSalary} {t('advanceRequest.currencySymbol')}</td>
                             <td className="p-6">
-                              <span className="bg-green-500/10 text-green-400 px-2 py-1 rounded-md text-[10px] font-bold">نشط</span>
+                              <span className="bg-green-500/10 text-green-400 px-2 py-1 rounded-md text-[10px] font-bold">{t('status.Active')}</span>
                             </td>
 	                            <td className="p-6">
 	                              <div className="flex items-center gap-4">
 	                                <button
 	                                  onClick={() => setShowConfirmCalc({ id: emp.employeeId, name: emp.fullName })}
-	                                  disabled={calculatingId !== null}
+	                                  disabled={calculatingId !== null || monthlySummary?.isLocked}
 	                                  className="text-purple-400 hover:text-purple-300 font-bold text-sm flex items-center gap-2 disabled:opacity-50"
 	                                >
 	                                  {calculatingId === emp.employeeId ? <Clock size={16} className="animate-spin" /> : <Calculator size={16} />}
-	                                  احتساب
+	                                  {t('payroll.calculate.calculate')}
 	                                </button>
 		                                {(() => {
 		                                  const slip = monthlyPayrollMap[emp.employeeId];
 		                                  if (!slip) {
 		                                    return (
 		                                      <span className="text-slate-600 text-xs font-bold">
-		                                        غير محتسب
+		                                        {t('payroll.calculate.notCalculated')}
 		                                      </span>
 		                                    );
 		                                  }
 		                                  if (slip.paid) {
-		                                    return <span className="text-emerald-400 text-xs font-black">تم التسليم</span>;
+		                                    return <span className="text-emerald-400 text-xs font-black">{t('payroll.calculate.delivered')}</span>;
 		                                  }
 		                                  return (
 		                                    <button
@@ -1138,7 +1140,7 @@ const PayrollDashboard = () => {
 		                                      disabled={payingId !== null}
 		                                      className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-900 text-white font-black px-4 py-2 rounded-xl text-xs shadow-lg shadow-emerald-500/10 disabled:opacity-60"
 		                                    >
-		                                      {payingId === emp.employeeId ? '...' : 'تسليم الراتب'}
+		                                      {payingId === emp.employeeId ? '...' : t('payroll.calculate.paySalary')}
 		                                    </button>
 		                                  );
 		                                })()}
@@ -1160,7 +1162,7 @@ const PayrollDashboard = () => {
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
                     <input
                       type="text"
-                      placeholder="بحث باسم الموظف في السجلات..."
+                      placeholder={t('payroll.history.searchPlaceholder')}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white placeholder:text-slate-500 focus:ring-2 focus:ring-purple-500/20"
@@ -1173,13 +1175,13 @@ const PayrollDashboard = () => {
                     <table className="w-full text-right">
                       <thead className="bg-white/5 text-slate-400 text-[11px] font-black uppercase">
                         <tr>
-                          <th className="p-6">الموظف</th>
-                          <th className="p-6">الشهر</th>
-                          <th className="p-6">ساعات العمل</th>
-                          <th className="p-6">إضافي</th>
-                          <th className="p-6">سلف مخصومة</th>
-                          <th className="p-6">الصافي</th>
-                          <th className="p-6">تفاصيل</th>
+                          <th className="p-6">{t('payroll.history.tableEmployee')}</th>
+                          <th className="p-6">{t('payroll.history.tableMonth')}</th>
+                          <th className="p-6">{t('payroll.history.tableWorkHours')}</th>
+                          <th className="p-6">{t('payroll.history.tableOvertime')}</th>
+                           <th className="p-6">{t('payroll.history.tableDeductions')}</th>
+                           <th className="p-6">{t('payroll.history.tableNet')}</th>
+                          <th className="p-6">{t('payroll.history.tableDetails')}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5">
@@ -1189,10 +1191,10 @@ const PayrollDashboard = () => {
                             <td className="p-6 text-slate-400 text-xs">
                               {new Date(slip.year, slip.month - 1).toLocaleDateString('ar-SA', { month: 'long', year: 'numeric' })}
                             </td>
-                            <td className="p-6 text-slate-300 font-bold">{slip.totalWorkHours} س</td>
-                            <td className="p-6 text-blue-400 font-bold">{slip.overtimeHours} س</td>
-                            <td className="p-6 text-red-400 font-bold">{slip.deductions} ر.س</td>
-                            <td className="p-6 text-green-400 font-black text-lg">{slip.netSalary?.toLocaleString()} ر.س</td>
+                            <td className="p-6 text-slate-300 font-bold">{slip.totalWorkHours} {t('attendanceGrid.hours')}</td>
+                            <td className="p-6 text-blue-400 font-bold">{slip.overtimeHours} {t('attendanceGrid.hours')}</td>
+                            <td className="p-6 text-red-400 font-bold">{slip.deductions} {t('advanceRequest.currencySymbol')}</td>
+                            <td className="p-6 text-green-400 font-black text-lg">{slip.netSalary?.toLocaleString()} {t('advanceRequest.currencySymbol')}</td>
                             <td className="p-6">
                               <button 
                                 onClick={() => setSelectedSlip(slip)}
@@ -1227,8 +1229,8 @@ const PayrollDashboard = () => {
                         <FileText size={24} />
                       </div>
                       <div>
-                        <h3 className="text-2xl font-black text-white arabic-text">تفاصيل قسيمة الراتب</h3>
-                        <p className="text-slate-400 text-sm">{selectedSlip.employeeName} — {new Date(selectedSlip.year, selectedSlip.month - 1).toLocaleDateString('ar-SA', { month: 'long', year: 'numeric' })}</p>
+                        <h3 className="text-2xl font-black text-white arabic-text">{t('payroll.slip.title')}</h3>
+                        <p className="text-slate-400 text-sm">{t('payroll.slip.subtitle', { name: selectedSlip.employeeName, date: new Date(selectedSlip.year, selectedSlip.month - 1).toLocaleDateString('ar-SA', { month: 'long', year: 'numeric' }) })}</p>
                       </div>
                     </div>
                     <button onClick={() => setSelectedSlip(null)} className="p-2 hover:bg-white/10 rounded-full text-slate-400 hover:text-white transition-all">
@@ -1240,32 +1242,32 @@ const PayrollDashboard = () => {
                     <div className="grid grid-cols-2 gap-8">
                       <div className="bg-white/5 p-6 rounded-3xl border border-white/5">
                         <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
-                          <TrendingUp size={14} className="text-green-500" /> الاستحقاقات
+                          <TrendingUp size={14} className="text-green-500" /> {t('payroll.slip.entitlements')}
                         </p>
                         <div className="space-y-3">
                           <div className="flex justify-between items-center">
-                            <span className="text-slate-400 text-sm">ساعات العمل الأساسية</span>
-                            <span className="text-white font-bold">{selectedSlip.totalWorkHours} ساعة</span>
+                            <span className="text-slate-400 text-sm">{t('payroll.slip.basicHours')}</span>
+                            <span className="text-white font-bold">{selectedSlip.totalWorkHours} {t('attendanceGrid.hours')}</span>
                           </div>
                           <div className="flex justify-between items-center">
-                            <span className="text-slate-400 text-sm">الساعات الإضافية</span>
-                            <span className="text-blue-400 font-bold">+{selectedSlip.overtimeHours} ساعة</span>
+                            <span className="text-slate-400 text-sm">{t('payroll.slip.overtime')}</span>
+                            <span className="text-blue-400 font-bold">+{selectedSlip.overtimeHours} {t('attendanceGrid.hours')}</span>
                           </div>
                         </div>
                       </div>
 
                       <div className="bg-white/5 p-6 rounded-3xl border border-white/5">
                         <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
-                          <TrendingDown size={14} className="text-red-500" /> الاستقطاعات
+                          <TrendingDown size={14} className="text-red-500" /> {t('payroll.slip.deductions')}
                         </p>
                         <div className="space-y-3">
                           <div className="flex justify-between items-center">
-                            <span className="text-slate-400 text-sm">سلف مخصومة</span>
-                            <span className="text-red-400 font-bold">{selectedSlip.deductions?.toLocaleString()} ر.س</span>
+                            <span className="text-slate-400 text-sm">{t('payroll.slip.advanceDeductions')}</span>
+                            <span className="text-red-400 font-bold">{selectedSlip.deductions?.toLocaleString()} {t('advanceRequest.currencySymbol')}</span>
                           </div>
                           <div className="flex justify-between items-center">
-                            <span className="text-slate-400 text-sm">تأمينات / أخرى</span>
-                            <span className="text-slate-500 font-bold">0 ر.س</span>
+                            <span className="text-slate-400 text-sm">{t('payroll.slip.insurance')}</span>
+                            <span className="text-slate-500 font-bold">0 {t('advanceRequest.currencySymbol')}</span>
                           </div>
                         </div>
                       </div>
@@ -1273,21 +1275,21 @@ const PayrollDashboard = () => {
 
                     <div className="bg-purple-600/10 p-8 rounded-[2rem] border border-purple-500/20 text-center relative overflow-hidden">
                        <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl" />
-                       <p className="text-purple-400 text-xs font-black uppercase tracking-[0.2em] mb-2">صافي المبلغ المستحق</p>
-                       <p className="text-5xl font-black text-white tracking-tight">{selectedSlip.netSalary?.toLocaleString()} <span className="text-lg font-bold text-purple-400">ر.س</span></p>
+                       <p className="text-purple-400 text-xs font-black uppercase tracking-[0.2em] mb-2">{t('payroll.slip.netAmount')}</p>
+                       <p className="text-5xl font-black text-white tracking-tight">{selectedSlip.netSalary?.toLocaleString()} <span className="text-lg font-bold text-purple-400">{t('advanceRequest.currencySymbol')}</span></p>
                     </div>
 
                     <div className="flex items-center gap-2 text-slate-500 text-[10px] font-bold uppercase tracking-widest">
-                      <Clock size={12} /> صدر بتاريخ: {new Date(selectedSlip.generatedAt).toLocaleString('ar-SA')}
+                      <Clock size={12} /> {t('payroll.slip.issuedAt', { date: new Date(selectedSlip.generatedAt).toLocaleString('ar-SA') })}
                     </div>
                   </div>
 
                   <div className="p-8 border-t border-white/5 bg-white/5 flex justify-between gap-4">
                     <button className="flex-1 bg-white/5 hover:bg-white/10 text-white font-bold py-4 rounded-2xl border border-white/5 transition-all flex items-center justify-center gap-2">
-                      <Printer size={18} /> طباعة القسيمة
+                      <Printer size={18} /> {t('payroll.slip.print')}
                     </button>
                     <button onClick={() => setSelectedSlip(null)} className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-2xl shadow-xl shadow-purple-600/20 transition-all">
-                      حسناً
+                      {t('userManagement.done')}
                     </button>
                   </div>
                 </motion.div>
@@ -1305,10 +1307,9 @@ const PayrollDashboard = () => {
                   <div className="bg-green-500/10 w-16 h-16 rounded-2xl flex items-center justify-center text-green-400 mb-6">
                     <UserPlus size={32} />
                   </div>
-                  <h3 className="text-2xl font-black text-white arabic-text mb-2">تم إنشاء الموظف</h3>
+                  <h3 className="text-2xl font-black text-white arabic-text mb-2">{t('payroll.recruitment.employeeCreated')}</h3>
                   <p className="text-slate-400 text-sm leading-relaxed">
-                    تم اعتماد طلب التوظيف وإنشاء حساب الموظف <span className="text-white font-bold">{createdCredentials.employeeName || '—'}</span>.
-                    هذه البيانات تظهر مرة واحدة فقط.
+                    {t('payroll.recruitment.employeeCreatedSubtitle', { name: createdCredentials.employeeName || '—' })}
                   </p>
 
                   <div className="mt-6 space-y-3">
@@ -1331,7 +1332,7 @@ const PayrollDashboard = () => {
                       onClick={() => setCreatedCredentials(null)}
                       className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-2xl shadow-xl shadow-purple-600/20 transition-all"
                     >
-                      حسناً
+                      {t('userManagement.done')}
                     </button>
                   </div>
                 </motion.div>
@@ -1348,10 +1349,9 @@ const PayrollDashboard = () => {
                   <div className="bg-orange-500/10 w-16 h-16 rounded-2xl flex items-center justify-center text-orange-500 mb-6">
                     <AlertCircle size={32} />
                   </div>
-                  <h3 className="text-2xl font-black text-white arabic-text mb-2">تأكيد احتساب الراتب</h3>
+                  <h3 className="text-2xl font-black text-white arabic-text mb-2">{t('payroll.calculate.confirmTitle')}</h3>
                   <p className="text-slate-400 text-sm leading-relaxed">
-                    أنت على وشك احتساب راتب شهر <span className="text-white font-bold">{reportMonth}/{reportYear}</span> لـ <span className="text-purple-400 font-bold">{showConfirmCalc.name}</span>.
-                    سيتم اعتماد ساعات العمل المعتمدة وخصم السلف الموافق عليها تلقائياً.
+                    {t('payroll.calculate.confirmMessage', { name: showConfirmCalc.name, month: reportMonth, year: reportYear })}
                   </p>
                   
                   <div className="mt-8 space-y-3">
@@ -1360,13 +1360,13 @@ const PayrollDashboard = () => {
                       className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-2xl shadow-xl shadow-purple-600/20 transition-all flex items-center justify-center gap-2"
                     >
                       <Calculator size={18} />
-                      تأكيد والاحتساب الآن
+                      {t('payroll.calculate.confirmButton')}
                     </button>
                     <button
                       onClick={() => setShowConfirmCalc(null)}
                       className="w-full bg-white/5 hover:bg-white/10 text-white font-bold py-4 rounded-2xl transition-all"
                     >
-                      إلغاء
+                      {t('common.cancel')}
                     </button>
                   </div>
                 </motion.div>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { submitAdvanceRequest } from '../services/api';
 import { motion } from 'framer-motion';
 import { extractApiError } from '../utils/errorHandler';
@@ -13,6 +14,7 @@ interface FormErrors {
 }
 
 const AdvanceRequestForm = ({ onClose, onSuccess }: AdvanceRequestFormProps) => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -30,16 +32,16 @@ const AdvanceRequestForm = ({ onClose, onSuccess }: AdvanceRequestFormProps) => 
     // Amount validation
     const amount = parseFloat(formData.amount);
     if (!formData.amount.trim()) {
-      newErrors.amount = 'المبلغ مطلوب';
+      newErrors.amount = t('advanceRequest.amountRequired');
     } else if (isNaN(amount) || amount <= 0) {
-      newErrors.amount = 'المبلغ يجب أن يكون رقماً موجباً';
+      newErrors.amount = t('advanceRequest.amountPositive');
     } else if (amount > 100000) {
-      newErrors.amount = 'المبلغ يتجاوز الحد الأقصى المسموح (100,000)';
+      newErrors.amount = t('advanceRequest.amountMaxExceeded');
     }
 
     // Reason validation
     if (formData.reason.trim().length > 500) {
-      newErrors.reason = 'السبب يجب ألا يتجاوز 500 حرف';
+      newErrors.reason = t('advanceRequest.reasonMaxLength');
     }
 
     setErrors(newErrors);
@@ -82,7 +84,7 @@ const AdvanceRequestForm = ({ onClose, onSuccess }: AdvanceRequestFormProps) => 
       }, 1500);
     } catch (err: unknown) {
       const { message } = extractApiError(err);
-      setError(message || 'حدث خطأ أثناء إرسال الطلب');
+      setError(message || t('errors.advanceRequestFailed'));
     } finally {
       setLoading(false);
     }
@@ -102,15 +104,15 @@ const AdvanceRequestForm = ({ onClose, onSuccess }: AdvanceRequestFormProps) => 
           dir="rtl"
         >
           <div className="text-green-600 text-6xl mb-4">✓</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">تم إرسال طلب السلفة بنجاح</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">{t('advanceRequest.successTitle')}</h2>
           <p className="text-gray-600 mb-6">
-            تم إرسال طلب السلفة بنجاح وتم توجيهه إلى إدارة الرواتب للمراجعة والموافقة
+            {t('advanceRequest.successMessage')}
           </p>
           <button
             onClick={onClose}
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
-            إغلاق
+            {t('common.close')}
           </button>
         </div>
       </motion.div>
@@ -133,7 +135,7 @@ const AdvanceRequestForm = ({ onClose, onSuccess }: AdvanceRequestFormProps) => 
         {/* Header */}
         <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white p-6 rounded-t-lg">
           <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold">طلب سلفة مالية</h2>
+            <h2 className="text-2xl font-bold">{t('advanceRequest.title')}</h2>
             <button
               onClick={onClose}
               className="text-white hover:text-gray-200 text-2xl font-bold"
@@ -142,7 +144,7 @@ const AdvanceRequestForm = ({ onClose, onSuccess }: AdvanceRequestFormProps) => 
             </button>
           </div>
           <p className="text-purple-100 mt-2">
-            أدخل المبلغ والسبب لإرسال طلب السلفة
+            {t('advanceRequest.subtitle')}
           </p>
         </div>
 
@@ -157,7 +159,7 @@ const AdvanceRequestForm = ({ onClose, onSuccess }: AdvanceRequestFormProps) => 
           {/* Amount */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              المبلغ المطلوب <span className="text-red-500">*</span>
+              {t('advanceRequest.amountLabel')} <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <input
@@ -172,26 +174,26 @@ const AdvanceRequestForm = ({ onClose, onSuccess }: AdvanceRequestFormProps) => 
                   errors.amount ? 'border-red-500' : 'border-gray-300'
                 }`}
               />
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">ر.س</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">{t('advanceRequest.currencySymbol')}</span>
             </div>
             {errors.amount && (
               <p className="text-red-500 text-xs mt-1">{errors.amount}</p>
             )}
             <p className="text-gray-500 text-xs mt-2">
-              الحد الأقصى المسموح: 100,000 ر.س
+              {t('advanceRequest.maxAllowed')}
             </p>
           </div>
  
           {/* Reason */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              سبب الطلب
+              {t('advanceRequest.reasonLabel')}
             </label>
             <textarea
               name="reason"
               value={formData.reason}
               onChange={handleChange}
-              placeholder="اكتب سبب طلب السلفة (اختياري)..."
+              placeholder={t('advanceRequest.reasonPlaceholder')}
               rows={4}
               maxLength={500}
               className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none text-gray-900 font-medium ${
@@ -209,8 +211,7 @@ const AdvanceRequestForm = ({ onClose, onSuccess }: AdvanceRequestFormProps) => 
           {/* Info Box */}
           <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
             <p className="text-purple-800 text-sm">
-              <strong>ملاحظة:</strong> سيتم خصم مبلغ السلفة من راتبك الشهري أثناء معالجة الرواتب.
-              سيتم مراجعة طلبك من قبل إدارة الموارد البشرية.
+              <strong>{t('advanceRequest.note')}</strong> {t('advanceRequest.noteText')}
             </p>
           </div>
 
@@ -222,7 +223,7 @@ const AdvanceRequestForm = ({ onClose, onSuccess }: AdvanceRequestFormProps) => 
               className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
               disabled={loading}
             >
-              إلغاء
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
@@ -235,10 +236,10 @@ const AdvanceRequestForm = ({ onClose, onSuccess }: AdvanceRequestFormProps) => 
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
-                  جاري الإرسال...
+                  {t('advanceRequest.sending')}
                 </span>
               ) : (
-                'إرسال الطلب'
+                t('advanceRequest.sendRequest')
               )}
             </button>
           </div>

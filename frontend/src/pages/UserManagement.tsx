@@ -114,7 +114,7 @@ const UserManagement = () => {
   });
 
   const error = queryError
-    ? (queryError instanceof Error ? queryError.message : t('users.loadError'))
+    ? (queryError instanceof Error ? queryError.message : t('userManagement.loadError'))
     : null;
 
   const [mutationError, setMutationError] = useState<string | null>(null);
@@ -124,12 +124,12 @@ const UserManagement = () => {
     mutationFn: ({ id, payload }: { id: number; payload: EmployeeAdminUpdatePayload }) =>
       updateEmployee(id, payload),
     onSuccess: () => {
-      setSuccessMessage(t('users.successUpdated'));
+      setSuccessMessage(t('userManagement.successUpdated'));
       setShowEditModal(false);
       void queryClient.invalidateQueries({ queryKey: queryKeys.users.list });
     },
     onError: (err: unknown) => {
-      const msg = err instanceof Error ? err.message : t('users.errorUpdate');
+      const msg = err instanceof Error ? err.message : t('userManagement.errorUpdate');
       setMutationError(msg);
     },
   });
@@ -138,14 +138,14 @@ const UserManagement = () => {
     mutationFn: ({ id, reason }: { id: number; reason: string }) => archiveEmployee(id, { reason }),
     onSuccess: (res) => {
       const name = res.data?.fullName ?? '';
-      setSuccessMessage(t('users.successArchived', { name }));
+      setSuccessMessage(t('userManagement.successArchived', { name }));
       setShowArchiveConfirm(false);
       setArchiveReason('');
       setSelectedEmployee(null);
       void queryClient.invalidateQueries({ queryKey: queryKeys.users.list });
     },
     onError: (err: unknown) => {
-      setMutationError(extractApiError(err).message || t('users.errorArchive'));
+      setMutationError(extractApiError(err).message || t('userManagement.errorArchive'));
     },
   });
 
@@ -154,10 +154,10 @@ const UserManagement = () => {
     mutationFn: (id: number) => resetEmployeePassword(id),
     onSuccess: (res) => {
       setResetPasswordResult({ password: res.data.newPassword, name: res.data.fullName });
-      setSuccessMessage(`تم إعادة تعيين كلمة المرور للموظف ${res.data.fullName}`);
+      setSuccessMessage(t('userManagement.resetPasswordSuccess', { name: res.data.fullName }));
     },
     onError: (err: unknown) => {
-      setMutationError(extractApiError(err).message || 'فشل في إعادة تعيين كلمة المرور');
+      setMutationError(extractApiError(err).message || t('userManagement.resetPasswordError'));
     },
   });
 
@@ -266,8 +266,8 @@ const UserManagement = () => {
               <Users size={28} className="text-blue-400" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold">{t('users.title')}</h1>
-              <p className="text-slate-400 mt-1">{t('users.subtitle')}</p>
+              <h1 className="text-3xl font-bold">{t('userManagement.title')}</h1>
+              <p className="text-slate-400 mt-1">{t('userManagement.subtitle')}</p>
             </div>
           </div>
         </div>
@@ -294,7 +294,7 @@ const UserManagement = () => {
               className="px-4 py-3 bg-zinc-900 border border-white/10 rounded-xl text-white"
             >
 
-              <option value="ALL">{t('users.allRoles')}</option>
+              <option value="ALL">{t('userManagement.allRoles')}</option>
               <option value="SUPER_ADMIN">{t('roles.SUPER_ADMIN')}</option>
               <option value="ADMIN">{t('roles.ADMIN')}</option>
               <option value="HR">{t('roles.HR')}</option>
@@ -318,22 +318,22 @@ const UserManagement = () => {
         {isPending ? (
           <div className="text-center py-12 text-slate-500">{t('common.loading')}</div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-12 text-slate-500">{t('users.noResults')}</div>
+          <div className="text-center py-12 text-slate-500">{t('userManagement.noResults')}</div>
         ) : (
           <div className="bg-zinc-900 border border-white/5 rounded-2xl overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-white/5 text-slate-400">
                   <tr>
-                    <th className="px-6 py-4 text-right font-bold">{t('users.tableNum')}</th>
-                    <th className="px-6 py-4 text-right font-bold">{t('users.tableName')}</th>
-                    <th className="px-6 py-4 text-right font-bold">{t('users.tableEmail')}</th>
-                    <th className="px-6 py-4 text-right font-bold">{t('users.tableRole')}</th>
-                    <th className="px-6 py-4 text-right font-bold">{t('users.tableTeam')}</th>
-                    <th className="px-6 py-4 text-right font-bold">{t('users.tableDept')}</th>
-                    <th className="px-6 py-4 text-right font-bold">{t('users.tableStatus')}</th>
-                    <th className="px-6 py-4 text-right font-bold">{t('users.tableCard')}</th>
-                    <th className="px-6 py-4 text-right font-bold">{t('users.tableActions')}</th>
+                    <th className="px-6 py-4 text-right font-bold">{t('userManagement.tableNum')}</th>
+                    <th className="px-6 py-4 text-right font-bold">{t('userManagement.tableName')}</th>
+                    <th className="px-6 py-4 text-right font-bold">{t('userManagement.tableEmail')}</th>
+                    <th className="px-6 py-4 text-right font-bold">{t('userManagement.tableRole')}</th>
+                    <th className="px-6 py-4 text-right font-bold">{t('userManagement.tableTeam')}</th>
+                    <th className="px-6 py-4 text-right font-bold">{t('userManagement.tableDept')}</th>
+                    <th className="px-6 py-4 text-right font-bold">{t('userManagement.tableStatus')}</th>
+                    <th className="px-6 py-4 text-right font-bold">{t('userManagement.tableCard')}</th>
+                    <th className="px-6 py-4 text-right font-bold">{t('userManagement.tableActions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -368,9 +368,9 @@ const UserManagement = () => {
                       </td>
                       <td className="px-6 py-4">
                         {emp.nfcLinked ? (
-                          <span className="text-green-400 text-xs font-bold">{t('users.nfcLinked')}</span>
+                          <span className="text-green-400 text-xs font-bold">{t('userManagement.nfcLinked')}</span>
                         ) : (
-                          <span className="text-slate-500 text-xs">{t('users.nfcNone')}</span>
+                          <span className="text-slate-500 text-xs">{t('userManagement.nfcNone')}</span>
                         )}
                       </td>
                       <td className="px-6 py-4">
@@ -378,7 +378,7 @@ const UserManagement = () => {
                           <button
                             onClick={() => handleView(emp)}
                             className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
-                            title={t('users.viewTitle')}
+                            title={t('userManagement.viewTitle')}
                           >
                             <Eye size={16} />
                           </button>
@@ -386,7 +386,7 @@ const UserManagement = () => {
                             <button
                               onClick={() => handleEdit(emp)}
                               className="p-2 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 hover:text-blue-300 transition-colors"
-                              title={t('users.editTitle')}
+                              title={t('userManagement.editTitle')}
                             >
                               <Edit size={16} />
                             </button>
@@ -395,7 +395,7 @@ const UserManagement = () => {
                             <button
                               onClick={() => { setSelectedEmployee(emp); setResetPasswordResult(null); setShowResetPassword(true); }}
                               className="p-2 rounded-lg bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 hover:text-yellow-300 transition-colors"
-                              title={isDevUser ? t('users.resetPwTitleDev') : t('users.resetPwTitle')}
+                              title={isDevUser ? t('userManagement.resetPwTitleDev') : t('userManagement.resetPwTitle')}
                             >
                               <Key size={16} />
                             </button>
@@ -404,7 +404,7 @@ const UserManagement = () => {
                             <button
                               onClick={() => { setSelectedEmployee(emp); setArchiveReason(''); setShowArchiveConfirm(true); }}
                               className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-colors"
-                              title={t('users.archiveTitle')}
+                              title={t('userManagement.archiveTitle')}
                             >
                               <UserX size={16} />
                             </button>
@@ -422,7 +422,7 @@ const UserManagement = () => {
         {/* Footer count */}
         {!isPending && (
           <div className="mt-4 text-slate-500 text-sm">
-            {t('users.footerCount', { filtered: filtered.length, total: employees.length })}
+            {t('userManagement.footerCount', { filtered: filtered.length, total: employees.length })}
           </div>
         )}
       </div>
@@ -455,29 +455,29 @@ const UserManagement = () => {
               </div>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div className="bg-white/5 p-4 rounded-xl">
-                  <p className="text-slate-500 mb-1">الدور</p>
+                  <p className="text-slate-500 mb-1">{t('userManagement.roleLabel')}</p>
                   <p className="text-white font-bold">{roleLabel(selectedEmployee.roleName)}</p>
                 </div>
                 <div className="bg-white/5 p-4 rounded-xl">
-                  <p className="text-slate-500 mb-1">القسم</p>
+                  <p className="text-slate-500 mb-1">{t('userManagement.departmentLabel')}</p>
                   <p className="text-white font-bold">{selectedEmployee.teamName ?? '—'}</p>
                 </div>
                 <div className="bg-white/5 p-4 rounded-xl">
-                  <p className="text-slate-500 mb-1">الراتب الأساسي</p>
-                  <p className="text-white font-bold">{selectedEmployee.baseSalary ? `${Number(selectedEmployee.baseSalary).toLocaleString()} ل.س` : '—'}</p>
+                  <p className="text-slate-500 mb-1">{t('userManagement.basicSalaryLabel')}</p>
+                  <p className="text-white font-bold">{selectedEmployee.baseSalary ? `${Number(selectedEmployee.baseSalary).toLocaleString()} ${t('userManagement.currencySymbol')}` : '—'}</p>
                 </div>
                 <div className="bg-white/5 p-4 rounded-xl">
-                  <p className="text-slate-500 mb-1">الحالة</p>
+                  <p className="text-slate-500 mb-1">{t('userManagement.statusLabel')}</p>
                   <p className={`font-bold ${selectedEmployee.employmentStatus === 'Active' ? 'text-green-400' : 'text-red-400'}`}>
-                    {selectedEmployee.employmentStatus === 'Active' ? 'نشط' : selectedEmployee.employmentStatus}
+                    {selectedEmployee.employmentStatus === 'Active' ? t('common.active') : selectedEmployee.employmentStatus}
                   </p>
                 </div>
                 <div className="bg-white/5 p-4 rounded-xl">
-                  <p className="text-slate-500 mb-1">بطاقة NFC</p>
-                  <p className="text-white font-bold">{selectedEmployee.nfcLinked ? `✓ ${selectedEmployee.cardUid ?? ''}` : 'غير مرتبط'}</p>
+                  <p className="text-slate-500 mb-1">{t('userManagement.nfcCardLabel')}</p>
+                  <p className="text-white font-bold">{selectedEmployee.nfcLinked ? `✓ ${selectedEmployee.cardUid ?? ''}` : t('userManagement.nfcNone')}</p>
                 </div>
                 <div className="bg-white/5 p-4 rounded-xl">
-                  <p className="text-slate-500 mb-1">رقم الموظف</p>
+                  <p className="text-slate-500 mb-1">{t('userManagement.employeeNumberLabel')}</p>
                   <p className="text-white font-bold">#{selectedEmployee.employeeId}</p>
                 </div>
               </div>
@@ -485,7 +485,7 @@ const UserManagement = () => {
                 onClick={() => setShowViewModal(false)}
                 className="w-full mt-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-slate-300 transition-colors"
               >
-                إغلاق
+                {t('common.close')}
               </button>
             </motion.div>
           </motion.div>
@@ -509,10 +509,10 @@ const UserManagement = () => {
               className="bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
-              <h2 className="text-xl font-bold text-white mb-6">تعديل بيانات: {selectedEmployee.fullName}</h2>
+              <h2 className="text-xl font-bold text-white mb-6">{t('userManagement.editModalTitle', { name: selectedEmployee.fullName })}</h2>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-bold text-slate-300 mb-2">الاسم الكامل</label>
+                  <label className="block text-sm font-bold text-slate-300 mb-2">{t('userManagement.fullName')}</label>
                   <input
                     type="text"
                     value={editForm.fullName}
@@ -521,7 +521,7 @@ const UserManagement = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-300 mb-2">البريد الإلكتروني</label>
+                  <label className="block text-sm font-bold text-slate-300 mb-2">{t('userManagement.email')}</label>
                   <input
                     type="email"
                     value={editForm.email}
@@ -530,7 +530,7 @@ const UserManagement = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-300 mb-2">رقم الهاتف</label>
+                  <label className="block text-sm font-bold text-slate-300 mb-2">{t('userManagement.phoneNumber')}</label>
                   <input
                     type="text"
                     value={editForm.mobileNumber || ''}
@@ -539,7 +539,7 @@ const UserManagement = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-300 mb-2">العنوان</label>
+                  <label className="block text-sm font-bold text-slate-300 mb-2">{t('userManagement.address')}</label>
                   <input
                     type="text"
                     value={editForm.address || ''}
@@ -548,7 +548,7 @@ const UserManagement = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-300 mb-2">رقم الهوية</label>
+                  <label className="block text-sm font-bold text-slate-300 mb-2">{t('userManagement.nationalId')}</label>
                   <input
                     type="text"
                     value={editForm.nationalId || ''}
@@ -559,10 +559,10 @@ const UserManagement = () => {
 
                 {/* Admin-only fields */}
                 <div className="border-t border-white/10 pt-4 mt-6">
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">حقول الإدارة المتقدمة</p>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">{t('userManagement.advancedAdminFields')}</p>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-bold text-slate-300 mb-2">القسم</label>
+                      <label className="block text-sm font-bold text-slate-300 mb-2">{t('userManagement.departmentLabel')}</label>
                       <select
                         value={editForm.departmentId || ''}
                         onChange={(e) => setEditForm({ ...editForm, departmentId: e.target.value ? Number(e.target.value) : null })}
@@ -570,7 +570,7 @@ const UserManagement = () => {
                         disabled={departmentsLoading}
                       >
                         <option value="" className="bg-zinc-800 text-white">
-                          {departmentsLoading ? 'جاري تحميل الأقسام...' : 'بدون قسم'}
+                          {departmentsLoading ? t('userManagement.loadingDepartments') : t('userManagement.noDepartment')}
                         </option>
                         {departments.map((d) => (
                           <option key={d.departmentId} value={d.departmentId} className="bg-zinc-800 text-white">{d.departmentName}{d.departmentCode ? ` (${d.departmentCode})` : ''}</option>
@@ -578,19 +578,19 @@ const UserManagement = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-slate-300 mb-2">الحالة</label>
+                      <label className="block text-sm font-bold text-slate-300 mb-2">{t('userManagement.statusLabel')}</label>
                       <select
                         value={editForm.employmentStatus || 'Active'}
                         onChange={(e) => setEditForm({ ...editForm, employmentStatus: e.target.value })}
                         className="w-full px-4 py-3 bg-zinc-800 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500"
                       >
-                        <option value="Active" className="bg-zinc-800 text-white">نشط</option>
-                        <option value="Inactive" className="bg-zinc-800 text-white">غير نشط</option>
-                        <option value="Terminated" className="bg-zinc-800 text-white">مُنهى</option>
+                        <option value="Active" className="bg-zinc-800 text-white">{t('common.active')}</option>
+                        <option value="Inactive" className="bg-zinc-800 text-white">{t('common.inactive')}</option>
+                        <option value="Terminated" className="bg-zinc-800 text-white">{t('common.terminated')}</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-slate-300 mb-2">الراتب الأساسي (ل.س)</label>
+                      <label className="block text-sm font-bold text-slate-300 mb-2">{t('userManagement.basicSalaryLabel')}</label>
                       <input
                         type="number"
                         value={editForm.baseSalary || ''}
@@ -607,14 +607,14 @@ const UserManagement = () => {
                   onClick={() => setShowEditModal(false)}
                   className="flex-1 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-slate-300 transition-colors"
                 >
-                  إلغاء
+                  {t('common.cancel')}
                 </button>
                 <button
                   onClick={handleSaveEdit}
                   disabled={updateMutation.isPending}
                   className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold text-white transition-colors disabled:opacity-50"
                 >
-                  {updateMutation.isPending ? 'جارِ الحفظ...' : 'حفظ التغييرات'}
+                  {updateMutation.isPending ? t('userManagement.saving') : t('userManagement.saveChanges')}
                 </button>
               </div>
             </motion.div>
@@ -642,24 +642,24 @@ const UserManagement = () => {
               <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center mx-auto text-4xl text-red-400 mb-4">
                 <UserX size={36} />
               </div>
-              <h2 className="text-2xl font-bold text-white mb-2 text-center">{t('users.archiveModalTitle')}</h2>
+              <h2 className="text-2xl font-bold text-white mb-2 text-center">{t('userManagement.archiveModalTitle')}</h2>
               <p className="text-slate-400 mb-4 text-sm">
-                {t('users.archiveModalLead')}
+                {t('userManagement.archiveModalLead')}
               </p>
               <div className="bg-white/5 rounded-xl p-4 mb-4">
                 <p className="text-white font-bold text-lg">{selectedEmployee.fullName}</p>
                 <p className="text-slate-500 text-sm">{selectedEmployee.email} · {roleLabel(selectedEmployee.roleName)}</p>
               </div>
-              <label className="block text-sm font-bold text-slate-300 mb-2">{t('users.archiveModalReasonLabel')}</label>
+              <label className="block text-sm font-bold text-slate-300 mb-2">{t('userManagement.archiveModalReasonLabel')}</label>
               <textarea
                 value={archiveReason}
                 onChange={(e) => setArchiveReason(e.target.value)}
                 rows={3}
-                placeholder={t('users.archiveModalReasonPlaceholder')}
+                placeholder={t('userManagement.archiveModalReasonPlaceholder')}
                 className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-slate-600 focus:ring-2 focus:ring-red-500 resize-none mb-4"
               />
               <p className="text-yellow-500/80 text-xs mb-6">
-                {t('users.archiveModalHint')}
+                {t('userManagement.archiveModalHint')}
               </p>
               <div className="flex gap-3">
                 <button
@@ -675,7 +675,7 @@ const UserManagement = () => {
                   disabled={archiveMutation.isPending || archiveReason.trim().length < 3}
                   className="flex-[2] py-3 bg-red-600 hover:bg-red-700 rounded-xl font-bold text-white transition-colors disabled:opacity-50"
                 >
-                  {archiveMutation.isPending ? t('users.archiveSubmitting') : t('users.archiveConfirm')}
+                  {archiveMutation.isPending ? t('userManagement.archiveSubmitting') : t('userManagement.archiveConfirm')}
                 </button>
               </div>
             </motion.div>
@@ -703,12 +703,12 @@ const UserManagement = () => {
               <div className="w-20 h-20 rounded-full bg-yellow-500/10 flex items-center justify-center mx-auto text-4xl text-yellow-400 mb-4">
                 <Key size={36} />
               </div>
-              <h2 className="text-2xl font-bold text-white mb-2">إعادة تعيين كلمة المرور</h2>
+              <h2 className="text-2xl font-bold text-white mb-2">{t('userManagement.resetPasswordModalTitle')}</h2>
 
               {!resetPasswordResult ? (
                 <>
                   <p className="text-slate-400 mb-2">
-                    هل تريد إعادة تعيين كلمة المرور للموظف التالي؟
+                    {t('userManagement.resetPasswordModalQuestion')}
                   </p>
                   <div className="bg-white/5 rounded-xl p-4 mb-6">
                     <p className="text-white font-bold text-lg">{selectedEmployee.fullName}</p>
@@ -719,33 +719,33 @@ const UserManagement = () => {
                       onClick={() => { setShowResetPassword(false); setResetPasswordResult(null); }}
                       className="flex-1 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-slate-300 transition-colors"
                     >
-                      إلغاء
+                      {t('common.cancel')}
                     </button>
                     <button
                       onClick={handleResetPassword}
                       disabled={resetPasswordMutation.isPending}
                       className="flex-[2] py-3 bg-yellow-600 hover:bg-yellow-700 rounded-xl font-bold text-white transition-colors disabled:opacity-50"
                     >
-                      {resetPasswordMutation.isPending ? 'جارِ التعيين...' : 'تأكيد إعادة التعيين'}
+                      {resetPasswordMutation.isPending ? t('userManagement.resetPasswordModalGenerating') : t('userManagement.resetPasswordModalConfirm')}
                     </button>
                   </div>
                 </>
               ) : (
                 <>
                   <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 mb-4">
-                    <p className="text-green-400 font-bold mb-3">✓ تم تعيين كلمة مرور جديدة</p>
+                    <p className="text-green-400 font-bold mb-3">{t('userManagement.resetPasswordModalSuccess')}</p>
                     <div className="bg-zinc-950 rounded-lg p-4 font-mono text-lg text-white select-all">
                       {resetPasswordResult.password}
                     </div>
                     <p className="text-slate-400 text-xs mt-3">
-                      هذه هي كلمة المرور الوحيدة — انسخها وأرسلها للموظف <strong>{resetPasswordResult.name}</strong>
+                      {t('userManagement.resetPasswordModalInstruction', { name: resetPasswordResult.name })}
                     </p>
                   </div>
                   <button
                     onClick={() => { setShowResetPassword(false); setResetPasswordResult(null); }}
                     className="w-full py-3 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold text-white transition-colors"
                   >
-                    تم
+                    {t('userManagement.resetPasswordModalDone')}
                   </button>
                 </>
               )}

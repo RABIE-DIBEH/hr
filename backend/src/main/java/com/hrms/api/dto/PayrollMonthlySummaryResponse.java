@@ -7,6 +7,7 @@ public record PayrollMonthlySummaryResponse(
         int year,
         long totalSlips,
         long paidSlips,
-        BigDecimal totalNetSalary
+        BigDecimal totalNetSalary,
+        boolean isLocked
 ) {}
 

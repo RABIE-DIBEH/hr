@@ -1,6 +1,8 @@
 package com.hrms.api;
 
 import com.hrms.api.dto.*;
+import com.hrms.api.exception.BusinessException;
+import com.hrms.api.exception.ErrorCode;
 import com.hrms.core.models.Employee;
 import com.hrms.core.models.RecruitmentRequest;
 import com.hrms.core.repositories.EmployeeRepository;
@@ -14,7 +16,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -40,7 +41,7 @@ public class RecruitmentRequestController {
     public ResponseEntity<ApiResponse<IdResponseDto>> createRequest(@Valid @RequestBody RecruitmentRequestDto dto,
                                            @AuthenticationPrincipal EmployeeUserDetails principal) {
         if (!hasAnyRole(principal, "HR", "SUPER_ADMIN")) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only HR can create recruitment requests");
+            throw new BusinessException(ErrorCode.FORBIDDEN_OPERATION, "Only HR can create recruitment requests");
         }
 
         RecruitmentRequest request = new RecruitmentRequest.RecruitmentRequestBuilder()
@@ -71,10 +72,8 @@ public class RecruitmentRequestController {
                             "Recruitment request submitted successfully"
                     )
             );
-        } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-        } catch (IllegalStateException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            throw new BusinessException(ErrorCode.RECRUITMENT_INVALID_STATE, e.getMessage());
         }
     }
 
@@ -89,7 +88,7 @@ public class RecruitmentRequestController {
             @PageableDefault(size = 20) Pageable pageable) {
         
         if (!hasAnyRole(principal, "MANAGER", "HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+            throw new BusinessException(ErrorCode.FORBIDDEN_OPERATION, "Access denied");
         }
 
         String dept = department != null ? department : principal.getTeamName();
@@ -136,7 +135,7 @@ public class RecruitmentRequestController {
             @PageableDefault(size = 20) Pageable pageable) {
         
         if (!hasAnyRole(principal, "HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+            throw new BusinessException(ErrorCode.FORBIDDEN_OPERATION, "Access denied");
         }
 
         Page<RecruitmentRequest> page;
@@ -167,7 +166,7 @@ public class RecruitmentRequestController {
             @Valid @RequestBody ProcessRecruitmentRequestDto dto,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
         if (!hasAnyRole(principal, "MANAGER", "HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+            throw new BusinessException(ErrorCode.FORBIDDEN_OPERATION, "Access denied");
         }
 
         try {
@@ -185,9 +184,9 @@ public class RecruitmentRequestController {
 
             return ResponseEntity.ok(ApiResponse.success(responseBody, message));
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+            throw new BusinessException(ErrorCode.RECRUITMENT_NOT_FOUND, e.getMessage());
         } catch (IllegalStateException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+            throw new BusinessException(ErrorCode.RECRUITMENT_INVALID_STATE, e.getMessage());
         }
     }
 
@@ -202,14 +201,14 @@ public class RecruitmentRequestController {
 
         Optional<RecruitmentRequest> optional = recruitmentRequestService.getRequestById(requestId);
         if (optional.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Request not found");
+            throw new BusinessException(ErrorCode.RECRUITMENT_NOT_FOUND, "Request not found");
         }
 
         RecruitmentRequest request = optional.get();
 
         if (!request.getRequestedBy().equals(principal.getEmployeeId())
                 && !hasAnyRole(principal, "MANAGER", "HR", "ADMIN", "SUPER_ADMIN", "PAYROLL")) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+            throw new BusinessException(ErrorCode.FORBIDDEN_OPERATION, "Access denied");
         }
 
         return ResponseEntity.ok(ApiResponse.success(toResponse(request), "Recruitment request retrieved successfully"));
@@ -224,7 +223,7 @@ public class RecruitmentRequestController {
             @AuthenticationPrincipal EmployeeUserDetails principal) {
 
         if (!hasAnyRole(principal, "HR", "ADMIN", "SUPER_ADMIN")) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+            throw new BusinessException(ErrorCode.FORBIDDEN_OPERATION, "Access denied");
         }
 
         Long nextId = recruitmentRequestService.generateNextEmployeeId();
@@ -272,14 +271,10 @@ public class RecruitmentRequestController {
                 .map(Employee::getFullName).orElse("Unknown");
     }
 
-    private static boolean hasRole(EmployeeUserDetails principal, String role) {
-        return principal.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_" + role));
-    }
-
     private static boolean hasAnyRole(EmployeeUserDetails principal, String... roles) {
         for (String role : roles) {
-            if (hasRole(principal, role)) {
+            if (principal.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_" + role))) {
                 return true;
             }
         }

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Lock, X, Save, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { changePassword } from '../services/api';
@@ -8,6 +9,7 @@ interface ChangePasswordModalProps {
 }
 
 const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose }) => {
+  const { t } = useTranslation();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -20,12 +22,12 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose }) =>
     setError(null);
 
     if (newPassword !== confirmPassword) {
-      setError('كلمات المرور الجديدة غير متطابقة');
+      setError(t('changePassword.passwordsNotMatch'));
       return;
     }
 
     if (newPassword.length < 6) {
-      setError('كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل');
+      setError(t('changePassword.passwordMinLength'));
       return;
     }
 
@@ -36,7 +38,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose }) =>
       setTimeout(() => onClose(), 2000);
     } catch (err: unknown) {
       const axiosError = err as { response?: { data?: { message?: string } } };
-      setError(axiosError.response?.data?.message || 'فشل تغيير كلمة المرور');
+      setError(axiosError.response?.data?.message || t('changePassword.changeFailed'));
     } finally {
       setLoading(false);
     }
@@ -60,10 +62,10 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose }) =>
         <div className="bg-gradient-to-r from-purple-600 to-indigo-700 text-white p-6 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <Lock size={20} />
-            <h2 className="text-xl font-bold">تغيير كلمة المرور</h2>
+            <h2 className="text-xl font-bold">{t('changePassword.title')}</h2>
           </div>
-          <button onClick={onClose} aria-label="إغلاق" className="hover:bg-white/10 p-1 rounded-lg transition-all">
-            <X size={20} aria-label="إغلاق" />
+          <button onClick={onClose} aria-label={t('common.close')} className="hover:bg-white/10 p-1 rounded-lg transition-all">
+            <X size={20} aria-label={t('common.close')} />
           </button>
         </div>
 
@@ -78,12 +80,12 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose }) =>
           {success && (
             <div className="bg-green-500/10 border border-green-500/20 text-green-400 p-3 rounded-xl text-sm flex items-center gap-2">
               <CheckCircle2 size={16} />
-              تم تغيير كلمة المرور بنجاح!
+              {t('changePassword.changeSuccess')}
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">كلمة المرور الحالية</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{t('changePassword.currentPassword')}</label>
             <input
               type="password"
               value={currentPassword}
@@ -94,7 +96,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose }) =>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">كلمة المرور الجديدة</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{t('changePassword.newPassword')}</label>
             <input
               type="password"
               value={newPassword}
@@ -105,7 +107,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose }) =>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">تأكيد كلمة المرور الجديدة</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{t('changePassword.confirmPassword')}</label>
             <input
               type="password"
               value={confirmPassword}
@@ -121,7 +123,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose }) =>
               onClick={onClose}
               className="flex-1 px-4 py-3 border border-white/10 text-slate-400 rounded-xl font-bold hover:bg-white/5 transition-all"
             >
-              إلغاء
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
@@ -133,7 +135,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose }) =>
               ) : (
                 <>
                   <Save size={18} />
-                  <span>تغيير كلمة المرور</span>
+                  <span>{t('changePassword.changeButton')}</span>
                 </>
               )}
             </button>

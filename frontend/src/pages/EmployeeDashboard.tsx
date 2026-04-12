@@ -253,13 +253,13 @@ const EmployeeDashboard = () => {
                 <span className="text-sm font-bold text-slate-100">تسجيل الدوام</span>
               </button>
               <button
-                onClick={() => navigate('/goals')}
+                onClick={() => navigate('/inbox')}
                 className="bg-white/5 hover:bg-white/10 p-5 rounded-3xl flex flex-col items-center gap-3 transition-all border border-white/5 active:scale-95 group"
               >
                 <div className="bg-orange-600/20 p-3 rounded-2xl text-orange-400 group-hover:scale-110 transition-all">
                   <TrendingUp size={24} />
                 </div>
-                <span className="text-sm font-bold text-slate-100">أهدافي</span>
+                <span className="text-sm font-bold text-slate-100">الرسائل</span>
               </button>
             </div>
           </section>

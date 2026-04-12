@@ -27,8 +27,8 @@ Install the following software:
 CREATE DATABASE hrms_db;
 
 -- Run from command line (adjust paths as needed)
-psql -U postgres -d hrms_db -f database\schema.sql
-psql -U postgres -d hrms_db -f database\seed_test_data.sql
+psql -U postgres -d hrms_db -f database\master_schema_v1.sql
+psql -U postgres -d hrms_db -f database\master_seed_v1.sql
 ```
 
 ### 3. Backend Setup
@@ -214,7 +214,7 @@ Each major component has its own detailed README:
 **Database connection issues:**
 - Verify database exists: `psql -U postgres -l`
 - Check credentials in `backend/.env`
-- Ensure schema is loaded: run `database/schema.sql`
+- Ensure schema is loaded: run `database/master_schema_v1.sql`
 
 **Docker issues:**
 - Check logs: `docker-compose logs [service]`

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { ShieldCheck, Mail, Lock, ArrowLeft, Loader2 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { login } from '../services/api';
@@ -7,6 +8,7 @@ import { getRole, dashboardForRole } from '../services/auth';
 import axios from 'axios';
 
 const Login = () => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [email, setEmail] = useState('');
@@ -28,7 +30,7 @@ const Login = () => {
       const msg =
         axios.isAxiosError(err) && err.response?.data && typeof err.response.data === 'object' && 'message' in err.response.data
           ? String((err.response.data as { message: string }).message)
-          : 'تعذر تسجيل الدخول. تحقق من البيانات أو اتصال الخادم.';
+          : t('login.loginError');
       setError(msg);
     } finally {
       setLoading(false);
@@ -53,7 +55,7 @@ const Login = () => {
 	            <h1 className="luxury-display mb-3 w-fit mx-auto text-center text-[2rem] font-extrabold leading-none text-luxury-accent drop-shadow-[0_0_18px_rgba(212,175,55,0.3)] sm:text-[2.35rem]">
 	              RABIO&amp;RADO
 	            </h1>
-	            <p className="w-fit mx-auto text-center text-white/55 font-medium text-sm">النظام المتكامل لادارة الشركات</p>
+	            <p className="w-fit mx-auto text-center text-white/55 font-medium text-sm">{t('login.title')}</p>
 	          </div>
 	        </div>
 
@@ -65,12 +67,12 @@ const Login = () => {
           )}
 
           <div className="space-y-2">
-            <label className="text-xs font-black text-luxury-accent uppercase tracking-[0.2em] mr-1">البريد الإلكتروني</label>
+            <label className="text-xs font-black text-luxury-accent uppercase tracking-[0.2em] mr-1">{t('login.emailLabel')}</label>
             <div className="relative">
               <Mail className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20" size={20} />
               <input
                 type="email"
-                placeholder="name@company.com"
+                placeholder={t('login.emailPlaceholder')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-white/[0.03] border border-white/5 rounded-[20px] py-5 pr-12 pl-4 text-white placeholder:text-white/30 focus:outline-none focus:border-luxury-primary/50 focus:bg-white/[0.05] transition-all text-sm font-medium"
@@ -80,12 +82,12 @@ const Login = () => {
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-black text-luxury-accent uppercase tracking-[0.2em] mr-1">كلمة المرور</label>
+            <label className="text-xs font-black text-luxury-accent uppercase tracking-[0.2em] mr-1">{t('login.passwordLabel')}</label>
             <div className="relative">
               <Lock className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20" size={20} />
               <input
                 type="password"
-                placeholder="••••••••"
+                placeholder={t('login.passwordPlaceholder')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full bg-white/[0.03] border border-white/5 rounded-[20px] py-5 pr-12 pl-4 text-white placeholder:text-white/30 focus:outline-none focus:border-luxury-primary/50 focus:bg-white/[0.05] transition-all text-sm font-medium"
@@ -103,7 +105,7 @@ const Login = () => {
               <Loader2 className="animate-spin" size={24} />
             ) : (
               <>
-                <span className="text-lg">تسجيل الدخول</span>
+                <span className="text-lg">{t('login.loginButton')}</span>
                 <ArrowLeft size={20} strokeWidth={3} />
               </>
             )}
@@ -111,7 +113,7 @@ const Login = () => {
         </form>
 
         <p className="mt-12 text-center text-white/20 text-[10px] font-bold uppercase tracking-[0.3em]">
-          النظام المالي المحمي • 2026
+          {t('login.footer')}
         </p>
       </motion.div>
     </div>

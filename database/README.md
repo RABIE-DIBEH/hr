@@ -7,14 +7,12 @@ This directory contains the PostgreSQL database schema, seed data, and migration
 
 ```
 database/
-├── schema.sql                # Main database schema (tables, indexes, constraints)
-├── seed_test_data.sql        # Test data for development and testing
-├── migrations/               # Database migration scripts (if needed)
-│   ├── 001_initial_schema.sql
-│   ├── 002_add_leave_balance.sql    # Phase 9: leave_balance_days column
-│   ├── 003_add_system_logs.sql      # Phase 9: system_logs table
-│   └── ... (other migrations)
-└── backups/                  # Database backup files (generated)
+├── master_schema_v1.sql      # Consolidated database schema (all tables, indexes, constraints)
+├── master_seed_v1.sql        # Consolidated seed data for development and testing
+├── seed_test_data.sql        # Legacy test data (kept for reference)
+├── seed_test_attendance.sql  # Attendance test data
+├── rollback_departments.sql  # Rollback script for departments
+└── README.md                 # This file
 ```
 
 ## 🗄️ Database Schema
@@ -167,10 +165,10 @@ CREATE INDEX idx_system_logs_action ON System_Logs(action_type);
 createdb -U postgres hrms_db
 
 # 2. Load schema
-psql -U postgres -d hrms_db -f schema.sql
+psql -U postgres -d hrms_db -f master_schema_v1.sql
 
-# 3. Load test data (optional)
-psql -U postgres -d hrms_db -f seed_test_data.sql
+# 3. Load seed data (optional)
+psql -U postgres -d hrms_db -f master_seed_v1.sql
 ```
 
 ### Docker Setup
