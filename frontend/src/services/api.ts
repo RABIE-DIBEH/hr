@@ -150,6 +150,14 @@ export interface AttendanceRecord {
   manualAdjustmentReason?: string;
 }
 
+export interface EmployeeProgress {
+  month: number;
+  year: number;
+  workedHours: number;
+  targetHours: number;
+  lastMonthWorkedHours: number;
+}
+
 export interface ManualAttendanceCorrectionPayload {
   checkIn?: string;
   checkOut?: string;
@@ -376,6 +384,9 @@ export const getMyAttendance = () =>
 
 export const getMyAttendancePage = (params?: PaginationParams) =>
   getPaginatedPage<AttendanceRecord>('/attendance/my', params);
+
+export const getMyAttendanceSummary = (month: number, year: number) =>
+  api.get<EmployeeProgress>(`/attendance/my/summary?month=${month}&year=${year}`);
 
 export const getManagerTodayAttendance = () =>
   getPaginatedItems<AttendanceRecord>('/attendance/manager/today');
@@ -646,11 +657,11 @@ export const downloadAttendancePdf = (month: number, year: number) =>
 export const downloadAttendanceExcel = (month: number, year: number) =>
   api.get(`/reports/attendance/excel?month=${month}&year=${year}`, { responseType: 'blob' });
 
-export const downloadPayrollPdf = (month: number, year: number) =>
-  api.get(`/reports/payroll/pdf?month=${month}&year=${year}`, { responseType: 'blob' });
+export const downloadPayrollPdf = (month: number, year: number, departmentId?: number) =>
+  api.post(`/payroll/export?month=${month}&year=${year}&format=pdf${departmentId ? `&departmentId=${departmentId}` : ''}`, {}, { responseType: 'blob' });
 
-export const downloadPayrollExcel = (month: number, year: number) =>
-  api.get(`/reports/payroll/excel?month=${month}&year=${year}`, { responseType: 'blob' });
+export const downloadPayrollExcel = (month: number, year: number, departmentId?: number) =>
+  api.post(`/payroll/export?month=${month}&year=${year}&format=excel${departmentId ? `&departmentId=${departmentId}` : ''}`, {}, { responseType: 'blob' });
 
 export const downloadLeavePdf = (month: number, year: number) =>
   api.get(`/reports/leave/pdf?month=${month}&year=${year}`, { responseType: 'blob' });

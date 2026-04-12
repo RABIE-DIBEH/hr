@@ -19,6 +19,7 @@
     "success": "Success",
     "error": "Error",
     "days": "days",
+    "hours": "hours",
     "searchPlaceholder": "Search by name or email..."
   },
   "dashboard": {
@@ -30,7 +31,8 @@
     "totalEmployees": "Total Employees",
     "todayAttendance": "Today's Attendance",
     "pendingLeaves": "Pending Leaves",
-    "pendingAdvances": "Pending Advances"
+    "pendingAdvances": "Pending Advances",
+    "monthlyHours": "Monthly Hours"
   },
   "sidebar": {
     "dashboard": "Dashboard",

@@ -18,12 +18,14 @@
     "terminated": "مُنهى",
     "success": "نجاح",
     "error": "خطأ",
-    "days": "يوم"
+    "days": "يوم",
+    "hours": "ساعة"
   },
   "dashboard": {
     "leaveBalance": "رصيد الإجازات",
     "lowBalance": "رصيد منخفض",
-    "availableBalance": "رصيد متاح"
+    "availableBalance": "رصيد متاح",
+    "monthlyHours": "ساعات الشهر"
   },
   "sidebar": {
     "dashboard": "لوحة التحكم",

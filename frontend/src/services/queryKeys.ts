@@ -11,6 +11,7 @@ export const queryKeys = {
     myLeaves: ['employee', 'my-leaves'] as const,
     myAttendanceLatest: ['employee', 'my-attendance', 'latest'] as const,
     myAttendanceToday: ['employee', 'my-attendance', 'today'] as const,
+    myAttendanceSummary: (month: number, year: number) => ['employee', 'my-attendance', 'summary', month, year] as const,
     myPayrollRoot: ['employee', 'my-payroll'] as const,
     myPayroll: (page: number) => ['employee', 'my-payroll', page] as const,
     myDepartment: ['employee', 'my-department'] as const,

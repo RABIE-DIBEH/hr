@@ -23,12 +23,15 @@ import LeaveRequestForm from '../components/LeaveRequestForm';
 import ProfileEditModal from '../components/ProfileEditModal';
 import { TableSkeleton } from '../components/Skeleton';
 import {
+  type AdvanceRequest,
   getCurrentEmployee,
-  getMyAdvanceRequests,
-  getMyPayrollSlipsPage,
   getMyAttendancePage,
+  getMyAdvanceRequests,
   getMyLeaveRequests,
-  getMyDepartment
+  getMyDepartment,
+  getMyAttendanceSummary,
+  getMyPayrollSlipsPage,
+  type PayrollSlip,
 } from '../services/api';
 import { queryKeys } from '../services/queryKeys';
 
@@ -82,6 +85,16 @@ const EmployeeDashboard = () => {
     queryKey: queryKeys.employee.myAttendanceToday,
     queryFn: async () => (await getMyAttendancePage({ page: 0, size: 1 })).data,
     enabled: showDayDetails,
+  });
+
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1;
+  const currentYear = now.getFullYear();
+
+  const { data: attendanceSummary } = useQuery({
+    queryKey: queryKeys.employee.myAttendanceSummary(currentMonth, currentYear),
+    queryFn: async () => (await getMyAttendanceSummary(currentMonth, currentYear)).data,
+    enabled: !!me,
   });
 
   const myPayrollSlips = payrollData?.items || [];
@@ -164,11 +177,30 @@ const EmployeeDashboard = () => {
             <div className="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center mb-4 text-blue-400 group-hover:scale-110 transition-transform">
               <Clock size={24} />
             </div>
-            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">ساعات الشهر</p>
-            <h3 className="text-2xl font-black text-white">160 ساعة</h3>
-            <div className="mt-3 flex items-center gap-1.5 text-[10px] font-bold text-blue-400 bg-blue-500/10 w-fit px-2.5 py-1 rounded-full uppercase">
-              <TrendingUp size={10} /> +12% vs last month
-            </div>
+            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">{t('dashboard.monthlyHours') || 'ساعات الشهر'}</p>
+            <h3 className="text-2xl font-black text-white">
+              {attendanceSummary?.workedHours?.toFixed(1) ?? '...'} {t('common.hours') || 'ساعة'}
+            </h3>
+            {attendanceSummary?.lastMonthWorkedHours != null && attendanceSummary.lastMonthWorkedHours > 0 && (
+              <div className="mt-3 flex items-center gap-1.5 text-[10px] font-bold text-blue-400 bg-blue-500/10 w-fit px-2.5 py-1 rounded-full uppercase">
+                <TrendingUp size={10} /> 
+                {(() => {
+                  const current = attendanceSummary.workedHours || 0;
+                  const last = attendanceSummary.lastMonthWorkedHours;
+                  const diff = current - last;
+                  const percent = (diff / last) * 100;
+                  return (percent > 0 ? `+${percent.toFixed(0)}` : percent.toFixed(0)) + '% vs last month';
+                })()}
+              </div>
+            )}
+            {attendanceSummary?.targetHours && (
+              <div className="mt-2 w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
+                <div 
+                  className="bg-blue-500 h-full transition-all duration-1000" 
+                  style={{ width: `${Math.min(100, (attendanceSummary.workedHours / attendanceSummary.targetHours) * 100)}%` }}
+                />
+              </div>
+            )}
           </div>
         </motion.div>
 
@@ -291,7 +323,7 @@ const EmployeeDashboard = () => {
               </div>
             ) : (
               <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                {myAdvances.map((adv) => (
+                {myAdvances.map((adv: AdvanceRequest) => (
                   <div key={adv.advanceId} className="bg-white/5 p-5 rounded-[2rem] border border-white/5">
                     <div className="flex justify-between items-center mb-3">
                       <span className="text-purple-400 font-black text-lg">{adv.amount} ر.س</span>
@@ -412,7 +444,7 @@ const EmployeeDashboard = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
-                    {myPayrollSlips.map((slip) => (
+                    {myPayrollSlips.map((slip: PayrollSlip) => (
                       <tr key={slip.payrollId} className="hover:bg-white/5 transition-all">
                         <td className="p-4 font-bold text-slate-100">
                           {new Date(slip.year, slip.month - 1).toLocaleDateString('ar-SA', { month: 'long', year: 'numeric' })}
