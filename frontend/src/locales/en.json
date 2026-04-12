@@ -159,7 +159,7 @@
     "editModalTitle": "Edit Data: {{name}}",
     "roleLabel": "Role",
     "departmentLabel": "Department",
-    "basicSalaryLabel": "Basic Salary (SAR)",
+    "basicSalaryLabel": "Basic Salary (SYP)",
     "statusLabel": "Status",
     "nfcCardLabel": "NFC Card",
     "employeeNumberLabel": "Employee Number",
@@ -171,7 +171,7 @@
     "resetPasswordModalSuccess": "✓ New password has been set",
     "resetPasswordModalInstruction": "This is the only time you'll see this password — copy it and send it to the employee {{name}}",
     "resetPasswordModalDone": "Done",
-    "currencySymbol": "SAR",
+    "currencySymbol": "SYP",
     "status": {
       "Active": "Active"
     }
@@ -230,14 +230,14 @@
     "successTitle": "Advance request sent successfully",
     "successMessage": "Advance request sent successfully and forwarded to payroll for review and approval",
     "amountLabel": "Requested Amount",
-    "maxAllowed": "Maximum allowed: 100,000 SAR",
+    "maxAllowed": "Maximum allowed: 100,000 SYP",
     "reasonLabel": "Request Reason",
     "reasonPlaceholder": "Write reason for advance request (optional)...",
     "note": "Note:",
     "noteText": "The advance amount will be deducted from your monthly salary during payroll processing. Your request will be reviewed by HR.",
     "sending": "Sending...",
     "sendRequest": "Send Request",
-    "currencySymbol": "SAR"
+    "currencySymbol": "SYP"
   },
   "inbox": {
     "title": "Inbox",
@@ -509,7 +509,7 @@
       "confirmMessage": "You are about to calculate payroll for {{month}}/{{year}} for {{name}}. Approved hours and validated advances will be automatically processed.",
       "confirmButton": "Confirm and Calculate Now",
       "engineLocked": "Payroll Engine Locked",
-      "engineLockedWarning": "Payroll calculation is currently disabled due to annual formula verification (May 2026).",
+      "engineLockedWarning": "Please ensure all work hours are accurately reviewed before calculating payroll.",
       "exportSection": "Export Payroll",
       "exportDescription": "Export payroll slips for all employees",
       "exportExcel": "Export Excel",
@@ -596,7 +596,7 @@
       "job": "Job",
       "department": "Department",
       "expectedSalary": "Expected Salary",
-      "currency": "SAR",
+      "currency": "SYP",
       "nationalId": "National ID",
       "mobile": "Mobile",
       "requestDate": "Request Date",
@@ -647,7 +647,7 @@
       "title": "Advance Requests (Manager Stage)",
       "subtitle": "{{count}} requests awaiting your review",
       "empty": "No pending advance requests currently",
-      "currency": "SAR",
+      "currency": "SYP",
       "amountPlaceholder": "Adjust amount (optional)",
       "reasonPlaceholder": "Adjust reason (optional)",
       "notePlaceholder": "Note (optional)",
@@ -743,7 +743,7 @@
       "job": "Job",
       "department": "Department",
       "expectedSalary": "Expected Salary",
-      "currency": "SAR",
+      "currency": "SYP",
       "nationalId": "National ID"
     },
     "errors": {
