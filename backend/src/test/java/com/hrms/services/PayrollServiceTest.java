@@ -38,6 +38,9 @@ class PayrollServiceTest {
     @Mock
     private EmployeeRepository employeeRepository;
 
+    @org.mockito.Spy
+    private PayrollFormulaEngine payrollFormulaEngine = new PayrollFormulaEngine();
+
     @InjectMocks
     private PayrollService payrollService;
 

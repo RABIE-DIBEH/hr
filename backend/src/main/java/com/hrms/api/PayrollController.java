@@ -16,6 +16,7 @@ import com.hrms.security.EmployeeUserDetails;
 import com.hrms.services.PayrollExcelExportService;
 import com.hrms.services.PayrollPdfService;
 import com.hrms.services.PayrollService;
+import com.hrms.services.PayrollFormulaEngine;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -44,19 +45,22 @@ public class PayrollController {
     private final RoleRepository roleRepository;
     private final PayrollExcelExportService payrollExcelExportService;
     private final PayrollPdfService payrollPdfService;
+    private final PayrollFormulaEngine payrollFormulaEngine;
 
     public PayrollController(PayrollService payrollService, 
                             EmployeeRepository employeeRepository,
                             DepartmentRepository departmentRepository,
                             RoleRepository roleRepository,
                             PayrollExcelExportService payrollExcelExportService,
-                            PayrollPdfService payrollPdfService) {
+                            PayrollPdfService payrollPdfService,
+                            PayrollFormulaEngine payrollFormulaEngine) {
         this.payrollService = payrollService;
         this.employeeRepository = employeeRepository;
         this.departmentRepository = departmentRepository;
         this.roleRepository = roleRepository;
         this.payrollExcelExportService = payrollExcelExportService;
         this.payrollPdfService = payrollPdfService;
+        this.payrollFormulaEngine = payrollFormulaEngine;
     }
 
     @PostMapping("/calculate")
@@ -393,37 +397,13 @@ public class PayrollController {
     }
 
     private com.hrms.services.PayrollFormulaEngine.PayrollResult toExportResult(Payroll payroll, Employee employee) {
-        BigDecimal baseSalary = defaultDecimal(employee.getBaseSalary());
-        BigDecimal workedHours = defaultDecimal(payroll.getTotalWorkHours());
-        BigDecimal overtimeHours = defaultDecimal(payroll.getOvertimeHours());
-        BigDecimal totalDeductions = defaultDecimal(payroll.getDeductions());
-        BigDecimal advanceDeductions = defaultDecimal(payroll.getAdvanceDeductions());
-        BigDecimal netSalary = defaultDecimal(payroll.getNetSalary());
-
-        BigDecimal dailyWage = baseSalary.compareTo(BigDecimal.ZERO) > 0
-                ? baseSalary.divide(new BigDecimal("26"), 10, RoundingMode.HALF_UP)
-                : BigDecimal.ZERO;
-        BigDecimal hourlyWage = dailyWage.compareTo(BigDecimal.ZERO) > 0
-                ? dailyWage.divide(new BigDecimal("8"), 10, RoundingMode.HALF_UP)
-                : BigDecimal.ZERO;
-
-        BigDecimal absenceDeduction = totalDeductions.subtract(advanceDeductions).max(BigDecimal.ZERO);
-        BigDecimal absenceDays = dailyWage.compareTo(BigDecimal.ZERO) > 0
-                ? absenceDeduction.divide(dailyWage, 10, RoundingMode.HALF_UP)
-                : BigDecimal.ZERO;
-        BigDecimal totalAdditions = netSalary.subtract(baseSalary).add(totalDeductions).max(BigDecimal.ZERO);
-
-        return new com.hrms.services.PayrollFormulaEngine.PayrollResult(
-                baseSalary,
-                workedHours,
-                overtimeHours,
-                absenceDays,
-                dailyWage,
-                hourlyWage,
-                totalDeductions,
-                totalAdditions,
-                advanceDeductions,
-                netSalary
+        return payrollFormulaEngine.reconstruct(
+                employee.getBaseSalary(),
+                payroll.getTotalWorkHours(),
+                payroll.getOvertimeHours(),
+                payroll.getDeductions(),
+                payroll.getAdvanceDeductions(),
+                payroll.getNetSalary()
         );
     }
 

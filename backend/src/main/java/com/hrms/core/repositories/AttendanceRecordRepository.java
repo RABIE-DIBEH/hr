@@ -58,4 +58,25 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
     @Query("SELECT a FROM AttendanceRecord a WHERE EXTRACT(MONTH FROM a.checkIn) = :month " +
            "AND EXTRACT(YEAR FROM a.checkIn) = :year")
     Page<AttendanceRecord> findAllMonthlyRecordsPage(@Param("month") int month, @Param("year") int year, Pageable pageable);
+
+    @Query("SELECT a FROM AttendanceRecord a WHERE a.employee.employeeId = :employeeId " +
+           "AND EXTRACT(YEAR FROM a.checkIn) = :year")
+    List<AttendanceRecord> findYearlyRecords(@Param("employeeId") Long employeeId, @Param("year") int year);
+
+    @Query("SELECT a.employee.employeeId, SUM(a.workHours) FROM AttendanceRecord a " +
+           "WHERE EXTRACT(MONTH FROM a.checkIn) = :month " +
+           "AND EXTRACT(YEAR FROM a.checkIn) = :year " +
+           "AND a.payrollStatus != 'EXCLUDED_FROM_PAYROLL' " +
+           "AND a.workHours IS NOT NULL " +
+           "GROUP BY a.employee.employeeId " +
+           "ORDER BY SUM(a.workHours) DESC")
+    List<Object[]> findMonthlyRanking(@Param("month") int month, @Param("year") int year);
+
+    @Query("SELECT a.employee.employeeId, SUM(a.workHours) FROM AttendanceRecord a " +
+           "WHERE EXTRACT(YEAR FROM a.checkIn) = :year " +
+           "AND a.payrollStatus != 'EXCLUDED_FROM_PAYROLL' " +
+           "AND a.workHours IS NOT NULL " +
+           "GROUP BY a.employee.employeeId " +
+           "ORDER BY SUM(a.workHours) DESC")
+    List<Object[]> findYearlyRanking(@Param("year") int year);
 }

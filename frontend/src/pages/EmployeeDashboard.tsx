@@ -169,56 +169,86 @@ const EmployeeDashboard = () => {
         variants={container}
         initial="hidden"
         animate="show"
-        className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12"
       >
-        <motion.div variants={item} className="bg-luxury-surface p-6 rounded-[2rem] border border-white/5 shadow-sm relative overflow-hidden group">
+        {/* Monthly Progress */}
+        <motion.div variants={item} className="bg-luxury-surface p-6 rounded-[2rem] border border-white/5 shadow-sm relative overflow-hidden group min-h-[180px]">
           <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-full blur-3xl -mr-8 -mt-8" />
           <div className="relative z-10">
-            <div className="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center mb-4 text-blue-400 group-hover:scale-110 transition-transform">
-              <Clock size={24} />
+            <div className="flex justify-between items-start mb-4">
+              <div className="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
+                <Clock size={24} />
+              </div>
+              {attendanceSummary?.monthlyRank && (
+                <div className="text-right">
+                  <p className="text-[10px] font-black text-blue-400 uppercase tracking-tighter">الترتيب</p>
+                  <p className="text-2xl font-black text-white italic tracking-tighter">#{attendanceSummary.monthlyRank}</p>
+                </div>
+              )}
             </div>
+            
             <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">{t('dashboard.monthlyHours') || 'ساعات الشهر'}</p>
             <h3 className="text-2xl font-black text-white">
               {attendanceSummary?.workedHours?.toFixed(1) ?? '...'} {t('common.hours') || 'ساعة'}
             </h3>
-            {attendanceSummary?.lastMonthWorkedHours != null && attendanceSummary.lastMonthWorkedHours > 0 && (
-              <div className="mt-3 flex items-center gap-1.5 text-[10px] font-bold text-blue-400 bg-blue-500/10 w-fit px-2.5 py-1 rounded-full uppercase">
-                <TrendingUp size={10} /> 
-                {(() => {
-                  const current = attendanceSummary.workedHours || 0;
-                  const last = attendanceSummary.lastMonthWorkedHours;
-                  const diff = current - last;
-                  const percent = (diff / last) * 100;
-                  return (percent > 0 ? `+${percent.toFixed(0)}` : percent.toFixed(0)) + '% vs last month';
-                })()}
-              </div>
-            )}
+            
             {attendanceSummary?.targetHours && (
-              <div className="mt-2 w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
-                <div 
-                  className="bg-blue-500 h-full transition-all duration-1000" 
-                  style={{ width: `${Math.min(100, (attendanceSummary.workedHours / attendanceSummary.targetHours) * 100)}%` }}
-                />
+              <div className="mt-4">
+                <div className="flex justify-between text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-tighter">
+                  <span>Progress</span>
+                  <span>{Math.round((attendanceSummary.workedHours / attendanceSummary.targetHours) * 100)}%</span>
+                </div>
+                <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
+                  <div 
+                    className="bg-blue-500 h-full transition-all duration-1000" 
+                    style={{ width: `${Math.min(100, (attendanceSummary.workedHours / attendanceSummary.targetHours) * 100)}%` }}
+                  />
+                </div>
               </div>
             )}
           </div>
         </motion.div>
 
-        <motion.div variants={item} className="bg-luxury-surface p-6 rounded-[2rem] border border-white/5 shadow-sm relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-3xl -mr-8 -mt-8" />
+        {/* Yearly Progress */}
+        <motion.div variants={item} className="bg-luxury-surface p-6 rounded-[2rem] border border-white/5 shadow-sm relative overflow-hidden group min-h-[180px]">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-full blur-3xl -mr-8 -mt-8" />
           <div className="relative z-10">
-            <div className="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center mb-4 text-emerald-400 group-hover:scale-110 transition-transform">
-              <CheckCircle size={24} />
+            <div className="flex justify-between items-start mb-4">
+              <div className="w-12 h-12 bg-amber-500/20 rounded-2xl flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
+                <TrendingUp size={24} />
+              </div>
+              {attendanceSummary?.yearlyRank && (
+                <div className="text-right">
+                  <p className="text-[10px] font-black text-amber-400 uppercase tracking-tighter">ترتيب السنة</p>
+                  <p className="text-2xl font-black text-white italic tracking-tighter">#{attendanceSummary.yearlyRank}</p>
+                </div>
+              )}
             </div>
-            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">الحضور اليومي</p>
-            <h3 className="text-2xl font-black text-white">منتظم</h3>
-            <div className="mt-3 flex items-center gap-1.5 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 w-fit px-2.5 py-1 rounded-full uppercase tracking-tighter">
-              98% Reliability Score
-            </div>
+            
+            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">ساعات السنة</p>
+            <h3 className="text-2xl font-black text-white">
+              {attendanceSummary?.yearlyWorkedHours?.toFixed(0) ?? '...'} {t('common.hours') || 'ساعة'}
+            </h3>
+            
+            {attendanceSummary?.yearlyTargetHours && (
+              <div className="mt-4">
+                <div className="flex justify-between text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-tighter">
+                  <span>Yearly Goal</span>
+                  <span>{Math.round((attendanceSummary.yearlyWorkedHours / attendanceSummary.yearlyTargetHours) * 100)}%</span>
+                </div>
+                <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
+                  <div 
+                    className="bg-amber-500 h-full transition-all duration-1000" 
+                    style={{ width: `${Math.min(100, (attendanceSummary.yearlyWorkedHours / attendanceSummary.yearlyTargetHours) * 100)}%` }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </motion.div>
 
-        <motion.div variants={item} className="bg-luxury-surface p-6 rounded-[2rem] border border-white/5 shadow-sm relative overflow-hidden group">
+        {/* Expected Salary or Leave Balance (Moving to 3rd column) */}
+        <motion.div variants={item} className="bg-luxury-surface p-6 rounded-[2rem] border border-white/5 shadow-sm relative overflow-hidden group min-h-[180px]">
           <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 rounded-full blur-3xl -mr-8 -mt-8" />
           <div className="relative z-10">
             <div className="w-12 h-12 bg-purple-500/20 rounded-2xl flex items-center justify-center mb-4 text-purple-400 group-hover:scale-110 transition-transform">
@@ -226,13 +256,14 @@ const EmployeeDashboard = () => {
             </div>
             <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">الراتب المتوقع</p>
             <h3 className="text-2xl font-black text-white">{me?.baseSalary?.toLocaleString() ?? 0} ر.س</h3>
-            <div className="mt-3 flex items-center gap-1.5 text-[10px] font-bold text-purple-400 bg-purple-500/10 w-fit px-2.5 py-1 rounded-full uppercase">
+            <div className="mt-1 flex items-center gap-1.5 text-[10px] font-bold text-purple-400 bg-purple-500/10 w-fit px-2.5 py-1 rounded-full uppercase">
               Current Cycle
             </div>
           </div>
         </motion.div>
 
-        <motion.div variants={item} className="bg-luxury-surface p-6 rounded-[2rem] border border-white/5 shadow-sm relative overflow-hidden group">
+        {/* Leave Balance (4th column) */}
+        <motion.div variants={item} className="bg-luxury-surface p-6 rounded-[2rem] border border-white/5 shadow-sm relative overflow-hidden group min-h-[180px]">
           <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/10 rounded-full blur-3xl -mr-8 -mt-8" />
           <div className="relative z-10">
             <div className="w-12 h-12 bg-orange-500/20 rounded-2xl flex items-center justify-center mb-4 text-orange-400 group-hover:scale-110 transition-transform">
@@ -240,7 +271,7 @@ const EmployeeDashboard = () => {
             </div>
             <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">{t('dashboard.leaveBalance')}</p>
             <h3 className="text-2xl font-black text-white">{me?.leaveBalanceDays?.toFixed(1) ?? 21.0} {t('common.days')}</h3>
-            <div className={`mt-3 flex items-center gap-1.5 text-[10px] font-bold w-fit px-2.5 py-1 rounded-full uppercase ${
+            <div className={`mt-1 flex items-center gap-1.5 text-[10px] font-bold w-fit px-2.5 py-1 rounded-full uppercase ${
               me?.leaveBalanceDays && me.leaveBalanceDays < 5 
                 ? 'text-red-400 bg-red-500/10' 
                 : 'text-orange-400 bg-orange-500/10'

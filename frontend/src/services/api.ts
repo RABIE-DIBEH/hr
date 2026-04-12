@@ -156,6 +156,11 @@ export interface EmployeeProgress {
   workedHours: number;
   targetHours: number;
   lastMonthWorkedHours: number;
+  yearlyWorkedHours: number;
+  yearlyTargetHours: number;
+  monthlyRank?: number;
+  yearlyRank?: number;
+  totalEmployees?: number;
 }
 
 export interface ManualAttendanceCorrectionPayload {

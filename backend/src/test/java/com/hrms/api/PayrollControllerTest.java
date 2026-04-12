@@ -11,6 +11,7 @@ import com.hrms.security.EmployeeUserDetails;
 import com.hrms.services.PayrollExcelExportService;
 import com.hrms.services.PayrollPdfService;
 import com.hrms.services.PayrollService;
+import com.hrms.services.PayrollFormulaEngine;
 import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.junit.jupiter.api.BeforeEach;
@@ -99,7 +100,8 @@ class PayrollControllerTest {
                         departmentRepository,
                         roleRepository,
                         payrollExcelExportService,
-                        payrollPdfService))
+                        payrollPdfService,
+                        new com.hrms.services.PayrollFormulaEngine()))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(
                         new PageableHandlerMethodArgumentResolver(),
@@ -205,7 +207,8 @@ class PayrollControllerTest {
                         departmentRepository,
                         roleRepository,
                         payrollExcelExportService,
-                        payrollPdfService))
+                        payrollPdfService,
+                        new com.hrms.services.PayrollFormulaEngine()))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(
                         new PageableHandlerMethodArgumentResolver(),
@@ -308,7 +311,8 @@ class PayrollControllerTest {
                         departmentRepository,
                         roleRepository,
                         payrollExcelExportService,
-                        payrollPdfService))
+                        payrollPdfService,
+                        new com.hrms.services.PayrollFormulaEngine()))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(
                         new PageableHandlerMethodArgumentResolver(),

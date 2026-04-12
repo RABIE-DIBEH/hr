@@ -5,7 +5,12 @@ import java.math.BigDecimal;
 public record EmployeeProgressResponse(
         int month,
         int year,
-        BigDecimal workedHours,
-        BigDecimal targetHours,
-        BigDecimal lastMonthWorkedHours
+        java.math.BigDecimal workedHours,
+        java.math.BigDecimal targetHours,
+        java.math.BigDecimal lastMonthWorkedHours,
+        java.math.BigDecimal yearlyWorkedHours,
+        java.math.BigDecimal yearlyTargetHours,
+        Integer monthlyRank,
+        Integer yearlyRank,
+        Integer totalEmployees
 ) {}

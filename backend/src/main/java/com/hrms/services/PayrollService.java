@@ -26,7 +26,7 @@ public class PayrollService {
     private final PayrollRepository payrollRepository;
     private final AdvanceRequestService advanceRequestService;
     private final EmployeeRepository employeeRepository;
-    private final PayrollFormulaEngine payrollFormulaEngine = new PayrollFormulaEngine();
+    private final PayrollFormulaEngine payrollFormulaEngine;
 
     @Value("${app.payroll.locked:false}")
     private boolean payrollLocked;
@@ -34,11 +34,13 @@ public class PayrollService {
     public PayrollService(AttendanceRecordRepository attendanceRepository,
             PayrollRepository payrollRepository,
             AdvanceRequestService advanceRequestService,
-            EmployeeRepository employeeRepository) {
+            EmployeeRepository employeeRepository,
+            PayrollFormulaEngine payrollFormulaEngine) {
         this.attendanceRepository = attendanceRepository;
         this.payrollRepository = payrollRepository;
         this.advanceRequestService = advanceRequestService;
         this.employeeRepository = employeeRepository;
+        this.payrollFormulaEngine = payrollFormulaEngine;
     }
 
     public boolean isPayrollLocked() {

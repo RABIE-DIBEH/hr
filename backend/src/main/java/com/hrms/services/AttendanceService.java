@@ -269,12 +269,44 @@ public class AttendanceService {
                 .map(AttendanceRecord::getWorkHours)
                 .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
 
+        // Calculate current year hours
+        java.util.List<AttendanceRecord> yearlyRecords = attendanceRepository.findYearlyRecords(employeeId, year);
+        java.math.BigDecimal yearlyWorkedHours = yearlyRecords.stream()
+                .filter(r -> !"EXCLUDED_FROM_PAYROLL".equals(r.getPayrollStatus()))
+                .filter(r -> r.getWorkHours() != null)
+                .map(AttendanceRecord::getWorkHours)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+
+        // Rankings
+        java.util.List<Object[]> monthlyRanking = attendanceRepository.findMonthlyRanking(month, year);
+        Integer monthlyRank = null;
+        for (int i = 0; i < monthlyRanking.size(); i++) {
+            if (String.valueOf(monthlyRanking.get(i)[0]).equals(String.valueOf(employeeId))) {
+                monthlyRank = i + 1;
+                break;
+            }
+        }
+
+        java.util.List<Object[]> yearlyRanking = attendanceRepository.findYearlyRanking(year);
+        Integer yearlyRank = null;
+        for (int i = 0; i < yearlyRanking.size(); i++) {
+            if (String.valueOf(yearlyRanking.get(i)[0]).equals(String.valueOf(employeeId))) {
+                yearlyRank = i + 1;
+                break;
+            }
+        }
+
         return new com.hrms.api.dto.EmployeeProgressResponse(
                 month,
                 year,
                 workedHours,
                 new java.math.BigDecimal("160"), // Target Hours
-                lastMonthWorkedHours
+                lastMonthWorkedHours,
+                yearlyWorkedHours,
+                new java.math.BigDecimal("1920"), // Yearly Target (160 * 12)
+                monthlyRank,
+                yearlyRank,
+                monthlyRanking.size()
         );
     }
 
