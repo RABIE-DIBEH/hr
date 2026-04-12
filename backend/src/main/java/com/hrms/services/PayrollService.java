@@ -32,9 +32,9 @@ public class PayrollService {
     private boolean payrollLocked;
 
     public PayrollService(AttendanceRecordRepository attendanceRepository,
-                          PayrollRepository payrollRepository,
-                          AdvanceRequestService advanceRequestService,
-                          EmployeeRepository employeeRepository) {
+            PayrollRepository payrollRepository,
+            AdvanceRequestService advanceRequestService,
+            EmployeeRepository employeeRepository) {
         this.attendanceRepository = attendanceRepository;
         this.payrollRepository = payrollRepository;
         this.advanceRequestService = advanceRequestService;
@@ -45,60 +45,57 @@ public class PayrollService {
         return payrollLocked;
     }
 
-    /**
-     * Guard that throws PAYROLL_LOCKED whenever the engine is frozen.
-     * Called at the top of every calculation method.
-     */
-    private void assertPayrollUnlocked() {
-        if (payrollLocked) {
-            throw new BusinessException(ErrorCode.PAYROLL_LOCKED,
-                    "Payroll engine is locked pending formula verification (May 2026). Set app.payroll.locked=false to re-enable.");
-        }
-    }
-
     @Transactional
-    public Payroll calculateMonthlyPayroll(Employee employee, int month, int year) {
-        assertPayrollUnlocked();
+    public PayrollFormulaEngine.PayrollResult getPayrollPreview(Employee employee, int month, int year) {
         List<AttendanceRecord> records = attendanceRepository.findMonthlyRecordsByPayrollStatuses(
                 employee.getEmployeeId(),
                 month,
                 year,
-                List.of("APPROVED_FOR_PAYROLL", "PROCESSED")
-        );
+                List.of("APPROVED_FOR_PAYROLL", "PROCESSED"));
 
         BigDecimal totalHours = records.stream()
                 .filter(r -> r.getWorkHours() != null)
                 .map(AttendanceRecord::getWorkHours)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal standardHours = BigDecimal.valueOf(160);
         BigDecimal baseSalary = employee.getBaseSalary() != null ? employee.getBaseSalary() : BigDecimal.ZERO;
-        
-        BigDecimal hourlyRate = baseSalary.divide(standardHours, 2, RoundingMode.HALF_UP);
-        BigDecimal netSalary = hourlyRate.multiply(totalHours).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal advanceDeductions = advanceRequestService
+                .getUndeductedDeliveredAmountForEmployee(employee.getEmployeeId(), month, year);
 
-        Payroll payroll = payrollRepository.findByEmployeeEmployeeIdAndMonthAndYear(employee.getEmployeeId(), month, year)
+        PayrollFormulaEngine engine = new PayrollFormulaEngine();
+        return engine.calculate(baseSalary, totalHours, advanceDeductions);
+    }
+
+    @Transactional
+    public Payroll calculateMonthlyPayroll(Employee employee, int month, int year) {
+        PayrollFormulaEngine.PayrollResult result = getPayrollPreview(employee, month, year);
+
+        Payroll payroll = payrollRepository
+                .findByEmployeeEmployeeIdAndMonthAndYear(employee.getEmployeeId(), month, year)
                 .orElse(Payroll.builder()
                         .employee(employee)
                         .month(month)
                         .year(year)
                         .build());
-        // Ensure we keep the fully-loaded Employee instance (avoid serializing a lazy proxy later).
+
         payroll.setEmployee(employee);
-
-        BigDecimal advanceDeductions = advanceRequestService.getUndeductedDeliveredAmountForEmployee(employee.getEmployeeId(), month, year);
-        BigDecimal payrollDeductions = advanceDeductions.max(BigDecimal.ZERO);
-        BigDecimal netSalaryWithDeductions = netSalary.subtract(payrollDeductions).setScale(2, RoundingMode.HALF_UP);
-
-        payroll.setTotalWorkHours(totalHours);
-        payroll.setAdvanceDeductions(advanceDeductions);
-        payroll.setOvertimeHours(totalHours.subtract(standardHours).max(BigDecimal.ZERO));
-        payroll.setDeductions(payrollDeductions);
-        payroll.setNetSalary(netSalaryWithDeductions);
+        payroll.setTotalWorkHours(result.workedHours());
+        payroll.setAdvanceDeductions(result.advanceDeductions());
+        payroll.setOvertimeHours(result.overtimeHours());
+        // We persist totalDeductions into the Deductions column
+        payroll.setDeductions(result.totalDeductions());
+        payroll.setNetSalary(result.netSalary());
 
         Payroll saved = payrollRepository.save(payroll);
+
+        List<AttendanceRecord> records = attendanceRepository.findMonthlyRecordsByPayrollStatuses(
+                employee.getEmployeeId(),
+                month,
+                year,
+                List.of("APPROVED_FOR_PAYROLL", "PROCESSED"));
         records.forEach(record -> record.setPayrollStatus("PROCESSED"));
         advanceRequestService.markDeliveredAdvancesAsDeducted(employee.getEmployeeId(), month, year);
+
         return saved;
     }
 
@@ -133,7 +130,6 @@ public class PayrollService {
      */
     @Transactional
     public PayrollBulkResult calculateAllMonthlyPayroll(int month, int year, String requester) {
-        assertPayrollUnlocked();
         List<Employee> allEmployees = employeeRepository.findAll();
         int successCount = 0;
         int errorCount = 0;
@@ -156,16 +152,15 @@ public class PayrollService {
                 allEmployees.size(),
                 successCount,
                 errorCount,
-                requester
-        );
+                requester);
     }
 
     /**
      * Calculate payroll for active employees in a specific department.
      */
     @Transactional
-    public PayrollBulkResult calculateAllMonthlyPayrollByDepartment(int month, int year, Long departmentId, String requester) {
-        assertPayrollUnlocked();
+    public PayrollBulkResult calculateAllMonthlyPayrollByDepartment(int month, int year, Long departmentId,
+            String requester) {
         List<Employee> deptEmployees = employeeRepository.findByDepartmentIdAndStatus(departmentId, "Active");
         int successCount = 0;
         int errorCount = 0;
@@ -185,8 +180,7 @@ public class PayrollService {
                 deptEmployees.size(),
                 successCount,
                 errorCount,
-                requester
-        );
+                requester);
     }
 
     @Transactional(readOnly = true)
@@ -204,7 +198,8 @@ public class PayrollService {
 
     @Transactional
     public Payroll markPayrollAsPaid(Long employeeId, int month, int year) {
-        // Join-fetch employee to avoid LazyInitializationException when controller maps to DTO after tx closes.
+        // Join-fetch employee to avoid LazyInitializationException when controller maps
+        // to DTO after tx closes.
         Payroll payroll = payrollRepository.findByEmployeeIdAndMonthAndYearFetchEmployee(employeeId, month, year)
                 .orElseThrow(() -> new IllegalArgumentException("Payroll not found"));
         payroll.setPaid(true);

@@ -38,7 +38,8 @@
       "Bash(java *)",
       "Bash(netstat *)",
       "Bash(docker info)",
-      "Bash(docker run *)"
+      "Bash(docker run *)",
+      "Bash(file *)"
     ]
   },
   "$version": 3

@@ -507,7 +507,13 @@
       "confirmMessage": "You are about to calculate payroll for {{month}}/{{year}} for {{name}}. Approved hours and validated advances will be automatically processed.",
       "confirmButton": "Confirm and Calculate Now",
       "engineLocked": "Payroll Engine Locked",
-      "engineLockedWarning": "Payroll calculation is currently disabled due to annual formula verification (May 2026)."
+      "engineLockedWarning": "Payroll calculation is currently disabled due to annual formula verification (May 2026).",
+      "exportSection": "Export Payroll",
+      "exportDescription": "Export payroll slips for all employees",
+      "exportExcel": "Export Excel",
+      "exportPdf": "Export PDF",
+      "exporting": "Exporting...",
+      "exportSuccess": "Export successful"
     },
     "history": {
       "searchPlaceholder": "Search by employee name in logs...",

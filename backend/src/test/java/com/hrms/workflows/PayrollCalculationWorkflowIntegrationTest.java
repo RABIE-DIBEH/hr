@@ -87,15 +87,17 @@ class PayrollCalculationWorkflowIntegrationTest extends AbstractContainerBaseTes
         // Verify total work hours (20 days * 8 hours = 160 hours)
         assertThat(payroll.getTotalWorkHours()).isEqualByComparingTo(new BigDecimal("160.00"));
         
-        // Verify base calculations: 5000 / 160 = 31.25 per hour
-        // 160 hours * 31.25 = 5000
-        assertThat(payroll.getNetSalary()).isEqualByComparingTo(new BigDecimal("5000.00"));
+        // Verify base calculations: 5000 base salary.
+        // 160h = 20 worked days. Absence days = 26 - 20 = 6. 
+        // Daily rate = 5000/26 = 192.31. Deductions = 6 * 192.31 = 1153.86
+        // Net = 5000 - 1153.86 = 3846.14
+        assertThat(payroll.getNetSalary()).isEqualByComparingTo(new BigDecimal("3846"));
         
         // Verify no overtime (exactly 160 hours)
         assertThat(payroll.getOvertimeHours()).isEqualByComparingTo(BigDecimal.ZERO);
         
-        // Verify no deductions initially
-        assertThat(payroll.getDeductions()).isEqualByComparingTo(BigDecimal.ZERO);
+        // Verify deductions for 6 absence days
+        assertThat(payroll.getDeductions()).isEqualByComparingTo(new BigDecimal("1153"));
 
         // Step 4: Verify attendance records were marked as processed
         List<AttendanceRecord> processedRecords = attendanceRepository
@@ -123,13 +125,15 @@ class PayrollCalculationWorkflowIntegrationTest extends AbstractContainerBaseTes
         Payroll payroll = payrollService.calculateMonthlyPayroll(employee, testMonth, testYear);
 
         // Verify calculations
-        // Base: 5000 / 160 = 31.25 per hour
-        // Regular hours: 160 * 31.25 = 5000
-        // Overtime hours: 40 * (31.25 * 1.5) = 40 * 46.875 = 1875
-        // Total: 5000 + 1875 = 6875
-        assertThat(payroll.getTotalWorkHours()).isEqualByComparingTo(new BigDecimal("200.00"));
-        assertThat(payroll.getOvertimeHours()).isEqualByComparingTo(new BigDecimal("40.00"));
-        assertThat(payroll.getNetSalary()).isEqualByComparingTo(new BigDecimal("6875.00"));
+        // Base: 5000
+        // Daily: 5000/26 = 192.31. Hourly: 192.31/8 = 24.04
+        // WorkedHours: 200 -> WorkedDays: 25.
+        // Overtime: 200 - 160 = 40. Additions: 40 * 24.04 = 961.60
+        // Absence: 26 - 25 = 1. Deductions: 1 * 192.31 = 192.31.
+        // Total: 5000 + 961.60 - 192.31 = 5769.29 -> 5769
+        assertThat(payroll.getTotalWorkHours()).isEqualByComparingTo(new BigDecimal("200"));
+        assertThat(payroll.getOvertimeHours()).isEqualByComparingTo(new BigDecimal("40"));
+        assertThat(payroll.getNetSalary()).isEqualByComparingTo(new BigDecimal("5769"));
     }
 
     @Test

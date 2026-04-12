@@ -43,17 +43,21 @@ class PayrollServiceTest {
         employee = Employee.builder()
                 .employeeId(1L)
                 .fullName("Test Employee")
-                .baseSalary(new BigDecimal("1600.00"))
+                .baseSalary(new BigDecimal("5000"))
                 .build();
     }
 
     @Test
-    void calculateMonthlyPayroll_standardHours_noDeductions() {
-        // 160 hours @ 1600 base = 10.00 hourly rate
-        // 160 * 10 = 1600.00 net salary
+    void calculateMonthlyPayroll_standard160Hours_hasAbsenceDeductions() {
+        // base = 5000. 
+        // daily = 5000/26 = 192.31
+        // workedHours = 160 -> workedDays = 20
+        // absenceDays = 26 - 20 = 6
+        // deductions = 6 * 192.31 = 1153.86
+        // net = 5000 - 1153.86 = 3846.14 -> 3846 (truncated)
         AttendanceRecord record = AttendanceRecord.builder()
                 .recordId(1L)
-                .workHours(new BigDecimal("160.00"))
+                .workHours(new BigDecimal("160"))
                 .build();
 
         when(attendanceRepository.findMonthlyRecordsByPayrollStatuses(anyLong(), anyInt(), anyInt(), anyList()))
@@ -64,24 +68,26 @@ class PayrollServiceTest {
                 .thenReturn(BigDecimal.ZERO);
         when(payrollRepository.save(any(Payroll.class))).thenAnswer(i -> i.getArguments()[0]);
 
-        Payroll result = payrollService.calculateMonthlyPayroll(employee, 5, 2024);
+        Payroll result = payrollService.calculateMonthlyPayroll(employee, 5, 2026);
 
         assertNotNull(result);
-        assertEquals(new BigDecimal("160.00"), result.getTotalWorkHours());
-        assertEquals(new BigDecimal("1600.00"), result.getNetSalary());
-        assertEquals(0, BigDecimal.ZERO.compareTo(result.getDeductions()));
-        assertEquals(0, BigDecimal.ZERO.compareTo(result.getOvertimeHours()));
-        verify(advanceRequestService).markDeliveredAdvancesAsDeducted(1L, 5, 2024);
+        assertEquals(new BigDecimal("160"), result.getTotalWorkHours());
+        assertEquals(new BigDecimal("3846"), result.getNetSalary());
+        assertEquals(new BigDecimal("1153"), result.getDeductions());
+        assertEquals(new BigDecimal("0"), result.getOvertimeHours());
+        verify(advanceRequestService).markDeliveredAdvancesAsDeducted(1L, 5, 2026);
     }
 
     @Test
     void calculateMonthlyPayroll_withOvertime_andDeductions() {
-        // 180 hours @ 1600 base = 10.00 hourly rate
-        // 180 * 10 = 1800.00 gross
-        // 1800 - 200 (advance) = 1600.00 net
+        // base = 5000. 
+        // daily = 192.31, hourly = 24.04
+        // workedHours = 200 -> overtime = 40. additions = 40 * 24.04 = 961.60
+        // workedDays = 25 -> absence = 1. deductions = 1 * 192.31 = 192.31
+        // net = 5000 + 961.60 - 192.31 = 5769.29 -> 5769 (truncated)
         AttendanceRecord record = AttendanceRecord.builder()
                 .recordId(1L)
-                .workHours(new BigDecimal("180.00"))
+                .workHours(new BigDecimal("200"))
                 .build();
 
         when(attendanceRepository.findMonthlyRecordsByPayrollStatuses(anyLong(), anyInt(), anyInt(), anyList()))
@@ -89,15 +95,68 @@ class PayrollServiceTest {
         when(payrollRepository.findByEmployeeEmployeeIdAndMonthAndYear(anyLong(), anyInt(), anyInt()))
                 .thenReturn(Optional.empty());
         when(advanceRequestService.getUndeductedDeliveredAmountForEmployee(anyLong(), anyInt(), anyInt()))
-                .thenReturn(new BigDecimal("200.00"));
+                .thenReturn(BigDecimal.ZERO);
         when(payrollRepository.save(any(Payroll.class))).thenAnswer(i -> i.getArguments()[0]);
 
-        Payroll result = payrollService.calculateMonthlyPayroll(employee, 5, 2024);
+        Payroll result = payrollService.calculateMonthlyPayroll(employee, 5, 2026);
 
-        assertEquals(new BigDecimal("180.00"), result.getTotalWorkHours());
-        assertEquals(new BigDecimal("20.00"), result.getOvertimeHours());
-        assertEquals(new BigDecimal("200.00"), result.getDeductions());
-        assertEquals(new BigDecimal("1600.00"), result.getNetSalary());
+        assertEquals(new BigDecimal("200"), result.getTotalWorkHours());
+        assertEquals(new BigDecimal("40"), result.getOvertimeHours());
+        assertEquals(new BigDecimal("192"), result.getDeductions()); // truncated from 192.31
+        assertEquals(new BigDecimal("5769"), result.getNetSalary());
+    }
+
+    @Test
+    void calculateMonthlyPayroll_absenceMonth() {
+        // base = 5000
+        // 120h = 15 days -> 11 absent days
+        // deductions = 11 * 192.31 = 2115.41
+        // net = 5000 - 2115.41 = 2884.59 -> 2884
+        AttendanceRecord record = AttendanceRecord.builder()
+                .recordId(1L)
+                .workHours(new BigDecimal("120"))
+                .build();
+
+        when(attendanceRepository.findMonthlyRecordsByPayrollStatuses(anyLong(), anyInt(), anyInt(), anyList()))
+                .thenReturn(List.of(record));
+        when(payrollRepository.findByEmployeeEmployeeIdAndMonthAndYear(anyLong(), anyInt(), anyInt()))
+                .thenReturn(Optional.empty());
+        when(advanceRequestService.getUndeductedDeliveredAmountForEmployee(anyLong(), anyInt(), anyInt()))
+                .thenReturn(BigDecimal.ZERO);
+        when(payrollRepository.save(any(Payroll.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        Payroll result = payrollService.calculateMonthlyPayroll(employee, 5, 2026);
+
+        assertEquals(new BigDecimal("120"), result.getTotalWorkHours());
+        assertEquals(new BigDecimal("0"), result.getOvertimeHours());
+        assertEquals(new BigDecimal("2115"), result.getDeductions());
+        assertEquals(new BigDecimal("2884"), result.getNetSalary());
+    }
+
+    @Test
+    void calculateMonthlyPayroll_withAdvances() {
+        // standard 160h + 500 advance. 
+        // deductions = 1153.86 + 500 = 1653.86 -> 1653
+        // net = 3846.14 - 500 = 3346.14 -> 3346
+        AttendanceRecord record = AttendanceRecord.builder()
+                .recordId(1L)
+                .workHours(new BigDecimal("160"))
+                .build();
+
+        when(attendanceRepository.findMonthlyRecordsByPayrollStatuses(anyLong(), anyInt(), anyInt(), anyList()))
+                .thenReturn(List.of(record));
+        when(payrollRepository.findByEmployeeEmployeeIdAndMonthAndYear(anyLong(), anyInt(), anyInt()))
+                .thenReturn(Optional.empty());
+        when(advanceRequestService.getUndeductedDeliveredAmountForEmployee(anyLong(), anyInt(), anyInt()))
+                .thenReturn(new BigDecimal("500"));
+        when(payrollRepository.save(any(Payroll.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        Payroll result = payrollService.calculateMonthlyPayroll(employee, 5, 2026);
+
+        assertEquals(new BigDecimal("160"), result.getTotalWorkHours());
+        assertEquals(new BigDecimal("0"), result.getOvertimeHours());
+        assertEquals(new BigDecimal("1653"), result.getDeductions());
+        assertEquals(new BigDecimal("3346"), result.getNetSalary());
     }
 
     @Test
@@ -110,9 +169,9 @@ class PayrollServiceTest {
                 .thenReturn(BigDecimal.ZERO);
         when(payrollRepository.save(any(Payroll.class))).thenAnswer(i -> i.getArguments()[0]);
 
-        Payroll result = payrollService.calculateMonthlyPayroll(employee, 5, 2024);
+        Payroll result = payrollService.calculateMonthlyPayroll(employee, 5, 2026);
 
-        assertEquals(BigDecimal.ZERO, result.getTotalWorkHours());
-        assertEquals(BigDecimal.ZERO.setScale(2), result.getNetSalary());
+        assertEquals(new BigDecimal("0"), result.getTotalWorkHours());
+        assertEquals(new BigDecimal("0"), result.getNetSalary());
     }
 }

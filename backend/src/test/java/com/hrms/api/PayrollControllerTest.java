@@ -6,6 +6,8 @@ import com.hrms.core.models.Employee;
 import com.hrms.core.models.Payroll;
 import com.hrms.core.repositories.EmployeeRepository;
 import com.hrms.security.EmployeeUserDetails;
+import com.hrms.services.PayrollExcelExportService;
+import com.hrms.services.PayrollPdfService;
 import com.hrms.services.PayrollService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,6 +51,12 @@ class PayrollControllerTest {
     @Mock
     private EmployeeRepository employeeRepository;
 
+    @Mock
+    private PayrollExcelExportService payrollExcelExportService;
+
+    @Mock
+    private PayrollPdfService payrollPdfService;
+
     private MockMvc mockMvc;
     private Employee employee;
     private EmployeeUserDetails superAdminPrincipal;
@@ -75,7 +83,8 @@ class PayrollControllerTest {
 
         ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
-        mockMvc = MockMvcBuilders.standaloneSetup(new PayrollController(payrollService, employeeRepository))
+        mockMvc = MockMvcBuilders.standaloneSetup(new PayrollController(
+                        payrollService, employeeRepository, payrollExcelExportService, payrollPdfService))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(
                         new PageableHandlerMethodArgumentResolver(),
@@ -173,7 +182,8 @@ class PayrollControllerTest {
 
         ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
-        mockMvc = MockMvcBuilders.standaloneSetup(new PayrollController(payrollService, employeeRepository))
+        mockMvc = MockMvcBuilders.standaloneSetup(new PayrollController(
+                        payrollService, employeeRepository, payrollExcelExportService, payrollPdfService))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(
                         new PageableHandlerMethodArgumentResolver(),

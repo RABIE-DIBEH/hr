@@ -54,6 +54,7 @@ const PayrollDashboard = () => {
   const [activeTab, setActiveTab] = useState<'advances' | 'recruitment' | 'history' | 'calculate'>('advances');
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
 
   // Advances State
@@ -292,6 +293,48 @@ const PayrollDashboard = () => {
       alert(t('common.error'));
     } finally {
       setIsDownloading(false);
+    }
+  };
+
+  const handleExportExcel = async () => {
+    setIsExporting(true);
+    try {
+      const response = await downloadPayrollExcel(reportMonth, reportYear);
+      const blob = new Blob([response.data], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `payroll_${reportMonth}_${reportYear}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      alert(t('common.error'));
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportPdf = async () => {
+    setIsExporting(true);
+    try {
+      const response = await downloadPayrollPdf(reportMonth, reportYear);
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `payroll_${reportMonth}_${reportYear}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      alert(t('common.error'));
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -1022,20 +1065,39 @@ const PayrollDashboard = () => {
                   <div>
                     <h4 className="text-white font-bold text-lg">{t('payroll.calculate.bannerTitle')}</h4>
                     <p className="text-slate-400 text-sm mt-1">{t('payroll.calculate.bannerSubtitle')}</p>
-                    {monthlySummary?.isLocked && (
-                      <p className="text-orange-400 text-xs font-bold mt-2 flex items-center gap-2">
-                        <AlertCircle size={14} /> {t('payroll.calculate.engineLockedWarning')}
-                      </p>
-                    )}
                   </div>
                   <button
                     onClick={() => setShowConfirmCalc({ name: t('payroll.calculate.bannerTitle') })}
-                    disabled={calculatingId !== null || monthlySummary?.isLocked}
+                    disabled={calculatingId !== null}
                     className="bg-purple-600 hover:bg-purple-700 text-white font-bold px-8 py-4 rounded-2xl shadow-xl shadow-purple-500/20 disabled:opacity-50 disabled:bg-slate-800 transition-all flex items-center gap-3"
                   >
                     {calculatingId === -1 ? <Clock className="animate-spin" /> : <Calculator />}
                     {t('payroll.calculate.calculateAll', { month: reportMonth, year: reportYear })}
                   </button>
+                </div>
+
+                {/* Export Buttons */}
+                <div className="bg-luxury-surface border border-white/5 p-6 rounded-3xl">
+                  <h4 className="text-white font-bold text-lg">{t('payroll.calculate.exportSection')}</h4>
+                  <p className="text-slate-400 text-sm mt-1">{t('payroll.calculate.exportDescription')}</p>
+                  <div className="flex gap-3 mt-4">
+                    <button
+                      onClick={() => handleExportExcel()}
+                      disabled={isExporting}
+                      className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-900 disabled:opacity-50 text-white font-bold px-6 py-3 rounded-2xl shadow-lg transition-all flex items-center gap-2"
+                    >
+                      {isExporting ? <Clock className="animate-spin" /> : <FileSpreadsheet size={18} />}
+                      {isExporting ? t('payroll.calculate.exporting') : t('payroll.calculate.exportExcel')}
+                    </button>
+                    <button
+                      onClick={() => handleExportPdf()}
+                      disabled={isExporting}
+                      className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-900 disabled:opacity-50 text-white font-bold px-6 py-3 rounded-2xl shadow-lg transition-all flex items-center gap-2"
+                    >
+                      {isExporting ? <Clock className="animate-spin" /> : <FileText size={18} />}
+                      {isExporting ? t('payroll.calculate.exporting') : t('payroll.calculate.exportPdf')}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1115,7 +1177,7 @@ const PayrollDashboard = () => {
 	                              <div className="flex items-center gap-4">
 	                                <button
 	                                  onClick={() => setShowConfirmCalc({ id: emp.employeeId, name: emp.fullName })}
-	                                  disabled={calculatingId !== null || monthlySummary?.isLocked}
+	                                  disabled={calculatingId !== null}
 	                                  className="text-purple-400 hover:text-purple-300 font-bold text-sm flex items-center gap-2 disabled:opacity-50"
 	                                >
 	                                  {calculatingId === emp.employeeId ? <Clock size={16} className="animate-spin" /> : <Calculator size={16} />}
