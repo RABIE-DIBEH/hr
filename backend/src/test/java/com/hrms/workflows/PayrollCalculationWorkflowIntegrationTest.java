@@ -16,7 +16,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -119,7 +118,7 @@ class PayrollCalculationWorkflowIntegrationTest extends AbstractContainerBaseTes
 
     @Test
     void payrollCalculationWithOvertime_CalculatesCorrectly() {
-        // Create attendance with overtime (200 hours total)
+        // Create attendance with overtime (20 days × 10h = 200h total)
         createAttendanceRecordsWithOvertime();
 
         Payroll payroll = payrollService.calculateMonthlyPayroll(employee, testMonth, testYear);
@@ -127,13 +126,14 @@ class PayrollCalculationWorkflowIntegrationTest extends AbstractContainerBaseTes
         // Verify calculations
         // Base: 5000
         // Daily: 5000/26 = 192.31. Hourly: 192.31/8 = 24.04
-        // WorkedHours: 200 -> WorkedDays: 25.
+        // WorkedHours: 200, but WorkedDays comes from attendance row count = 20.
         // Overtime: 200 - 160 = 40. Additions: 40 * 24.04 = 961.60
-        // Absence: 26 - 25 = 1. Deductions: 1 * 192.31 = 192.31.
-        // Total: 5000 + 961.60 - 192.31 = 5769.29 -> 5769
+        // Absence: 26 - 20 = 6. Deductions: 6 * 192.31 = 1153.86.
+        // Total: 5000 + 961.60 - 1153.86 = 4807.74 -> 4807
         assertThat(payroll.getTotalWorkHours()).isEqualByComparingTo(new BigDecimal("200"));
         assertThat(payroll.getOvertimeHours()).isEqualByComparingTo(new BigDecimal("40"));
-        assertThat(payroll.getNetSalary()).isEqualByComparingTo(new BigDecimal("5769"));
+        assertThat(payroll.getDeductions()).isEqualByComparingTo(new BigDecimal("1153"));
+        assertThat(payroll.getNetSalary()).isEqualByComparingTo(new BigDecimal("4807"));
     }
 
     @Test

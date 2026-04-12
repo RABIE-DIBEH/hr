@@ -4,11 +4,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.hrms.core.models.Employee;
 import com.hrms.core.models.Payroll;
+import com.hrms.core.repositories.DepartmentRepository;
 import com.hrms.core.repositories.EmployeeRepository;
+import com.hrms.core.repositories.RoleRepository;
 import com.hrms.security.EmployeeUserDetails;
 import com.hrms.services.PayrollExcelExportService;
 import com.hrms.services.PayrollPdfService;
 import com.hrms.services.PayrollService;
+import org.springframework.http.converter.ByteArrayHttpMessageConverter;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -52,6 +56,12 @@ class PayrollControllerTest {
     private EmployeeRepository employeeRepository;
 
     @Mock
+    private DepartmentRepository departmentRepository;
+
+    @Mock
+    private RoleRepository roleRepository;
+
+    @Mock
     private PayrollExcelExportService payrollExcelExportService;
 
     @Mock
@@ -84,13 +94,20 @@ class PayrollControllerTest {
         ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
         mockMvc = MockMvcBuilders.standaloneSetup(new PayrollController(
-                        payrollService, employeeRepository, payrollExcelExportService, payrollPdfService))
+                        payrollService,
+                        employeeRepository,
+                        departmentRepository,
+                        roleRepository,
+                        payrollExcelExportService,
+                        payrollPdfService))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(
                         new PageableHandlerMethodArgumentResolver(),
                         new AuthenticationPrincipalResolver(superAdminPrincipal)
                 )
-                .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
+                .setMessageConverters(
+                        new MappingJackson2HttpMessageConverter(objectMapper),
+                        new ByteArrayHttpMessageConverter())
                 .build();
     }
 
@@ -183,7 +200,12 @@ class PayrollControllerTest {
         ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
         mockMvc = MockMvcBuilders.standaloneSetup(new PayrollController(
-                        payrollService, employeeRepository, payrollExcelExportService, payrollPdfService))
+                        payrollService,
+                        employeeRepository,
+                        departmentRepository,
+                        roleRepository,
+                        payrollExcelExportService,
+                        payrollPdfService))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(
                         new PageableHandlerMethodArgumentResolver(),
@@ -195,6 +217,110 @@ class PayrollControllerTest {
         mockMvc.perform(post("/api/payroll/calculate-all")
                         .param("month", "4")
                         .param("year", "2026"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void exportPayroll_ExcelFormat_ReturnsExcelFile() throws Exception {
+        // Given
+        Payroll payroll = Payroll.builder()
+                .employee(employee)
+                .month(4)
+                .year(2026)
+                .build();
+        payroll.setPayrollId(12L);
+        payroll.setTotalWorkHours(new BigDecimal("160.00"));
+        payroll.setOvertimeHours(BigDecimal.ZERO);
+        payroll.setDeductions(BigDecimal.ZERO);
+        payroll.setNetSalary(new BigDecimal("8000.00"));
+
+        when(payrollService.getMonthlyPayroll(eq(4), eq(2026), any()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(payroll)));
+        
+        when(payrollExcelExportService.generatePayrollWorkbook(any(), any(), any(), any(), any(), any()))
+                .thenReturn(new org.apache.poi.xssf.usermodel.XSSFWorkbook());
+
+        // When/Then
+        mockMvc.perform(post("/api/payroll/export")
+                        .param("month", "4")
+                        .param("year", "2026")
+                        .param("format", "excel"))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("Content-Disposition", "attachment; filename=\"payroll_4_2026.xlsx\""));
+    }
+
+    @Test
+    void exportPayroll_PdfFormat_ReturnsPdfFile() throws Exception {
+        // Given
+        Payroll payroll = Payroll.builder()
+                .employee(employee)
+                .month(4)
+                .year(2026)
+                .build();
+        payroll.setPayrollId(12L);
+        payroll.setTotalWorkHours(new BigDecimal("160.00"));
+        payroll.setOvertimeHours(BigDecimal.ZERO);
+        payroll.setDeductions(BigDecimal.ZERO);
+        payroll.setNetSalary(new BigDecimal("8000.00"));
+
+        when(payrollService.getMonthlyPayroll(eq(4), eq(2026), any()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(payroll)));
+        
+        when(payrollPdfService.generatePayrollPdf(any(), any(), any(), any(), any()))
+                .thenReturn(new byte[0]);
+
+        // When/Then
+        mockMvc.perform(post("/api/payroll/export")
+                        .param("month", "4")
+                        .param("year", "2026")
+                        .param("format", "pdf"))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("Content-Type", "application/pdf"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("Content-Disposition", "attachment; filename=\"payroll_4_2026.pdf\""));
+    }
+
+    @Test
+    void exportPayroll_InvalidFormat_ReturnsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/payroll/export")
+                        .param("month", "4")
+                        .param("year", "2026")
+                        .param("format", "invalid"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void exportPayroll_NonPayrollRole_ReturnsForbidden() throws Exception {
+        Employee regularEmployee = Employee.builder()
+                .employeeId(2L)
+                .fullName("Regular Employee")
+                .email("employee@hrms.com")
+                .passwordHash("secret")
+                .status("Active")
+                .build();
+        EmployeeUserDetails employeePrincipal = new EmployeeUserDetails(regularEmployee, "EMPLOYEE", "General");
+
+        ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+
+        mockMvc = MockMvcBuilders.standaloneSetup(new PayrollController(
+                        payrollService,
+                        employeeRepository,
+                        departmentRepository,
+                        roleRepository,
+                        payrollExcelExportService,
+                        payrollPdfService))
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .setCustomArgumentResolvers(
+                        new PageableHandlerMethodArgumentResolver(),
+                        new AuthenticationPrincipalResolver(employeePrincipal)
+                )
+                .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
+                .build();
+
+        mockMvc.perform(post("/api/payroll/export")
+                        .param("month", "4")
+                        .param("year", "2026")
+                        .param("format", "excel"))
                 .andExpect(status().isForbidden());
     }
 

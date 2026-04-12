@@ -1,8 +1,6 @@
 package com.hrms.services;
 
 import com.hrms.api.dto.PayrollBulkResult;
-import com.hrms.api.exception.BusinessException;
-import com.hrms.api.exception.ErrorCode;
 import com.hrms.core.models.AttendanceRecord;
 import com.hrms.core.models.Employee;
 import com.hrms.core.models.Payroll;
@@ -16,17 +14,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 public class PayrollService {
 
+    private static final List<String> PAYROLL_ELIGIBLE_STATUSES = List.of("APPROVED_FOR_PAYROLL", "PROCESSED");
+
     private final AttendanceRecordRepository attendanceRepository;
     private final PayrollRepository payrollRepository;
     private final AdvanceRequestService advanceRequestService;
     private final EmployeeRepository employeeRepository;
+    private final PayrollFormulaEngine payrollFormulaEngine = new PayrollFormulaEngine();
 
     @Value("${app.payroll.locked:false}")
     private boolean payrollLocked;
@@ -47,28 +47,14 @@ public class PayrollService {
 
     @Transactional
     public PayrollFormulaEngine.PayrollResult getPayrollPreview(Employee employee, int month, int year) {
-        List<AttendanceRecord> records = attendanceRepository.findMonthlyRecordsByPayrollStatuses(
-                employee.getEmployeeId(),
-                month,
-                year,
-                List.of("APPROVED_FOR_PAYROLL", "PROCESSED"));
-
-        BigDecimal totalHours = records.stream()
-                .filter(r -> r.getWorkHours() != null)
-                .map(AttendanceRecord::getWorkHours)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal baseSalary = employee.getBaseSalary() != null ? employee.getBaseSalary() : BigDecimal.ZERO;
-        BigDecimal advanceDeductions = advanceRequestService
-                .getUndeductedDeliveredAmountForEmployee(employee.getEmployeeId(), month, year);
-
-        PayrollFormulaEngine engine = new PayrollFormulaEngine();
-        return engine.calculate(baseSalary, totalHours, advanceDeductions);
+        List<AttendanceRecord> records = findPayrollEligibleRecords(employee.getEmployeeId(), month, year);
+        return buildPayrollResult(employee, month, year, records);
     }
 
     @Transactional
     public Payroll calculateMonthlyPayroll(Employee employee, int month, int year) {
-        PayrollFormulaEngine.PayrollResult result = getPayrollPreview(employee, month, year);
+        List<AttendanceRecord> records = findPayrollEligibleRecords(employee.getEmployeeId(), month, year);
+        PayrollFormulaEngine.PayrollResult result = buildPayrollResult(employee, month, year, records);
 
         Payroll payroll = payrollRepository
                 .findByEmployeeEmployeeIdAndMonthAndYear(employee.getEmployeeId(), month, year)
@@ -88,15 +74,45 @@ public class PayrollService {
 
         Payroll saved = payrollRepository.save(payroll);
 
-        List<AttendanceRecord> records = attendanceRepository.findMonthlyRecordsByPayrollStatuses(
-                employee.getEmployeeId(),
-                month,
-                year,
-                List.of("APPROVED_FOR_PAYROLL", "PROCESSED"));
         records.forEach(record -> record.setPayrollStatus("PROCESSED"));
+        attendanceRepository.saveAll(records);
         advanceRequestService.markDeliveredAdvancesAsDeducted(employee.getEmployeeId(), month, year);
 
         return saved;
+    }
+
+    private List<AttendanceRecord> findPayrollEligibleRecords(Long employeeId, int month, int year) {
+        return attendanceRepository.findMonthlyRecordsByPayrollStatuses(
+                employeeId,
+                month,
+                year,
+                PAYROLL_ELIGIBLE_STATUSES);
+    }
+
+    private PayrollFormulaEngine.PayrollResult buildPayrollResult(
+            Employee employee,
+            int month,
+            int year,
+            List<AttendanceRecord> records) {
+        BigDecimal totalHours = records.stream()
+                .map(AttendanceRecord::getWorkHours)
+                .filter(hours -> hours != null)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal workedDays = BigDecimal.valueOf(records.stream()
+                .map(AttendanceRecord::getWorkHours)
+                .filter(this::hasPositiveHours)
+                .count());
+
+        BigDecimal baseSalary = employee.getBaseSalary() != null ? employee.getBaseSalary() : BigDecimal.ZERO;
+        BigDecimal advanceDeductions = advanceRequestService
+                .getUndeductedDeliveredAmountForEmployee(employee.getEmployeeId(), month, year);
+
+        return payrollFormulaEngine.calculate(baseSalary, totalHours, workedDays, advanceDeductions);
+    }
+
+    private boolean hasPositiveHours(BigDecimal hours) {
+        return hours != null && hours.compareTo(BigDecimal.ZERO) > 0;
     }
 
     /**

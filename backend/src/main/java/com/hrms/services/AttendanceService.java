@@ -246,6 +246,38 @@ public class AttendanceService {
         return attendanceRepository.findAllMonthlyRecordsPage(month, year, pageable).map(this::toDto);
     }
 
+    @Transactional(readOnly = true)
+    public com.hrms.api.dto.EmployeeProgressResponse getEmployeeMonthlySummary(Long employeeId, int month, int year) {
+        // Calculate current month hours
+        java.util.List<AttendanceRecord> currentRecords = attendanceRepository.findMonthlyRecords(employeeId, month, year);
+
+        java.math.BigDecimal workedHours = currentRecords.stream()
+                .filter(r -> !"EXCLUDED_FROM_PAYROLL".equals(r.getPayrollStatus()))
+                .filter(r -> r.getWorkHours() != null)
+                .map(AttendanceRecord::getWorkHours)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+
+        // Calculate last month hours for comparison
+        int lastMonth = month == 1 ? 12 : month - 1;
+        int lastYear = month == 1 ? year - 1 : year;
+
+        java.util.List<AttendanceRecord> lastRecords = attendanceRepository.findMonthlyRecords(employeeId, lastMonth, lastYear);
+
+        java.math.BigDecimal lastMonthWorkedHours = lastRecords.stream()
+                .filter(r -> !"EXCLUDED_FROM_PAYROLL".equals(r.getPayrollStatus()))
+                .filter(r -> r.getWorkHours() != null)
+                .map(AttendanceRecord::getWorkHours)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+
+        return new com.hrms.api.dto.EmployeeProgressResponse(
+                month,
+                year,
+                workedHours,
+                new java.math.BigDecimal("160"), // Target Hours
+                lastMonthWorkedHours
+        );
+    }
+
     private boolean hasAnyRole(EmployeeUserDetails principal, String... roles) {
         for (String role : roles) {
             if (principal.getAuthorities().stream().anyMatch(a -> role.equals(a.getAuthority()))) {

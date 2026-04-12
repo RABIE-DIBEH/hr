@@ -129,4 +129,16 @@ public class AttendanceController {
                 "Company monthly attendance retrieved successfully"
         ));
     }
+
+    @GetMapping("/my/summary")
+    public ResponseEntity<ApiResponse<com.hrms.api.dto.EmployeeProgressResponse>> getMyMonthlySummary(
+            @RequestParam int month,
+            @RequestParam int year,
+            @AuthenticationPrincipal EmployeeUserDetails principal) {
+
+        com.hrms.api.dto.EmployeeProgressResponse summary =
+                attendanceService.getEmployeeMonthlySummary(principal.getEmployeeId(), month, year);
+
+        return ResponseEntity.ok(ApiResponse.success(summary, "Monthly summary retrieved successfully"));
+    }
 }

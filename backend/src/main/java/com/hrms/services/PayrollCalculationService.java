@@ -5,7 +5,6 @@ import com.hrms.api.dto.PayrollResult;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.math.MathContext;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,12 +58,9 @@ public class PayrollCalculationService {
         BigDecimal hourlyWage = dailyWage.divide(HOURS_PER_DAY, SCALE, RoundingMode.HALF_UP);
 
         // Deduction VALUES (calculated, not the raw counts)
-        BigDecimal calculatedHourDeduction = BigDecimal.valueOf(data.deductionHour())
-                .multiply(hourlyWage);
-        BigDecimal calculatedDayDeduction = BigDecimal.valueOf(data.deductionDay())
-                .multiply(dailyWage);
-        BigDecimal calculatedAbsenceDeduction = BigDecimal.valueOf(data.absenceDeduction())
-                .multiply(dailyWage);
+        BigDecimal calculatedHourDeduction = data.deductionHour().multiply(hourlyWage);
+        BigDecimal calculatedDayDeduction = data.deductionDay().multiply(dailyWage);
+        BigDecimal calculatedAbsenceDeduction = data.absenceDeduction().multiply(dailyWage);
 
         BigDecimal totalDeductions = calculatedHourDeduction
                 .add(calculatedDayDeduction)
@@ -73,10 +69,8 @@ public class PayrollCalculationService {
                 .add(data.advanceDeduction());
 
         // Addition VALUES
-        BigDecimal calculatedHourAddition = BigDecimal.valueOf(data.additionalHours())
-                .multiply(hourlyWage);
-        BigDecimal calculatedDayAddition = BigDecimal.valueOf(data.additionalDays())
-                .multiply(dailyWage);
+        BigDecimal calculatedHourAddition = data.additionalHours().multiply(hourlyWage);
+        BigDecimal calculatedDayAddition = data.additionalDays().multiply(dailyWage);
 
         BigDecimal totalAdditions = calculatedHourAddition
                 .add(calculatedDayAddition)
@@ -88,6 +82,9 @@ public class PayrollCalculationService {
         BigDecimal netSalary = basicSalary
                 .add(totalAdditions)
                 .subtract(totalDeductions);
+        if (netSalary.compareTo(BigDecimal.ZERO) < 0) {
+            netSalary = BigDecimal.ZERO;
+        }
 
         return new PayrollResult(
                 data.employeeCode(),

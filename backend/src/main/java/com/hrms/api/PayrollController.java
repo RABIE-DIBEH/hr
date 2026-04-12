@@ -5,9 +5,13 @@ import com.hrms.api.dto.PaginatedResponse;
 import com.hrms.api.dto.PayrollBulkResult;
 import com.hrms.api.dto.PayrollMonthlySummaryResponse;
 import com.hrms.api.dto.PayrollResponse;
+import com.hrms.core.models.Department;
 import com.hrms.core.models.Employee;
 import com.hrms.core.models.Payroll;
+import com.hrms.core.models.UsersRole;
+import com.hrms.core.repositories.DepartmentRepository;
 import com.hrms.core.repositories.EmployeeRepository;
+import com.hrms.core.repositories.RoleRepository;
 import com.hrms.security.EmployeeUserDetails;
 import com.hrms.services.PayrollExcelExportService;
 import com.hrms.services.PayrollPdfService;
@@ -26,6 +30,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.format.TextStyle;
 import java.util.Locale;
 
@@ -35,15 +40,21 @@ public class PayrollController {
 
     private final PayrollService payrollService;
     private final EmployeeRepository employeeRepository;
+    private final DepartmentRepository departmentRepository;
+    private final RoleRepository roleRepository;
     private final PayrollExcelExportService payrollExcelExportService;
     private final PayrollPdfService payrollPdfService;
 
     public PayrollController(PayrollService payrollService, 
                             EmployeeRepository employeeRepository,
+                            DepartmentRepository departmentRepository,
+                            RoleRepository roleRepository,
                             PayrollExcelExportService payrollExcelExportService,
                             PayrollPdfService payrollPdfService) {
         this.payrollService = payrollService;
         this.employeeRepository = employeeRepository;
+        this.departmentRepository = departmentRepository;
+        this.roleRepository = roleRepository;
         this.payrollExcelExportService = payrollExcelExportService;
         this.payrollPdfService = payrollPdfService;
     }
@@ -256,45 +267,102 @@ public class PayrollController {
             @RequestParam(required = false, defaultValue = "excel") String format,
             @AuthenticationPrincipal EmployeeUserDetails principal) {
 
+        if (!"excel".equalsIgnoreCase(format) && !"pdf".equalsIgnoreCase(format)) {
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "Invalid format. Use 'excel' or 'pdf'");
+        }
+
         if (!hasAnyRole(principal, "ROLE_PAYROLL", "ROLE_SUPER_ADMIN")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only PAYROLL can export payroll");
         }
 
-        org.springframework.data.domain.Page<com.hrms.core.models.Payroll> page = payrollService.getMonthlyPayroll(month, year, org.springframework.data.domain.Pageable.unpaged());
+        // Get payroll data, filtered by department if specified
+        org.springframework.data.domain.Page<com.hrms.core.models.Payroll> page;
+        if (departmentId != null) {
+            page = payrollService.getMonthlyPayrollByDepartment(departmentId, month, year, org.springframework.data.domain.Pageable.unpaged());
+        } else {
+            page = payrollService.getMonthlyPayroll(month, year, org.springframework.data.domain.Pageable.unpaged());
+        }
+
+        // Get department name for the export (use specified department or default)
+        String departmentName = "قسم الحسابات"; // Default
+        if (departmentId != null) {
+            departmentName = departmentRepository.findById(departmentId)
+                    .map(Department::getDepartmentName)
+                    .orElse("قسم الحسابات");
+        }
+
+        // Convert payroll data to export format with real department and role names
         java.util.List<com.hrms.api.dto.PayrollExportData> exportDataList = page.getContent().stream().map(payroll -> {
             com.hrms.core.models.Employee emp = payroll.getEmployee();
-            String deptName = emp.getDepartmentId() != null ? String.valueOf(emp.getDepartmentId()) : "General";
-            String jobTitle = emp.getRoleId() != null ? String.valueOf(emp.getRoleId()) : "Employee";
-            com.hrms.services.PayrollFormulaEngine.PayrollResult engineResult = payrollService.getPayrollPreview(emp, month, year);
-            return com.hrms.api.dto.PayrollExportData.of(String.valueOf(emp.getEmployeeId()), emp.getFullName(), jobTitle, deptName, engineResult);
+            
+            // Get real department name
+            String deptName = "General";
+            if (emp.getDepartmentId() != null) {
+                deptName = departmentRepository.findById(emp.getDepartmentId())
+                        .map(Department::getDepartmentName)
+                        .orElse("General");
+            }
+            
+            // Get real role/job title
+            String jobTitle = "Employee";
+            if (emp.getRoleId() != null) {
+                jobTitle = roleRepository.findById(emp.getRoleId())
+                        .map(UsersRole::getRoleName)
+                        .orElse("Employee");
+            }
+            
+            com.hrms.services.PayrollFormulaEngine.PayrollResult engineResult = toExportResult(payroll, emp);
+            
+            return com.hrms.api.dto.PayrollExportData.of(
+                String.valueOf(emp.getEmployeeId()), 
+                emp.getFullName(), 
+                jobTitle, 
+                deptName, 
+                engineResult
+            );
         }).toList();
 
+        // Convert month number to Arabic month name
+        String monthName = getArabicMonthName(month);
+        
         if ("excel".equalsIgnoreCase(format)) {
             try {
-                org.apache.poi.xssf.usermodel.XSSFWorkbook workbook = payrollExcelExportService.generatePayrollWorkbook(exportDataList, "الإدارة العامة", "قسم الحسابات", "", String.valueOf(month), String.valueOf(year));
+                org.apache.poi.xssf.usermodel.XSSFWorkbook workbook = payrollExcelExportService.generatePayrollWorkbook(
+                    exportDataList, 
+                    "الإدارة العامة", 
+                    departmentName, 
+                    "", 
+                    monthName, 
+                    String.valueOf(year)
+                );
                 java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
                 workbook.write(baos);
                 workbook.close();
                 org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
-                headers.setContentType(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM);
-                headers.setContentDispositionFormData("attachment", "payroll_" + month + "_" + year + ".xlsx");
+                headers.setContentType(org.springframework.http.MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+                headers.setContentDisposition(org.springframework.http.ContentDisposition.attachment().filename("payroll_" + month + "_" + year + ".xlsx").build());
                 return new org.springframework.http.ResponseEntity<>(baos.toByteArray(), headers, org.springframework.http.HttpStatus.OK);
             } catch (Exception e) {
                 throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR, "Failed to generate Excel: " + e.getMessage());
             }
         } else if ("pdf".equalsIgnoreCase(format)) {
             try {
-                byte[] pdfBytes = payrollPdfService.generatePayrollPdf(exportDataList, "الإدارة العامة", "", String.valueOf(month), String.valueOf(year));
+                byte[] pdfBytes = payrollPdfService.generatePayrollPdf(
+                    exportDataList, 
+                    "الإدارة العامة", 
+                    "", 
+                    monthName, 
+                    String.valueOf(year)
+                );
                 org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
                 headers.setContentType(org.springframework.http.MediaType.APPLICATION_PDF);
-                headers.setContentDispositionFormData("attachment", "payroll_" + month + "_" + year + ".pdf");
+                headers.setContentDisposition(org.springframework.http.ContentDisposition.attachment().filename("payroll_" + month + "_" + year + ".pdf").build());
                 return new org.springframework.http.ResponseEntity<>(pdfBytes, headers, org.springframework.http.HttpStatus.OK);
             } catch (Exception e) {
                 throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR, "Failed to generate PDF: " + e.getMessage());
             }
-        } else {
-            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "Invalid format. Use 'excel' or 'pdf'");
         }
+        throw new IllegalStateException("Unreachable export format branch");
     }
 
     private static boolean hasAnyRole(EmployeeUserDetails principal, String... roles) {
@@ -304,5 +372,62 @@ public class PayrollController {
             }
         }
         return false;
+    }
+
+    private String getArabicMonthName(int month) {
+        switch (month) {
+            case 1: return "يناير";
+            case 2: return "فبراير";
+            case 3: return "مارس";
+            case 4: return "أبريل";
+            case 5: return "مايو";
+            case 6: return "يونيو";
+            case 7: return "يوليو";
+            case 8: return "أغسطس";
+            case 9: return "سبتمبر";
+            case 10: return "أكتوبر";
+            case 11: return "نوفمبر";
+            case 12: return "ديسمبر";
+            default: return String.valueOf(month);
+        }
+    }
+
+    private com.hrms.services.PayrollFormulaEngine.PayrollResult toExportResult(Payroll payroll, Employee employee) {
+        BigDecimal baseSalary = defaultDecimal(employee.getBaseSalary());
+        BigDecimal workedHours = defaultDecimal(payroll.getTotalWorkHours());
+        BigDecimal overtimeHours = defaultDecimal(payroll.getOvertimeHours());
+        BigDecimal totalDeductions = defaultDecimal(payroll.getDeductions());
+        BigDecimal advanceDeductions = defaultDecimal(payroll.getAdvanceDeductions());
+        BigDecimal netSalary = defaultDecimal(payroll.getNetSalary());
+
+        BigDecimal dailyWage = baseSalary.compareTo(BigDecimal.ZERO) > 0
+                ? baseSalary.divide(new BigDecimal("26"), 10, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+        BigDecimal hourlyWage = dailyWage.compareTo(BigDecimal.ZERO) > 0
+                ? dailyWage.divide(new BigDecimal("8"), 10, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+
+        BigDecimal absenceDeduction = totalDeductions.subtract(advanceDeductions).max(BigDecimal.ZERO);
+        BigDecimal absenceDays = dailyWage.compareTo(BigDecimal.ZERO) > 0
+                ? absenceDeduction.divide(dailyWage, 10, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+        BigDecimal totalAdditions = netSalary.subtract(baseSalary).add(totalDeductions).max(BigDecimal.ZERO);
+
+        return new com.hrms.services.PayrollFormulaEngine.PayrollResult(
+                baseSalary,
+                workedHours,
+                overtimeHours,
+                absenceDays,
+                dailyWage,
+                hourlyWage,
+                totalDeductions,
+                totalAdditions,
+                advanceDeductions,
+                netSalary
+        );
+    }
+
+    private BigDecimal defaultDecimal(BigDecimal value) {
+        return value != null ? value : BigDecimal.ZERO;
     }
 }

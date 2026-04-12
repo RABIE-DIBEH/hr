@@ -25,8 +25,8 @@ import java.util.Set;
  *   <li>Fully blank rows are skipped</li>
  * </ul>
  *
- * All numeric inputs are truncated toward zero (equivalent to Python's
- * {@code int(float(value))}).
+ * Numeric inputs preserve spreadsheet precision so parity tests can exercise
+ * the real Java calculator against the same values the Python file used.
  */
 @Service
 public class PayrollExcelImportService {
@@ -100,24 +100,23 @@ public class PayrollExcelImportService {
             return null;
         }
 
-        // All monetary amounts: truncate toward zero like Python's int(float(x))
-        BigDecimal basicSalary = getCellTruncatedBigDecimal(row, 3);
+        BigDecimal basicSalary = getCellBigDecimal(row, 3);
         int totalVacation = getCellTruncatedInt(row, 6);
         int usedVacation = getCellTruncatedInt(row, 7);
         int remainingVacation = getCellTruncatedInt(row, 8);
-        int deductionHour = getCellTruncatedInt(row, 9);
-        int deductionDay = getCellTruncatedInt(row, 10);
-        int absenceDeduction = getCellTruncatedInt(row, 11);
-        BigDecimal adminDeduction = getCellTruncatedBigDecimal(row, 12);
-        BigDecimal advanceDeduction = getCellTruncatedBigDecimal(row, 13);
-        BigDecimal totalDeductionsInput = getCellTruncatedBigDecimal(row, 14);
-        int additionalHours = getCellTruncatedInt(row, 15);
-        int additionalDays = getCellTruncatedInt(row, 16);
-        BigDecimal bonuses = getCellTruncatedBigDecimal(row, 17);
-        BigDecimal transportation = getCellTruncatedBigDecimal(row, 18);
-        BigDecimal punctualityBonus = getCellTruncatedBigDecimal(row, 19);
-        BigDecimal totalAdditionsInput = getCellTruncatedBigDecimal(row, 20);
-        BigDecimal netSalaryInput = getCellTruncatedBigDecimal(row, 21);
+        BigDecimal deductionHour = getCellBigDecimal(row, 9);
+        BigDecimal deductionDay = getCellBigDecimal(row, 10);
+        BigDecimal absenceDeduction = getCellBigDecimal(row, 11);
+        BigDecimal adminDeduction = getCellBigDecimal(row, 12);
+        BigDecimal advanceDeduction = getCellBigDecimal(row, 13);
+        BigDecimal totalDeductionsInput = getCellBigDecimal(row, 14);
+        BigDecimal additionalHours = getCellBigDecimal(row, 15);
+        BigDecimal additionalDays = getCellBigDecimal(row, 16);
+        BigDecimal bonuses = getCellBigDecimal(row, 17);
+        BigDecimal transportation = getCellBigDecimal(row, 18);
+        BigDecimal punctualityBonus = getCellBigDecimal(row, 19);
+        BigDecimal totalAdditionsInput = getCellBigDecimal(row, 20);
+        BigDecimal netSalaryInput = getCellBigDecimal(row, 21);
 
         return new EmployeePayrollData(
                 employeeCode,
@@ -233,19 +232,25 @@ public class PayrollExcelImportService {
     }
 
     /**
-     * Reads a numeric cell value and converts to BigDecimal truncated
-     * toward zero (scale 0), matching Python's {@code int(float(value))}.
-     * Returns BigDecimal.ZERO for blank or invalid cells.
+     * Reads a numeric cell value as BigDecimal while preserving fractional
+     * precision from the spreadsheet. Returns BigDecimal.ZERO for blank or
+     * invalid cells.
      */
-    private BigDecimal getCellTruncatedBigDecimal(Row row, int colIndex) {
+    private BigDecimal getCellBigDecimal(Row row, int colIndex) {
         Cell cell = row.getCell(colIndex, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
         if (cell == null || cell.getCellType() == CellType.BLANK) {
             return BigDecimal.ZERO;
         }
         try {
-            double value = cell.getNumericCellValue();
-            return BigDecimal.valueOf(value)
-                    .setScale(0, RoundingMode.DOWN);
+            return switch (cell.getCellType()) {
+                case NUMERIC -> BigDecimal.valueOf(cell.getNumericCellValue());
+                case STRING -> {
+                    String value = cell.getStringCellValue().trim();
+                    yield value.isEmpty() ? BigDecimal.ZERO : new BigDecimal(value);
+                }
+                case FORMULA -> BigDecimal.valueOf(cell.getNumericCellValue());
+                default -> BigDecimal.ZERO;
+            };
         } catch (Exception e) {
             return BigDecimal.ZERO;
         }
