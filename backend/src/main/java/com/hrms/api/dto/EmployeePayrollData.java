@@ -24,11 +24,11 @@ public record EmployeePayrollData(
         // Col I
         int remainingVacation,
         // Col J
-        int deductionHour,
+        BigDecimal deductionHour,
         // Col K
-        int deductionDay,
+        BigDecimal deductionDay,
         // Col L
-        int absenceDeduction,
+        BigDecimal absenceDeduction,
         // Col M
         BigDecimal adminDeduction,
         // Col N
@@ -36,9 +36,9 @@ public record EmployeePayrollData(
         // Col O (pre-calculated in input, not used for our own calculations)
         BigDecimal totalDeductionsInput,
         // Col P
-        int additionalHours,
+        BigDecimal additionalHours,
         // Col Q
-        int additionalDays,
+        BigDecimal additionalDays,
         // Col R
         BigDecimal bonuses,
         // Col S

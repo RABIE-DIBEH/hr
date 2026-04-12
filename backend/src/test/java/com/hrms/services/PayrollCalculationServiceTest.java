@@ -35,10 +35,10 @@ class PayrollCalculationServiceTest {
                 "EMP001", "Alice Smith", "Accountant",
                 new BigDecimal("5200"),    // basic_salary
                 30, 5, 25,                  // vacation
-                0, 0, 0,                    // deduction_hour, deduction_day, absence
+                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, // deduction_hour, deduction_day, absence
                 BigDecimal.ZERO, BigDecimal.ZERO,  // admin_deduction, advance_deduction
                 BigDecimal.ZERO,            // total_deductions_input
-                0, 0,                       // additional_hours, additional_days
+                BigDecimal.ZERO, BigDecimal.ZERO, // additional_hours, additional_days
                 BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, // bonuses, transport, punctuality
                 BigDecimal.ZERO,            // total_additions_input
                 BigDecimal.ZERO             // net_salary_input
@@ -72,10 +72,10 @@ class PayrollCalculationServiceTest {
                 "EMP002", "Bob Jones", "Engineer",
                 new BigDecimal("6500"),    // basic_salary
                 30, 10, 20,                 // vacation
-                0, 0, 0,                    // no deductions (hour, day, absence)
+                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, // no deductions (hour, day, absence)
                 BigDecimal.ZERO, BigDecimal.ZERO,  // admin_deduction, advance_deduction
                 BigDecimal.ZERO,            // total_deductions_input
-                10, 2,                      // additional_hours, additional_days
+                new BigDecimal("10"), new BigDecimal("2"), // additional_hours, additional_days
                 new BigDecimal("500"),      // bonuses
                 new BigDecimal("200"),      // transportation
                 new BigDecimal("100"),      // punctuality_bonus
@@ -123,11 +123,11 @@ class PayrollCalculationServiceTest {
                 "EMP003", "Charlie Brown", "Clerk",
                 new BigDecimal("4800"),    // basic_salary
                 30, 7, 23,                  // vacation
-                3, 1, 2,                    // deduction_hour, deduction_day, absence
+                new BigDecimal("3"), new BigDecimal("1"), new BigDecimal("2"),
                 new BigDecimal("150"),      // admin_deduction
                 new BigDecimal("300"),      // advance_deduction
                 BigDecimal.ZERO,            // total_deductions_input
-                5, 0,                       // additional_hours, additional_days
+                new BigDecimal("5"), BigDecimal.ZERO,
                 new BigDecimal("200"),      // bonuses
                 BigDecimal.ZERO,            // transportation
                 BigDecimal.ZERO,            // punctuality_bonus
@@ -179,10 +179,10 @@ class PayrollCalculationServiceTest {
                 "EMP004", "Diana Prince", "Intern",
                 BigDecimal.ZERO,
                 0, 0, 0,
-                0, 0, 0,
+                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
                 BigDecimal.ZERO, BigDecimal.ZERO,
                 BigDecimal.ZERO,
-                0, 0,
+                BigDecimal.ZERO, BigDecimal.ZERO,
                 BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
                 BigDecimal.ZERO,
                 BigDecimal.ZERO
@@ -205,17 +205,17 @@ class PayrollCalculationServiceTest {
         EmployeePayrollData data1 = new EmployeePayrollData(
                 "E1", "Alice", "Manager",
                 new BigDecimal("5200"),
-                30, 5, 25, 0, 0, 0,
+                30, 5, 25, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
                 BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
-                0, 0, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
                 BigDecimal.ZERO, BigDecimal.ZERO
         );
         EmployeePayrollData data2 = new EmployeePayrollData(
                 "E2", "Bob", "Clerk",
                 new BigDecimal("3900"),
-                30, 0, 30, 0, 0, 0,
+                30, 0, 30, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
                 BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
-                0, 0, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
                 BigDecimal.ZERO, BigDecimal.ZERO
         );
 
