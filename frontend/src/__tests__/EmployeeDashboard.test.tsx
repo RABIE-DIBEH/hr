@@ -25,6 +25,7 @@ vi.mock('../services/api', async () => {
     getMyLeaveRequests: vi.fn(),
     getMyPayrollSlipsPage: vi.fn(),
     getMyAttendancePage: vi.fn(),
+    getMyAttendanceSummary: vi.fn(),
   };
 });
 
@@ -67,6 +68,15 @@ describe('EmployeeDashboard', () => {
     vi.mocked(api.getMyLeaveRequests).mockResolvedValue({ data: [] } as Awaited<ReturnType<typeof api.getMyLeaveRequests>>);
     vi.mocked(api.getMyPayrollSlipsPage).mockResolvedValue({ data: mockPaginated([]) } as Awaited<ReturnType<typeof api.getMyPayrollSlipsPage>>);
     vi.mocked(api.getMyAttendancePage).mockResolvedValue({ data: mockPaginated([]) } as Awaited<ReturnType<typeof api.getMyAttendancePage>>);
+    vi.mocked(api.getMyAttendanceSummary).mockResolvedValue({
+      data: {
+        month: 4,
+        year: 2026,
+        workedHours: 160,
+        targetHours: 160,
+        lastMonthWorkedHours: 150,
+      }
+    } as Awaited<ReturnType<typeof api.getMyAttendanceSummary>>);
   });
 
   it('renders loading states initially', async () => {
@@ -100,8 +110,7 @@ describe('EmployeeDashboard', () => {
     render(<EmployeeDashboard />, { wrapper: createWrapper() });
 
     await waitFor(() => {
-      // "ساعات الشهر" is hardcoded Arabic, "dashboard.leaveBalance" returns key since i18n isn't initialized
-      expect(screen.getByText('ساعات الشهر')).toBeDefined();
+      expect(screen.getByText('dashboard.monthlyHours')).toBeDefined();
       expect(screen.getByText((_, element) => element?.tagName.toLowerCase() === 'p' && element?.textContent?.includes('dashboard.leaveBalance') === true)).toBeDefined();
       expect(screen.getByText('الراتب المتوقع')).toBeDefined();
     });

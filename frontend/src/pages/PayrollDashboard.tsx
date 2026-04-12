@@ -231,7 +231,7 @@ const PayrollDashboard = () => {
         break;
       }
     }
-  }, [advancesQuery, historyQuery, employeesQuery, monthlyPayrollQuery, recruitmentQuery, loadError]);
+  }, [advancesQuery, historyQuery, employeesQuery, monthlyPayrollQuery, recruitmentQuery, loadError, t]);
 
   // Mutation: Process recruitment request
   const processRecruitmentMutation = useMutation({

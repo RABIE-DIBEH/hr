@@ -131,8 +131,12 @@ jobs:
         
     - name: Verify Flutter Installation
       run: |
-        flutter --version
-        which flutter
+        if command -v flutter &>/dev/null; then
+          flutter --version
+          which flutter
+        else
+          echo "⚠️  Flutter not available on runner"
+        fi
         
     - name: Validate Mobile Structure
       run: |
