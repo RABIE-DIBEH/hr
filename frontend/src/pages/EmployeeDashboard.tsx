@@ -15,6 +15,7 @@ import {
   User,
   X,
   ChevronRight,
+  ChevronLeft,
 } from 'lucide-react';
 import PaginationControls from '../components/PaginationControls';
 import CurrentDateTimePanel from '../components/CurrentDateTimePanel';
@@ -36,7 +37,7 @@ import {
 import { queryKeys } from '../services/queryKeys';
 
 const EmployeeDashboard = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showAdvanceForm, setShowAdvanceForm] = useState(false);
@@ -145,10 +146,10 @@ const EmployeeDashboard = () => {
           </div>
           <div>
             <h1 className="text-3xl font-bold text-white tracking-tight arabic-text">
-              مرحباً، {me?.fullName ?? '…'} 👋
+              {t('employeeDashboard.welcome', { name: me?.fullName ?? '…' })}
             </h1>
             <p className="text-slate-400 mt-1">
-              {[myDepartment?.departmentName, me?.teamName, me?.roleName].filter(Boolean).join(' | ') || 'عرض تقرير الدوام'}
+              {[myDepartment?.departmentName, me?.teamName, me?.roleName].filter(Boolean).join(' | ') || t('employeeDashboard.activity.viewAll')}
             </p>
           </div>
         </div>
@@ -157,7 +158,7 @@ const EmployeeDashboard = () => {
           <button
             onClick={() => setShowProfileEdit(true)}
             className="bg-luxury-surface border border-white/5 p-3 rounded-xl shadow-sm hover:bg-white/5 transition-all flex items-center gap-2 text-slate-300"
-            title="تعديل الملف الشخصي"
+            title={t('employeeDashboard.editProfile')}
           >
             <User size={18} />
           </button>
@@ -181,21 +182,21 @@ const EmployeeDashboard = () => {
               </div>
               {attendanceSummary?.monthlyRank && (
                 <div className="text-right">
-                  <p className="text-[10px] font-black text-blue-400 uppercase tracking-tighter">الترتيب</p>
+                  <p className="text-[10px] font-black text-blue-400 uppercase tracking-tighter">{t('employeeDashboard.stats.rank')}</p>
                   <p className="text-2xl font-black text-white italic tracking-tighter">#{attendanceSummary.monthlyRank}</p>
                 </div>
               )}
             </div>
             
-            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">{t('dashboard.monthlyHours') || 'ساعات الشهر'}</p>
+            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">{t('employeeDashboard.stats.monthlyHours')}</p>
             <h3 className="text-2xl font-black text-white">
-              {attendanceSummary?.workedHours?.toFixed(1) ?? '...'} {t('common.hours') || 'ساعة'}
+              {attendanceSummary?.workedHours?.toFixed(1) ?? '...'} {t('common.hours')}
             </h3>
             
             {attendanceSummary?.targetHours && (
               <div className="mt-4">
                 <div className="flex justify-between text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-tighter">
-                  <span>Progress</span>
+                  <span>{t('employeeDashboard.stats.progress')}</span>
                   <span>{Math.round((attendanceSummary.workedHours / attendanceSummary.targetHours) * 100)}%</span>
                 </div>
                 <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
@@ -219,21 +220,21 @@ const EmployeeDashboard = () => {
               </div>
               {attendanceSummary?.yearlyRank && (
                 <div className="text-right">
-                  <p className="text-[10px] font-black text-amber-400 uppercase tracking-tighter">ترتيب السنة</p>
+                  <p className="text-[10px] font-black text-amber-400 uppercase tracking-tighter">{t('employeeDashboard.stats.yearlyRank')}</p>
                   <p className="text-2xl font-black text-white italic tracking-tighter">#{attendanceSummary.yearlyRank}</p>
                 </div>
               )}
             </div>
             
-            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">ساعات السنة</p>
+            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">{t('employeeDashboard.stats.yearlyHours')}</p>
             <h3 className="text-2xl font-black text-white">
-              {attendanceSummary?.yearlyWorkedHours?.toFixed(0) ?? '...'} {t('common.hours') || 'ساعة'}
+              {attendanceSummary?.yearlyWorkedHours?.toFixed(0) ?? '...'} {t('common.hours')}
             </h3>
             
             {attendanceSummary?.yearlyTargetHours && (
               <div className="mt-4">
                 <div className="flex justify-between text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-tighter">
-                  <span>Yearly Goal</span>
+                  <span>{t('employeeDashboard.stats.yearlyGoal')}</span>
                   <span>{Math.round((attendanceSummary.yearlyWorkedHours / attendanceSummary.yearlyTargetHours) * 100)}%</span>
                 </div>
                 <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
@@ -254,10 +255,10 @@ const EmployeeDashboard = () => {
             <div className="w-12 h-12 bg-purple-500/20 rounded-2xl flex items-center justify-center mb-4 text-purple-400 group-hover:scale-110 transition-transform">
               <DollarSign size={24} />
             </div>
-            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">الراتب المتوقع</p>
-            <h3 className="text-2xl font-black text-white">{me?.baseSalary?.toLocaleString() ?? 0} ر.س</h3>
+            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">{t('employeeDashboard.stats.expectedSalary')}</p>
+            <h3 className="text-2xl font-black text-white">{me?.baseSalary?.toLocaleString()} {t('common.currency')}</h3>
             <div className="mt-1 flex items-center gap-1.5 text-[10px] font-bold text-purple-400 bg-purple-500/10 w-fit px-2.5 py-1 rounded-full uppercase">
-              Current Cycle
+              {t('employeeDashboard.stats.currCycle')}
             </div>
           </div>
         </motion.div>
@@ -269,14 +270,14 @@ const EmployeeDashboard = () => {
             <div className="w-12 h-12 bg-orange-500/20 rounded-2xl flex items-center justify-center mb-4 text-orange-400 group-hover:scale-110 transition-transform">
               <ArrowUpRight size={24} />
             </div>
-            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">{t('dashboard.leaveBalance')}</p>
+            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">{t('employeeDashboard.stats.leaveBalance')}</p>
             <h3 className="text-2xl font-black text-white">{me?.leaveBalanceDays?.toFixed(1) ?? 21.0} {t('common.days')}</h3>
             <div className={`mt-1 flex items-center gap-1.5 text-[10px] font-bold w-fit px-2.5 py-1 rounded-full uppercase ${
               me?.leaveBalanceDays && me.leaveBalanceDays < 5 
                 ? 'text-red-400 bg-red-500/10' 
                 : 'text-orange-400 bg-orange-500/10'
             }`}>
-              {me?.leaveBalanceDays && me.leaveBalanceDays < 5 ? t('dashboard.lowBalance') : t('dashboard.availableBalance')}
+              {me?.leaveBalanceDays && me.leaveBalanceDays < 5 ? t('employeeDashboard.stats.lowBalance') : t('employeeDashboard.stats.availableBalance')}
             </div>
           </div>
         </motion.div>
@@ -286,7 +287,7 @@ const EmployeeDashboard = () => {
         {/* Quick Actions & Requests */}
         <div className="lg:col-span-1 space-y-10">
           <section className="bg-luxury-surface rounded-[2.5rem] p-8 shadow-sm border border-white/5">
-            <h2 className="text-xl font-bold text-white mb-6 tracking-tight arabic-text">إجراءات سريعة</h2>
+            <h2 className="text-xl font-bold text-white mb-6 tracking-tight arabic-text">{t('employeeDashboard.actions.title')}</h2>
             <div className="grid grid-cols-2 gap-4">
               <button
                 onClick={() => setShowLeaveForm(true)}
@@ -295,7 +296,7 @@ const EmployeeDashboard = () => {
                 <div className="bg-purple-600/20 p-3 rounded-2xl text-purple-400 group-hover:scale-110 transition-all">
                   <Calendar size={24} />
                 </div>
-                <span className="text-sm font-bold text-slate-100">طلب إجازة</span>
+                <span className="text-sm font-bold text-slate-100">{t('employeeDashboard.actions.leaveRequest')}</span>
               </button>
               <button
                 onClick={() => setShowAdvanceForm(true)}
@@ -304,7 +305,7 @@ const EmployeeDashboard = () => {
                 <div className="bg-emerald-600/20 p-3 rounded-2xl text-emerald-400 group-hover:scale-110 transition-all">
                   <HandCoins size={24} />
                 </div>
-                <span className="text-sm font-bold text-slate-100">طلب سلفة</span>
+                <span className="text-sm font-bold text-slate-100">{t('employeeDashboard.actions.advanceRequest')}</span>
               </button>
               <button
                 onClick={() => navigate('/clock')}
@@ -313,7 +314,7 @@ const EmployeeDashboard = () => {
                 <div className="bg-blue-600/20 p-3 rounded-2xl text-blue-400 group-hover:scale-110 transition-all">
                   <Monitor size={24} />
                 </div>
-                <span className="text-sm font-bold text-slate-100">تسجيل الدوام</span>
+                <span className="text-sm font-bold text-slate-100">{t('employeeDashboard.actions.clocking')}</span>
               </button>
               <button
                 onClick={() => navigate('/inbox')}
@@ -322,14 +323,14 @@ const EmployeeDashboard = () => {
                 <div className="bg-orange-600/20 p-3 rounded-2xl text-orange-400 group-hover:scale-110 transition-all">
                   <TrendingUp size={24} />
                 </div>
-                <span className="text-sm font-bold text-slate-100">الرسائل</span>
+                <span className="text-sm font-bold text-slate-100">{t('employeeDashboard.actions.messages')}</span>
               </button>
             </div>
           </section>
 
           {/* Pending Advance Requests */}
           <section className="bg-luxury-surface rounded-[2.5rem] p-8 shadow-sm border border-white/5 overflow-hidden">
-            <h2 className="text-xl font-bold text-white mb-6 tracking-tight arabic-text">طلبات السلف الحالية</h2>
+            <h2 className="text-xl font-bold text-white mb-6 tracking-tight arabic-text">{t('employeeDashboard.advances.title')}</h2>
             {loadingAdvances ? (
               <div className="space-y-4">
                 <div className="bg-white/5 p-5 rounded-[2rem] border border-white/5">
@@ -350,30 +351,30 @@ const EmployeeDashboard = () => {
             ) : myAdvances.length === 0 ? (
               <div className="text-center py-10 opacity-40">
                 <HandCoins size={40} className="mx-auto mb-3" />
-                <p className="text-sm font-medium">لا توجد طلبات سلف معلقة</p>
+                <p className="text-sm font-medium">{t('employeeDashboard.advances.empty')}</p>
               </div>
             ) : (
               <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                 {myAdvances.map((adv: AdvanceRequest) => (
                   <div key={adv.advanceId} className="bg-white/5 p-5 rounded-[2rem] border border-white/5">
                     <div className="flex justify-between items-center mb-3">
-                      <span className="text-purple-400 font-black text-lg">{adv.amount} ر.س</span>
+                      <span className="text-purple-400 font-black text-lg">{adv.amount} {t('common.currency')}</span>
 	                      <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${
 	                        adv.status === 'APPROVED' ? 'bg-emerald-500/10 text-emerald-400' :
 	                        adv.status === 'REJECTED' ? 'bg-red-500/10 text-red-400' :
 	                        adv.status === 'DELIVERED' ? 'bg-blue-500/10 text-blue-400' :
 	                        'bg-orange-500/10 text-orange-400'
 	                      }`}>
-	                        {adv.status === 'APPROVED' ? 'معتمد' :
-	                          adv.status === 'REJECTED' ? 'مرفوض' :
-	                          adv.status === 'DELIVERED' ? 'تم التسليم' :
-	                          adv.status === 'PENDING_PAYROLL' ? 'بانتظار الرواتب' :
-	                          'بانتظار المدير'}
+	                        {adv.status === 'APPROVED' ? t('employeeDashboard.advances.status.approved') :
+	                          adv.status === 'REJECTED' ? t('employeeDashboard.advances.status.rejected') :
+	                          adv.status === 'DELIVERED' ? t('employeeDashboard.advances.status.delivered') :
+	                          adv.status === 'PENDING_PAYROLL' ? t('employeeDashboard.advances.status.pendingPayroll') :
+	                          t('employeeDashboard.advances.status.pendingManager')}
 	                      </span>
                     </div>
-                    <p className="text-slate-400 text-[10px] font-medium leading-relaxed italic">{adv.reason || 'لا يوجد سبب مكتوب'}</p>
+                    <p className="text-slate-400 text-[10px] font-medium leading-relaxed italic">{adv.reason || t('employeeDashboard.advances.noReason')}</p>
                     <div className="mt-3 flex items-center gap-2 text-[10px] text-slate-600 font-bold uppercase">
-                      <Clock size={12} /> {adv.requestedAt ? new Date(adv.requestedAt).toLocaleDateString('ar-SA') : '—'}
+                      <Clock size={12} /> {adv.requestedAt ? new Date(adv.requestedAt).toLocaleDateString(i18n.language === 'ar' ? 'ar-SA' : 'en-US') : '—'}
                     </div>
                   </div>
                 ))}
@@ -383,7 +384,7 @@ const EmployeeDashboard = () => {
 
           {/* Pending Leave Requests */}
           <section className="bg-luxury-surface rounded-[2.5rem] p-8 shadow-sm border border-white/5 overflow-hidden">
-            <h2 className="text-xl font-bold text-white mb-6 tracking-tight arabic-text">طلبات الإجازة</h2>
+            <h2 className="text-xl font-bold text-white mb-6 tracking-tight arabic-text">{t('employeeDashboard.leaves.title')}</h2>
             {loadingLeaves ? (
               <div className="space-y-4">
                 <div className="bg-white/5 p-5 rounded-[2rem] border border-white/5">
@@ -404,30 +405,30 @@ const EmployeeDashboard = () => {
             ) : myLeaves.length === 0 ? (
               <div className="text-center py-10 opacity-40">
                 <Calendar size={40} className="mx-auto mb-3" />
-                <p className="text-sm font-medium">لا توجد طلبات إجازة حالية</p>
+                <p className="text-sm font-medium">{t('employeeDashboard.leaves.empty')}</p>
               </div>
             ) : (
               <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                 {myLeaves.map((leave) => (
                   <div key={leave.requestId} className="bg-white/5 p-5 rounded-[2rem] border border-white/5">
                     <div className="flex justify-between items-center mb-3">
-                      <span className="text-blue-400 font-bold text-sm">{leave.leaveType === 'Hourly' ? 'إجازة ساعية' : 'إجازة أيام'}</span>
+                      <span className="text-blue-400 font-bold text-sm">{leave.leaveType === 'Hourly' ? t('employeeDashboard.leaves.hourly') : t('employeeDashboard.leaves.daily')}</span>
                       <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${
                         leave.status === 'APPROVED' ? 'bg-green-500/10 text-green-400' : 
                         leave.status === 'REJECTED' ? 'bg-red-500/10 text-red-400' : 
                         leave.status === 'PENDING_HR' ? 'bg-purple-500/10 text-purple-400' :
                         'bg-orange-500/10 text-orange-400'
                       }`}>
-                        {leave.status === 'APPROVED' ? 'مقبول' : 
-                         leave.status === 'REJECTED' ? 'مرفوض' : 
-                         leave.status === 'PENDING_HR' ? 'بانتظار HR' :
-                         'بانتظار المدير'}
+                        {leave.status === 'APPROVED' ? t('employeeDashboard.leaves.status.approved') : 
+                         leave.status === 'REJECTED' ? t('employeeDashboard.leaves.status.rejected') : 
+                         leave.status === 'PENDING_HR' ? t('employeeDashboard.leaves.status.pendingHr') :
+                         t('employeeDashboard.leaves.status.pendingManager')}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-xs text-slate-300 font-bold">
-                      <span>{new Date(leave.startDate).toLocaleDateString('ar-SA')}</span>
-                      <ChevronRight size={12} className="opacity-20" />
-                      <span>{leave.duration} {leave.leaveType === 'Hourly' ? 'ساعة' : 'يوم'}</span>
+                      <span>{new Date(leave.startDate).toLocaleDateString(i18n.language === 'ar' ? 'ar-SA' : 'en-US')}</span>
+                      {i18n.language === 'ar' ? <ChevronLeft size={12} className="opacity-20" /> : <ChevronRight size={12} className="opacity-20" />}
+                      <span>{leave.duration} {leave.leaveType === 'Hourly' ? t('common.hours') : t('common.days')}</span>
                     </div>
                     {leave.reason && <p className="text-slate-500 text-[10px] mt-2 italic truncate">{leave.reason}</p>}
                   </div>
@@ -441,8 +442,8 @@ const EmployeeDashboard = () => {
         <section className="lg:col-span-2 bg-luxury-surface rounded-[2.5rem] p-10 shadow-sm border border-white/5 overflow-hidden flex flex-col">
           <div className="flex justify-between items-center mb-10">
             <div>
-              <h2 className="text-2xl font-black text-white tracking-tight arabic-text">سجل الرواتب (Pay Slips)</h2>
-              <p className="text-slate-400 text-sm mt-1">تاريخ صرف المستحقات والخصومات</p>
+              <h2 className="text-2xl font-black text-white tracking-tight arabic-text">{t('employeeDashboard.payroll.title')}</h2>
+              <p className="text-slate-400 text-sm mt-1">{t('employeeDashboard.payroll.subtitle')}</p>
             </div>
             <div className="p-3 bg-white/5 rounded-2xl">
               <DollarSign className="text-purple-500" size={24} />
@@ -452,13 +453,13 @@ const EmployeeDashboard = () => {
           {loadingPayroll ? (
             <div className="text-center py-20 text-slate-500 flex flex-col items-center gap-4">
               <div className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-              جاري جلب سجلات الرواتب...
+              {t('employeeDashboard.payroll.loading')}
             </div>
           ) : myPayrollSlips.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center py-20 text-slate-500">
               <DollarSign size={40} className="mx-auto mb-3 opacity-40 text-slate-600" />
-              <p className="font-medium">لا توجد قسائم راتب حالياً</p>
-              <p className="text-sm mt-1 text-slate-600">سيتم إنشاء قسيمة الراتب عند معالجة الرواتب من قبل HR</p>
+              <p className="font-medium">{t('employeeDashboard.payroll.empty')}</p>
+              <p className="text-sm mt-1 text-slate-600">{t('employeeDashboard.payroll.emptyDesc')}</p>
             </div>
           ) : (
             <>
@@ -466,27 +467,27 @@ const EmployeeDashboard = () => {
                 <table className="w-full text-right border-collapse">
                   <thead className="bg-white/5 text-slate-400 text-[10px] font-black uppercase tracking-[0.15em]">
                     <tr>
-                      <th className="p-4">الشهر / السنة</th>
-                      <th className="p-4">ساعات العمل</th>
-                      <th className="p-4">ساعات إضافية</th>
-                      <th className="p-4">الخصومات</th>
-                      <th className="p-4">صافي الراتب</th>
-                      <th className="p-4">تاريخ الإصدار</th>
+                      <th className="p-4">{t('employeeDashboard.payroll.headers.period')}</th>
+                      <th className="p-4">{t('employeeDashboard.payroll.headers.workHours')}</th>
+                      <th className="p-4">{t('employeeDashboard.payroll.headers.overtime')}</th>
+                      <th className="p-4">{t('employeeDashboard.payroll.headers.deductions')}</th>
+                      <th className="p-4">{t('employeeDashboard.payroll.headers.netSalary')}</th>
+                      <th className="p-4">{t('employeeDashboard.payroll.headers.issuedAt')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
                     {myPayrollSlips.map((slip: PayrollSlip) => (
                       <tr key={slip.payrollId} className="hover:bg-white/5 transition-all">
                         <td className="p-4 font-bold text-slate-100">
-                          {new Date(slip.year, slip.month - 1).toLocaleDateString('ar-SA', { month: 'long', year: 'numeric' })}
+                          {new Date(slip.year, slip.month - 1).toLocaleDateString(i18n.language === 'ar' ? 'ar-SA' : 'en-US', { month: 'long', year: 'numeric' })}
                         </td>
-                        <td className="p-4 text-slate-300 text-sm">{slip.totalWorkHours ?? 0} ساعة</td>
-                        <td className="p-4 text-slate-300 text-sm">{slip.overtimeHours ?? 0} ساعة</td>
-                        <td className="p-4 text-red-400 text-sm">{slip.deductions ?? 0} ر.س</td>
-                        <td className="p-4 font-bold text-green-400">{slip.netSalary?.toLocaleString() ?? 0} ر.س</td>
+                        <td className="p-4 text-slate-300 text-sm">{slip.totalWorkHours ?? 0} {t('common.hours')}</td>
+                        <td className="p-4 text-slate-300 text-sm">{slip.overtimeHours ?? 0} {t('common.hours')}</td>
+                        <td className="p-4 text-red-400 text-sm">{slip.deductions ?? 0} SYP</td>
+                        <td className="p-4 font-bold text-green-400">{slip.netSalary?.toLocaleString() ?? 0} {t('common.currency')}</td>
                         <td className="p-4 text-slate-500 text-sm">
                           {slip.generatedAt
-                            ? new Date(slip.generatedAt).toLocaleDateString('ar-SA')
+                            ? new Date(slip.generatedAt).toLocaleDateString(i18n.language === 'ar' ? 'ar-SA' : 'en-US')
                             : '—'}
                         </td>
                       </tr>
@@ -514,12 +515,12 @@ const EmployeeDashboard = () => {
         className="mt-12 bg-luxury-surface rounded-[2rem] p-8 shadow-sm border border-white/5"
       >
         <div className="flex justify-between items-center mb-8">
-          <h2 className="text-xl font-bold text-white tracking-tight">آخر عمليات الحضور</h2>
+          <h2 className="text-xl font-bold text-white tracking-tight">{t('employeeDashboard.activity.title')}</h2>
           <button
             onClick={() => navigate('/attendance')}
             className="text-blue-400 text-sm font-bold hover:underline"
           >
-            مشاهدة الكل
+            {t('employeeDashboard.activity.viewAll')}
           </button>
         </div>
 
@@ -527,7 +528,7 @@ const EmployeeDashboard = () => {
           {loadingAttendance ? (
             <TableSkeleton rows={3} />
           ) : latestAttendance.length === 0 ? (
-            <div className="text-center py-8 text-slate-500">لا يوجد سجلات حضور حتى الآن</div>
+            <div className="text-center py-8 text-slate-500">{t('employeeDashboard.activity.empty')}</div>
           ) : (
             latestAttendance.map((log) => (
               <div key={log.recordId} className="flex items-center justify-between p-4 rounded-2xl hover:bg-white/5 transition-all border border-transparent hover:border-white/5 group">
@@ -537,19 +538,19 @@ const EmployeeDashboard = () => {
                   </div>
                   <div>
                     <p className="font-bold text-slate-100">
-                      {new Date(log.checkIn).toLocaleDateString('ar-SA', { weekday: 'long', day: 'numeric', month: 'long' })}
+                      {new Date(log.checkIn).toLocaleDateString(i18n.language === 'ar' ? 'ar-SA' : 'en-US', { weekday: 'long', day: 'numeric', month: 'long' })}
                     </p>
                     <p className="text-xs text-slate-500 font-medium">
-                      {log.workHours ? `دوام (${log.workHours} ساعة)` : 'جاري العمل...'}
+                      {log.workHours ? `(${log.workHours} ${t('common.hours')})` : t('employeeDashboard.activity.working')}
                     </p>
                   </div>
                 </div>
                 <div className="text-right">
                   <p className="font-mono font-bold text-slate-200">
-                    {new Date(log.checkIn).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })} — {log.checkOut ? new Date(log.checkOut).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }) : '...'}
+                    {new Date(log.checkIn).toLocaleTimeString(i18n.language === 'ar' ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit' })} — {log.checkOut ? new Date(log.checkOut).toLocaleTimeString(i18n.language === 'ar' ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit' }) : '...'}
                   </p>
                   <p className="text-[10px] text-green-400 font-bold uppercase tracking-widest mt-1 flex items-center justify-end gap-1">
-                    <CheckCircle size={10} /> Verified
+                    <CheckCircle size={10} /> {t('employeeDashboard.activity.verified')}
                   </p>
                 </div>
               </div>
@@ -606,7 +607,7 @@ const EmployeeDashboard = () => {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
                   <Clock size={20} className="text-luxury-primary" />
-                  تفاصيل دوام اليوم
+                  {t('employeeDashboard.todayDetails.title')}
                 </h2>
                 <button onClick={() => setShowDayDetails(false)} className="text-slate-400 hover:text-white transition-colors">
                   <X size={20} />
@@ -623,33 +624,33 @@ const EmployeeDashboard = () => {
                   </div>
                 </div>
               ) : !todayRecord ? (
-                <div className="text-center py-8 text-slate-400">لا توجد بيانات دوام لهذا اليوم</div>
+                <div className="text-center py-8 text-slate-400">{t('employeeDashboard.todayDetails.empty')}</div>
               ) : (
                 <div className="space-y-4">
                   <div className="bg-white/5 rounded-xl p-4 border border-white/5">
-                    <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">تسجيل الدخول</p>
+                    <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">{t('employeeDashboard.todayDetails.checkIn')}</p>
                     <p className="text-2xl font-bold text-white">
-                      {new Date(todayRecord.checkIn).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(todayRecord.checkIn).toLocaleTimeString(i18n.language === 'ar' ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
                   <div className="bg-white/5 rounded-xl p-4 border border-white/5">
-                    <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">تسجيل الخروج</p>
+                    <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">{t('employeeDashboard.todayDetails.checkOut')}</p>
                     <p className="text-2xl font-bold text-white">
                       {todayRecord.checkOut
-                        ? new Date(todayRecord.checkOut).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })
-                        : 'لم يتم بعد'}
+                        ? new Date(todayRecord.checkOut).toLocaleTimeString(i18n.language === 'ar' ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit' })
+                        : t('employeeDashboard.todayDetails.notYet')}
                     </p>
                   </div>
                   {todayRecord.workHours != null && (
                     <div className="bg-white/5 rounded-xl p-4 border border-white/5">
-                      <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">إجمالي ساعات العمل</p>
+                      <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">{t('employeeDashboard.todayDetails.totalHours')}</p>
                       <p className="text-2xl font-bold text-luxury-primary">
-                        {Math.floor(todayRecord.workHours)} ساعة {Math.round((todayRecord.workHours % 1) * 60)} دقيقة
+                        {t('employeeDashboard.todayDetails.hoursFormat', { hours: Math.floor(todayRecord.workHours), minutes: Math.round((todayRecord.workHours % 1) * 60) })}
                       </p>
                     </div>
                   )}
                   <div className="bg-white/5 rounded-xl p-4 border border-white/5">
-                    <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">الحالة</p>
+                    <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">{t('employeeDashboard.todayDetails.status')}</p>
                     <span className={`inline-block px-3 py-1 rounded-lg text-sm font-bold ${
                       todayRecord.status === 'Present'
                         ? 'bg-green-500/10 text-green-400'
@@ -657,7 +658,7 @@ const EmployeeDashboard = () => {
                         ? 'bg-red-500/10 text-red-400'
                         : 'bg-yellow-500/10 text-yellow-400'
                     }`}>
-                      {todayRecord.status === 'Present' ? 'حاضر' : todayRecord.status === 'Absent' ? 'غائب' : todayRecord.status}
+                      {todayRecord.status === 'Present' ? t('employeeDashboard.todayDetails.present') : todayRecord.status === 'Absent' ? t('employeeDashboard.todayDetails.absent') : todayRecord.status}
                     </span>
                   </div>
                 </div>

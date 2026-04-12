@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '../services/queryKeys';
 import {
@@ -69,32 +70,32 @@ const toNumber = (value: number | string | null | undefined | readonly (string |
   return typeof value === 'number' ? value : Number(value ?? 0) || 0;
 };
 
-const formatMoney = (value: number) =>
-  new Intl.NumberFormat('ar-EG', {
+const formatMoney = (value: number, language: string) =>
+  new Intl.NumberFormat(language === 'ar' ? 'ar-EG' : 'en-US', {
     maximumFractionDigits: 0,
   }).format(value);
 
-const formatMonthYear = (date: Date) =>
-  date.toLocaleDateString('ar-EG', {
+const formatMonthYear = (date: Date, language: string) =>
+  date.toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US', {
     month: 'long',
     year: 'numeric',
   });
 
-const formatDateTime = (value?: string) => {
-  if (!value) return 'لا يوجد تسجيل';
+const formatDateTime = (value: string | undefined, language: string, fallback: string) => {
+  if (!value) return fallback;
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'لا يوجد تسجيل';
-  return date.toLocaleString('ar-EG');
+  if (Number.isNaN(date.getTime())) return fallback;
+  return date.toLocaleString(language === 'ar' ? 'ar-EG' : 'en-US');
 };
 
-const formatDateOnly = (value?: string) => {
-  if (!value) return 'غير محدد';
+const formatDateOnly = (value: string | undefined, language: string, fallback: string) => {
+  if (!value) return fallback;
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'غير محدد';
-  return date.toLocaleDateString('ar-EG');
+  if (Number.isNaN(date.getTime())) return fallback;
+  return date.toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US');
 };
 
-const getDepartmentName = (employee: EmployeeSummary) => employee.departmentName?.trim() || employee.teamName?.trim() || 'غير محدد';
+const getDepartmentName = (employee: EmployeeSummary, fallback: string) => employee.departmentName?.trim() || employee.teamName?.trim() || fallback;
 
 const getMonthKey = (value?: string) => {
   if (!value) return '';
@@ -127,10 +128,10 @@ const getHeadStatus = (record?: AttendanceRecord): HeadStatus => {
   return checkIn.getHours() > 9 || (checkIn.getHours() === 9 && checkIn.getMinutes() > 15) ? 'late' : 'present';
 };
 
-const headStatusLabel = (status: HeadStatus) => ({
-  present: 'حاضر',
-  late: 'متأخر',
-  absent: 'غائب',
+const headStatusLabel = (status: HeadStatus, t: (key: string) => string) => ({
+  present: t('ceoDashboard.attendance.present'),
+  late: t('ceoDashboard.attendance.late'),
+  absent: t('ceoDashboard.attendance.absent'),
 }[status]);
 
 const headStatusClass = (status: HeadStatus) => ({
@@ -140,6 +141,7 @@ const headStatusClass = (status: HeadStatus) => ({
 }[status]);
 
 const CEODashboard = () => {
+  const { t, i18n } = useTranslation();
   const [reportDate, setReportDate] = useState(new Date());
   const [exporting, setExporting] = useState<string | null>(null);
 
@@ -188,7 +190,7 @@ const CEODashboard = () => {
       return {
         employeeId: manager.employeeId,
         name: manager.fullName,
-        department: getDepartmentName(manager),
+        department: getDepartmentName(manager, t('ceoDashboard.fallback.unspecified')),
         status,
         checkIn: (todayRecord ?? latestAttendance.get(manager.employeeId))?.checkIn,
       };
@@ -210,7 +212,7 @@ const CEODashboard = () => {
 
     const departmentMap = new Map<string, DepartmentStats>();
     for (const employee of activeEmployees) {
-      const key = getDepartmentName(employee);
+      const key = getDepartmentName(employee, t('ceoDashboard.fallback.unspecified'));
       const current = departmentMap.get(key) ?? {
         department: key,
         employees: 0,
@@ -226,14 +228,14 @@ const CEODashboard = () => {
     for (const slip of payroll.filter((item) => item.month === reportMonth && item.year === reportYear)) {
       const employee = employeeById.get(slip.employeeId);
       if (!employee) continue;
-      const current = departmentMap.get(getDepartmentName(employee));
+      const current = departmentMap.get(getDepartmentName(employee, t('ceoDashboard.fallback.unspecified')));
       if (current) current.payrollIssued += toNumber(slip.netSalary);
     }
 
     for (const advance of advancesThisMonth) {
       const employee = employeeById.get(advance.employeeId ?? -1);
       if (!employee) continue;
-      const current = departmentMap.get(getDepartmentName(employee));
+      const current = departmentMap.get(getDepartmentName(employee, t('ceoDashboard.fallback.unspecified')));
       if (current) current.advances += toNumber(advance.amount);
     }
 
@@ -275,7 +277,7 @@ const CEODashboard = () => {
       trend: [...trendSeed.entries()].map(([key, amount]) => {
         const [year, month] = key.split('-').map(Number);
         return {
-          month: new Date(year, month - 1, 1).toLocaleDateString('ar-EG', { month: 'short' }),
+          month: new Date(year, month - 1, 1).toLocaleDateString(i18n.language === 'ar' ? 'ar-EG' : 'en-US', { month: 'short' }),
           amount,
         };
       }),
@@ -291,6 +293,8 @@ const CEODashboard = () => {
     reportMonth,
     reportMonthId,
     reportYear,
+    t,
+    i18n.language,
   ]);
 
   const downloadReport = async (
@@ -311,7 +315,7 @@ const CEODashboard = () => {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="rounded-[2rem] border border-white/10 bg-white/5 px-8 py-6 text-lg font-bold text-white">
-          جارٍ تحميل لوحة المدير التنفيذي...
+          {t('ceoDashboard.loading')}
         </div>
       </div>
     );
@@ -326,10 +330,10 @@ const CEODashboard = () => {
   }
 
   const summaryCards = [
-    { label: 'إجمالي الموظفين', value: data.activeEmployees.length, subLabel: 'الموظفون النشطون حاليًا', icon: Users, tone: 'text-sky-300 bg-sky-500/10 border-sky-500/20' },
-    { label: 'إجمالي الرواتب الشهرية', value: `${formatMoney(data.salaryTotal)} ج.م`, subLabel: 'الكتلة الشهرية الحالية', icon: Wallet, tone: 'text-emerald-300 bg-emerald-500/10 border-emerald-500/20' },
-    { label: 'إجمالي السلف هذا الشهر', value: `${formatMoney(data.advanceTotal)} ج.م`, subLabel: 'السلف المصروفة والمسلّمة', icon: HandCoins, tone: 'text-amber-300 bg-amber-500/10 border-amber-500/20' },
-    { label: 'التنبيهات العاجلة', value: data.recentAlerts.length, subLabel: 'أعلى أولوية للمتابعة', icon: Bell, tone: 'text-rose-300 bg-rose-500/10 border-rose-500/20' },
+    { label: t('ceoDashboard.summary.employees'), value: data.activeEmployees.length, subLabel: t('ceoDashboard.summary.employeesSub'), icon: Users, tone: 'text-sky-300 bg-sky-500/10 border-sky-500/20' },
+    { label: t('ceoDashboard.summary.salary'), value: `${formatMoney(data.salaryTotal, i18n.language)}${t('ceoDashboard.fallback.currency')}`, subLabel: t('ceoDashboard.summary.salarySub'), icon: Wallet, tone: 'text-emerald-300 bg-emerald-500/10 border-emerald-500/20' },
+    { label: t('ceoDashboard.summary.advances'), value: `${formatMoney(data.advanceTotal, i18n.language)}${t('ceoDashboard.fallback.currency')}`, subLabel: t('ceoDashboard.summary.advancesSub'), icon: HandCoins, tone: 'text-amber-300 bg-amber-500/10 border-amber-500/20' },
+    { label: t('ceoDashboard.summary.alerts'), value: data.recentAlerts.length, subLabel: t('ceoDashboard.summary.alertsSub'), icon: Bell, tone: 'text-rose-300 bg-rose-500/10 border-rose-500/20' },
   ];
 
   return (
@@ -342,14 +346,13 @@ const CEODashboard = () => {
           <div className="max-w-4xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-4 py-2 text-xs font-bold text-amber-300">
               <Sparkles size={14} />
-              لوحة القيادة التنفيذية
+              {t('ceoDashboard.title')}
             </div>
             <h1 className="mt-5 text-4xl font-black leading-tight text-white lg:text-5xl">
-              نظرة شاملة على أداء الشركة
+              {t('ceoDashboard.heroTitle')}
             </h1>
             <p className="mt-4 max-w-3xl text-base leading-8 text-slate-300 lg:text-lg">
-              هذه الصفحة مخصصة للمدير التنفيذي لمتابعة مؤشرات الموارد البشرية والرواتب والسلف والتنبيهات الحرجة
-              في واجهة واحدة مصممة لاتخاذ القرار بسرعة ووضوح.
+              {t('ceoDashboard.heroSubtitle')}
             </p>
             <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               <div className="rounded-2xl border border-white/8 bg-white/[0.04] px-5 py-4">
@@ -357,12 +360,12 @@ const CEODashboard = () => {
                 <p className="mt-1 text-sm font-bold text-white">{meQuery.data?.fullName ?? '—'}</p>
               </div>
               <div className="rounded-2xl border border-white/8 bg-white/[0.04] px-5 py-4">
-                <p className="text-xs text-slate-500">فترة التقرير</p>
-                <p className="mt-1 text-sm font-bold text-white">{formatMonthYear(reportDate)}</p>
+                <p className="text-xs text-slate-500">{t('ceoDashboard.periodLabel')}</p>
+                <p className="mt-1 text-sm font-bold text-white">{formatMonthYear(reportDate, i18n.language)}</p>
               </div>
               <div className="rounded-2xl border border-white/8 bg-white/[0.04] px-5 py-4">
-                <p className="text-xs text-slate-500">حالة المراجعة</p>
-                <p className="mt-1 text-sm font-bold text-emerald-300">محدثة حسب البيانات الحالية</p>
+                <p className="text-xs text-slate-500">{t('ceoDashboard.statusLabel')}</p>
+                <p className="mt-1 text-sm font-bold text-emerald-300">{t('ceoDashboard.statusUpdated')}</p>
               </div>
             </div>
           </div>
@@ -372,15 +375,15 @@ const CEODashboard = () => {
             <div className="rounded-[2rem] border border-white/8 bg-black/30 p-4 backdrop-blur-xl">
               <div className="mb-3 flex items-center gap-2 text-sm font-bold text-white">
                 <CalendarRange size={16} className="text-amber-300" />
-                اختيار الشهر
+                {t('ceoDashboard.monthPicker')}
               </div>
               <div className="flex items-center justify-between gap-3">
-                <button type="button" onClick={() => setReportDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-slate-200 transition hover:bg-white/10">الشهر السابق</button>
-                <span className="text-sm font-black text-white">{formatMonthYear(reportDate)}</span>
-                <button type="button" onClick={() => setReportDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))} disabled={reportDate >= new Date(new Date().getFullYear(), new Date().getMonth(), 1)} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-slate-200 transition hover:bg-white/10 disabled:opacity-40">الشهر التالي</button>
+                <button type="button" onClick={() => setReportDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-slate-200 transition hover:bg-white/10">{t('ceoDashboard.prevMonth')}</button>
+                <span className="text-sm font-black text-white">{formatMonthYear(reportDate, i18n.language)}</span>
+                <button type="button" onClick={() => setReportDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))} disabled={reportDate >= new Date(new Date().getFullYear(), new Date().getMonth(), 1)} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-slate-200 transition hover:bg-white/10 disabled:opacity-40">{t('ceoDashboard.nextMonth')}</button>
               </div>
             </div>
-          </div>
+            </div>
         </div>
       </header>
 
@@ -399,28 +402,28 @@ const CEODashboard = () => {
         <div className="rounded-[2.5rem] border border-white/6 bg-luxury-surface p-7 shadow-[0_24px_70px_rgba(0,0,0,0.28)]">
           <div className="flex flex-col gap-3 border-b border-white/6 pb-5 md:flex-row md:items-end md:justify-between">
             <div>
-              <h2 className="text-2xl font-black text-white">حالة حضور رؤساء الأقسام</h2>
-              <p className="mt-2 text-sm leading-7 text-slate-400">يتم احتساب الحالة اعتمادًا على تسجيل اليوم. عدم وجود تسجيل يعني غيابًا، والتأخر يبدأ بعد الساعة ٩:١٥ صباحًا.</p>
+              <h2 className="text-2xl font-black text-white">{t('ceoDashboard.attendance.title')}</h2>
+              <p className="mt-2 text-sm leading-7 text-slate-400">{t('ceoDashboard.attendance.subtitle')}</p>
             </div>
             <div className="flex flex-wrap gap-2 text-sm font-bold">
-              <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-emerald-300">حاضر: {data.headTotals.present}</span>
-              <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-4 py-2 text-amber-300">متأخر: {data.headTotals.late}</span>
-              <span className="rounded-full border border-rose-500/20 bg-rose-500/10 px-4 py-2 text-rose-300">غائب: {data.headTotals.absent}</span>
+              <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-emerald-300">{t('ceoDashboard.attendance.present')}: {data.headTotals.present}</span>
+              <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-4 py-2 text-amber-300">{t('ceoDashboard.attendance.late')}: {data.headTotals.late}</span>
+              <span className="rounded-full border border-rose-500/20 bg-rose-500/10 px-4 py-2 text-rose-300">{t('ceoDashboard.attendance.absent')}: {data.headTotals.absent}</span>
             </div>
           </div>
 
           <div className="mt-6 overflow-x-auto">
             <table className="w-full min-w-[720px] text-right">
               <thead className="text-xs font-bold text-slate-500">
-                <tr><th className="pb-4">رئيس القسم</th><th className="pb-4">القسم</th><th className="pb-4">الحالة</th><th className="pb-4">آخر تسجيل حضور</th></tr>
+                <tr><th className="pb-4">{t('ceoDashboard.attendance.table.head')}</th><th className="pb-4">{t('ceoDashboard.attendance.table.department')}</th><th className="pb-4">{t('ceoDashboard.attendance.table.status')}</th><th className="pb-4">{t('ceoDashboard.attendance.table.lastCheckIn')}</th></tr>
               </thead>
               <tbody className="divide-y divide-white/5">
                 {data.headRows.map((item) => (
                   <tr key={item.employeeId} className="transition hover:bg-white/[0.03]">
                     <td className="py-4 text-sm font-bold text-white">{item.name}</td>
                     <td className="py-4 text-sm text-slate-300">{item.department}</td>
-                    <td className="py-4"><span className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold ${headStatusClass(item.status)}`}>{headStatusLabel(item.status)}</span></td>
-                    <td className="py-4 text-sm text-slate-400">{formatDateTime(item.checkIn)}</td>
+                    <td className="py-4"><span className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold ${headStatusClass(item.status)}`}>{headStatusLabel(item.status, t)}</span></td>
+                    <td className="py-4 text-sm text-slate-400">{formatDateTime(item.checkIn, i18n.language, '—')}</td>
                   </tr>
                 ))}
               </tbody>
@@ -432,13 +435,13 @@ const CEODashboard = () => {
           <div className="flex items-center gap-3 border-b border-white/6 pb-5">
             <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-3 text-rose-300"><ShieldAlert size={20} /></div>
             <div>
-              <h2 className="text-2xl font-black text-white">التنبيهات والإشعارات</h2>
-              <p className="mt-1 text-sm text-slate-400">أهم الرسائل ذات الأولوية العالية التي تتطلب متابعة مباشرة.</p>
+              <h2 className="text-2xl font-black text-white">{t('ceoDashboard.alerts.title')}</h2>
+              <p className="mt-1 text-sm text-slate-400">{t('ceoDashboard.alerts.subtitle')}</p>
             </div>
           </div>
 
           <div className="mt-6 space-y-4">
-            {data.recentAlerts.length === 0 && <div className="rounded-2xl border border-white/5 bg-black/20 p-5 text-sm text-slate-400">لا توجد تنبيهات عاجلة في الوقت الحالي.</div>}
+            {data.recentAlerts.length === 0 && <div className="rounded-2xl border border-white/5 bg-black/20 p-5 text-sm text-slate-400">{t('ceoDashboard.alerts.empty')}</div>}
             {data.recentAlerts.map((alert: InboxMessage) => (
               <div key={alert.messageId} className="rounded-[1.6rem] border border-white/5 bg-black/20 p-5">
                 <div className="flex items-start justify-between gap-4">
@@ -446,9 +449,9 @@ const CEODashboard = () => {
                     <p className="text-sm font-black text-white">{alert.title}</p>
                     <p className="mt-2 text-sm leading-7 text-slate-400">{alert.message}</p>
                   </div>
-                  <span className="rounded-full border border-rose-500/20 bg-rose-500/10 px-3 py-1 text-[11px] font-bold text-rose-300">{alert.priority === 'HIGH' ? 'عالية' : alert.priority === 'MEDIUM' ? 'متوسطة' : 'منخفضة'}</span>
+                  <span className="rounded-full border border-rose-500/20 bg-rose-500/10 px-3 py-1 text-[11px] font-bold text-rose-300">{alert.priority === 'HIGH' ? t('ceoDashboard.alerts.priority.high') : alert.priority === 'MEDIUM' ? t('ceoDashboard.alerts.priority.medium') : t('ceoDashboard.alerts.priority.low')}</span>
                 </div>
-                <div className="mt-4 text-xs text-slate-500">المرسل: {alert.senderName} | {formatDateTime(alert.createdAt)}</div>
+                <div className="mt-4 text-xs text-slate-500">{t('ceoDashboard.alerts.sender')}{alert.senderName} | {formatDateTime(alert.createdAt, i18n.language, '—')}</div>
               </div>
             ))}
           </div>
@@ -459,8 +462,8 @@ const CEODashboard = () => {
         <div className="rounded-[2.5rem] border border-white/6 bg-luxury-surface p-7 shadow-[0_24px_70px_rgba(0,0,0,0.28)]">
           <div className="mb-5 flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-black text-white">السلف الشهرية</h2>
-              <p className="mt-1 text-sm text-slate-400">اتجاه السلف المصروفة خلال آخر ستة أشهر.</p>
+              <h2 className="text-2xl font-black text-white">{t('ceoDashboard.trends.title')}</h2>
+              <p className="mt-1 text-sm text-slate-400">{t('ceoDashboard.trends.subtitle')}</p>
             </div>
             <TrendingUp className="text-amber-300" size={22} />
           </div>
@@ -470,9 +473,9 @@ const CEODashboard = () => {
                 <CartesianGrid stroke="#ffffff10" strokeDasharray="4 4" vertical={false} />
                 <XAxis dataKey="month" stroke="#94a3b8" axisLine={false} tickLine={false} />
                 <YAxis stroke="#94a3b8" axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ backgroundColor: '#0f1115', border: '1px solid #ffffff10', borderRadius: '14px' }} formatter={(value) => [`${formatMoney(toNumber(value))} ج.م`, 'قيمة السلف']} />
+                <Tooltip contentStyle={{ backgroundColor: '#0f1115', border: '1px solid #ffffff10', borderRadius: '14px' }} formatter={(value) => [`${formatMoney(toNumber(value), i18n.language)}${t('ceoDashboard.fallback.currency')}`, t('ceoDashboard.trends.tooltip')]} />
                 <Legend />
-                <Line type="monotone" dataKey="amount" name="السلف" stroke="#d4af37" strokeWidth={3} dot={{ r: 4 }} />
+                <Line type="monotone" dataKey="amount" name={t('ceoDashboard.trends.name')} stroke="#d4af37" strokeWidth={3} dot={{ r: 4 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -481,8 +484,8 @@ const CEODashboard = () => {
         <div className="rounded-[2.5rem] border border-white/6 bg-luxury-surface p-7 shadow-[0_24px_70px_rgba(0,0,0,0.28)]">
           <div className="mb-5 flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-black text-white">توزيع الرواتب حسب الأقسام</h2>
-              <p className="mt-1 text-sm text-slate-400">حجم الرواتب الأساسية لكل قسم داخل الشركة.</p>
+              <h2 className="text-2xl font-black text-white">{t('ceoDashboard.distribution.title')}</h2>
+              <p className="mt-1 text-sm text-slate-400">{t('ceoDashboard.distribution.subtitle')}</p>
             </div>
             <Wallet className="text-emerald-300" size={22} />
           </div>
@@ -492,7 +495,7 @@ const CEODashboard = () => {
                 <Pie data={data.salaryDistribution} dataKey="value" nameKey="name" innerRadius={60} outerRadius={102} paddingAngle={3}>
                   {data.salaryDistribution.map((item, index) => <Cell key={item.name} fill={chartColors[index % chartColors.length]} />)}
                 </Pie>
-                <Tooltip contentStyle={{ backgroundColor: '#0f1115', border: '1px solid #ffffff10', borderRadius: '14px' }} formatter={(value) => [`${formatMoney(toNumber(value))} ج.م`, 'إجمالي الرواتب']} />
+                <Tooltip contentStyle={{ backgroundColor: '#0f1115', border: '1px solid #ffffff10', borderRadius: '14px' }} formatter={(value) => [`${formatMoney(toNumber(value), i18n.language)}${t('ceoDashboard.fallback.currency')}`, t('ceoDashboard.distribution.tooltip')]} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
@@ -504,8 +507,8 @@ const CEODashboard = () => {
         <div className="rounded-[2.5rem] border border-white/6 bg-luxury-surface p-7 shadow-[0_24px_70px_rgba(0,0,0,0.28)]">
           <div className="mb-5 flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-black text-white">ملخص الرواتب لكل قسم</h2>
-              <p className="mt-1 text-sm text-slate-400">مقارنة بين موازنة الرواتب والصرف الفعلي والسلف داخل كل قسم.</p>
+              <h2 className="text-2xl font-black text-white">{t('ceoDashboard.departments.title')}</h2>
+              <p className="mt-1 text-sm text-slate-400">{t('ceoDashboard.departments.subtitle')}</p>
             </div>
             <Briefcase className="text-sky-300" size={22} />
           </div>
@@ -515,26 +518,26 @@ const CEODashboard = () => {
                 <CartesianGrid stroke="#ffffff10" strokeDasharray="4 4" vertical={false} />
                 <XAxis dataKey="department" stroke="#94a3b8" axisLine={false} tickLine={false} />
                 <YAxis stroke="#94a3b8" axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ backgroundColor: '#0f1115', border: '1px solid #ffffff10', borderRadius: '14px' }} formatter={(value, name) => [`${formatMoney(toNumber(value))} ج.م`, String(name)]} />
+                <Tooltip contentStyle={{ backgroundColor: '#0f1115', border: '1px solid #ffffff10', borderRadius: '14px' }} formatter={(value, name) => [`${formatMoney(toNumber(value), i18n.language)}${t('ceoDashboard.fallback.currency')}`, String(name)]} />
                 <Legend />
-                <Bar dataKey="monthlySalary" name="موازنة الرواتب" fill="#0891b2" radius={[8, 8, 0, 0]} />
-                <Bar dataKey="payrollIssued" name="الرواتب المصروفة" fill="#10b981" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="monthlySalary" name={t('ceoDashboard.departments.table.budget')} fill="#0891b2" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="payrollIssued" name={t('ceoDashboard.departments.table.actual')} fill="#10b981" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
           <div className="mt-6 overflow-x-auto">
             <table className="w-full min-w-[760px] text-right">
               <thead className="text-xs font-bold text-slate-500">
-                <tr><th className="pb-4">القسم</th><th className="pb-4">عدد الموظفين</th><th className="pb-4">موازنة الرواتب</th><th className="pb-4">الرواتب المصروفة</th><th className="pb-4">السلف خلال الشهر</th></tr>
+                <tr><th className="pb-4">{t('ceoDashboard.departments.table.department')}</th><th className="pb-4">{t('ceoDashboard.departments.table.count')}</th><th className="pb-4">{t('ceoDashboard.departments.table.budget')}</th><th className="pb-4">{t('ceoDashboard.departments.table.actual')}</th><th className="pb-4">{t('ceoDashboard.departments.table.advances')}</th></tr>
               </thead>
               <tbody className="divide-y divide-white/5">
                 {data.departments.map((item) => (
                   <tr key={item.department} className="transition hover:bg-white/[0.03]">
                     <td className="py-4 text-sm font-bold text-white">{item.department}</td>
                     <td className="py-4 text-sm text-slate-300">{item.employees}</td>
-                    <td className="py-4 text-sm text-slate-300">{formatMoney(item.monthlySalary)} ج.م</td>
-                    <td className="py-4 text-sm text-slate-300">{formatMoney(item.payrollIssued)} ج.م</td>
-                    <td className="py-4 text-sm text-slate-300">{formatMoney(item.advances)} ج.م</td>
+                    <td className="py-4 text-sm text-slate-300">{formatMoney(item.monthlySalary, i18n.language)}{t('ceoDashboard.fallback.currency')}</td>
+                    <td className="py-4 text-sm text-slate-300">{formatMoney(item.payrollIssued, i18n.language)}{t('ceoDashboard.fallback.currency')}</td>
+                    <td className="py-4 text-sm text-slate-300">{formatMoney(item.advances, i18n.language)}{t('ceoDashboard.fallback.currency')}</td>
                   </tr>
                 ))}
               </tbody>
@@ -546,8 +549,8 @@ const CEODashboard = () => {
           <div className="rounded-[2.5rem] border border-white/6 bg-luxury-surface p-7 shadow-[0_24px_70px_rgba(0,0,0,0.28)]">
             <div className="mb-5 flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-black text-white">سجل السلف المصروفة</h2>
-                <p className="mt-1 text-sm text-slate-400">آخر السلف التي تم تسليمها خلال الأشهر السابقة.</p>
+                <h2 className="text-2xl font-black text-white">{t('ceoDashboard.history.title')}</h2>
+                <p className="mt-1 text-sm text-slate-400">{t('ceoDashboard.history.subtitle')}</p>
               </div>
               <HandCoins className="text-amber-300" size={22} />
             </div>
@@ -557,12 +560,12 @@ const CEODashboard = () => {
                 <div key={item.advanceId} className="rounded-[1.6rem] border border-white/5 bg-black/20 p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="font-bold text-white">{item.employeeName ?? `الموظف ${item.employeeId ?? '—'}`}</p>
-                      <p className="mt-2 text-sm text-slate-400">{item.reason || 'سلفة مالية'}</p>
+                      <p className="font-bold text-white">{item.employeeName ?? t('ceoDashboard.history.fallback', { id: item.employeeId ?? '—' })}</p>
+                      <p className="mt-2 text-sm text-slate-400">{item.reason || t('ceoDashboard.history.reasonFallback')}</p>
                     </div>
                     <div className="text-left">
-                      <p className="font-black text-amber-300">{formatMoney(toNumber(item.amount))} ج.م</p>
-                      <p className="mt-2 text-xs text-slate-500">{formatDateOnly(item.paidAt ?? item.processedAt ?? item.requestedAt)}</p>
+                      <p className="font-black text-amber-300">{formatMoney(toNumber(item.amount), i18n.language)}{t('ceoDashboard.fallback.currency')}</p>
+                      <p className="mt-2 text-xs text-slate-500">{formatDateOnly(item.paidAt ?? item.processedAt ?? item.requestedAt, i18n.language, t('ceoDashboard.fallback.unspecified'))}</p>
                     </div>
                   </div>
                 </div>
@@ -573,37 +576,30 @@ const CEODashboard = () => {
           <div className="rounded-[2.5rem] border border-white/6 bg-luxury-surface p-7 shadow-[0_24px_70px_rgba(0,0,0,0.28)]">
             <div className="mb-5 flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-black text-white">التقارير والإعدادات</h2>
-                <p className="mt-1 text-sm text-slate-400">تنزيل ملفات CSV وPDF وExcel الخاصة بالتقارير التنفيذية.</p>
+                <h2 className="text-2xl font-black text-white">{t('ceoDashboard.reports.title')}</h2>
+                <p className="mt-1 text-sm text-slate-400">{t('ceoDashboard.reports.subtitle')}</p>
               </div>
               <Download className="text-slate-300" size={22} />
             </div>
 
             <div className="space-y-4">
               <div className="rounded-[1.6rem] border border-white/5 bg-black/20 p-4">
-                <p className="font-bold text-white">ملخص تنفيذي بصيغة CSV</p>
-                <p className="mt-1 text-sm text-slate-400">يتضمن عدد الموظفين وإجمالي الرواتب والسلف الشهرية.</p>
-                <button type="button" onClick={() => saveCsv(`ملخص-تنفيذي-${reportMonth}-${reportYear}.csv`, [['المؤشر', 'القيمة'], ['إجمالي الموظفين', data.activeEmployees.length], ['إجمالي الرواتب الشهرية', data.salaryTotal], ['إجمالي السلف الشهرية', data.advanceTotal]])} className="mt-3 inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/10"><FileSpreadsheet size={16} />تنزيل ملف CSV</button>
+                <p className="font-bold text-white">{t('ceoDashboard.reports.advanceCsv.title')}</p>
+                <p className="mt-1 text-sm text-slate-400">{t('ceoDashboard.reports.advanceCsv.subtitle')}</p>
+                <button type="button" onClick={() => saveCsv(`${t('ceoDashboard.reports.advanceCsv.title')}-${reportMonth}-${reportYear}.csv`, [['Employee ID', 'Name', 'Amount', 'Date'], ...data.paymentHistory.map((item) => [item.employeeId ?? '', item.employeeName ?? '', toNumber(item.amount), item.paidAt ?? item.processedAt ?? item.requestedAt ?? ''])])} className="mt-3 inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/10"><FileSpreadsheet size={16} />{t('ceoDashboard.reports.advanceCsv.button')}</button>
               </div>
-
               <div className="rounded-[1.6rem] border border-white/5 bg-black/20 p-4">
-                <p className="font-bold text-white">سجل السلف بصيغة CSV</p>
-                <p className="mt-1 text-sm text-slate-400">يحتوي على أحدث السلف المصروفة مع المبالغ والتواريخ.</p>
-                <button type="button" onClick={() => saveCsv(`سجل-السلف-${reportMonth}-${reportYear}.csv`, [['رقم الموظف', 'اسم الموظف', 'المبلغ', 'تاريخ الصرف'], ...data.paymentHistory.map((item) => [item.employeeId ?? '', item.employeeName ?? '', toNumber(item.amount), item.paidAt ?? item.processedAt ?? item.requestedAt ?? ''])])} className="mt-3 inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/10"><FileSpreadsheet size={16} />تنزيل ملف CSV</button>
-              </div>
-
-              <div className="rounded-[1.6rem] border border-white/5 bg-black/20 p-4">
-                <p className="font-bold text-white">التقارير التشغيلية</p>
-                <p className="mt-1 text-sm text-slate-400">تنزيل تقارير الحضور والرواتب والإجازات والتوظيف.</p>
+                <p className="font-bold text-white">{t('ceoDashboard.reports.ops.title')}</p>
+                <p className="mt-1 text-sm text-slate-400">{t('ceoDashboard.reports.ops.subtitle')}</p>
                 <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  <button type="button" onClick={() => downloadReport('payroll-pdf', `تقرير-الرواتب-${reportMonth}-${reportYear}.pdf`, () => downloadPayrollPdf(reportMonth, reportYear))} className="rounded-xl bg-purple-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-purple-700">{exporting === 'payroll-pdf' ? 'جارٍ التنزيل...' : 'رواتب PDF'}</button>
-                  <button type="button" onClick={() => downloadReport('payroll-xlsx', `تقرير-الرواتب-${reportMonth}-${reportYear}.xlsx`, () => downloadPayrollExcel(reportMonth, reportYear))} className="rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-700">{exporting === 'payroll-xlsx' ? 'جارٍ التنزيل...' : 'رواتب Excel'}</button>
-                  <button type="button" onClick={() => downloadReport('attendance-pdf', `تقرير-الحضور-${reportMonth}-${reportYear}.pdf`, () => downloadAttendancePdf(reportMonth, reportYear))} className="rounded-xl bg-sky-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-sky-700">{exporting === 'attendance-pdf' ? 'جارٍ التنزيل...' : 'حضور PDF'}</button>
-                  <button type="button" onClick={() => downloadReport('attendance-xlsx', `تقرير-الحضور-${reportMonth}-${reportYear}.xlsx`, () => downloadAttendanceExcel(reportMonth, reportYear))} className="rounded-xl bg-cyan-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-cyan-700">{exporting === 'attendance-xlsx' ? 'جارٍ التنزيل...' : 'حضور Excel'}</button>
-                  <button type="button" onClick={() => downloadReport('leave-pdf', `تقرير-الإجازات-${reportMonth}-${reportYear}.pdf`, () => downloadLeavePdf(reportMonth, reportYear))} className="rounded-xl bg-orange-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-orange-700">{exporting === 'leave-pdf' ? 'جارٍ التنزيل...' : 'إجازات PDF'}</button>
-                  <button type="button" onClick={() => downloadReport('leave-xlsx', `تقرير-الإجازات-${reportMonth}-${reportYear}.xlsx`, () => downloadLeaveExcel(reportMonth, reportYear))} className="rounded-xl bg-amber-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-amber-700">{exporting === 'leave-xlsx' ? 'جارٍ التنزيل...' : 'إجازات Excel'}</button>
-                  <button type="button" onClick={() => downloadReport('recruitment-pdf', `تقرير-التوظيف-${reportMonth}-${reportYear}.pdf`, () => downloadRecruitmentPdf(reportMonth, reportYear))} className="rounded-xl bg-fuchsia-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-fuchsia-700">{exporting === 'recruitment-pdf' ? 'جارٍ التنزيل...' : 'توظيف PDF'}</button>
-                  <button type="button" onClick={() => downloadReport('recruitment-xlsx', `تقرير-التوظيف-${reportMonth}-${reportYear}.xlsx`, () => downloadRecruitmentExcel(reportMonth, reportYear))} className="rounded-xl bg-rose-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-rose-700">{exporting === 'recruitment-xlsx' ? 'جارٍ التنزيل...' : 'توظيف Excel'}</button>
+                  <button type="button" onClick={() => downloadReport('payroll-pdf', `payroll-report-${reportMonth}-${reportYear}.pdf`, () => downloadPayrollPdf(reportMonth, reportYear))} className="rounded-xl bg-purple-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-purple-700">{exporting === 'payroll-pdf' ? t('ceoDashboard.reports.ops.downloading') : t('ceoDashboard.reports.ops.payrollPdf')}</button>
+                  <button type="button" onClick={() => downloadReport('payroll-xlsx', `payroll-report-${reportMonth}-${reportYear}.xlsx`, () => downloadPayrollExcel(reportMonth, reportYear))} className="rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-700">{exporting === 'payroll-xlsx' ? t('ceoDashboard.reports.ops.downloading') : t('ceoDashboard.reports.ops.payrollExcel')}</button>
+                  <button type="button" onClick={() => downloadReport('attendance-pdf', `attendance-report-${reportMonth}-${reportYear}.pdf`, () => downloadAttendancePdf(reportMonth, reportYear))} className="rounded-xl bg-sky-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-sky-700">{exporting === 'attendance-pdf' ? t('ceoDashboard.reports.ops.downloading') : t('ceoDashboard.reports.ops.attendancePdf')}</button>
+                  <button type="button" onClick={() => downloadReport('attendance-xlsx', `attendance-report-${reportMonth}-${reportYear}.xlsx`, () => downloadAttendanceExcel(reportMonth, reportYear))} className="rounded-xl bg-cyan-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-cyan-700">{exporting === 'attendance-xlsx' ? t('ceoDashboard.reports.ops.downloading') : t('ceoDashboard.reports.ops.attendanceExcel')}</button>
+                  <button type="button" onClick={() => downloadReport('leave-pdf', `leave-report-${reportMonth}-${reportYear}.pdf`, () => downloadLeavePdf(reportMonth, reportYear))} className="rounded-xl bg-orange-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-orange-700">{exporting === 'leave-pdf' ? t('ceoDashboard.reports.ops.downloading') : t('ceoDashboard.reports.ops.leavePdf')}</button>
+                  <button type="button" onClick={() => downloadReport('leave-xlsx', `leave-report-${reportMonth}-${reportYear}.xlsx`, () => downloadLeaveExcel(reportMonth, reportYear))} className="rounded-xl bg-amber-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-amber-700">{exporting === 'leave-xlsx' ? t('ceoDashboard.reports.ops.downloading') : t('ceoDashboard.reports.ops.leaveExcel')}</button>
+                  <button type="button" onClick={() => downloadReport('recruitment-pdf', `recruitment-report-${reportMonth}-${reportYear}.pdf`, () => downloadRecruitmentPdf(reportMonth, reportYear))} className="rounded-xl bg-fuchsia-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-fuchsia-700">{exporting === 'recruitment-pdf' ? t('ceoDashboard.reports.ops.downloading') : t('ceoDashboard.reports.ops.recruitmentPdf')}</button>
+                  <button type="button" onClick={() => downloadReport('recruitment-xlsx', `recruitment-report-${reportMonth}-${reportYear}.xlsx`, () => downloadRecruitmentExcel(reportMonth, reportYear))} className="rounded-xl bg-rose-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-rose-700">{exporting === 'recruitment-xlsx' ? t('ceoDashboard.reports.ops.downloading') : t('ceoDashboard.reports.ops.recruitmentExcel')}</button>
                 </div>
               </div>
             </div>

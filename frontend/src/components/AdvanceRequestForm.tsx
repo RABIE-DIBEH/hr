@@ -32,16 +32,16 @@ const AdvanceRequestForm = ({ onClose, onSuccess }: AdvanceRequestFormProps) => 
     // Amount validation
     const amount = parseFloat(formData.amount);
     if (!formData.amount.trim()) {
-      newErrors.amount = t('advanceRequest.amountRequired');
+      newErrors.amount = t('forms.advance.validation.amountRequired');
     } else if (isNaN(amount) || amount <= 0) {
-      newErrors.amount = t('advanceRequest.amountPositive');
+      newErrors.amount = t('forms.advance.validation.amountPositive');
     } else if (amount > 100000) {
-      newErrors.amount = t('advanceRequest.amountMaxExceeded');
+      newErrors.amount = t('forms.advance.validation.amountMaxExceeded');
     }
 
     // Reason validation
     if (formData.reason.trim().length > 500) {
-      newErrors.reason = t('advanceRequest.reasonMaxLength');
+      newErrors.reason = t('forms.advance.validation.reasonMaxLength');
     }
 
     setErrors(newErrors);
@@ -84,7 +84,7 @@ const AdvanceRequestForm = ({ onClose, onSuccess }: AdvanceRequestFormProps) => 
       }, 1500);
     } catch (err: unknown) {
       const { message } = extractApiError(err);
-      setError(message || t('errors.advanceRequestFailed'));
+      setError(message || t('forms.advance.validation.submitError'));
     } finally {
       setLoading(false);
     }
@@ -104,15 +104,15 @@ const AdvanceRequestForm = ({ onClose, onSuccess }: AdvanceRequestFormProps) => 
           dir="rtl"
         >
           <div className="text-green-600 text-6xl mb-4">✓</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">{t('advanceRequest.successTitle')}</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">{t('forms.advance.successTitle')}</h2>
           <p className="text-gray-600 mb-6">
-            {t('advanceRequest.successMessage')}
+            {t('forms.advance.successDesc')}
           </p>
           <button
             onClick={onClose}
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
-            {t('common.close')}
+            {t('common.close') || 'Close'}
           </button>
         </div>
       </motion.div>
@@ -135,7 +135,7 @@ const AdvanceRequestForm = ({ onClose, onSuccess }: AdvanceRequestFormProps) => 
         {/* Header */}
         <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white p-6 rounded-t-lg">
           <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold">{t('advanceRequest.title')}</h2>
+            <h2 className="text-2xl font-bold">{t('forms.advance.title')}</h2>
             <button
               onClick={onClose}
               className="text-white hover:text-gray-200 text-2xl font-bold"
@@ -144,7 +144,7 @@ const AdvanceRequestForm = ({ onClose, onSuccess }: AdvanceRequestFormProps) => 
             </button>
           </div>
           <p className="text-purple-100 mt-2">
-            {t('advanceRequest.subtitle')}
+            {t('forms.advance.subtitle')}
           </p>
         </div>
 
@@ -159,7 +159,7 @@ const AdvanceRequestForm = ({ onClose, onSuccess }: AdvanceRequestFormProps) => 
           {/* Amount */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('advanceRequest.amountLabel')} <span className="text-red-500">*</span>
+              {t('forms.advance.amount')} <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <input
@@ -167,33 +167,33 @@ const AdvanceRequestForm = ({ onClose, onSuccess }: AdvanceRequestFormProps) => 
                 name="amount"
                 value={formData.amount}
                 onChange={handleChange}
-                placeholder="0.00"
+                placeholder={t('forms.advance.placeholders.amount')}
                 min="0"
                 step="0.01"
                 className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg font-semibold text-gray-900 ${
                   errors.amount ? 'border-red-500' : 'border-gray-300'
                 }`}
               />
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">{t('advanceRequest.currencySymbol')}</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">{t('common.currencySymbol') || 'SYP'}</span>
             </div>
             {errors.amount && (
               <p className="text-red-500 text-xs mt-1">{errors.amount}</p>
             )}
             <p className="text-gray-500 text-xs mt-2">
-              {t('advanceRequest.maxAllowed')}
+              {t('forms.advance.maxAllowed')}
             </p>
           </div>
  
           {/* Reason */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('advanceRequest.reasonLabel')}
+              {t('forms.advance.reason')}
             </label>
             <textarea
               name="reason"
               value={formData.reason}
               onChange={handleChange}
-              placeholder={t('advanceRequest.reasonPlaceholder')}
+              placeholder={t('forms.advance.placeholders.reason')}
               rows={4}
               maxLength={500}
               className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none text-gray-900 font-medium ${
@@ -211,7 +211,7 @@ const AdvanceRequestForm = ({ onClose, onSuccess }: AdvanceRequestFormProps) => 
           {/* Info Box */}
           <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
             <p className="text-purple-800 text-sm">
-              <strong>{t('advanceRequest.note')}</strong> {t('advanceRequest.noteText')}
+              <strong>{t('forms.advance.note')}</strong> {t('forms.advance.noteText')}
             </p>
           </div>
 
@@ -223,7 +223,7 @@ const AdvanceRequestForm = ({ onClose, onSuccess }: AdvanceRequestFormProps) => 
               className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
               disabled={loading}
             >
-              {t('common.cancel')}
+              {t('common.cancel') || 'Cancel'}
             </button>
             <button
               type="submit"
@@ -239,7 +239,7 @@ const AdvanceRequestForm = ({ onClose, onSuccess }: AdvanceRequestFormProps) => 
                   {t('advanceRequest.sending')}
                 </span>
               ) : (
-                t('advanceRequest.sendRequest')
+                t('forms.advance.submit')
               )}
             </button>
           </div>

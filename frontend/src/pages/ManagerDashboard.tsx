@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
@@ -49,6 +50,7 @@ import {
 } from '../components/attendanceStatus';
 
 const ManagerDashboard = () => {
+  const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const [processingRequest, setProcessingRequest] = useState<number | null>(null);
@@ -170,28 +172,28 @@ const ManagerDashboard = () => {
 
   const stats = [
     {
-      label: 'إجمالي الفريق',
+      label: t('managerDashboard.stats.totalTeam'),
       value: String(teamTotalCount),
       icon: Users,
       color: 'text-blue-400',
       bg: 'bg-blue-500/10',
     },
     {
-      label: 'طلبات توظيف معلقة',
+      label: t('managerDashboard.stats.pendingRecruitment'),
       value: String(requestTotalCount),
       icon: UserCheck,
       color: 'text-green-400',
       bg: 'bg-green-500/10',
     },
     {
-      label: 'طلبات إجازة معلقة',
+      label: t('managerDashboard.stats.pendingLeaves'),
       value: String(leaveTotalCount),
       icon: AlertTriangle,
       color: 'text-orange-400',
       bg: 'bg-orange-500/10',
     },
     {
-      label: 'طلبات سلف معلقة',
+      label: t('managerDashboard.stats.pendingAdvances'),
       value: String(advancesTotalCount),
       icon: ClipboardList,
       color: 'text-purple-400',
@@ -199,7 +201,7 @@ const ManagerDashboard = () => {
     },
   ];
 
-  const headerTeam = me?.teamName ?? 'فريقك';
+  const headerTeam = me?.teamName ?? t('managerDashboard.team.title');
 
   const handleProcessRequest = async (requestId: number, status: 'Approved' | 'Rejected') => {
     setProcessingRequest(requestId);
@@ -211,7 +213,7 @@ const ManagerDashboard = () => {
       setAdjustedSalary('');
       setSelectedRequestId(null);
     } catch (err: unknown) {
-      setError(extractApiError(err).message || 'فشل معالجة الطلب');
+      setError(extractApiError(err).message || t('managerDashboard.errors.processRequest'));
     } finally {
       setProcessingRequest(null);
     }
@@ -225,7 +227,7 @@ const ManagerDashboard = () => {
       setLeaveNote('');
       setSelectedLeaveId(null);
     } catch (err: unknown) {
-      setError(extractApiError(err).message || 'فشل معالجة طلب الإجازة');
+      setError(extractApiError(err).message || t('managerDashboard.errors.processLeave'));
     } finally {
       setProcessingLeave(null);
     }
@@ -248,7 +250,7 @@ const ManagerDashboard = () => {
       setAdjustedAdvanceReason('');
       setSelectedAdvanceId(null);
     } catch (err: unknown) {
-      setError(extractApiError(err).message || 'فشل معالجة طلب السلفة');
+      setError(extractApiError(err).message || t('managerDashboard.errors.processAdvance'));
     } finally {
       setProcessingAdvance(null);
     }
@@ -260,14 +262,14 @@ const ManagerDashboard = () => {
       await verifyAttendance(recordId);
       await queryClient.invalidateQueries({ queryKey: queryKeys.manager.todayAttendanceRoot });
     } catch (err: unknown) {
-      alert(extractApiError(err).message || "فشل تأكيد الدوام");
+      alert(extractApiError(err).message || t('managerDashboard.attendance.verifyFailed'));
     } finally {
       setVerifyingRecord(null);
     }
   };
 
   const handleReportFraud = async (recordId: number) => {
-    const note = prompt('يرجى إدخال تفاصيل التلاعب أو ملاحظتك:');
+    const note = prompt(t('managerDashboard.attendance.fraudPrompt'));
     if (!note) return;
     
     setVerifyingRecord(recordId);
@@ -275,7 +277,7 @@ const ManagerDashboard = () => {
       await reportFraud(recordId, note);
       await queryClient.invalidateQueries({ queryKey: queryKeys.manager.todayAttendanceRoot });
     } catch (err: unknown) {
-      alert(extractApiError(err).message || "فشل الإبلاغ عن تلاعب");
+      alert(extractApiError(err).message || t('managerDashboard.attendance.fraudFailed'));
     } finally {
       setVerifyingRecord(null);
     }
@@ -296,11 +298,11 @@ const ManagerDashboard = () => {
   });
 
   const handlePrevMonth = () => {
-    setReportDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+    setReportDate((prev: Date) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
   };
 
   const handleNextMonth = () => {
-    setReportDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+    setReportDate((prev: Date) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
   };
 
   const handleDownloadAttendance = async (type: 'pdf' | 'excel') => {
@@ -334,7 +336,7 @@ const ManagerDashboard = () => {
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'فشل تحميل تقرير الحضور.';
+      const msg = err instanceof Error ? err.message : t('managerDashboard.errors.downloadReport');
       alert(msg);
     } finally {
       setIsDownloading(false);
@@ -345,9 +347,9 @@ const ManagerDashboard = () => {
     <>
       <header className="flex justify-between items-center mb-10">
         <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight arabic-text">إدارة الفريق</h1>
+          <h1 className="text-3xl font-bold text-white tracking-tight arabic-text">{t('managerDashboard.title')}</h1>
           <p className="text-slate-400 mt-1">
-            {[myDepartment?.departmentName, headerTeam].filter(Boolean).join(' • ')} • بيانات مباشرة من الخادم
+            {t('managerDashboard.subtitle', { items: [myDepartment?.departmentName, headerTeam].filter(Boolean).join(' • ') })}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -357,7 +359,7 @@ const ManagerDashboard = () => {
 
       {!canViewManagerScopedTeam && !canViewCompanyWideTeam && (
         <div className="mb-6 p-4 rounded-xl bg-amber-500/10 text-amber-200 text-sm">
-          عرض القائمة مخصص لحسابات <strong>MANAGER</strong>. حسابك الحالي: {me?.roleName ?? '—'}.
+          <span dangerouslySetInnerHTML={{ __html: t('managerDashboard.managerOnly', { role: me?.roleName ?? '—' }) }} />
         </div>
       )}
 
@@ -395,23 +397,23 @@ const ManagerDashboard = () => {
                 <FileText size={24} />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white">مركز التقارير (إدارة الحضور)</h2>
-                <p className="text-slate-400 text-sm">تصدير بيانات حضور الفريق لـ {reportDate.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' })}</p>
+                <h2 className="text-xl font-bold text-white">{t('managerDashboard.reportCenter.title')}</h2>
+                <p className="text-slate-400 text-sm">{t('managerDashboard.reportCenter.subtitle', { date: reportDate.toLocaleDateString(i18n.language === 'ar' ? 'ar-EG' : 'en-US', { month: 'long', year: 'numeric' }) })}</p>
               </div>
             </div>
             <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/10">
               <button onClick={handlePrevMonth} className="text-slate-400 hover:text-white transition-colors">
-                <ChevronRight size={18} />
+                {i18n.language === 'ar' ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
               </button>
               <span className="text-white font-bold text-xs min-w-[100px] text-center">
-                {reportDate.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' })}
+                {reportDate.toLocaleDateString(i18n.language === 'ar' ? 'ar-EG' : 'en-US', { month: 'long', year: 'numeric' })}
               </span>
               <button 
                 onClick={handleNextMonth} 
                 disabled={reportDate >= new Date()} 
                 className="text-slate-400 hover:text-white disabled:opacity-30 transition-colors"
               >
-                <ChevronLeft size={18} />
+                {i18n.language === 'ar' ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
               </button>
             </div>
           </div>
@@ -419,28 +421,28 @@ const ManagerDashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-white/5 p-6 rounded-2xl border border-white/5 flex items-center justify-between">
               <div>
-                <h3 className="text-white font-bold mb-1">تقرير الحضور الشهري (PDF)</h3>
-                <p className="text-slate-500 text-xs">ملف جاهز للطباعة والتوثيق</p>
+                <h3 className="text-white font-bold mb-1">{t('managerDashboard.reportCenter.pdf.title')}</h3>
+                <p className="text-slate-500 text-xs">{t('managerDashboard.reportCenter.pdf.desc')}</p>
               </div>
               <button 
                 onClick={() => handleDownloadAttendance('pdf')}
                 disabled={isDownloading}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-bold transition-all text-xs disabled:opacity-50"
               >
-                تحميل PDF
+                {t('managerDashboard.reportCenter.pdf.button')}
               </button>
             </div>
             <div className="bg-white/5 p-6 rounded-2xl border border-white/5 flex items-center justify-between">
               <div>
-                <h3 className="text-white font-bold mb-1">تقرير الحضور الشهري (Excel)</h3>
-                <p className="text-slate-500 text-xs">ملف قابل للتعديل والتحليل الإحصائي</p>
+                <h3 className="text-white font-bold mb-1">{t('managerDashboard.reportCenter.excel.title')}</h3>
+                <p className="text-slate-500 text-xs">{t('managerDashboard.reportCenter.excel.desc')}</p>
               </div>
               <button 
                 onClick={() => handleDownloadAttendance('excel')}
                 disabled={isDownloading}
                 className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg font-bold transition-all text-xs disabled:opacity-50"
               >
-                تحميل Excel
+                {t('managerDashboard.reportCenter.excel.button')}
               </button>
             </div>
           </div>
@@ -455,9 +457,9 @@ const ManagerDashboard = () => {
               <ClipboardList size={24} />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white">طلبات التوظيف المعلقة</h2>
+              <h2 className="text-xl font-bold text-white">{t('managerDashboard.recruitment.title')}</h2>
               <p className="text-slate-400 text-sm">
-                {pendingRequests.length} طلب في انتظار المراجعة
+                {t('managerDashboard.recruitment.subtitle', { count: pendingRequests.length })}
               </p>
             </div>
           </div>
@@ -465,7 +467,7 @@ const ManagerDashboard = () => {
           {pendingRequests.length === 0 ? (
             <div className="p-12 text-center text-slate-500">
               <ClipboardList size={48} className="mx-auto mb-4 opacity-50" />
-              <p>لا توجد طلبات توظيف معلقة</p>
+              <p>{t('managerDashboard.recruitment.empty')}</p>
             </div>
           ) : (
             <div className="divide-y divide-white/5">
@@ -476,35 +478,35 @@ const ManagerDashboard = () => {
                       <div className="flex items-center gap-3 mb-3">
                         <h3 className="text-lg font-bold text-white">{request.fullName}</h3>
                         <span className="bg-orange-500/10 text-orange-400 px-3 py-1 rounded-lg text-xs font-bold">
-                          قيد المراجعة
+                          {t('managerDashboard.recruitment.underReview')}
                         </span>
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                         <div>
-                          <p className="text-slate-500 text-xs mb-1">الوظيفة</p>
+                          <p className="text-slate-500 text-xs mb-1">{t('managerDashboard.recruitment.job')}</p>
                           <p className="text-slate-200 font-medium">{request.jobDescription}</p>
                         </div>
                         <div>
-                          <p className="text-slate-500 text-xs mb-1">القسم</p>
+                          <p className="text-slate-500 text-xs mb-1">{t('managerDashboard.recruitment.department')}</p>
                           <p className="text-slate-200 font-medium">{request.department}</p>
                         </div>
                         <div>
-                          <p className="text-slate-500 text-xs mb-1">الراتب المتوقع</p>
-                          <p className="text-slate-200 font-medium">{request.expectedSalary} ريال</p>
+                          <p className="text-slate-500 text-xs mb-1">{t('managerDashboard.recruitment.expectedSalary')}</p>
+                          <p className="text-slate-200 font-medium">{request.expectedSalary} {t('managerDashboard.recruitment.currency')}</p>
                         </div>
                         <div>
-                          <p className="text-slate-500 text-xs mb-1">رقم الهوية</p>
+                          <p className="text-slate-500 text-xs mb-1">{t('managerDashboard.recruitment.nationalId')}</p>
                           <p className="text-slate-200 font-mono">{request.nationalId}</p>
                         </div>
                         <div>
-                          <p className="text-slate-500 text-xs mb-1">الجوال</p>
+                          <p className="text-slate-500 text-xs mb-1">{t('managerDashboard.recruitment.mobile')}</p>
                           <p className="text-slate-200 font-mono">{request.mobileNumber}</p>
                         </div>
                         <div>
-                          <p className="text-slate-500 text-xs mb-1">تاريخ الطلب</p>
+                          <p className="text-slate-500 text-xs mb-1">{t('managerDashboard.recruitment.requestDate')}</p>
                           <p className="text-slate-200">
                             {request.requestedAt
-                              ? new Date(request.requestedAt).toLocaleDateString('ar-SA')
+                              ? new Date(request.requestedAt).toLocaleDateString(i18n.language === 'ar' ? 'ar-SA' : 'en-US')
                               : '—'}
                           </p>
                         </div>
@@ -516,14 +518,14 @@ const ManagerDashboard = () => {
                         <div className="space-y-2">
                           <input
                             type="number"
-                            placeholder="تعديل الراتب (اختياري)"
+                            placeholder={t('managerDashboard.recruitment.salaryPlaceholder')}
                             value={adjustedSalary}
                             onChange={(e) => setAdjustedSalary(e.target.value)}
                             className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/20"
                           />
                           <input
                             type="text"
-                            placeholder="ملاحظة (اختياري)"
+                            placeholder={t('managerDashboard.recruitment.notePlaceholder')}
                             value={processNote}
                             onChange={(e) => setProcessNote(e.target.value)}
                             className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/20"
@@ -535,7 +537,7 @@ const ManagerDashboard = () => {
                               className="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-1 disabled:opacity-50"
                             >
                               <Check size={14} />
-                              موافقة
+                              {t('managerDashboard.recruitment.approve')}
                             </button>
                             <button
                               onClick={() => handleProcessRequest(request.requestId!, 'Rejected')}
@@ -543,7 +545,7 @@ const ManagerDashboard = () => {
                               className="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-1 disabled:opacity-50"
                             >
                               <X size={14} />
-                              رفض
+                              {t('managerDashboard.recruitment.reject')}
                             </button>
                           </div>
                         </div>
@@ -555,7 +557,7 @@ const ManagerDashboard = () => {
                           }}
                           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all"
                         >
-                          مراجعة الطلب
+                          {t('managerDashboard.recruitment.reviewRequest')}
                         </button>
                       )}
                     </div>
@@ -581,10 +583,8 @@ const ManagerDashboard = () => {
               <UserCheck size={24} />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white">المراجعة اليومية (دوام الفريق اليوم)</h2>
-              <p className="text-slate-400 text-sm">
-                تحقق جسدياً من وجود موظفيك الذين سجلوا دخولهم عبر الـ NFC
-              </p>
+              <h2 className="text-xl font-bold text-white uppercase tracking-tight arabic-text">{t('managerDashboard.attendance.title')}</h2>
+              <p className="text-slate-400 text-sm">{t('managerDashboard.attendance.subtitle')}</p>
             </div>
           </div>
         </div>
@@ -592,20 +592,20 @@ const ManagerDashboard = () => {
         {todayAttendance.length === 0 ? (
           <div className="p-12 text-center text-slate-500">
             <CheckCircle2 size={48} className="mx-auto mb-4 opacity-50" />
-            <p>لا توجد سجلات دوام ناشطة للفريق اليوم حتى الآن</p>
+            <p>{t('managerDashboard.attendance.empty')}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-right border-collapse">
               <thead className="bg-white/5 text-slate-400 text-[10px] font-black uppercase tracking-[0.15em]">
                 <tr>
-                  <th className="p-6">الموظف</th>
-                  <th className="p-6">وقت الدخول</th>
-                  <th className="p-6">وقت الخروج</th>
-                  <th className="p-6">الحالة العامة</th>
-                  <th className="p-6">المراجعة</th>
-                  <th className="p-6">الرواتب</th>
-                  <th className="p-6">إجراءات المراجعة</th>
+                  <th className="p-6">{t('managerDashboard.attendance.headers.employee')}</th>
+                  <th className="p-6">{t('managerDashboard.attendance.headers.checkIn')}</th>
+                  <th className="p-6">{t('managerDashboard.attendance.headers.checkOut')}</th>
+                  <th className="p-6">{t('managerDashboard.attendance.headers.status')}</th>
+                  <th className="p-6">{t('managerDashboard.attendance.headers.review')}</th>
+                  <th className="p-6">{t('managerDashboard.attendance.headers.payroll')}</th>
+                  <th className="p-6">{t('managerDashboard.attendance.headers.actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -617,21 +617,21 @@ const ManagerDashboard = () => {
                   return (
                   <tr key={record.recordId} className="hover:bg-white/5 transition-all">
                     <td className="p-6 font-bold text-slate-100">{record.employeeName}</td>
-                    <td className="p-6 font-mono text-slate-400 text-sm">{new Date(record.checkIn).toLocaleTimeString('ar-EG', {hour: '2-digit', minute: '2-digit'})}</td>
-                    <td className="p-6 font-mono text-slate-400 text-sm">{record.checkOut ? new Date(record.checkOut).toLocaleTimeString('ar-EG', {hour: '2-digit', minute: '2-digit'}) : '—'}</td>
+                    <td className="p-6 font-mono text-slate-400 text-sm">{new Date(record.checkIn).toLocaleTimeString(i18n.language === 'ar' ? 'ar-EG' : 'en-US', {hour: '2-digit', minute: '2-digit'})}</td>
+                    <td className="p-6 font-mono text-slate-400 text-sm">{record.checkOut ? new Date(record.checkOut).toLocaleTimeString(i18n.language === 'ar' ? 'ar-EG' : 'en-US', {hour: '2-digit', minute: '2-digit'}) : '—'}</td>
                     <td className="p-6">
                       <span className={`inline-flex rounded-lg px-3 py-1 text-xs font-bold ${summaryMeta.className}`}>
-                        {summaryMeta.label}
+                        {t(summaryMeta.label)}
                       </span>
                     </td>
                     <td className="p-6">
                       <span className={`inline-flex rounded-lg px-3 py-1 text-xs font-bold ${reviewMeta.className}`}>
-                        {reviewMeta.label}
+                        {t(reviewMeta.label)}
                       </span>
                     </td>
                     <td className="p-6">
                       <span className={`inline-flex rounded-lg px-3 py-1 text-xs font-bold ${payrollMeta.className}`}>
-                        {payrollMeta.label}
+                        {t(payrollMeta.label)}
                       </span>
                     </td>
                     <td className="p-6">
@@ -642,20 +642,20 @@ const ManagerDashboard = () => {
                             disabled={verifyingRecord === record.recordId}
                             className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-50 flex items-center gap-1.5 shadow-lg shadow-green-900/20"
                           >
-                            <Check size={14} /> تأكيد الحضور
+                            <Check size={14} /> {t('managerDashboard.attendance.confirmAttendance')}
                           </button>
                           <button
                             onClick={() => handleReportFraud(record.recordId)}
                             disabled={verifyingRecord === record.recordId}
                             className="bg-red-600/10 hover:bg-red-600 text-red-400 hover:text-white px-4 py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-50 flex items-center gap-1.5 border border-red-500/20"
                           >
-                            <AlertTriangle size={14} /> تلاعب
+                            <AlertTriangle size={14} /> {t('managerDashboard.attendance.reportFraud')}
                           </button>
                         </div>
                       ) : (
                         <div className="flex flex-col gap-1">
                           <span className="text-xs text-slate-500 font-bold flex items-center gap-1">
-                            <CheckCircle2 size={12} className="text-emerald-500" /> تم الاجراء
+                            <CheckCircle2 size={12} className="text-emerald-500" /> {t('managerDashboard.attendance.actionDone')}
                           </span>
                           {record.managerNotes && (
                             <p className="text-[10px] text-slate-400 italic max-w-[150px] truncate" title={record.managerNotes}>
@@ -687,9 +687,9 @@ const ManagerDashboard = () => {
               <FileText size={24} />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white">طلبات الإجازة للفريق</h2>
+              <h2 className="text-xl font-bold text-white">{t('managerDashboard.leaves.title')}</h2>
               <p className="text-slate-400 text-sm">
-                {pendingLeaves.length} طلب بانتظار موافقتك
+                {t('managerDashboard.leaves.subtitle', { count: pendingLeaves.length })}
               </p>
             </div>
           </div>
@@ -697,7 +697,7 @@ const ManagerDashboard = () => {
           {pendingLeaves.length === 0 ? (
             <div className="p-12 text-center text-slate-500">
               <FileText size={48} className="mx-auto mb-4 opacity-50" />
-              <p>لا توجد طلبات إجازة معلقة للفريق</p>
+              <p>{t('managerDashboard.leaves.empty')}</p>
             </div>
           ) : (
             <div className="divide-y divide-white/5">
@@ -706,23 +706,23 @@ const ManagerDashboard = () => {
                   <div className="flex justify-between items-start gap-6">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-3">
-                        <h3 className="text-lg font-bold text-white">{leave.employeeName ?? `الموظف #${leave.employeeId}`}</h3>
+                        <h3 className="text-lg font-bold text-white">{leave.employeeName ?? t('managerDashboard.leaves.employeeFallback', { id: leave.employeeId })}</h3>
                         <span className="bg-blue-500/10 text-blue-400 px-3 py-1 rounded-lg text-xs font-bold">
-                          {leave.leaveType === 'Hourly' ? 'إجازة ساعية' : 'إجازة مسبقة'}
+                          {leave.leaveType === 'Hourly' ? t('managerDashboard.leaves.hourly') : t('managerDashboard.leaves.advance')}
                         </span>
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                         <div>
-                          <p className="text-slate-500 text-xs mb-1">المدة</p>
-                          <p className="text-slate-200 font-medium">{leave.duration} {leave.leaveType === 'Hourly' ? 'ساعة' : 'يوم'}</p>
+                          <p className="text-slate-500 text-xs mb-1">{t('managerDashboard.leaves.duration')}</p>
+                          <p className="text-slate-200 font-medium">{leave.duration} {leave.leaveType === 'Hourly' ? t('managerDashboard.leaves.hours') : t('managerDashboard.leaves.days')}</p>
                         </div>
                         <div>
-                          <p className="text-slate-500 text-xs mb-1">تاريخ الإجازة</p>
+                          <p className="text-slate-500 text-xs mb-1">{t('managerDashboard.leaves.leaveDate')}</p>
                           <p className="text-slate-200 font-medium">{leave.startDate}</p>
                         </div>
                         {leave.reason && (
                           <div className="col-span-2">
-                            <p className="text-slate-500 text-xs mb-1">السبب</p>
+                            <p className="text-slate-500 text-xs mb-1">{t('managerDashboard.leaves.reason')}</p>
                             <p className="text-slate-200 text-xs">{leave.reason}</p>
                           </div>
                         )}
@@ -734,7 +734,7 @@ const ManagerDashboard = () => {
                         <div className="space-y-2">
                           <input
                             type="text"
-                            placeholder="ملاحظة للموظف/لـHR (اختياري)"
+                            placeholder={t('managerDashboard.leaves.notePlaceholder')}
                             value={leaveNote}
                             onChange={(e) => setLeaveNote(e.target.value)}
                             className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/20"
@@ -745,14 +745,14 @@ const ManagerDashboard = () => {
                               disabled={processingLeave === leave.requestId}
                               className="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-1 disabled:opacity-50"
                             >
-                              <Check size={14} /> موافقة
+                              <Check size={14} /> {t('managerDashboard.leaves.approve')}
                             </button>
                             <button
                               onClick={() => handleProcessLeave(leave.requestId!, 'REJECTED')}
                               disabled={processingLeave === leave.requestId}
                               className="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-1 disabled:opacity-50"
                             >
-                              <X size={14} /> رفض
+                              <X size={14} /> {t('managerDashboard.leaves.reject')}
                             </button>
                           </div>
                         </div>
@@ -764,7 +764,7 @@ const ManagerDashboard = () => {
                           }}
                           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all"
                         >
-                          مراجعة الطلب
+                          {t('managerDashboard.leaves.reviewRequest')}
                         </button>
                       )}
                     </div>
@@ -790,9 +790,9 @@ const ManagerDashboard = () => {
               <ClipboardList size={24} />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white">طلبات السلف (مرحلة المدير)</h2>
+              <h2 className="text-xl font-bold text-white">{t('managerDashboard.advances.title')}</h2>
               <p className="text-slate-400 text-sm">
-                {pendingAdvances.length} طلب بانتظار مراجعتك
+                {t('managerDashboard.advances.subtitle', { count: pendingAdvances.length })}
               </p>
             </div>
           </div>
@@ -800,7 +800,7 @@ const ManagerDashboard = () => {
           {pendingAdvances.length === 0 ? (
             <div className="p-12 text-center text-slate-500">
               <ClipboardList size={48} className="mx-auto mb-4 opacity-50" />
-              <p>لا توجد طلبات سلف معلقة حالياً</p>
+              <p>{t('managerDashboard.advances.empty')}</p>
             </div>
           ) : (
             <div className="divide-y divide-white/5">
@@ -809,16 +809,16 @@ const ManagerDashboard = () => {
                   <div className="flex justify-between items-start gap-6">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-3">
-                        <h3 className="text-lg font-bold text-white">{adv.employeeName ?? `الموظف #${adv.employeeId}`}</h3>
+                        <h3 className="text-lg font-bold text-white">{adv.employeeName ?? t('managerDashboard.advances.employeeFallback', { id: adv.employeeId })}</h3>
                         <span className="bg-purple-500/10 text-purple-300 px-3 py-1 rounded-lg text-xs font-bold">
-                          {adv.amount} ر.س
+                          {adv.amount} {t('managerDashboard.advances.currency')}
                         </span>
                       </div>
                       {adv.reason && (
                         <p className="text-slate-400 text-xs">{adv.reason}</p>
                       )}
                       <p className="text-slate-500 text-xs mt-2">
-                        {adv.requestedAt ? new Date(adv.requestedAt).toLocaleString('ar-SA') : ''}
+                        {adv.requestedAt ? new Date(adv.requestedAt).toLocaleString(i18n.language === 'ar' ? 'ar-SA' : 'en-US') : ''}
                       </p>
                     </div>
 
@@ -828,21 +828,21 @@ const ManagerDashboard = () => {
                           <input
                             type="number"
                             inputMode="decimal"
-                            placeholder="تعديل المبلغ (اختياري)"
+                            placeholder={t('managerDashboard.advances.amountPlaceholder')}
                             value={adjustedAdvanceAmount}
                             onChange={(e) => setAdjustedAdvanceAmount(e.target.value)}
                             className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-slate-500 focus:ring-2 focus:ring-purple-500/20"
                           />
                           <input
                             type="text"
-                            placeholder="تعديل السبب (اختياري)"
+                            placeholder={t('managerDashboard.advances.reasonPlaceholder')}
                             value={adjustedAdvanceReason}
                             onChange={(e) => setAdjustedAdvanceReason(e.target.value)}
                             className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-slate-500 focus:ring-2 focus:ring-purple-500/20"
                           />
                           <input
                             type="text"
-                            placeholder="ملاحظة (اختياري)"
+                            placeholder={t('managerDashboard.advances.notePlaceholder')}
                             value={advanceNote}
                             onChange={(e) => setAdvanceNote(e.target.value)}
                             className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-slate-500 focus:ring-2 focus:ring-purple-500/20"
@@ -853,14 +853,14 @@ const ManagerDashboard = () => {
                               disabled={processingAdvance === adv.advanceId}
                               className="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-1 disabled:opacity-50"
                             >
-                              <Check size={14} /> اعتماد
+                              <Check size={14} /> {t('managerDashboard.advances.approve')}
                             </button>
                             <button
                               onClick={() => handleProcessAdvance(adv.advanceId!, 'Rejected')}
                               disabled={processingAdvance === adv.advanceId}
                               className="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-1 disabled:opacity-50"
                             >
-                              <X size={14} /> رفض
+                              <X size={14} /> {t('managerDashboard.advances.reject')}
                             </button>
                           </div>
                         </div>
@@ -874,7 +874,7 @@ const ManagerDashboard = () => {
                           }}
                           className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all"
                         >
-                          مراجعة الطلب
+                          {t('managerDashboard.advances.reviewRequest')}
                         </button>
                       )}
                     </div>
@@ -894,13 +894,13 @@ const ManagerDashboard = () => {
 
       <div className="bg-luxury-surface rounded-[2.5rem] shadow-sm border border-white/5 overflow-hidden">
         <div className="p-8 border-b border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <h2 className="text-xl font-bold text-white">المرؤوسون المباشرون</h2>
+          <h2 className="text-xl font-bold text-white">{t('managerDashboard.team.title')}</h2>
           <div className="flex gap-3 w-full md:w-auto">
             <div className="relative flex-1 md:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input
                 type="text"
-                placeholder="بحث عن موظف..."
+                placeholder={t('managerDashboard.team.searchPlaceholder')}
                 value={teamSearch}
                 onChange={(e) => setTeamSearch(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 bg-white/5 border-transparent focus:bg-white/10 focus:border-blue-500/50 rounded-xl text-sm transition-all text-white placeholder:text-slate-500"
@@ -918,12 +918,12 @@ const ManagerDashboard = () => {
                   ? 'bg-white/5 text-slate-400 border-white/5' 
                   : 'bg-blue-600/10 text-blue-400 border-blue-500/20'
               }`}
-              title="تصفية حسب حالة البطاقة"
+              title={t('managerDashboard.team.filterTitle')}
             >
               <Filter size={18} />
-              {teamStatusFilter === 'LINKED' && <span>ببطاقة</span>}
-              {teamStatusFilter === 'NOT_LINKED' && <span>بدون بطاقة</span>}
-              {teamStatusFilter === 'ALL' && <span>الكل</span>}
+              {teamStatusFilter === 'LINKED' && <span>{t('managerDashboard.team.withCard')}</span>}
+              {teamStatusFilter === 'NOT_LINKED' && <span>{t('managerDashboard.team.withoutCard')}</span>}
+              {teamStatusFilter === 'ALL' && <span>{t('managerDashboard.team.all')}</span>}
             </button>
           </div>
         </div>
@@ -932,11 +932,11 @@ const ManagerDashboard = () => {
           <table className="w-full text-right border-collapse">
             <thead>
               <tr className="bg-white/5 text-slate-400 text-[10px] font-black uppercase tracking-[0.15em]">
-                <th className="p-6">الموظف</th>
-                <th className="p-6">البريد</th>
-                <th className="p-6">الفريق</th>
-                <th className="p-6">NFC</th>
-                <th className="p-6 text-center">الحالة</th>
+                <th className="p-6">{t('managerDashboard.team.headers.employee')}</th>
+                <th className="p-6">{t('managerDashboard.team.headers.email')}</th>
+                <th className="p-6">{t('managerDashboard.team.headers.team')}</th>
+                <th className="p-6">{t('managerDashboard.team.headers.nfc')}</th>
+                <th className="p-6 text-center">{t('managerDashboard.team.headers.status')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -944,11 +944,11 @@ const ManagerDashboard = () => {
                 <tr>
                   <td colSpan={5} className="p-8 text-center text-slate-500 text-sm">
                     {teamSearch || teamStatusFilter !== 'ALL'
-                      ? 'لا توجد نتائج تطابق معايير البحث.'
+                      ? t('managerDashboard.team.emptyResults')
                       : canViewCompanyWideTeam
-                      ? 'لا توجد سجلات موظفين متاحة حالياً.'
+                      ? t('managerDashboard.team.emptyCompanyScale')
                       : me?.roleName === 'MANAGER'
-                      ? 'لا يوجد مرؤوسون مسجّلون لك (managerId) في قاعدة البيانات.'
+                      ? t('managerDashboard.team.emptyManagerScale')
                       : '—'}
                   </td>
                 </tr>
@@ -981,10 +981,10 @@ const ManagerDashboard = () => {
                           <div
                             className={`w-1.5 h-1.5 rounded-full ${emp.nfcLinked ? 'bg-green-400' : 'bg-slate-500'}`}
                           />
-                          {emp.nfcLinked ? 'بطاقة مرتبطة' : 'بدون بطاقة'}
+                          {emp.nfcLinked ? t('managerDashboard.team.cardLinked') : t('managerDashboard.team.noCard')}
                         </span>
                         <span className="text-slate-500 flex items-center gap-1 text-[10px] font-bold">
-                          <CheckCircle2 size={14} /> بيانات حية
+                          <CheckCircle2 size={14} /> {t('managerDashboard.team.liveData')}
                         </span>
                       </div>
                     </td>
@@ -996,7 +996,7 @@ const ManagerDashboard = () => {
         </div>
 
         <div className="p-6 bg-white/[0.02] border-t border-white/5 flex justify-between items-center text-xs text-slate-500 font-medium">
-          <p>عرض {filteredTeam.length} من إجمالي {teamTotalCount} موظفاً في فريقك</p>
+          <p>{t('managerDashboard.team.footer', { count: filteredTeam.length, total: teamTotalCount })}</p>
         </div>
         <PaginationControls
           page={teamPage}

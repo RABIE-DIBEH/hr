@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { submitLeaveRequest } from '../services/api';
 import { motion } from 'framer-motion';
@@ -10,6 +11,7 @@ interface LeaveRequestFormProps {
 }
 
 const LeaveRequestForm = ({ onClose, onSuccess }: LeaveRequestFormProps) => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -34,11 +36,11 @@ const LeaveRequestForm = ({ onClose, onSuccess }: LeaveRequestFormProps) => {
 
     const durationNum = parseFloat(formData.duration);
     if (!formData.startDate || (leaveType === 'Standard' && !formData.endDate)) {
-      setError('يرجى تحديد تواريخ الإجازة');
+      setError(t('forms.leave.validation.datesRequired'));
       return;
     }
     if (isNaN(durationNum) || durationNum <= 0) {
-      setError('المدة يجب أن تكون رقماً أكبر من صفر');
+      setError(t('forms.leave.validation.durationInvalid'));
       return;
     }
 
@@ -58,7 +60,7 @@ const LeaveRequestForm = ({ onClose, onSuccess }: LeaveRequestFormProps) => {
       }, 1500);
     } catch (err: unknown) {
       const { message } = extractApiError(err);
-      setError(message || 'حدث خطأ أثناء إرسال الطلب. تأكد من صحة البيانات وتوفر رصيد كافٍ.');
+      setError(message || t('forms.leave.validation.submitError'));
     } finally {
       setLoading(false);
     }
@@ -80,15 +82,15 @@ const LeaveRequestForm = ({ onClose, onSuccess }: LeaveRequestFormProps) => {
           <div className="text-green-400 bg-green-500/10 w-20 h-20 rounded-full flex items-center justify-center mx-auto text-4xl mb-4">
             ✓
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">تم إصدار الطلب بنجاح</h2>
+          <h2 className="text-2xl font-bold text-white mb-2">{t('forms.leave.successTitle')}</h2>
           <p className="text-slate-400 mb-6">
-            تم توجيه الطلب إلى مدير القسم للمراجعة المبدئية.
+            {t('forms.leave.successDesc')}
           </p>
           <button
             onClick={onClose}
             className="bg-blue-600 text-white px-8 py-3 rounded-xl hover:bg-blue-700 font-bold transition-all w-full"
           >
-            إغلاق
+            {t('common.close') || 'Close'}
           </button>
         </div>
       </motion.div>
@@ -111,12 +113,12 @@ const LeaveRequestForm = ({ onClose, onSuccess }: LeaveRequestFormProps) => {
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-6 rounded-t-2xl flex justify-between items-center shrink-0">
           <div>
-            <h2 className="text-2xl font-bold">نموذج طلب إجازة</h2>
-            <p className="text-blue-200 mt-1 text-sm">حدد نوع الإجازة والفترة المطلوبة</p>
+            <h2 className="text-2xl font-bold">{t('forms.leave.title')}</h2>
+            <p className="text-blue-200 mt-1 text-sm">{t('forms.leave.desc')}</p>
           </div>
           <button
             onClick={onClose}
-            aria-label="إغلاق"
+            aria-label={t('common.close') || 'Close'}
             className="text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-xl transition-all"
           >
             <X size={24} />
@@ -143,7 +145,7 @@ const LeaveRequestForm = ({ onClose, onSuccess }: LeaveRequestFormProps) => {
                     : 'text-slate-400 hover:text-white hover:bg-white/5'
                 }`}
               >
-                إجازة مسبقة (أيام)
+                {t('forms.leave.types.standardToggle')}
               </button>
               <button
                 type="button"
@@ -154,7 +156,7 @@ const LeaveRequestForm = ({ onClose, onSuccess }: LeaveRequestFormProps) => {
                     : 'text-slate-400 hover:text-white hover:bg-white/5'
                 }`}
               >
-                إجازة ساعية (مباشرة)
+                {t('forms.leave.types.hourlyToggle')}
               </button>
             </div>
 
@@ -163,7 +165,7 @@ const LeaveRequestForm = ({ onClose, onSuccess }: LeaveRequestFormProps) => {
               <div>
                 <label className="block text-sm font-bold text-slate-300 mb-2 flex items-center gap-2">
                   <Calendar size={16} className="text-blue-400" />
-                  {leaveType === 'Standard' ? 'تاريخ البداية' : 'تاريخ الإجازة'}
+                  {leaveType === 'Standard' ? t('forms.leave.startDate') : t('forms.leave.leaveDate')}
                   <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -176,10 +178,10 @@ const LeaveRequestForm = ({ onClose, onSuccess }: LeaveRequestFormProps) => {
               </div>
 
               {leaveType === 'Standard' && (
-                <div>
+                 <div>
                   <label className="block text-sm font-bold text-slate-300 mb-2 flex items-center gap-2">
                     <Calendar size={16} className="text-blue-400" />
-                    تاريخ النهاية <span className="text-red-500">*</span>
+                    {t('forms.leave.endDate')} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="date"
@@ -193,44 +195,44 @@ const LeaveRequestForm = ({ onClose, onSuccess }: LeaveRequestFormProps) => {
             </div>
 
             {/* Duration */}
-            <div>
+             <div>
               <label className="block text-sm font-bold text-slate-300 mb-2 flex items-center gap-2">
                 <Clock size={16} className="text-blue-400" />
-                المدة المطلوبة <span className="text-red-500">*</span>
+                {t('forms.leave.duration')} <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <input
                   type="number"
-                  name="duration"
+                   name="duration"
                   value={formData.duration}
                   onChange={handleChange}
-                  placeholder="مثال: 1"
+                  placeholder={t('forms.leave.placeholders.duration')}
                   min="0.5"
                   step="0.5"
                   className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder:text-slate-600"
                 />
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">
-                  {leaveType === 'Standard' ? 'يوم' : 'ساعة'}
+                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">
+                  {leaveType === 'Standard' ? t('common.day') || 'day' : t('common.hour') || 'hour'}
                 </span>
               </div>
-              <p className="text-slate-500 text-xs mt-2 font-medium">
+               <p className="text-slate-500 text-xs mt-2 font-medium">
                 {leaveType === 'Standard' 
-                  ? 'يتم خصم هذه الأيام من رصيد الإجازات السنوي المتبقي.' 
-                  : 'يتم خصم هذه الساعات من رصيد الساعات الإضافية (Overtime).'}
+                  ? t('forms.leave.deductionWarningDaily') 
+                  : t('forms.leave.deductionWarningHourly')}
               </p>
             </div>
 
             {/* Reason */}
-            <div>
+             <div>
               <label className="block text-sm font-bold text-slate-300 mb-2 flex items-center gap-2">
                 <FileText size={16} className="text-blue-400" />
-                سبب الإجازة (اختياري)
+                {t('forms.leave.reason')}
               </label>
               <textarea
-                name="reason"
+                 name="reason"
                 value={formData.reason}
                 onChange={handleChange}
-                placeholder="اكتب التبرير هنا..."
+                placeholder={t('forms.leave.placeholders.reason')}
                 rows={3}
                 className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder:text-slate-600 resize-none"
               />
@@ -240,13 +242,13 @@ const LeaveRequestForm = ({ onClose, onSuccess }: LeaveRequestFormProps) => {
 
         {/* Footer */}
         <div className="p-6 bg-white/5 border-t border-white/10 flex gap-4 shrink-0 rounded-b-2xl">
-          <button
+           <button
             type="button"
             onClick={onClose}
             className="flex-1 py-3 text-slate-300 bg-white/5 hover:bg-white/10 rounded-xl font-bold transition-all"
             disabled={loading}
           >
-            إلغاء
+            {t('common.cancel') || 'Cancel'}
           </button>
           <button
             onClick={handleSubmit}
@@ -258,8 +260,8 @@ const LeaveRequestForm = ({ onClose, onSuccess }: LeaveRequestFormProps) => {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
-            ) : (
-              'إرسال الطلب للمدير'
+             ) : (
+              t('forms.leave.submit')
             )}
           </button>
         </div>

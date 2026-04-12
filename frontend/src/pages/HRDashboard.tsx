@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
@@ -46,6 +47,7 @@ import { queryKeys } from '../services/queryKeys';
 import { extractApiError } from '../utils/errorHandler';
 
 const HRDashboard = () => {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const employeePage = 0;
@@ -131,7 +133,7 @@ const HRDashboard = () => {
 
   const handleAssignOrReplace = async () => {
     if (selectedEmployeeId === '' || !cardUidInput.trim()) {
-      setCardFeedback('اختر موظفاً وأدخل UID صالحاً أولاً.');
+      setCardFeedback(t('hrDashboard.feedback.selectEmployeeUid'));
       return;
     }
 
@@ -139,17 +141,17 @@ const HRDashboard = () => {
     try {
       if (selectedCard) {
         await replaceEmployeeNfcCard(selectedEmployeeId, cardUidInput.trim());
-        setCardFeedback('تم استبدال البطاقة وربط UID جديد بنجاح.');
+        setCardFeedback(t('hrDashboard.feedback.replaceSuccess'));
       } else {
         await assignEmployeeNfcCard(selectedEmployeeId, cardUidInput.trim());
-        setCardFeedback('تم ربط البطاقة الجديدة بالموظف بنجاح.');
+        setCardFeedback(t('hrDashboard.feedback.assignSuccess'));
       }
       setCardUidInput('');
       await queryClient.invalidateQueries({ queryKey: queryKeys.hr.employeesRoot });
       await queryClient.invalidateQueries({ queryKey: queryKeys.hr.employeeCardRoot });
       setLoadError(null);
     } catch (error: unknown) {
-      setCardFeedback(getErrorMessage(error, 'فشل حفظ بيانات البطاقة.'));
+      setCardFeedback(getErrorMessage(error, t('hrDashboard.errors.saveCard')));
     } finally {
       setCardActionLoading(false);
     }
@@ -166,10 +168,10 @@ const HRDashboard = () => {
       await updateEmployeeNfcCardStatus(selectedEmployeeId, status);
       await queryClient.invalidateQueries({ queryKey: queryKeys.hr.employeesRoot });
       await queryClient.invalidateQueries({ queryKey: queryKeys.hr.employeeCardRoot });
-      setCardFeedback('تم تحديث حالة البطاقة بنجاح.');
+      setCardFeedback(t('hrDashboard.feedback.statusUpdateSuccess'));
       setLoadError(null);
     } catch (error: unknown) {
-      setCardFeedback(getErrorMessage(error, 'فشل تحديث حالة البطاقة.'));
+      setCardFeedback(getErrorMessage(error, t('hrDashboard.errors.updateStatus')));
     } finally {
       setCardActionLoading(false);
     }
@@ -187,10 +189,10 @@ const HRDashboard = () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.hr.employeesRoot });
       await queryClient.invalidateQueries({ queryKey: queryKeys.hr.employeeCardRoot });
       setCardUidInput('');
-      setCardFeedback('تم فك ربط البطاقة من الموظف.');
+      setCardFeedback(t('hrDashboard.feedback.unassignSuccess'));
       setLoadError(null);
     } catch (error: unknown) {
-      setCardFeedback(getErrorMessage(error, 'فشل فك ربط البطاقة.'));
+      setCardFeedback(getErrorMessage(error, t('hrDashboard.errors.unassign')));
     } finally {
       setCardActionLoading(false);
     }
@@ -236,7 +238,7 @@ const HRDashboard = () => {
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch {
-      alert('فشل تحميل تقرير التوظيف.');
+      alert(t('hrDashboard.errors.downloadRecruitment'));
     } finally {
       setIsDownloading(false);
     }
@@ -261,7 +263,7 @@ const HRDashboard = () => {
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch {
-      alert('فشل تحميل تقرير الحضور.');
+      alert(t('hrDashboard.errors.downloadAttendance'));
     } finally {
       setIsDownloading(false);
     }
@@ -286,7 +288,7 @@ const HRDashboard = () => {
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch {
-      alert('فشل تحميل تقرير الرواتب.');
+      alert(t('hrDashboard.errors.downloadPayroll'));
     } finally {
       setIsDownloading(false);
     }
@@ -302,7 +304,7 @@ const HRDashboard = () => {
       setAdjustedSalary('');
       setSelectedRecruitmentId(null);
     } catch (err: unknown) {
-      setLoadError(extractApiError(err).message || 'فشل معالجة طلب التوظيف');
+      setLoadError(extractApiError(err).message || t('hrDashboard.errors.processRecruitment'));
     } finally {
       setProcessingRecruitment(null);
     }
@@ -316,7 +318,7 @@ const HRDashboard = () => {
       setLeaveNote('');
       setSelectedLeaveId(null);
     } catch (err: unknown) {
-      setLoadError(extractApiError(err).message || 'فشل معالجة طلب الإجازة');
+      setLoadError(extractApiError(err).message || t('hrDashboard.errors.processLeave'));
     } finally {
       setProcessingLeave(null);
     }
@@ -328,9 +330,9 @@ const HRDashboard = () => {
         <div className="flex justify-between items-start">
           <div>
             <h1 className="text-3xl font-black text-white tracking-tight arabic-text">
-              إدارة الموارد البشرية (HR)
+              {t('hrDashboard.title')}
             </h1>
-            <p className="text-slate-400 mt-1">إدارة البطاقات الذكية ومعالجة الرواتب الشهرية</p>
+            <p className="text-slate-400 mt-1">{t('hrDashboard.subtitle')}</p>
           </div>
           <div className="flex items-center gap-4">
             <CurrentDateTimePanel />
@@ -339,14 +341,14 @@ const HRDashboard = () => {
               className="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all border border-white/10"
             >
               <Search size={20} />
-              <span>الشبكة المركزية للحضور</span>
+              <span>{t('hrDashboard.actions.attendanceGrid')}</span>
             </button>
             <button
               onClick={() => setShowRecruitmentForm(true)}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-blue-600/20"
             >
               <UserPlus size={20} />
-              <span>طلب توظيف جديد</span>
+              <span>{t('hrDashboard.actions.newRecruitment')}</span>
             </button>
           </div>
         </div>
@@ -369,8 +371,8 @@ const HRDashboard = () => {
                 <FileText size={24} />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white">مركز التقارير الشهرية</h2>
-                <p className="text-slate-400 text-sm">تصدير بيانات الحضور، الرواتب، والتوظيف لـ {reportDate.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' })}</p>
+                <h2 className="text-xl font-bold text-white">{t('hrDashboard.reports.title')}</h2>
+                <p className="text-slate-400 text-sm">{t('hrDashboard.reports.subtitle', { date: reportDate.toLocaleDateString(i18n.language === 'ar' ? 'ar-EG' : 'en-US', { month: 'long', year: 'numeric' }) })}</p>
               </div>
             </div>
             <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/10">
@@ -378,7 +380,7 @@ const HRDashboard = () => {
                 <ChevronRight size={18} />
               </button>
               <span className="text-white font-bold text-xs min-w-[100px] text-center">
-                {reportDate.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' })}
+                {reportDate.toLocaleDateString(i18n.language === 'ar' ? 'ar-EG' : 'en-US', { month: 'long', year: 'numeric' })}
               </span>
               <button
                 onClick={handleNextMonth}
@@ -395,7 +397,7 @@ const HRDashboard = () => {
             <div className="bg-white/5 p-6 rounded-2xl border border-white/5">
               <h3 className="text-white font-bold mb-4 flex items-center gap-2">
                 <CheckCircle2 size={16} className="text-blue-400" />
-                تقارير الحضور
+                {t('hrDashboard.reports.attendance.title')}
               </h3>
               <div className="flex gap-2">
                 <button 
@@ -419,7 +421,7 @@ const HRDashboard = () => {
             <div className="bg-white/5 p-6 rounded-2xl border border-white/5">
               <h3 className="text-white font-bold mb-4 flex items-center gap-2">
                 <CreditCard size={16} className="text-purple-400" />
-                تقارير الرواتب
+                {t('hrDashboard.reports.payroll.title')}
               </h3>
               <div className="flex gap-2">
                 <button 
@@ -443,7 +445,7 @@ const HRDashboard = () => {
             <div className="bg-white/5 p-6 rounded-2xl border border-white/5">
               <h3 className="text-white font-bold mb-4 flex items-center gap-2">
                 <UserPlus size={16} className="text-orange-400" />
-                تقارير التوظيف
+                {t('hrDashboard.reports.recruitment.title')}
               </h3>
               <div className="flex gap-2">
                 <button 
@@ -467,13 +469,13 @@ const HRDashboard = () => {
             <div className="bg-white/5 p-6 rounded-2xl border border-white/5">
               <h3 className="text-white font-bold mb-4 flex items-center gap-2">
                 <Calendar size={16} className="text-purple-400" />
-                أرصدة الإجازات
+                {t('hrDashboard.reports.leaveBalance.title')}
               </h3>
               <button 
                 onClick={() => navigate('/hr/leave-report')}
                 className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg font-bold transition-all text-xs"
               >
-                عرض التقرير التفاعلي
+                {t('hrDashboard.reports.leaveBalance.button')}
               </button>
             </div>
           </div>
@@ -497,13 +499,13 @@ const HRDashboard = () => {
               <div className="bg-blue-600 w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-900/20 mb-4">
                 <CreditCard size={24} />
               </div>
-              <h2 className="text-xl font-bold mb-2 text-white">إدارة بطاقات NFC</h2>
+              <h2 className="text-xl font-bold mb-2 text-white">{t('hrDashboard.nfc.title')}</h2>
               <p className="text-slate-400 text-sm leading-relaxed">
-                اختر موظفاً ثم اربط بطاقة جديدة، استبدل UID، غيّر الحالة، أو فك الارتباط بالكامل.
+                {t('hrDashboard.nfc.subtitle')}
               </p>
             </div>
             <span className="bg-blue-500/10 text-blue-400 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-widest">
-              Live Card Control
+              {t('hrDashboard.nfc.liveControl')}
             </span>
           </div>
 
@@ -520,7 +522,7 @@ const HRDashboard = () => {
                     setCardUidInput('');
                   }}
                 >
-                  <option value="" className="bg-slate-900">اختر الموظف من القائمة...</option>
+                  <option value="" className="bg-slate-900">{t('hrDashboard.nfc.selectEmployee')}</option>
                   {employees.map((employee) => (
                     <option key={employee.employeeId} value={employee.employeeId} className="bg-slate-900">
                       {employee.fullName} ({employee.teamName ?? '—'})
@@ -531,17 +533,17 @@ const HRDashboard = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                  <p className="text-slate-500 text-xs mb-1">الموظف</p>
+                  <p className="text-slate-500 text-xs mb-1">{t('hrDashboard.nfc.stats.employee')}</p>
                   <p className="text-white font-bold">{selectedEmployee?.fullName ?? '—'}</p>
                 </div>
                 <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                  <p className="text-slate-500 text-xs mb-1">UID الحالي</p>
+                  <p className="text-slate-500 text-xs mb-1">{t('hrDashboard.nfc.stats.uid')}</p>
                   <p className="text-slate-200 font-mono text-sm break-all">{selectedCard?.uid ?? '—'}</p>
                 </div>
                 <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                  <p className="text-slate-500 text-xs mb-1">الحالة</p>
+                  <p className="text-slate-500 text-xs mb-1">{t('hrDashboard.nfc.stats.status')}</p>
                   <span className={`inline-flex px-3 py-1 rounded-lg text-[11px] font-black uppercase ${cardStatusBadge}`}>
-                    {selectedCard?.status ?? 'No Card'}
+                    {selectedCard?.status ?? t('hrDashboard.nfc.summary.noCard')}
                   </span>
                 </div>
               </div>
@@ -549,13 +551,13 @@ const HRDashboard = () => {
               <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4">
                 <div className="flex items-center gap-2 text-white font-bold">
                   <IdCard size={18} />
-                  <span>{selectedCard ? 'استبدال أو إعادة إصدار البطاقة' : 'ربط بطاقة جديدة'}</span>
+                  <span>{selectedCard ? t('hrDashboard.nfc.form.titleReplace') : t('hrDashboard.nfc.form.titleAssign')}</span>
                 </div>
                 <input
                   type="text"
                   value={cardUidInput}
                   onChange={(e) => setCardUidInput(e.target.value)}
-                  placeholder={selectedCard ? 'أدخل UID جديداً للاستبدال' : 'أدخل UID البطاقة الجديدة'}
+                  placeholder={selectedCard ? t('hrDashboard.nfc.form.placeholderReplace') : t('hrDashboard.nfc.form.placeholderAssign')}
                   className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-sm text-white placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/20"
                 />
                 <button
@@ -565,7 +567,7 @@ const HRDashboard = () => {
                   className="w-full bg-white text-black py-3 rounded-xl font-bold hover:bg-slate-200 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {cardActionLoading ? <RefreshCcw className="animate-spin" size={18} /> : <LinkIcon size={18} />}
-                  <span>{selectedCard ? 'استبدال البطاقة الحالية' : 'ربط البطاقة الجديدة'}</span>
+                  <span>{selectedCard ? t('hrDashboard.nfc.form.buttonReplace') : t('hrDashboard.nfc.form.buttonAssign')}</span>
                 </button>
               </div>
             </div>
@@ -573,8 +575,8 @@ const HRDashboard = () => {
             <div className="bg-white/5 border border-white/10 rounded-[2rem] p-6 space-y-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-white font-bold">إجراءات الحالة</p>
-                  <p className="text-slate-500 text-xs mt-1">تفعيل، إيقاف، حظر، أو فك الارتباط</p>
+                  <p className="text-white font-bold">{t('hrDashboard.nfc.actions.title')}</p>
+                  <p className="text-slate-500 text-xs mt-1">{t('hrDashboard.nfc.actions.subtitle')}</p>
                 </div>
                 <span className="text-xs text-slate-500">{selectedEmployee?.fullName ?? ''}</span>
               </div>
@@ -585,7 +587,7 @@ const HRDashboard = () => {
                 disabled={cardActionLoading || !selectedCard}
                 className="w-full bg-green-500/10 text-green-300 border border-green-500/20 py-3 rounded-xl font-bold hover:bg-green-500/15 transition-all disabled:opacity-40"
               >
-                تفعيل البطاقة
+                {t('hrDashboard.nfc.actions.activate')}
               </button>
               <button
                 type="button"
@@ -595,7 +597,7 @@ const HRDashboard = () => {
               >
                 <span className="inline-flex items-center gap-2">
                   <Power size={16} />
-                  إيقاف البطاقة
+                  {t('hrDashboard.nfc.actions.deactivate')}
                 </span>
               </button>
               <button
@@ -604,7 +606,7 @@ const HRDashboard = () => {
                 disabled={cardActionLoading || !selectedCard}
                 className="w-full bg-red-500/10 text-red-300 border border-red-500/20 py-3 rounded-xl font-bold hover:bg-red-500/15 transition-all disabled:opacity-40"
               >
-                حظر البطاقة
+                {t('hrDashboard.nfc.actions.block')}
               </button>
               <button
                 type="button"
@@ -614,20 +616,20 @@ const HRDashboard = () => {
               >
                 <span className="inline-flex items-center gap-2">
                   <Trash2 size={16} />
-                  فك الارتباط نهائياً
+                  {t('hrDashboard.nfc.actions.unassign')}
                 </span>
               </button>
 
               <div className="rounded-2xl border border-white/10 bg-black/20 p-4 min-h-28">
-                <p className="text-slate-500 text-xs mb-2">ملخص البطاقة</p>
+                <p className="text-slate-500 text-xs mb-2">{t('hrDashboard.nfc.summary.title')}</p>
                 {selectedCard ? (
                   <div className="space-y-2 text-sm">
-                    <p className="text-slate-200">UID: <span className="font-mono">{selectedCard.uid}</span></p>
-                    <p className="text-slate-200">الحالة الحالية: {selectedCard.status}</p>
-                    <p className="text-slate-400 text-xs">تاريخ الإصدار: {selectedCard.issuedDate ? new Date(selectedCard.issuedDate).toLocaleString('ar-SA') : '—'}</p>
+                    <p className="text-slate-200">{t('hrDashboard.nfc.summary.uid')}<span className="font-mono">{selectedCard.uid}</span></p>
+                    <p className="text-slate-200">{t('hrDashboard.nfc.summary.status')}{selectedCard.status}</p>
+                    <p className="text-slate-400 text-xs">{t('hrDashboard.nfc.summary.issuedDate')}{selectedCard.issuedDate ? new Date(selectedCard.issuedDate).toLocaleString(i18n.language === 'ar' ? 'ar-SA' : 'en-US') : '—'}</p>
                   </div>
                 ) : (
-                  <p className="text-slate-500 text-sm">لا توجد بطاقة مرتبطة بالموظف المحدد حالياً.</p>
+                  <p className="text-slate-500 text-sm">{t('hrDashboard.nfc.summary.empty')}</p>
                 )}
               </div>
             </div>
@@ -648,9 +650,9 @@ const HRDashboard = () => {
               <UserPlus size={24} />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white">طلبات التوظيف المعلقة</h2>
+              <h2 className="text-xl font-bold text-white">{t('hrDashboard.recruitment.title')}</h2>
               <p className="text-slate-400 text-sm">
-                {pendingRecruitment.length} طلب بانتظار المراجعة
+                {t('hrDashboard.recruitment.subtitle', { count: pendingRecruitment.length })}
               </p>
             </div>
           </div>
@@ -659,7 +661,7 @@ const HRDashboard = () => {
         {pendingRecruitment.length === 0 ? (
           <div className="p-12 text-center text-slate-500">
             <UserPlus size={48} className="mx-auto mb-4 opacity-50" />
-            <p>لا توجد طلبات توظيف معلقة</p>
+            <p>{t('hrDashboard.recruitment.empty')}</p>
           </div>
         ) : (
           <div className="divide-y divide-white/5">
@@ -670,35 +672,35 @@ const HRDashboard = () => {
                     <div className="flex items-center gap-3 mb-3">
                       <h3 className="text-lg font-bold text-white">{request.fullName}</h3>
                       <span className="bg-orange-500/10 text-orange-400 px-3 py-1 rounded-lg text-xs font-bold">
-                        {request.status?.replace('_', ' ') || 'قيد المراجعة'}
+                        {request.status === 'PENDING_MANAGER' ? t('hrDashboard.recruitment.underReview') : request.status?.replace('_', ' ') || t('hrDashboard.recruitment.underReview')}
                       </span>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                       <div>
-                        <p className="text-slate-500 text-xs mb-1">الوظيفة</p>
+                        <p className="text-slate-500 text-xs mb-1">{t('hrDashboard.recruitment.job')}</p>
                         <p className="text-slate-200 font-medium">{request.jobDescription}</p>
                       </div>
                       <div>
-                        <p className="text-slate-500 text-xs mb-1">القسم</p>
+                        <p className="text-slate-500 text-xs mb-1">{t('hrDashboard.recruitment.department')}</p>
                         <p className="text-slate-200 font-medium">{request.department}</p>
                       </div>
                       <div>
-                        <p className="text-slate-500 text-xs mb-1">الراتب المتوقع</p>
-                        <p className="text-slate-200 font-medium">{request.expectedSalary} ريال</p>
+                        <p className="text-slate-500 text-xs mb-1">{t('hrDashboard.recruitment.expectedSalary')}</p>
+                        <p className="text-slate-200 font-medium">{request.expectedSalary} {t('hrDashboard.recruitment.currency')}</p>
                       </div>
                       <div>
-                        <p className="text-slate-500 text-xs mb-1">رقم الهوية</p>
+                        <p className="text-slate-500 text-xs mb-1">{t('hrDashboard.recruitment.nationalId')}</p>
                         <p className="text-slate-200 font-mono">{request.nationalId}</p>
                       </div>
                       <div>
-                        <p className="text-slate-500 text-xs mb-1">الجوال</p>
+                        <p className="text-slate-500 text-xs mb-1">{t('hrDashboard.recruitment.mobile')}</p>
                         <p className="text-slate-200 font-mono">{request.mobileNumber}</p>
                       </div>
                       <div>
-                        <p className="text-slate-500 text-xs mb-1">تاريخ الطلب</p>
+                        <p className="text-slate-500 text-xs mb-1">{t('hrDashboard.recruitment.requestDate')}</p>
                         <p className="text-slate-200">
                           {request.requestedAt
-                            ? new Date(request.requestedAt).toLocaleDateString('ar-SA')
+                            ? new Date(request.requestedAt).toLocaleDateString(i18n.language === 'ar' ? 'ar-SA' : 'en-US')
                             : '—'}
                         </p>
                       </div>
@@ -710,14 +712,14 @@ const HRDashboard = () => {
                       <div className="space-y-2">
                         <input
                           type="number"
-                          placeholder="تعديل الراتب (اختياري)"
+                          placeholder={t('hrDashboard.recruitment.salaryPlaceholder')}
                           value={adjustedSalary}
                           onChange={(e) => setAdjustedSalary(e.target.value)}
                           className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/20"
                         />
                         <input
                           type="text"
-                          placeholder="ملاحظة (اختياري)"
+                          placeholder={t('hrDashboard.recruitment.notePlaceholder')}
                           value={recruitmentNote}
                           onChange={(e) => setRecruitmentNote(e.target.value)}
                           className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/20"
@@ -728,14 +730,14 @@ const HRDashboard = () => {
                             disabled={processingRecruitment === request.requestId}
                             className="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-1 disabled:opacity-50"
                           >
-                            موافقة
+                            {t('hrDashboard.recruitment.approve')}
                           </button>
                           <button
                             onClick={() => handleProcessRecruitment(request.requestId!, 'Rejected')}
                             disabled={processingRecruitment === request.requestId}
                             className="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-1 disabled:opacity-50"
                           >
-                            رفض
+                            {t('hrDashboard.recruitment.reject')}
                           </button>
                         </div>
                       </div>
@@ -748,7 +750,7 @@ const HRDashboard = () => {
                         }}
                         className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all"
                       >
-                        مراجعة الطلب
+                        {t('hrDashboard.recruitment.reviewRequest')}
                       </button>
                     )}
                   </div>
@@ -771,9 +773,9 @@ const HRDashboard = () => {
             <CheckCircle2 size={24} />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-white">طلبات الإجازة (بانتظار HR)</h2>
+            <h2 className="text-xl font-bold text-white uppercase tracking-tight arabic-text">{t('hrDashboard.leaves.title')}</h2>
             <p className="text-slate-400 text-sm">
-              {pendingLeaves.length} طلب إجازة بانتظار مراجعة أو توثيق الـ HR
+              {t('hrDashboard.leaves.subtitle', { count: pendingLeaves.length })}
             </p>
           </div>
         </div>
@@ -781,7 +783,7 @@ const HRDashboard = () => {
         {pendingLeaves.length === 0 ? (
           <div className="p-12 text-center text-slate-500">
             <CheckCircle2 size={48} className="mx-auto mb-4 opacity-50" />
-            <p>لا توجد طلبات إجازة معلقة للمراجعة</p>
+            <p>{t('hrDashboard.leaves.empty')}</p>
           </div>
         ) : (
           <div className="divide-y divide-white/5">
@@ -790,29 +792,29 @@ const HRDashboard = () => {
                 <div className="flex justify-between items-start gap-6">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-3">
-                      <h3 className="text-lg font-bold text-white">{leave.employeeName ?? `الموظف #${leave.employeeId}`}</h3>
+                      <h3 className="text-lg font-bold text-white">{leave.employeeName ?? t('hrDashboard.leaves.employeeFallback', { id: leave.employeeId })}</h3>
                       <span className="bg-blue-500/10 text-blue-400 px-3 py-1 rounded-lg text-xs font-bold">
-                        {leave.leaveType === 'Hourly' ? 'إجازة ساعية' : 'إجازة مسبقة'}
+                        {leave.leaveType === 'Hourly' ? t('hrDashboard.leaves.hourly') : t('hrDashboard.leaves.advance')}
                       </span>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                       <div>
-                        <p className="text-slate-500 text-xs mb-1">المدة</p>
-                        <p className="text-slate-200 font-medium">{leave.duration} {leave.leaveType === 'Hourly' ? 'ساعة' : 'يوم'}</p>
+                        <p className="text-slate-500 text-xs mb-1">{t('hrDashboard.leaves.duration')}</p>
+                        <p className="text-slate-200 font-medium">{leave.duration} {leave.leaveType === 'Hourly' ? t('hrDashboard.leaves.hours') : t('hrDashboard.leaves.days')}</p>
                       </div>
                       <div>
-                        <p className="text-slate-500 text-xs mb-1">تاريخ الإجازة</p>
+                        <p className="text-slate-500 text-xs mb-1">{t('hrDashboard.leaves.date')}</p>
                         <p className="text-slate-200 font-medium">{leave.startDate}</p>
                       </div>
                       {leave.reason && (
                         <div className="col-span-2">
-                          <p className="text-slate-500 text-xs mb-1">السبب</p>
+                          <p className="text-slate-500 text-xs mb-1">{t('hrDashboard.leaves.reason')}</p>
                           <p className="text-slate-200 text-xs">{leave.reason}</p>
                         </div>
                       )}
                       {leave.managerNote && (
                         <div className="col-span-2">
-                          <p className="text-orange-400 text-xs mb-1">ملاحظة المدير</p>
+                          <p className="text-orange-400 text-xs mb-1">{t('hrDashboard.leaves.managerNote')}</p>
                           <p className="text-slate-200 text-xs border border-orange-500/20 bg-orange-500/5 p-2 rounded-lg">{leave.managerNote}</p>
                         </div>
                       )}
@@ -824,7 +826,7 @@ const HRDashboard = () => {
                       <div className="space-y-2">
                         <input
                           type="text"
-                          placeholder="ملاحظة للموظف (اختياري)"
+                          placeholder={t('hrDashboard.leaves.notePlaceholder')}
                           value={leaveNote}
                           onChange={(e) => setLeaveNote(e.target.value)}
                           className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/20"
@@ -835,14 +837,14 @@ const HRDashboard = () => {
                             disabled={processingLeave === leave.requestId}
                             className="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-1 disabled:opacity-50"
                           >
-                            {processingLeave === leave.requestId ? '...' : 'اعتماد وخصم الرصيد'}
+                            {processingLeave === leave.requestId ? '...' : t('hrDashboard.leaves.approve')}
                           </button>
                           <button
                             onClick={() => handleProcessLeave(leave.requestId!, 'REJECTED')}
                             disabled={processingLeave === leave.requestId}
                             className="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-1 disabled:opacity-50"
                           >
-                            رفض
+                            {t('hrDashboard.leaves.reject')}
                           </button>
                         </div>
                       </div>
@@ -854,7 +856,7 @@ const HRDashboard = () => {
                         }}
                         className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all"
                       >
-                        مراجعة الاعتماد
+                        {t('hrDashboard.leaves.reviewRequest')}
                       </button>
                     )}
                   </div>

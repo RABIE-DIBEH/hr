@@ -198,7 +198,7 @@ Review and convert these endpoints from `Map<String, Object>` to typed DTOs:
 
 ---
 
-## Phase 6: Final Review & Merge (Week 5-6) ✅ IN PROGRESS
+## Phase 6: Final Review & Merge (Week 5-6) ✅ COMPLETED
 
 ### 6.1 Code Review
 
@@ -211,7 +211,8 @@ Review and convert these endpoints from `Map<String, Object>` to typed DTOs:
 
 - [x] Merge `stabilization-phase` → `main`
 - [x] Create release tag: `git tag v0.8-stable`
-- [ ] Push tags: `git push origin v0.8-stable`
+- [x] Push tags: `git push origin v0.8-stable`
+- [x] Subsequent releases: `v0.9-stable`, `v1.0-stable`
 
 ### 6.3 Update Checklists
 

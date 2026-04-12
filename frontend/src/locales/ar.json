@@ -1,6 +1,6 @@
 {
   "common": {
-    "loading": "جارِ التحميل...",
+    "loading": "جاري التحميل...",
     "noResults": "لا توجد نتائج",
     "close": "إغلاق",
     "cancel": "إلغاء",
@@ -18,8 +18,12 @@
     "terminated": "مُنهى",
     "success": "نجاح",
     "error": "خطأ",
+    "hours": "ساعة",
     "days": "يوم",
-    "hours": "ساعة"
+    "noData": "لا توجد بيانات",
+    "currency": "ل.س",
+    "retry": "إعادة المحاولة",
+    "refresh": "تحديث البيانات"
   },
   "dashboard": {
     "leaveBalance": "رصيد الإجازات",
@@ -199,24 +203,10 @@
     "resetPasswordFailed": "فشل في إعادة تعيين كلمة المرور",
     "advanceRequestFailed": "حدث خطأ أثناء إرسال الطلب"
   },
-  "advanceRequest": {
-    "title": "طلب سلفة مالية",
-    "subtitle": "أدخل المبلغ والسبب لإرسال طلب السلفة",
-    "amountRequired": "المبلغ مطلوب",
-    "amountPositive": "المبلغ يجب أن يكون رقماً موجباً",
-    "amountMaxExceeded": "المبلغ يتجاوز الحد الأقصى المسموح (100,000)",
-    "reasonMaxLength": "السبب يجب ألا يتجاوز 500 حرف",
-    "successTitle": "تم إرسال طلب السلفة بنجاح",
-    "successMessage": "تم إرسال طلب السلفة بنجاح وتم توجيهه إلى إدارة الرواتب للمراجعة والموافقة",
-    "amountLabel": "المبلغ المطلوب",
-    "maxAllowed": "الحد الأقصى المسموح: 100,000 ل.س",
-    "reasonLabel": "سبب الطلب",
-    "reasonPlaceholder": "اكتب سبب طلب السلفة (اختياري)...",
-    "note": "ملاحظة:",
-    "noteText": "سيتم خصم مبلغ السلفة من راتبك الشهري أثناء معالجة الرواتب. سيتم مراجعة طلبك من قبل إدارة الموارد البشرية.",
-    "sending": "جاري الإرسال...",
-    "sendRequest": "إرسال الطلب",
-    "currencySymbol": "ل.س"
+  "errorBoundary": {
+    "title": "حدث خطأ غير متوقع",
+    "message": "نعتذر، واجه هذا القسم مشكلة تقنية. لقد تم إبلاغ فريق الدعم تلقائياً.",
+    "refresh": "تحديث الصفحة"
   },
   "inbox": {
     "title": "صندوق الرسائل",
@@ -517,7 +507,639 @@
       "insurance": "تأمينات / أخرى",
       "netAmount": "صافي المبلغ المستحق",
       "issuedAt": "صدر بتاريخ: {{date}}",
-      "print": "طباعة القسيمة"
+      "delivered": "سجل التسليمات"
     }
+  },
+  "attendanceLogs": {
+    "title": "سجل دوامي",
+    "subtitle": "عرض تفاصيل الحضور والانصراف اليومية",
+    "loading": "جاري تحميل السجل...",
+    "empty": "لا يوجد سجل دوام متاح بعد",
+    "checkIn": "دخول",
+    "checkOut": "خروج",
+    "workHours": "ساعات العمل: {{count}} ساعة",
+    "stillWorking": "جاري العمل..."
+  },
+  "teamAttendance": {
+    "title": "المراجعة اليومية (دوام الفريق)",
+    "subtitle": "تحقق من وجود موظفيك الفعلي في المكتب لليوم {{date}}",
+    "recordsTitle": "سجلات اليوم",
+    "recordsSubtitle": "{{count}} موظف سجلوا دخولهم",
+    "searchPlaceholder": "بحث عن موظف...",
+    "loading": "جاري جلب سجلات الفريق...",
+    "noResults": "لا توجد سجلات مطابقة للبحث",
+    "fraudPrompt": "يرجى إدخال تفاصيل التلاعب أو ملاحظتك:",
+    "table": {
+      "employee": "الموظف",
+      "checkIn": "وقت الدخول",
+      "checkOut": "وقت الخروج",
+      "generalStatus": "الحالة العامة",
+      "review": "المراجعة",
+      "payroll": "الرواتب",
+      "action": "الإجراء"
+    },
+    "actions": {
+      "confirm": "تأكيد",
+      "fraud": "تلاعب",
+      "done": "تم الاجراء"
+    },
+    "errors": {
+      "verifyFailed": "فشل تأكيد الحضور",
+      "fraudFailed": "فشل الإبلاغ عن تلاعب"
+    }
+  },
+  "managerDashboard": {
+    "title": "لوحة تحكم المدير",
+    "subtitle": "إدارة الفريق: {{items}}",
+    "managerOnly": "هذا القسم مخصص للمدراء فقط. دورك الحالي هو: <span class=\"font-black text-amber-500\">{{role}}</span>",
+    "stats": {
+      "totalTeam": "إجمالي الفريق",
+      "pendingRecruitment": "طلبات توظيف",
+      "pendingLeaves": "طلبات إجازة",
+      "pendingAdvances": "طلبات سلف"
+    },
+    "errors": {
+      "processRequest": "حدث خطأ أثناء معالجة الطلب.",
+      "processLeave": "حدث خطأ أثناء معالجة الإجازة.",
+      "processAdvance": "حدث خطأ أثناء معالجة السلفة.",
+      "downloadReport": "حدث خطأ أثناء محاولة تحميل التقرير."
+    },
+    "team": {
+      "title": "فريق العمل",
+      "searchPlaceholder": "البحث بالاسم أو البريد الإلكتروني...",
+      "filterTitle": "تصفية حسب حالة البطاقة",
+      "withCard": "مرتبط ببطاقة",
+      "withoutCard": "بدون بطاقة",
+      "all": "الكل",
+      "cardLinked": "مرتبط",
+      "noCard": "غير مرتبط",
+      "liveData": "بيانات حية",
+      "footer": "عرض {{count}} من إجمالي {{total}} موظف",
+      "emptyResults": "لا توجد نتائج تطابق معايير البحث.",
+      "emptyCompanyScale": "لا توجد سجلات موظفين متاحة حالياً.",
+      "emptyManagerScale": "لا يوجد موظفين تابعين لك حالياً.",
+      "headers": {
+        "employee": "الموظف",
+        "email": "البريد الإلكتروني",
+        "team": "الفريق",
+        "nfc": "البطاقة الذكية",
+        "status": "الحالة"
+      }
+    },
+    "attendance": {
+      "title": "مراجعة الدوام اليومي",
+      "subtitle": "تحقق من سجلات حضور وانصراف الفريق لليوم.",
+      "empty": "لا توجد سجلات حضور مسجلة لليوم حتى الآن.",
+      "headers": {
+        "employee": "الموظف",
+        "checkIn": "دخول",
+        "checkOut": "خروج",
+        "status": "الحالة",
+        "review": "المراجعة",
+        "payroll": "الرواتب",
+        "actions": "إجراءات"
+      },
+      "confirmAttendance": "تأكيد",
+      "reportFraud": "تبليغ",
+      "fraudPrompt": "يرجى كتابة سبب التبليغ عن تلاعب:",
+      "fraudFailed": "فشل التبليغ عن تلاعب.",
+      "verifyFailed": "فشلت عملية التأكيد.",
+      "actionDone": "تم الإجراء"
+    },
+    "recruitment": {
+      "title": "طلبات التوظيف المعلقة",
+      "subtitle": "يوجد {{count}} طلب بانتظار المراجعة",
+      "empty": "لا توجد طلبات توظيف معلقة حالياً.",
+      "underReview": "قيد المراجعة",
+      "job": "الوظيفة المطلوبة",
+      "department": "القسم",
+      "expectedSalary": "الراتب المتوقع",
+      "currency": "ل.س",
+      "nationalId": "الرقم الوطني",
+      "mobile": "رقم التواصل",
+      "requestDate": "تاريخ الطلب",
+      "salaryPlaceholder": "الراتب المعتمد",
+      "notePlaceholder": "ملاحظة المراجعة...",
+      "approve": "قبول",
+      "reject": "رفض",
+      "reviewRequest": "مراجعة الطلب"
+    },
+    "leaves": {
+      "title": "طلبات الإجازة",
+      "subtitle": "يوجد {{count}} طلب بانتظار مراجعتك",
+      "empty": "لا توجد طلبات إجازة معالجة معلقة.",
+      "employeeFallback": "موظف مجهول (ID: {{id}})",
+      "hourly": "إجازة ساعية",
+      "advance": "إجازة أيام",
+      "duration": "المدة",
+      "hours": "ساعات",
+      "days": "أيام",
+      "leaveDate": "التاريخ",
+      "reason": "السبب",
+      "notePlaceholder": "ملاحظات...",
+      "approve": "اعتماد",
+      "reject": "رفض",
+      "reviewRequest": "مراجعة الطلب"
+    },
+    "advances": {
+      "title": "طلبات السلف (مرحلة المدير)",
+      "subtitle": "{{count}} طلب بانتظار مراجعتك",
+      "empty": "لا توجد طلبات سلف معلقة حالياً.",
+      "employeeFallback": "موظف مجهول (ID: {{id}})",
+      "currency": "ل.س",
+      "amountPlaceholder": "المبلغ المعتمد",
+      "reasonPlaceholder": "سبب التعديل إن وُجد",
+      "notePlaceholder": "ملاحظات المدير...",
+      "reviewRequest": "مراجعة الطلب",
+      "approve": "قبول",
+      "reject": "رفض"
+    },
+    "reportCenter": {
+      "title": "مركز التقارير",
+      "subtitle": "تقارير شهر {{date}}",
+      "pdf": {
+        "title": "تقرير PDF شامل",
+        "desc": "تقرير الدوام الرسمي لجميع الموظفين.",
+        "button": "تحميل PDF"
+      },
+      "excel": {
+        "title": "ملف Excel مفصل",
+        "desc": "تقرير دقيق للبيانات لإدارة الرواتب.",
+        "button": "تحميل Excel"
+      }
+    }
+  },
+  "hrDashboard": {
+    "title": "إدارة الموارد البشرية (HR)",
+    "subtitle": "إدارة البطاقات الذكية ومعالجة الرواتب الشهرية",
+    "actions": {
+      "attendanceGrid": "الشبكة المركزية للحضور",
+      "newRecruitment": "طلب توظيف جديد"
+    },
+    "reports": {
+      "title": "مركز التقارير الشهرية",
+      "subtitle": "تصدير بيانات الحضور، الرواتب، والتوظيف لـ {{date}}",
+      "attendance": {
+        "title": "تقارير الحضور"
+      },
+      "payroll": {
+        "title": "تقارير الرواتب"
+      },
+      "recruitment": {
+        "title": "تقارير التوظيف"
+      },
+      "leaveBalance": {
+        "title": "أرصدة الإجازات",
+        "button": "عرض التقرير التفاعلي"
+      }
+    },
+    "nfc": {
+      "title": "إدارة بطاقات NFC",
+      "subtitle": "اختر موظفاً ثم اربط بطاقة جديدة، استبدل UID، غيّر الحالة، أو فك الارتباط بالكامل.",
+      "liveControl": "Live Card Control",
+      "selectEmployee": "اختر الموظف من القائمة...",
+      "stats": {
+        "employee": "الموظف",
+        "uid": "UID الحالي",
+        "status": "الحالة"
+      },
+      "form": {
+        "titleAssign": "ربط بطاقة جديدة",
+        "titleReplace": "استبدال أو إعادة إصدار البطاقة",
+        "placeholderAssign": "أدخل UID البطاقة الجديدة",
+        "placeholderReplace": "أدخل UID جديداً للاستبدال",
+        "buttonAssign": "ربط البطاقة الجديدة",
+        "buttonReplace": "استبدال البطاقة الحالية"
+      },
+      "actions": {
+        "title": "إجراءات الحالة",
+        "subtitle": "تفعيل، إيقاف، حظر، أو فك الارتباط",
+        "activate": "تفعيل البطاقة",
+        "deactivate": "إيقاف البطاقة",
+        "block": "حظر البطاقة",
+        "unassign": "فك الارتباط نهائياً"
+      },
+      "summary": {
+        "title": "ملخص البطاقة",
+        "uid": "UID: ",
+        "status": "الحالة الحالية: ",
+        "issuedDate": "تاريخ الإصدار: ",
+        "empty": "لا توجد بطاقة مرتبطة بالموظف المحدد حالياً.",
+        "noCard": "بدون بطاقة"
+      }
+    },
+    "recruitment": {
+      "title": "طلبات التوظيف المعلقة",
+      "subtitle": "{{count}} طلب بانتظار المراجعة",
+      "empty": "لا توجد طلبات توظيف معلقة",
+      "underReview": "قيد المراجعة",
+      "job": "الوظيفة",
+      "department": "القسم",
+      "expectedSalary": "الراتب المتوقع",
+      "currency": "ل.س",
+      "nationalId": "رقم الهوية",
+      "mobile": "الجوال",
+      "requestDate": "تاريخ الطلب",
+      "salaryPlaceholder": "تعديل الراتب (اختياري)",
+      "notePlaceholder": "ملاحظة (اختياري)",
+      "approve": "موافقة",
+      "reject": "رفض",
+      "reviewRequest": "مراجعة الطلب"
+    },
+    "leaves": {
+      "title": "طلبات الإجازة (بانتظار HR)",
+      "subtitle": "{{count}} طلب إجازة بانتظار مراجعة أو توثيق الـ HR",
+      "empty": "لا توجد طلبات إجازة معلقة للمراجعة",
+      "employeeFallback": "الموظف #{{id}}",
+      "hourly": "إجازة ساعية",
+      "advance": "إجازة مسبقة",
+      "duration": "المدة",
+      "hours": "ساعة",
+      "days": "يوم",
+      "leaveDate": "تاريخ الإجازة",
+      "date": "التاريخ",
+      "reason": "السبب",
+      "managerNote": "ملاحظة المدير",
+      "notePlaceholder": "ملاحظة للـ HR (اختياري)",
+      "approve": "موافقة",
+      "reject": "رفض",
+      "reviewRequest": "مراجعة الطلب"
+    },
+    "feedback": {
+      "selectEmployeeUid": "اختر موظفاً وأدخل UID صالحاً أولاً.",
+      "replaceSuccess": "تم استبدال البطاقة وربط UID جديد بنجاح.",
+      "assignSuccess": "تم ربط البطاقة الجديدة بالموظف بنجاح.",
+      "selectEmployee": "اختر موظفاً أولاً.",
+      "statusUpdateSuccess": "تم تحديث حالة البطاقة بنجاح.",
+      "unassignSuccess": "تم فك ربط البطاقة من الموظف."
+    },
+    "errors": {
+      "saveCard": "فشل حفظ بيانات البطاقة.",
+      "updateStatus": "فشل تحديث حالة البطاقة.",
+      "unassign": "فشل فك ربط البطاقة.",
+      "downloadRecruitment": "فشل تحميل تقرير التوظيف.",
+      "downloadAttendance": "فشل تحميل تقرير الحضور.",
+      "downloadPayroll": "فشل تحميل تقرير الرواتب.",
+      "processRecruitment": "فشل معالجة طلب التوظيف",
+      "processLeave": "فشل معالجة طلب الإجازة"
+    }
+  },
+  "ceoDashboard": {
+    "title": "لوحة القيادة التنفيذية",
+    "subtitle": "نظرة شاملة على أداء الشركة ومؤشرات الموارد البشرية",
+    "loading": "جارٍ تحميل لوحة المدير التنفيذي...",
+    "heroTitle": "نظرة شاملة على أداء الشركة",
+    "heroSubtitle": "هذه الصفحة مخصصة للمدير التنفيذي لمتابعة مؤشرات الموارد البشرية والرواتب والسلف والتنبيهات الحرجة في واجهة واحدة مصممة لاتخاذ القرار بسرعة ووضوح.",
+    "userLabel": "المستخدم الحالي",
+    "periodLabel": "فترة التقرير",
+    "statusLabel": "حالة المراجعة",
+    "statusUpdated": "محدثة حسب البيانات الحالية",
+    "monthPicker": "اختيار الشهر",
+    "prevMonth": "الشهر السابق",
+    "nextMonth": "الشهر التالي",
+    "summary": {
+      "employees": "إجمالي الموظفين",
+      "employeesSub": "الموظفون النشطون حاليًا",
+      "salary": "إجمالي الرواتب الشهرية",
+      "salarySub": "الكتلة الشهرية الحالية",
+      "advances": "إجمالي السلف هذا الشهر",
+      "advancesSub": "السلف المصروفة والمسلّمة",
+      "alerts": "التنبيهات العاجلة",
+      "alertsSub": "أعلى أولوية للمتابعة"
+    },
+    "attendance": {
+      "title": "حالة حضور رؤساء الأقسام",
+      "subtitle": "يتم احتساب الحالة اعتمادًا على تسجيل اليوم. عدم وجود تسجيل يعني غيابًا، والتأخر يبدأ بعد الساعة ٩:١٥ صباحًا.",
+      "present": "حاضر",
+      "late": "متأخر",
+      "absent": "غائب",
+      "table": {
+        "head": "رئيس القسم",
+        "department": "القسم",
+        "status": "الحالة",
+        "lastCheckIn": "آخر تسجيل حضور"
+      }
+    },
+    "alerts": {
+      "title": "التنبيهات والإشعارات",
+      "subtitle": "أهم الرسائل ذات الأولوية العالية التي تتطلب متابعة مباشرة.",
+      "empty": "لا توجد تنبيهات عاجلة في الوقت الحالي.",
+      "priority": {
+        "high": "عالية",
+        "medium": "متوسطة",
+        "low": "منخفضة"
+      },
+      "sender": "المرسل: "
+    },
+    "trends": {
+      "title": "السلف الشهرية",
+      "subtitle": "اتجاه السلف المصروفة خلال آخر ستة أشهر.",
+      "tooltip": "قيمة السلف",
+      "label": "السلف"
+    },
+    "distribution": {
+      "title": "توزيع الرواتب حسب الأقسام",
+      "subtitle": "حجم الرواتب الأساسية لكل قسم داخل الشركة.",
+      "tooltip": "إجمالي الرواتب"
+    },
+    "departments": {
+      "title": "ملخص الرواتب لكل قسم",
+      "subtitle": "مقارنة بين موازنة الرواتب والصرف الفعلي والسلف داخل كل قسم.",
+      "table": {
+        "department": "القسم",
+        "count": "عدد الموظفين",
+        "budget": "موازنة الرواتب",
+        "actual": "الرواتب المصروفة",
+        "advances": "السلف خلال الشهر"
+      }
+    },
+    "history": {
+      "title": "سجل السلف المصروفة",
+      "subtitle": "آخر السلف التي تم تسليمها خلال الأشهر السابقة.",
+      "fallback": "الموظف {{id}}",
+      "reasonFallback": "سلفة مالية"
+    },
+    "reports": {
+      "title": "التقارير والإعدادات",
+      "subtitle": "تنزيل ملفات CSV وPDF وExcel الخاصة بالتقارير التنفيذية.",
+      "execCsv": {
+        "title": "ملخص تنفيذي بصيغة CSV",
+        "subtitle": "يتضمن عدد الموظفين وإجمالي الرواتب والسلف الشهرية.",
+        "button": "تنزيل ملف CSV"
+      },
+      "advanceCsv": {
+        "title": "سجل السلف بصيغة CSV",
+        "subtitle": "يحتوي على أحدث السلف المصروفة مع المبالغ والتواريخ.",
+        "button": "تنزيل ملف CSV"
+      },
+      "ops": {
+        "title": "التقارير التشغيلية",
+        "subtitle": "تنزيل تقارير الحضور والرواتب والإجازات والتوظيف.",
+        "payrollPdf": "رواتب PDF",
+        "payrollExcel": "رواتب Excel",
+        "attendancePdf": "حضور PDF",
+        "attendanceExcel": "حضور Excel",
+        "leavePdf": "إجازات PDF",
+        "leaveExcel": "إجازات Excel",
+        "recruitmentPdf": "توظيف PDF",
+        "recruitmentExcel": "توظيف Excel",
+        "downloading": "جارٍ التنزيل..."
+      }
+    },
+    "fallback": {
+      "noCheckIn": "لا يوجد تسجيل",
+      "unspecified": "غير محدد",
+      "currency": " ل.س"
+    }
+  },
+  "employeeDashboard": {
+    "welcome": "مرحباً، {{name}} 👋",
+    "editProfile": "تعديل الملف الشخصي",
+    "stats": {
+      "monthlyHours": "ساعات الشهر",
+      "yearlyHours": "ساعات السنة",
+      "expectedSalary": "الراتب المتوقع",
+      "rank": "الترتيب",
+      "yearlyRank": "ترتيب السنة",
+      "currCycle": "الدورة الحالية",
+      "progress": "التقدم",
+      "yearlyGoal": "هدف السنة",
+      "leaveBalance": "رصيد الإجازات",
+      "lowBalance": "رصيد منخفض",
+      "availableBalance": "رصيد متاح"
+    },
+    "actions": {
+      "title": "إجراءات سريعة",
+      "leaveRequest": "طلب إجازة",
+      "advanceRequest": "طلب سلفة",
+      "clocking": "تسجيل الدوام",
+      "messages": "الرسائل"
+    },
+    "advances": {
+      "title": "طلبات السلف الحالية",
+      "empty": "لا توجد طلبات سلف معلقة",
+      "noReason": "لا يوجد سبب مكتوب",
+      "status": {
+        "approved": "معتمد",
+        "rejected": "مرفوض",
+        "delivered": "تم التسليم",
+        "pendingPayroll": "بانتظار الرواتب",
+        "pendingManager": "بانتظار المدير"
+      }
+    },
+    "leaves": {
+      "title": "طلبات الإجازة",
+      "empty": "لا توجد طلبات إجازة حالية",
+      "hourly": "إجازة ساعية",
+      "daily": "إجازة أيام",
+      "status": {
+        "approved": "مقبول",
+        "rejected": "مرفوض",
+        "pendingHr": "بانتظار HR",
+        "pendingManager": "بانتظار المدير"
+      }
+    },
+    "payroll": {
+      "title": "سجل الرواتب (Pay Slips)",
+      "subtitle": "تاريخ صرف المستحقات والخصومات",
+      "loading": "جاري جلب سجلات الرواتب...",
+      "empty": "لا توجد قسائم راتب حالياً",
+      "emptyDesc": "سيتم إنشاء قسيمة الراتب عند معالجة الرواتب من قبل HR",
+      "headers": {
+        "period": "الشهر / السنة",
+        "workHours": "ساعات العمل",
+        "overtime": "ساعات إضافية",
+        "deductions": "الخصومات",
+        "netSalary": "صافي الراتب",
+        "issuedAt": "تاريخ الإصدار"
+      }
+    },
+    "activity": {
+      "title": "آخر عمليات الحضور",
+      "viewAll": "مشاهدة الكل",
+      "empty": "لا يوجد سجلات حضور حتى الآن",
+      "working": "جاري العمل...",
+      "verified": "مؤكد"
+    },
+    "todayDetails": {
+      "title": "تفاصيل دوام اليوم",
+      "empty": "لا توجد بيانات دوام لهذا اليوم",
+      "checkIn": "تسجيل الدخول",
+      "checkOut": "تسجيل الخروج",
+      "notYet": "لم يتم بعد",
+      "totalHours": "إجمالي ساعات العمل",
+      "hoursFormat": "{{hours}} ساعة {{minutes}} دقيقة",
+      "status": "الحالة",
+      "present": "حاضر",
+      "absent": "غائب"
+    }
+  },
+  "forms": {
+    "recruitment": {
+      "title": "طلب توظيف جديد",
+      "desc": "قم بملء جميع البيانات المطلوبة لإرسال طلب التوظيف",
+      "personalInfo": "البيانات الشخصية",
+      "contactInfo": "بيانات الاتصال",
+      "employmentInfo": "بيانات التوظيف",
+      "fullName": "الاسم الثلاثي",
+      "nationalId": "رقم الهوية الوطنية",
+      "mobile": "رقم الجوال",
+      "email": "البريد الإلكتروني",
+      "age": "العمر",
+      "maritalStatus": "الحالة الاجتماعية",
+      "numberOfChildren": "عدد الأطفال",
+      "militaryStatus": "حالة الخدمة العسكرية",
+      "address": "العنوان",
+      "jobDesc": "المسمى الوظيفي",
+      "department": "القسم",
+      "employeeId": "رقم الموظف",
+      "expectedSalary": "الراتب المتوقع",
+      "insuranceNumber": "رقم التأمين",
+      "healthNumber": "الرقم الصحي",
+      "submit": "إرسال للموافقة",
+      "processing": "جاري الإرسال...",
+      "successTitle": "تم إرسال الطلب بنجاح",
+      "successDesc": "تم إرسال طلب التوظيف بنجاح وتم توجيهه إلى مدير القسم للمراجعة والموافقة",
+      "placeholders": {
+        "fullName": "مثال: أحمد محمد علي",
+        "email": "example@company.com",
+        "nationalId": "10 أرقام",
+        "age": "18-65",
+        "address": "المدينة، الحي، الشارع",
+        "jobDesc": "مثال: مطور برمجيات",
+        "department": "اختر القسم",
+        "deptLoading": "جاري تحميل الأقسام...",
+        "manualEmpId": "أدخل رقم الموظف",
+        "salary": "0.00",
+        "optional": "اختياري"
+      },
+      "validation": {
+        "nameMin": "يجب إدخال الاسم الثلاثي (ثلاثة أجزاء على الأقل)",
+        "emailRequired": "البريد الإلكتروني مطلوب",
+        "emailInvalid": "صيغة البريد الإلكتروني غير صحيحة",
+        "nationalIdRequired": "رقم الهوية الوطنية مطلوب",
+        "nationalIdLength": "رقم الهوية الوطنية يجب أن يكون 10 أرقام",
+        "addressRequired": "العنوان مطلوب",
+        "jobRequired": "المسمى الوظيفي مطلوب",
+        "deptRequired": "القسم مطلوب",
+        "ageRequired": "العمر مطلوب",
+        "ageRange": "العمر يجب أن يكون بين 18 و 65 سنة",
+        "militaryRequired": "حالة الخدمة العسكرية مطلوبة",
+        "maritalRequired": "الحالة الاجتماعية مطلوبة",
+        "childrenInvalid": "عدد الأطفال يجب أن يكون رقماً صحيحاً موجباً",
+        "mobileRequired": "رقم الجوال مطلوب",
+        "mobileInvalid": "رقم الجوال يجب أن يبدأ بـ 05 ويتكون من 10 أرقام",
+        "salaryRequired": "الراتب المتوقع مطلوب",
+        "salaryPositive": "الراتب يجب أن يكون رقماً موجباً",
+        "empIdRequired": "رقم الموظف مطلوب",
+        "empIdPositive": "رقم الموظف يجب أن يكون رقماً موجباً",
+        "startNumRequired": "يجب إدخال رقم بداية للموظفين (يُستخدم كرقم أولي ثم يتم الزيادة تلقائياً)",
+        "startNumPositive": "رقم البداية يجب أن يكون رقماً موجباً",
+        "submitError": "حدث خطأ أثناء إرسال الطلب"
+      },
+      "idMode": {
+        "auto": "توليد تلقائي",
+        "manual": "إدخال يدوي",
+        "startWarning": "⚠️ أدخل رقم البداية أدناه",
+        "assignInfo": "سيتم تعيين الرقم: ",
+        "loading": "جاري التحميل...",
+        "firstUse": "🔢 <strong>أول استخدام:</strong> أدخل رقم البداية وسيتم توليد الأرقام التالية تلقائياً"
+      },
+      "options": {
+        "single": "أعزب",
+        "married": "متزوج",
+        "divorced": "مطلق",
+        "widowed": "أرمل",
+        "served": "أدى الخدمة",
+        "exempt": "معفي",
+        "excluded": "مستثنى",
+        "notServed": "لم يؤدها بعد"
+      }
+    },
+    "advance": {
+      "title": "طلب سلفة مالية",
+      "subtitle": "أدخل المبلغ والسبب لإرسال طلب السلفة",
+      "amount": "المبلغ المطلوب",
+      "maxAllowed": "الحد الأقصى المسموح: 100,000 ل.س",
+      "reason": "سبب الطلب",
+      "submit": "إرسال الطلب",
+      "processing": "جاري الإرسال...",
+      "successTitle": "تم إرسال طلب السلفة بنجاح",
+      "successDesc": "تم إرسال طلب السلفة بنجاح وتم توجيهه إلى إدارة الرواتب للمراجعة والموافقة",
+      "note": "ملاحظة:",
+      "noteText": "سيتم خصم مبلغ السلفة من راتبك الشهري أثناء معالجة الرواتب. سيتم مراجعة طلبك من قبل إدارة الموارد البشرية.",
+      "placeholders": {
+        "amount": "0.00",
+        "reason": "اكتب سبب طلب السلفة (اختياري)..."
+      },
+      "validation": {
+        "amountRequired": "المبلغ مطلوب",
+        "amountPositive": "المبلغ يجب أن يكون رقماً موجباً",
+        "amountMaxExceeded": "المبلغ يتجاوز الحد الأقصى المسموح (100,000)",
+        "reasonMaxLength": "السبب يجب ألا يتجاوز 500 حرف",
+        "submitError": "حدث خطأ أثناء إرسال الطلب"
+      }
+    },
+    "leave": {
+      "title": "تقديم طلب إجازة",
+      "desc": "حدد نوع الإجازة والفترة المطلوبة",
+      "type": "نوع الإجازة",
+      "types": {
+        "hourly": "إجازة ساعية (مأذونية)",
+        "daily": "إجازة أيام (إدارية/سنوية)",
+        "standardToggle": "إجازة مسبقة (أيام)",
+        "hourlyToggle": "إجازة ساعية (مباشرة)"
+      },
+      "startDate": "تاريخ البدء",
+      "endDate": "تاريخ النهاية",
+      "leaveDate": "تاريخ الإجازة",
+      "duration": "المدة المطلوبة",
+      "durationHourly": "عدد الساعات",
+      "durationDaily": "عدد الأيام",
+      "deductionWarningDaily": "يتم خصم هذه الأيام من رصيد الإجازات السنوي المتبقي.",
+      "deductionWarningHourly": "يتم خصم هذه الساعات من رصيد الساعات الإضافية (Overtime).",
+      "reason": "سبب الإجازة (اختياري)",
+      "submit": "إرسال الطلب للمدير",
+      "processing": "جاري الإرسال...",
+      "successTitle": "تم إصدار الطلب بنجاح",
+      "successDesc": "تم توجيه الطلب إلى مدير القسم للمراجعة المبدئية.",
+      "placeholders": {
+        "reason": "اكتب التبرير هنا...",
+        "duration": "مثال: 1"
+      },
+      "validation": {
+        "datesRequired": "يرجى تحديد تواريخ الإجازة",
+        "durationInvalid": "المدة يجب أن تكون رقماً أكبر من صفر",
+        "submitError": "حدث خطأ أثناء إرسال الطلب. تأكد من صحة البيانات وتوفر رصيد كافٍ."
+      }
+    }
+  },
+  "attendanceStatus": {
+    "review": {
+      "PENDING_REVIEW": "بانتظار المراجعة",
+      "VERIFIED": "تم التحقق",
+      "FRAUD": "تلاعب مؤكد",
+      "MANUALLY_CORRECTED": "تم التصحيح يدوياً",
+      "SUSPICIOUS": "نشاط مشبوه"
+    },
+    "payroll": {
+      "PENDING_APPROVAL": "بانتظار اعتماد الرواتب",
+      "APPROVED_FOR_PAYROLL": "معتمد للرواتب",
+      "EXCLUDED_FROM_PAYROLL": "مستبعد من الرواتب"
+    },
+    "fallback": "غير محدد",
+    "legacy": {
+      "fraud": "تلاعب",
+      "suspicious": "مشبوه",
+      "corrected": "تم التصحيح",
+      "verified": "مؤكد",
+      "open": "مفتوح"
+    }
+  },
+  "pagination": {
+    "totalItems": "إجمالي {{count}} عنصر",
+    "prev": "السابق",
+    "next": "التالي",
+    "pageInfo": "صفحة {{current}} من {{total}}"
   }
 }

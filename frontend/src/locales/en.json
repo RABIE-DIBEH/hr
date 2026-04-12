@@ -18,9 +18,13 @@
     "terminated": "Terminated",
     "success": "Success",
     "error": "Error",
-    "days": "days",
-    "hours": "hours",
-    "searchPlaceholder": "Search by name or email..."
+    "hours": "hr",
+    "days": "day",
+    "noData": "No data",
+    "currency": "SYP",
+    "searchPlaceholder": "Search by name or email...",
+    "retry": "Retry",
+    "refresh": "Refresh Data"
   },
   "dashboard": {
     "leaveBalance": "Leave Balance",
@@ -220,24 +224,10 @@
     "resetPasswordFailed": "Failed to reset password",
     "advanceRequestFailed": "Error occurred while sending request"
   },
-  "advanceRequest": {
-    "title": "Advance Request",
-    "subtitle": "Enter amount and reason to send advance request",
-    "amountRequired": "Amount required",
-    "amountPositive": "Amount must be a positive number",
-    "amountMaxExceeded": "Amount exceeds maximum allowed (100,000)",
-    "reasonMaxLength": "Reason must not exceed 500 characters",
-    "successTitle": "Advance request sent successfully",
-    "successMessage": "Advance request sent successfully and forwarded to payroll for review and approval",
-    "amountLabel": "Requested Amount",
-    "maxAllowed": "Maximum allowed: 100,000 SYP",
-    "reasonLabel": "Request Reason",
-    "reasonPlaceholder": "Write reason for advance request (optional)...",
-    "note": "Note:",
-    "noteText": "The advance amount will be deducted from your monthly salary during payroll processing. Your request will be reviewed by HR.",
-    "sending": "Sending...",
-    "sendRequest": "Send Request",
-    "currencySymbol": "SYP"
+  "errorBoundary": {
+    "title": "Unexpected Error Occurred",
+    "message": "We apologize, this section encountered a technical issue. Our support team has been notified automatically.",
+    "refresh": "Refresh Page"
   },
   "inbox": {
     "title": "Inbox",
@@ -541,6 +531,165 @@
       "print": "Print Slip"
     }
   },
+  "attendanceLogs": {
+    "title": "My Attendance Log",
+    "subtitle": "View your daily arrival and departure records",
+    "loading": "Loading log...",
+    "empty": "No attendance history available yet",
+    "checkIn": "Check In",
+    "checkOut": "Check Out",
+    "workHours": "Work Hours: {{count}} hours",
+    "stillWorking": "Work in progress..."
+  },
+  "teamAttendance": {
+    "title": "Daily Review (Team Attendance)",
+    "subtitle": "Check your employees' actual presence in the office for today {{date}}",
+    "recordsTitle": "Today's Records",
+    "recordsSubtitle": "{{count}} employees checked in",
+    "searchPlaceholder": "Search for employee...",
+    "loading": "Fetching team records...",
+    "noResults": "No records match your search",
+    "fraudPrompt": "Please enter fraud details or your note:",
+    "table": {
+      "employee": "Employee",
+      "checkIn": "Arrival Time",
+      "checkOut": "Departure Time",
+      "generalStatus": "General Status",
+      "review": "Review",
+      "payroll": "Payroll",
+      "action": "Action"
+    },
+    "actions": {
+      "confirm": "Confirm",
+      "fraud": "Fraud",
+      "done": "Action Complete"
+    },
+    "errors": {
+      "verifyFailed": "Failed to confirm attendance",
+      "fraudFailed": "Failed to report fraud"
+    }
+  },
+  "managerDashboard": {
+    "title": "Manager Dashboard",
+    "subtitle": "Team Management: {{items}}",
+    "managerOnly": "This section is for managers only. Your current role is: <span class=\"font-black text-amber-500\">{{role}}</span>",
+    "stats": {
+      "totalTeam": "Total Team",
+      "pendingRecruitment": "Recruitments",
+      "pendingLeaves": "Leave Requests",
+      "pendingAdvances": "Advance Requests"
+    },
+    "errors": {
+      "processRequest": "An error occurred while processing the request.",
+      "processLeave": "An error occurred while processing the leave.",
+      "processAdvance": "An error occurred while processing the advance.",
+      "downloadReport": "An error occurred while trying to download the report."
+    },
+    "team": {
+      "title": "Workforce",
+      "searchPlaceholder": "Search by name or email...",
+      "filterTitle": "Filter by card status",
+      "withCard": "Linked with card",
+      "withoutCard": "No card",
+      "all": "All",
+      "cardLinked": "Linked",
+      "noCard": "Not Linked",
+      "liveData": "Live Data",
+      "footer": "Showing {{count}} of total {{total}} employees",
+      "emptyResults": "No results match your search.",
+      "emptyCompanyScale": "No employee records available.",
+      "emptyManagerScale": "No subordinates registered to you.",
+      "headers": {
+        "employee": "Employee",
+        "email": "Email",
+        "team": "Team",
+        "nfc": "NFC Card",
+        "status": "Status"
+      }
+    },
+    "attendance": {
+      "title": "Daily Attendance Review",
+      "subtitle": "Verify the team's check-in/out records for today.",
+      "empty": "No attendance records registered for today yet.",
+      "headers": {
+        "employee": "Employee",
+        "checkIn": "In",
+        "checkOut": "Out",
+        "status": "Status",
+        "review": "Review",
+        "payroll": "Payroll",
+        "actions": "Actions"
+      },
+      "confirmAttendance": "Confirm",
+      "reportFraud": "Report",
+      "fraudPrompt": "Please write the reason for reporting fraud:",
+      "fraudFailed": "Failed to report fraud.",
+      "verifyFailed": "Confirmation process failed.",
+      "actionDone": "Done"
+    },
+    "recruitment": {
+      "title": "Pending Recruitment Requests",
+      "subtitle": "{{count}} requests awaiting review",
+      "empty": "No pending recruitment requests currently.",
+      "underReview": "Under Review",
+      "job": "Job Description",
+      "department": "Department",
+      "expectedSalary": "Expected Salary",
+      "currency": "SYP",
+      "nationalId": "National ID",
+      "mobile": "Mobile Number",
+      "requestDate": "Request Date",
+      "salaryPlaceholder": "Approved Salary",
+      "notePlaceholder": "Review note...",
+      "approve": "Approve",
+      "reject": "Reject",
+      "reviewRequest": "Review Request"
+    },
+    "leaves": {
+      "title": "Leave Requests",
+      "subtitle": "{{count}} requests awaiting your review",
+      "empty": "No pending processed leave requests.",
+      "employeeFallback": "Unknown Employee (ID: {{id}})",
+      "hourly": "Hourly Leave",
+      "advance": "Daily Leave",
+      "duration": "Duration",
+      "hours": "Hours",
+      "days": "Days",
+      "leaveDate": "Date",
+      "reason": "Reason",
+      "notePlaceholder": "Notes...",
+      "approve": "Approve",
+      "reject": "Reject",
+      "reviewRequest": "Review Request"
+    },
+    "advances": {
+      "title": "Advance Requests (Manager Stage)",
+      "subtitle": "{{count}} requests awaiting your review",
+      "empty": "No pending advance requests currently.",
+      "employeeFallback": "Unknown Employee (ID: {{id}})",
+      "currency": "SYP",
+      "amountPlaceholder": "Approved Amount",
+      "reasonPlaceholder": "Adjustment reason if any",
+      "notePlaceholder": "Manager notes...",
+      "reviewRequest": "Review Request",
+      "approve": "Approve",
+      "reject": "Reject"
+    },
+    "reportCenter": {
+      "title": "Report Center",
+      "subtitle": "Reports for {{date}}",
+      "pdf": {
+        "title": "Comprehensive PDF",
+        "desc": "Official attendance report for all employees.",
+        "button": "Download PDF"
+      },
+      "excel": {
+        "title": "Detailed Excel",
+        "desc": "Accurate data for payroll management.",
+        "button": "Download Excel"
+      }
+    }
+  },
   "nfcClock": {
     "title": "Smart Attendance System",
     "branch": "Main Headquarters Branch",
@@ -564,32 +713,67 @@
     "done": "Done",
     "retry": "Retry"
   },
-  "managerDashboard": {
-    "title": "Team Management",
-    "subtitle": "{{items}} - Live data from server",
-    "managerOnly": "This view is for <strong>MANAGER</strong> accounts. Your current account: {{role}}.",
-    "stats": {
-      "totalTeam": "Total Team",
-      "pendingRecruitment": "Pending Recruitment Requests",
-      "pendingLeaves": "Pending Leave Requests",
-      "pendingAdvances": "Pending Advance Requests"
+  "hrDashboard": {
+    "title": "Human Resources (HR) Management",
+    "subtitle": "Smart card management and monthly payroll processing",
+    "actions": {
+      "attendanceGrid": "Central Attendance Grid",
+      "newRecruitment": "New Recruitment Request"
     },
-    "reportCenter": {
-      "title": "Reports Center (Attendance Management)",
-      "subtitle": "Export team attendance data for {{date}}",
-      "pdf": {
-        "title": "Monthly Attendance Report (PDF)",
-        "desc": "File ready for printing and documentation",
-        "button": "Download PDF"
+    "reports": {
+      "title": "Monthly Reports Center",
+      "subtitle": "Export attendance, payroll, and recruitment data for {{date}}",
+      "attendance": {
+        "title": "Attendance Reports"
       },
-      "excel": {
-        "title": "Monthly Attendance Report (Excel)",
-        "desc": "Editable file for statistical analysis",
-        "button": "Download Excel"
+      "payroll": {
+        "title": "Payroll Reports"
+      },
+      "recruitment": {
+        "title": "Recruitment Reports"
+      },
+      "leaveBalance": {
+        "title": "Leave Balances",
+        "button": "View Interactive Report"
+      }
+    },
+    "nfc": {
+      "title": "NFC Card Management",
+      "subtitle": "Select an employee to link a new card, replace UID, change status, or unassign entirely.",
+      "liveControl": "Live Card Control",
+      "selectEmployee": "Select employee from list...",
+      "stats": {
+        "employee": "Employee",
+        "uid": "Current UID",
+        "status": "Status"
+      },
+      "form": {
+        "titleAssign": "Link New Card",
+        "titleReplace": "Replace/Reissue Card",
+        "placeholderAssign": "Enter new card UID",
+        "placeholderReplace": "Enter new UID for replacement",
+        "buttonAssign": "Link New Card",
+        "buttonReplace": "Replace Current Card"
+      },
+      "actions": {
+        "title": "Status Actions",
+        "subtitle": "Activate, deactivate, block, or unassign",
+        "activate": "Activate Card",
+        "deactivate": "Deactivate Card",
+        "block": "Block Card",
+        "unassign": "Unassign Permanently"
+      },
+      "summary": {
+        "title": "Card Summary",
+        "uid": "UID: ",
+        "status": "Current Status: ",
+        "issuedDate": "Issued Date: ",
+        "empty": "No card currently linked to the selected employee.",
+        "noCard": "No Card"
       }
     },
     "recruitment": {
-      "title": "Pending Recruitment Requests",
+      "title": "Pending Recruitment",
       "subtitle": "{{count}} requests awaiting review",
       "empty": "No pending recruitment requests",
       "underReview": "Under Review",
@@ -606,152 +790,150 @@
       "reject": "Reject",
       "reviewRequest": "Review Request"
     },
-    "attendance": {
-      "title": "Daily Review (Team Attendance Today)",
-      "subtitle": "Physically verify your employees who clocked in via NFC",
-      "empty": "No active attendance records for the team today yet",
-      "headers": {
-        "employee": "Employee",
-        "checkIn": "Check-in Time",
-        "checkOut": "Check-out Time",
-        "status": "General Status",
-        "review": "Review",
-        "payroll": "Payroll",
-        "actions": "Review Actions"
-      },
-      "confirmAttendance": "Confirm Attendance",
-      "reportFraud": "Fraud",
-      "actionDone": "Action Complete",
-      "verifyFailed": "Failed to confirm attendance",
-      "fraudPrompt": "Please enter fraud details or your note:",
-      "fraudFailed": "Failed to report fraud"
-    },
     "leaves": {
-      "title": "Team Leave Requests",
-      "subtitle": "{{count}} requests awaiting your approval",
-      "empty": "No pending leave requests for the team",
+      "title": "Leave Requests (Awaiting HR)",
+      "subtitle": "{{count}} requests awaiting HR review or documentation",
+      "empty": "No pending leave requests",
+      "employeeFallback": "Employee #{{id}}",
       "hourly": "Hourly Leave",
       "advance": "Advance Leave",
       "duration": "Duration",
-      "hours": "hour",
+      "hours": "hr",
       "days": "day",
       "leaveDate": "Leave Date",
+      "date": "Date",
       "reason": "Reason",
-      "notePlaceholder": "Note for employee/HR (optional)",
+      "managerNote": "Manager Note",
+      "notePlaceholder": "Note for HR (optional)",
       "approve": "Approve",
       "reject": "Reject",
-      "reviewRequest": "Review Request",
-      "employeeFallback": "Employee #{{id}}"
+      "reviewRequest": "Review Request"
     },
-    "advances": {
-      "title": "Advance Requests (Manager Stage)",
-      "subtitle": "{{count}} requests awaiting your review",
-      "empty": "No pending advance requests currently",
-      "currency": "SYP",
-      "amountPlaceholder": "Adjust amount (optional)",
-      "reasonPlaceholder": "Adjust reason (optional)",
-      "notePlaceholder": "Note (optional)",
-      "approve": "Approve",
-      "reject": "Reject",
-      "reviewRequest": "Review Request",
-      "employeeFallback": "Employee #{{id}}"
-    },
-    "team": {
-      "title": "Direct Reports",
-      "searchPlaceholder": "Search for employee...",
-      "filterTitle": "Filter by card status",
-      "withCard": "With Card",
-      "withoutCard": "Without Card",
-      "all": "All",
-      "headers": {
-        "employee": "Employee",
-        "email": "Email",
-        "team": "Team",
-        "status": "Status"
-      },
-      "noResults": "No results match your search criteria.",
-      "noData": "No employee records currently available.",
-      "noSubordinates": "No subordinates registered to you (managerId) in the database.",
-      "cardLinked": "Card Linked",
-      "noCard": "No Card",
-      "liveData": "Live Data",
-      "footer": "Showing {{count}} of {{total}} employees on your team"
+    "feedback": {
+      "selectEmployeeUid": "Please select an employee and enter a valid UID first.",
+      "replaceSuccess": "Card replaced and new UID linked successfully.",
+      "assignSuccess": "New card linked to employee successfully.",
+      "selectEmployee": "Select an employee first.",
+      "statusUpdateSuccess": "Card status updated successfully.",
+      "unassignSuccess": "Card unassigned from employee successfully."
     },
     "errors": {
-      "processRequest": "Failed to process request",
-      "processLeave": "Failed to process leave request",
-      "processAdvance": "Failed to process advance request",
-      "downloadReport": "Failed to download attendance report."
-    }
-  },
-  "hrDashboard": {
-    "title": "Human Resources Management (HR)",
-    "subtitle": "Smart card management and monthly payroll processing",
-    "attendanceGrid": "Central Attendance Network",
-    "newRecruitment": "New Recruitment Request",
-    "reportsCenter": {
-      "title": "Monthly Reports Center",
-      "subtitle": "Export attendance, payroll, and recruitment data for {{date}}"
-    },
-    "reports": {
-      "attendance": "Attendance Reports",
-      "payroll": "Payroll Reports",
-      "recruitment": "Recruitment Reports",
-      "leaveBalance": "Leave Balances",
-      "viewInteractive": "View Interactive Report"
-    },
-    "nfc": {
-      "title": "NFC Card Management",
-      "subtitle": "Select an employee then link a new card, replace UID, change status, or fully unlink.",
-      "selectPlaceholder": "Select employee from list...",
-      "employee": "Employee",
-      "currentUid": "Current UID",
-      "status": "Status",
-      "replaceOrNew": "Replace or Re-issue Card",
-      "linkNew": "Link New Card",
-      "newUidPlaceholder": "Enter new UID for replacement",
-      "newCardPlaceholder": "Enter new card UID",
-      "replaceCard": "Replace Current Card",
-      "linkCard": "Link New Card",
-      "statusActions": "Status Actions",
-      "statusDesc": "Activate, deactivate, block, or unlink",
-      "activate": "Activate Card",
-      "deactivate": "Deactivate Card",
-      "block": "Block Card",
-      "unlink": "Unlink Permanently",
-      "cardSummary": "Card Summary",
-      "currentStatus": "Current Status",
-      "issueDate": "Issue Date",
-      "noCard": "No card is currently linked to the selected employee.",
-      "feedback": {
-        "selectFirst": "Select an employee and enter a valid UID first.",
-        "replaced": "Card replaced and new UID linked successfully.",
-        "linked": "New card linked to employee successfully.",
-        "saveFailed": "Failed to save card data.",
-        "selectEmployee": "Select an employee first.",
-        "statusUpdated": "Card status updated successfully.",
-        "statusFailed": "Failed to update card status.",
-        "unlinked": "Card unlinked from employee.",
-        "unlinkFailed": "Failed to unlink card."
-      }
-    },
-    "recruitment": {
-      "title": "Pending Recruitment Requests",
-      "subtitle": "{{count}} requests awaiting review",
-      "empty": "No pending recruitment requests",
-      "underReview": "Under Review",
-      "job": "Job",
-      "department": "Department",
-      "expectedSalary": "Expected Salary",
-      "currency": "SYP",
-      "nationalId": "National ID"
-    },
-    "errors": {
+      "saveCard": "Failed to save card data.",
+      "updateStatus": "Failed to update card status.",
+      "unassign": "Failed to unassign card.",
       "downloadRecruitment": "Failed to download recruitment report.",
       "downloadAttendance": "Failed to download attendance report.",
       "downloadPayroll": "Failed to download payroll report.",
       "processRecruitment": "Failed to process recruitment request",
       "processLeave": "Failed to process leave request"
+    }
+  },
+  "ceoDashboard": {
+    "title": "Executive Dashboard",
+    "subtitle": "Comprehensive view of company performance and HR metrics",
+    "loading": "Loading CEO Dashboard...",
+    "heroTitle": "Comprehensive Company Performance Overview",
+    "heroSubtitle": "This page is dedicated to the CEO to monitor HR metrics, payroll, advances, and critical alerts in a single interface designed for quick and clear decision-making.",
+    "userLabel": "Current User",
+    "periodLabel": "Report Period",
+    "statusLabel": "Review Status",
+    "statusUpdated": "Updated per current data",
+    "monthPicker": "Select Month",
+    "prevMonth": "Prev Month",
+    "nextMonth": "Next Month",
+    "summary": {
+      "employees": "Total Employees",
+      "employeesSub": "Actively employed",
+      "salary": "Total Monthly Payroll",
+      "salarySub": "Current monthly total",
+      "advances": "Total Advances This Month",
+      "advancesSub": "Processed and delivered advances",
+      "alerts": "Urgent Alerts",
+      "alertsSub": "Highest priority for follow-up"
+    },
+    "attendance": {
+      "title": "Department Head Attendance Status",
+      "subtitle": "Status is calculated based on today's registration. No registration means absent, and lateness starts after 9:15 AM.",
+      "present": "Present",
+      "late": "Late",
+      "absent": "Absent",
+      "table": {
+        "head": "Dept. Head",
+        "department": "Department",
+        "status": "Status",
+        "lastCheckIn": "Last Check-in"
+      }
+    },
+    "alerts": {
+      "title": "Alerts & Notifications",
+      "subtitle": "High-priority messages requiring direct follow-up.",
+      "empty": "No urgent alerts currently.",
+      "priority": {
+        "high": "High",
+        "medium": "Medium",
+        "low": "Low"
+      },
+      "sender": "Sender: "
+    },
+    "trends": {
+      "title": "Monthly Advances Trend",
+      "subtitle": "Advance payment trend over the last six months.",
+      "tooltip": "Advance Amount",
+      "label": "Advances"
+    },
+    "distribution": {
+      "title": "Payroll Distribution by Department",
+      "subtitle": "Base salary volume for each department in the company.",
+      "tooltip": "Total Payroll"
+    },
+    "departments": {
+      "title": "Department Payroll Summary",
+      "subtitle": "Comparison between payroll budget, actual issue, and advances per department.",
+      "table": {
+        "department": "Department",
+        "count": "Employee Count",
+        "budget": "Payroll Budget",
+        "actual": "Actual Issued",
+        "advances": "Advances This Month"
+      }
+    },
+    "history": {
+      "title": "Disbursed Advances History",
+      "subtitle": "Latest advances delivered over previous months.",
+      "fallback": "Employee {{id}}",
+      "reasonFallback": "Financial Advance"
+    },
+    "reports": {
+      "title": "Reports & Settings",
+      "subtitle": "Download CSV, PDF, and Excel files for executive reporting.",
+      "execCsv": {
+        "title": "Executive Summary CSV",
+        "subtitle": "Includes employee count, total payroll, and monthly advances.",
+        "button": "Download CSV"
+      },
+      "advanceCsv": {
+        "title": "Advances Record CSV",
+        "subtitle": "Contains latest disbursed advances with amounts and dates.",
+        "button": "Download CSV"
+      },
+      "ops": {
+        "title": "Operational Reports",
+        "subtitle": "Download attendance, payroll, leave, and recruitment reports.",
+        "payrollPdf": "Payroll PDF",
+        "payrollExcel": "Payroll Excel",
+        "attendancePdf": "Attendance PDF",
+        "attendanceExcel": "Attendance Excel",
+        "leavePdf": "Leaves PDF",
+        "leaveExcel": "Leaves Excel",
+        "recruitmentPdf": "Recruitment PDF",
+        "recruitmentExcel": "Recruitment Excel",
+        "downloading": "Downloading..."
+      }
+    },
+    "fallback": {
+      "noCheckIn": "No Check-in",
+      "unspecified": "Unspecified",
+      "currency": " SYP"
     }
   },
   "leaveBalanceReport": {
@@ -827,5 +1009,255 @@
       "delete": "Device deleted successfully"
     },
     "close": "Close"
+  },
+  "employeeDashboard": {
+    "welcome": "Welcome, {{name}} 👋",
+    "editProfile": "Edit Profile",
+    "stats": {
+      "monthlyHours": "Monthly Hours",
+      "yearlyHours": "Yearly Hours",
+      "expectedSalary": "Expected Salary",
+      "rank": "Rank",
+      "yearlyRank": "Yearly Rank",
+      "currCycle": "Current Cycle",
+      "progress": "Progress",
+      "yearlyGoal": "Yearly Goal",
+      "leaveBalance": "Leave Balance",
+      "lowBalance": "Low Balance",
+      "availableBalance": "Available Balance"
+    },
+    "actions": {
+      "title": "Quick Actions",
+      "leaveRequest": "Request Leave",
+      "advanceRequest": "Request Advance",
+      "clocking": "Check In/Out",
+      "messages": "Messages"
+    },
+    "advances": {
+      "title": "Current Advance Requests",
+      "empty": "No pending advance requests",
+      "noReason": "No reason provided",
+      "status": {
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "delivered": "Delivered",
+        "pendingPayroll": "Awaiting Payroll",
+        "pendingManager": "Awaiting Manager"
+      }
+    },
+    "leaves": {
+      "title": "Leave Requests",
+      "empty": "No current leave requests",
+      "hourly": "Hourly Leave",
+      "daily": "Daily Leave",
+      "status": {
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "pendingHr": "Awaiting HR",
+        "pendingManager": "Awaiting Manager"
+      }
+    },
+    "payroll": {
+      "title": "Pay Slips History",
+      "subtitle": "Record of payments and deductions",
+      "loading": "Fetching payroll records...",
+      "empty": "No pay slips available currently",
+      "emptyDesc": "Pay slips are generated after HR processes payroll.",
+      "headers": {
+        "period": "Month / Year",
+        "workHours": "Work Hours",
+        "overtime": "Overtime",
+        "deductions": "Deductions",
+        "netSalary": "Net Salary",
+        "issuedAt": "Issued At"
+      }
+    },
+    "activity": {
+      "title": "Latest Attendance Activity",
+      "viewAll": "View All",
+      "empty": "No attendance logs yet",
+      "working": "Work in progress...",
+      "verified": "Verified"
+    },
+    "todayDetails": {
+      "title": "Today's Attendance Details",
+      "empty": "No attendance data for today",
+      "checkIn": "Check In",
+      "checkOut": "Check Out",
+      "notYet": "Not yet",
+      "totalHours": "Total Work Hours",
+      "hoursFormat": "{{hours}}h {{minutes}}m",
+      "status": "Status",
+      "present": "Present",
+      "absent": "Absent"
+    }
+  },
+  "forms": {
+    "recruitment": {
+      "title": "New Recruitment Request",
+      "desc": "Fill in all the required details to submit a recruitment request",
+      "personalInfo": "Personal Information",
+      "contactInfo": "Contact Details",
+      "employmentInfo": "Employment Details",
+      "fullName": "Full Name",
+      "nationalId": "National ID Number",
+      "mobile": "Mobile Number",
+      "email": "Email Address",
+      "age": "Age",
+      "maritalStatus": "Marital Status",
+      "numberOfChildren": "Number of Children",
+      "militaryStatus": "Military Service Status",
+      "address": "Address",
+      "jobDesc": "Job Title",
+      "department": "Department",
+      "employeeId": "Employee ID",
+      "expectedSalary": "Expected Salary",
+      "insuranceNumber": "Insurance Number",
+      "healthNumber": "Health Number",
+      "submit": "Submit for Approval",
+      "processing": "Submitting...",
+      "successTitle": "Request Sent Successfully",
+      "successDesc": "The recruitment request has been submitted and forwarded to the department manager for review and approval.",
+      "placeholders": {
+        "fullName": "e.g. John Doe",
+        "email": "example@company.com",
+        "nationalId": "10 digits",
+        "age": "18-65",
+        "address": "City, Neighborhood, Street",
+        "jobDesc": "e.g. Software Developer",
+        "department": "Select Department",
+        "deptLoading": "Loading departments...",
+        "manualEmpId": "Enter Employee ID",
+        "salary": "0.00",
+        "optional": "Optional"
+      },
+      "validation": {
+        "nameMin": "Triple name must be entered (at least three parts)",
+        "emailRequired": "Email is required",
+        "emailInvalid": "Invalid email format",
+        "nationalIdRequired": "National ID is required",
+        "nationalIdLength": "National ID must be 10 digits",
+        "addressRequired": "Address is required",
+        "jobRequired": "Job title is required",
+        "deptRequired": "Department is required",
+        "ageRequired": "Age is required",
+        "ageRange": "Age must be between 18 and 65 years",
+        "militaryRequired": "Military service status is required",
+        "maritalRequired": "Marital status is required",
+        "childrenInvalid": "Number of children must be a positive whole number",
+        "mobileRequired": "Mobile number is required",
+        "mobileInvalid": "Mobile number must start with 05 and be 10 digits",
+        "salaryRequired": "Expected salary is required",
+        "salaryPositive": "Salary must be a positive number",
+        "empIdRequired": "Employee ID is required",
+        "empIdPositive": "Employee ID must be a positive number",
+        "startNumRequired": "A starting employee number must be entered (used as initial, then auto-incremented)",
+        "startNumPositive": "Starting number must be a positive number",
+        "submitError": "Error occurred while sending the request"
+      },
+      "idMode": {
+        "auto": "Auto-generate",
+        "manual": "Manual Entry",
+        "startWarning": "⚠️ Enter starting number below",
+        "assignInfo": "Assigned ID will be: ",
+        "loading": "Loading...",
+        "firstUse": "🔢 <strong>First Use:</strong> Enter a starting number and subsequent IDs will be auto-generated"
+      },
+      "options": {
+        "single": "Single",
+        "married": "Married",
+        "divorced": "Divorced",
+        "widowed": "Widowed",
+        "served": "Served",
+        "exempt": "Exempt",
+        "excluded": "Excluded",
+        "notServed": "Not Served Yet"
+      }
+    },
+    "advance": {
+      "title": "Advance Request",
+      "subtitle": "Enter amount and reason to send advance request",
+      "amount": "Requested Amount",
+      "maxAllowed": "Maximum allowed: 100,000 SYP",
+      "reason": "Request Reason",
+      "submit": "Send Request",
+      "processing": "Sending...",
+      "successTitle": "Advance request sent successfully",
+      "successDesc": "Advance request sent successfully and forwarded to payroll for review and approval",
+      "note": "Note:",
+      "noteText": "The advance amount will be deducted from your monthly salary during payroll processing. Your request will be reviewed by HR.",
+      "placeholders": {
+        "amount": "0.00",
+        "reason": "Write reason for advance request (optional)..."
+      },
+      "validation": {
+        "amountRequired": "Amount required",
+        "amountPositive": "Amount must be a positive number",
+        "amountMaxExceeded": "Amount exceeds maximum allowed (100,000)",
+        "reasonMaxLength": "Reason must not exceed 500 characters",
+        "submitError": "Error occurred while sending the request"
+      }
+    },
+    "leave": {
+      "title": "Submit Leave Request",
+      "desc": "Select leave type and requested duration",
+      "type": "Leave Type",
+      "types": {
+        "hourly": "Hourly Leave (Permission)",
+        "daily": "Daily Leave (Administrative/Annual)",
+        "standardToggle": "Pre-planned Leave (Days)",
+        "hourlyToggle": "Hourly Leave (Direct)"
+      },
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "leaveDate": "Leave Date",
+      "duration": "Requested Duration",
+      "durationHourly": "Number of Hours",
+      "durationDaily": "Number of Days",
+      "deductionWarningDaily": "These days will be deducted from your remaining annual leave balance.",
+      "deductionWarningHourly": "These hours will be deducted from your overtime balance.",
+      "reason": "Leave Reason (Optional)",
+      "submit": "Send Request to Manager",
+      "processing": "Sending...",
+      "successTitle": "Request Issued Successfully",
+      "successDesc": "The request has been forwarded to the department manager for initial review.",
+      "placeholders": {
+        "reason": "Write justification here...",
+        "duration": "e.g. 1"
+      },
+      "validation": {
+        "datesRequired": "Please specify leave dates",
+        "durationInvalid": "Duration must be a number greater than zero",
+        "submitError": "An error occurred while sending the request. Ensure data is correct and sufficient balance is available."
+      }
+    }
+  },
+  "attendanceStatus": {
+    "review": {
+      "PENDING_REVIEW": "Pending Review",
+      "VERIFIED": "Verified",
+      "FRAUD": "Confirmed Fraud",
+      "MANUALLY_CORRECTED": "Manually Corrected",
+      "SUSPICIOUS": "Suspicious Activity"
+    },
+    "payroll": {
+      "PENDING_APPROVAL": "Awaiting Payroll Approval",
+      "APPROVED_FOR_PAYROLL": "Approved for Payroll",
+      "EXCLUDED_FROM_PAYROLL": "Excluded from Payroll"
+    },
+    "fallback": "Undefined",
+    "legacy": {
+      "fraud": "Fraud",
+      "suspicious": "Suspicious",
+      "corrected": "Corrected",
+      "verified": "Verified",
+      "open": "Open"
+    }
+  },
+  "pagination": {
+    "totalItems": "Total {{count}} items",
+    "prev": "Prev",
+    "next": "Next",
+    "pageInfo": "Page {{current}} of {{total}}"
   }
 }

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react';
 import { submitRecruitmentRequest, getNextEmployeeId, getAllDepartments, type RecruitmentRequest, type Department } from '../services/api';
 import { motion } from 'framer-motion';
@@ -13,6 +14,7 @@ interface FormErrors {
 }
 
 const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormProps) => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -87,7 +89,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
     // Full name validation (three-part name)
     const nameParts = formData.fullName.trim().split(/\s+/);
     if (nameParts.length < 3) {
-      newErrors.fullName = 'يجب إدخال الاسم الثلاثي (ثلاثة أجزاء على الأقل)';
+      newErrors.fullName = t('forms.recruitment.validation.nameMin');
     }
 
     // Email validation
@@ -99,75 +101,75 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
 
     // National ID validation
     if (!formData.nationalId.trim()) {
-      newErrors.nationalId = 'رقم الهوية الوطنية مطلوب';
+      newErrors.nationalId = t('forms.recruitment.validation.nationalIdRequired');
     } else if (!/^\d{10}$/.test(formData.nationalId.trim())) {
-      newErrors.nationalId = 'رقم الهوية الوطنية يجب أن يكون 10 أرقام';
+      newErrors.nationalId = t('forms.recruitment.validation.nationalIdLength');
     }
 
     // Address validation
     if (!formData.address.trim()) {
-      newErrors.address = 'العنوان مطلوب';
+      newErrors.address = t('forms.recruitment.validation.addressRequired');
     }
 
     // Job description validation
     if (!formData.jobDescription.trim()) {
-      newErrors.jobDescription = 'المسمى الوظيفي مطلوب';
+      newErrors.jobDescription = t('forms.recruitment.validation.jobRequired');
     }
 
     // Department validation
     if (!formData.department.trim()) {
-      newErrors.department = 'القسم مطلوب';
+      newErrors.department = t('forms.recruitment.validation.deptRequired');
     }
 
     // Age validation
     const age = parseInt(formData.age);
     if (!formData.age) {
-      newErrors.age = 'العمر مطلوب';
+      newErrors.age = t('forms.recruitment.validation.ageRequired');
     } else if (isNaN(age) || age < 18 || age > 65) {
-      newErrors.age = 'العمر يجب أن يكون بين 18 و 65 سنة';
+      newErrors.age = t('forms.recruitment.validation.ageRange');
     }
 
     // Military service status
     if (!formData.militaryServiceStatus) {
-      newErrors.militaryServiceStatus = 'حالة الخدمة العسكرية مطلوبة';
+      newErrors.militaryServiceStatus = t('forms.recruitment.validation.militaryRequired');
     }
 
     // Marital status
     if (!formData.maritalStatus) {
-      newErrors.maritalStatus = 'الحالة الاجتماعية مطلوبة';
+      newErrors.maritalStatus = t('forms.recruitment.validation.maritalRequired');
     }
 
     // Number of children (optional but must be valid if provided)
     if (formData.numberOfChildren) {
       const children = parseInt(formData.numberOfChildren);
       if (isNaN(children) || children < 0) {
-        newErrors.numberOfChildren = 'عدد الأطفال يجب أن يكون رقماً صحيحاً موجباً';
+        newErrors.numberOfChildren = t('forms.recruitment.validation.childrenInvalid');
       }
     }
 
     // Mobile number validation
     if (!formData.mobileNumber.trim()) {
-      newErrors.mobileNumber = 'رقم الجوال مطلوب';
+      newErrors.mobileNumber = t('forms.recruitment.validation.mobileRequired');
     } else if (!/^05\d{8}$/.test(formData.mobileNumber.trim())) {
-      newErrors.mobileNumber = 'رقم الجوال يجب أن يبدأ بـ 05 ويتكون من 10 أرقام';
+      newErrors.mobileNumber = t('forms.recruitment.validation.mobileInvalid');
     }
 
     // Expected salary validation
     const salary = parseFloat(formData.expectedSalary);
     if (!formData.expectedSalary) {
-      newErrors.expectedSalary = 'الراتب المتوقع مطلوب';
+      newErrors.expectedSalary = t('forms.recruitment.validation.salaryRequired');
     } else if (isNaN(salary) || salary <= 0) {
-      newErrors.expectedSalary = 'الراتب يجب أن يكون رقماً موجباً';
+      newErrors.expectedSalary = t('forms.recruitment.validation.salaryPositive');
     }
 
     // Manual employee ID validation
     if (employeeIdMode === 'manual') {
       if (!manualEmployeeId.trim()) {
-        newErrors.employeeId = 'رقم الموظف مطلوب';
+        newErrors.employeeId = t('forms.recruitment.validation.empIdRequired');
       } else {
         const empId = parseInt(manualEmployeeId);
         if (isNaN(empId) || empId <= 0) {
-          newErrors.employeeId = 'رقم الموظف يجب أن يكون رقماً موجباً';
+          newErrors.employeeId = t('forms.recruitment.validation.empIdPositive');
         }
       }
     }
@@ -175,11 +177,11 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
     // Auto-generate starting number validation
     if (employeeIdMode === 'auto' && requiresStartingNumber) {
       if (!manualEmployeeId.trim()) {
-        newErrors.employeeId = 'يجب إدخال رقم بداية للموظفين (يُستخدم كرقم أولي ثم يتم الزيادة تلقائياً)';
+        newErrors.employeeId = t('forms.recruitment.validation.startNumRequired');
       } else {
         const empId = parseInt(manualEmployeeId);
         if (isNaN(empId) || empId <= 0) {
-          newErrors.employeeId = 'رقم البداية يجب أن يكون رقماً موجباً';
+          newErrors.employeeId = t('forms.recruitment.validation.startNumPositive');
         }
       }
     }
@@ -245,7 +247,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
       }, 1500);
     } catch (err: unknown) {
       const { message } = extractApiError(err);
-      setError(message || 'حدث خطأ أثناء إرسال الطلب');
+      setError(message || t('forms.recruitment.validation.submitError'));
     } finally {
       setLoading(false);
     }
@@ -264,9 +266,9 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
           onClick={(e) => e.stopPropagation()}
         >
           <div className="text-green-600 text-6xl mb-4">✓</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">تم إرسال الطلب بنجاح</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">{t('forms.recruitment.successTitle')}</h2>
           <p className="text-gray-600 mb-6">
-            تم إرسال طلب التوظيف بنجاح وتم توجيهه إلى مدير القسم للمراجعة والموافقة
+            {t('forms.recruitment.successDesc')}
           </p>
           <button
             onClick={onClose}
@@ -295,7 +297,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-lg">
           <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold">طلب توظيف جديد</h2>
+            <h2 className="text-2xl font-bold">{t('forms.recruitment.title')}</h2>
             <button
               onClick={onClose}
               className="text-white hover:text-gray-200 text-2xl font-bold"
@@ -304,7 +306,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
             </button>
           </div>
           <p className="text-blue-100 mt-2">
-            قم بملء جميع البيانات المطلوبة لإرسال طلب التوظيف
+            {t('forms.recruitment.desc')}
           </p>
         </div>
 
@@ -318,12 +320,12 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
 
           {/* Personal Information Section */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">البيانات الشخصية</h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">{t('forms.recruitment.personalInfo')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Full Name */}
               <div>
                 <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
-                  الاسم الثلاثي <span className="text-red-500">*</span>
+                  {t('forms.recruitment.fullName')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="fullName"
@@ -331,7 +333,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                   name="fullName"
                   value={formData.fullName}
                   onChange={handleChange}
-                  placeholder="مثال: أحمد محمد علي"
+                  placeholder={t('forms.recruitment.placeholders.fullName')}
                   className={`w-full px-4 py-2 border rounded-lg bg-white text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                     errors.fullName ? 'border-red-500' : 'border-gray-300'
                   }`}
@@ -344,7 +346,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
               {/* Email */}
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  البريد الإلكتروني <span className="text-red-500">*</span>
+                  {t('forms.recruitment.email')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="email"
@@ -352,7 +354,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="example@company.com"
+                  placeholder={t('forms.recruitment.placeholders.email')}
                   className={`w-full px-4 py-2 border rounded-lg bg-white text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                     errors.email ? 'border-red-500' : 'border-gray-300'
                   }`}
@@ -365,7 +367,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
               {/* National ID */}
               <div>
                 <label htmlFor="nationalId" className="block text-sm font-medium text-gray-700 mb-2">
-                  رقم الهوية الوطنية <span className="text-red-500">*</span>
+                  {t('forms.recruitment.nationalId')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="nationalId"
@@ -373,7 +375,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                   name="nationalId"
                   value={formData.nationalId}
                   onChange={handleChange}
-                  placeholder="10 أرقام"
+                  placeholder={t('forms.recruitment.placeholders.nationalId')}
                   maxLength={10}
                   className={`w-full px-4 py-2 border rounded-lg bg-white text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                     errors.nationalId ? 'border-red-500' : 'border-gray-300'
@@ -387,7 +389,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
               {/* Age */}
               <div>
                 <label htmlFor="age" className="block text-sm font-medium text-gray-700 mb-2">
-                  العمر <span className="text-red-500">*</span>
+                  {t('forms.recruitment.age')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="age"
@@ -395,7 +397,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                   name="age"
                   value={formData.age}
                   onChange={handleChange}
-                  placeholder="18-65"
+                  placeholder={t('forms.recruitment.placeholders.age')}
                   min="18"
                   max="65"
                   className={`w-full px-4 py-2 border rounded-lg bg-white text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
@@ -410,7 +412,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
               {/* Marital Status */}
               <div>
                 <label htmlFor="maritalStatus" className="block text-sm font-medium text-gray-700 mb-2">
-                  الحالة الاجتماعية <span className="text-red-500">*</span>
+                  {t('forms.recruitment.maritalStatus')} <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="maritalStatus"
@@ -421,11 +423,11 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                     errors.maritalStatus ? 'border-red-500' : 'border-gray-300'
                   }`}
                 >
-                  <option value="">اختر</option>
-                  <option value="أعزب">أعزب</option>
-                  <option value="متزوج">متزوج</option>
-                  <option value="مطلق">مطلق</option>
-                  <option value="أرمل">أرمل</option>
+                  <option value="">{t('common.select') || 'Select'}</option>
+                  <option value="أعزب">{t('forms.recruitment.options.single')}</option>
+                  <option value="متزوج">{t('forms.recruitment.options.married')}</option>
+                  <option value="مطلق">{t('forms.recruitment.options.divorced')}</option>
+                  <option value="أرمل">{t('forms.recruitment.options.widowed')}</option>
                 </select>
                 {errors.maritalStatus && (
                   <p className="text-red-500 text-xs mt-1">{errors.maritalStatus}</p>
@@ -435,7 +437,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
               {/* Number of Children */}
               <div>
                 <label htmlFor="numberOfChildren" className="block text-sm font-medium text-gray-700 mb-2">
-                  عدد الأطفال
+                  {t('forms.recruitment.numberOfChildren')}
                 </label>
                 <input
                   id="numberOfChildren"
@@ -457,7 +459,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
               {/* Military Service Status */}
               <div>
                 <label htmlFor="militaryServiceStatus" className="block text-sm font-medium text-gray-700 mb-2">
-                  حالة الخدمة العسكرية <span className="text-red-500">*</span>
+                  {t('forms.recruitment.militaryStatus')} <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="militaryServiceStatus"
@@ -468,11 +470,11 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                     errors.militaryServiceStatus ? 'border-red-500' : 'border-gray-300'
                   }`}
                 >
-                  <option value="">اختر</option>
-                  <option value="أدى الخدمة">أدى الخدمة</option>
-                  <option value="معفي">معفي</option>
-                  <option value="مستثنى">مستثنى</option>
-                  <option value="لم يؤدها بعد">لم يؤدها بعد</option>
+                  <option value="">{t('common.select') || 'Select'}</option>
+                  <option value="أدى الخدمة">{t('forms.recruitment.options.served')}</option>
+                  <option value="معفي">{t('forms.recruitment.options.exempt')}</option>
+                  <option value="مستثنى">{t('forms.recruitment.options.excluded')}</option>
+                  <option value="لم يؤدها بعد">{t('forms.recruitment.options.notServed')}</option>
                 </select>
                 {errors.militaryServiceStatus && (
                   <p className="text-red-500 text-xs mt-1">{errors.militaryServiceStatus}</p>
@@ -483,12 +485,12 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
 
           {/* Contact Information Section */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">بيانات الاتصال</h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">{t('forms.recruitment.contactInfo')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Mobile Number */}
               <div>
                 <label htmlFor="mobileNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                  رقم الجوال <span className="text-red-500">*</span>
+                  {t('forms.recruitment.mobile')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="mobileNumber"
@@ -510,7 +512,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
               {/* Address */}
               <div className="md:col-span-2">
                 <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
-                  العنوان <span className="text-red-500">*</span>
+                  {t('forms.recruitment.address')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="address"
@@ -518,7 +520,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                   name="address"
                   value={formData.address}
                   onChange={handleChange}
-                  placeholder="المدينة، الحي، الشارع"
+                  placeholder={t('forms.recruitment.placeholders.address')}
                   className={`w-full px-4 py-2 border rounded-lg bg-white text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                     errors.address ? 'border-red-500' : 'border-gray-300'
                   }`}
@@ -532,12 +534,12 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
 
           {/* Employment Information Section */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">بيانات التوظيف</h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">{t('forms.recruitment.employmentInfo')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Job Description */}
               <div>
                 <label htmlFor="jobDescription" className="block text-sm font-medium text-gray-700 mb-2">
-                  المسمى الوظيفي <span className="text-red-500">*</span>
+                  {t('forms.recruitment.jobDesc')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="jobDescription"
@@ -545,7 +547,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                   name="jobDescription"
                   value={formData.jobDescription}
                   onChange={handleChange}
-                  placeholder="مثال: مطور برمجيات"
+                  placeholder={t('forms.recruitment.placeholders.jobDesc')}
                   className={`w-full px-4 py-2 border rounded-lg bg-white text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                     errors.jobDescription ? 'border-red-500' : 'border-gray-300'
                   }`}
@@ -558,7 +560,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
               {/* Department */}
               <div>
                 <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-2">
-                  القسم <span className="text-red-500">*</span>
+                  {t('forms.recruitment.department')} <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="department"
@@ -570,7 +572,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                   }`}
                   disabled={departmentsLoading}
                 >
-                  <option value="">{departmentsLoading ? 'جاري تحميل الأقسام...' : 'اختر القسم'}</option>
+                  <option v-text={t('forms.recruitment.placeholders.department')} value="">{departmentsLoading ? t('forms.recruitment.placeholders.deptLoading') : t('forms.recruitment.placeholders.department')}</option>
                   {departments.map((dept) => (
                     <option key={dept.departmentId} value={dept.departmentName}>
                       {dept.departmentName}
@@ -585,7 +587,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
               {/* Employee ID Assignment */}
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-3">
-                  رقم الموظف <span className="text-red-500">*</span>
+                  {t('forms.recruitment.employeeId')} <span className="text-red-500">*</span>
                 </label>
                 <div className="flex flex-col sm:flex-row gap-4">
                   {/* Auto-generate option */}
@@ -599,18 +601,18 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                       className="w-4 h-4 text-blue-600"
                     />
                     <div className="flex-1">
-                      <span className="text-sm font-medium text-gray-800">توليد تلقائي</span>
+                      <span className="text-sm font-medium text-gray-800">{t('forms.recruitment.idMode.auto')}</span>
                       {requiresStartingNumber ? (
                         <p className="text-xs text-amber-600 mt-1">
-                          ⚠️ أدخل رقم البداية أدناه
+                          {t('forms.recruitment.idMode.startWarning')}
                         </p>
                       ) : nextAutoEmployeeId != null ? (
                         <p className="text-xs text-gray-500 mt-1">
-                          سيتم تعيين الرقم: <span className="font-mono font-bold text-blue-600">{nextAutoEmployeeId}</span>
+                          {t('forms.recruitment.idMode.assignInfo')} <span className="font-mono font-bold text-blue-600">{nextAutoEmployeeId}</span>
                         </p>
                       ) : (
                         <p className="text-xs text-gray-500 mt-1">
-                          جاري التحميل...
+                          {t('forms.recruitment.idMode.loading')}
                         </p>
                       )}
                     </div>
@@ -627,7 +629,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                       className="w-4 h-4 text-blue-600"
                     />
                     <div className="flex-1">
-                      <span className="text-sm font-medium text-gray-800">إدخال يدوي</span>
+                      <span className="text-sm font-medium text-gray-800">{t('forms.recruitment.idMode.manual')}</span>
                     </div>
                   </label>
                 </div>
@@ -635,9 +637,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                 {/* Starting number input (shown when auto-generate is selected for the first time) */}
                 {employeeIdMode === 'auto' && requiresStartingNumber && (
                   <div className="mt-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                    <p className="text-sm text-amber-800 mb-2">
-                      🔢 <strong>أول استخدام:</strong> أدخل رقم البداية وسيتم توليد الأرقام التالية تلقائياً
-                    </p>
+                    <p className="text-sm text-amber-800 mb-2" dangerouslySetInnerHTML={{ __html: t('forms.recruitment.idMode.firstUse') }} />
                     <input
                       id="startingNumber"
                       type="number"
@@ -663,7 +663,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                       type="number"
                       value={manualEmployeeId}
                       onChange={(e) => setManualEmployeeId(e.target.value)}
-                      placeholder="أدخل رقم الموظف"
+                      placeholder={t('forms.recruitment.placeholders.manualEmpId')}
                       min="1"
                       className={`w-full px-4 py-2 border rounded-lg bg-white text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                         errors.employeeId ? 'border-red-500' : 'border-gray-300'
@@ -679,7 +679,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
               {/* Expected Salary */}
               <div>
                 <label htmlFor="expectedSalary" className="block text-sm font-medium text-gray-700 mb-2">
-                  الراتب المتوقع <span className="text-red-500">*</span>
+                  {t('forms.recruitment.expectedSalary')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="expectedSalary"
@@ -687,7 +687,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                   name="expectedSalary"
                   value={formData.expectedSalary}
                   onChange={handleChange}
-                  placeholder="0.00"
+                  placeholder={t('forms.recruitment.placeholders.salary')}
                   min="0"
                   step="0.01"
                   className={`w-full px-4 py-2 border rounded-lg bg-white text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
@@ -702,7 +702,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
               {/* Insurance Number */}
               <div>
                 <label htmlFor="insuranceNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                  رقم التأمين
+                  {t('forms.recruitment.insuranceNumber')}
                 </label>
                 <input
                   id="insuranceNumber"
@@ -710,7 +710,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                   name="insuranceNumber"
                   value={formData.insuranceNumber}
                   onChange={handleChange}
-                  placeholder="اختياري"
+                  placeholder={t('forms.recruitment.placeholders.optional')}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
@@ -718,7 +718,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
               {/* Health Number */}
               <div>
                 <label htmlFor="healthNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                  الرقم الصحي
+                  {t('forms.recruitment.healthNumber')}
                 </label>
                 <input
                   id="healthNumber"
@@ -726,7 +726,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                   name="healthNumber"
                   value={formData.healthNumber}
                   onChange={handleChange}
-                  placeholder="اختياري"
+                  placeholder={t('forms.recruitment.placeholders.optional')}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
@@ -741,7 +741,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
               className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
               disabled={loading}
             >
-              إلغاء
+              {t('common.cancel') || 'Cancel'}
             </button>
             <button
               type="submit"

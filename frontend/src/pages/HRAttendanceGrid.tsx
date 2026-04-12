@@ -426,12 +426,12 @@ const HRAttendanceGrid = () => {
                       </td>
                       <td className="p-5">
                         <span className={`inline-flex rounded-lg px-3 py-1 text-xs font-bold ${reviewMeta.className}`}>
-                          {reviewMeta.label}
+                          {t(reviewMeta.label)}
                         </span>
                       </td>
                       <td className="p-5">
                         <span className={`inline-flex rounded-lg px-3 py-1 text-xs font-bold ${payrollMeta.className}`}>
-                          {payrollMeta.label}
+                          {t(payrollMeta.label)}
                         </span>
                       </td>
                       <td className="p-5">
