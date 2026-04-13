@@ -99,7 +99,7 @@ describe('RecruitmentRequestForm', () => {
     
     // Wait for departments to load
     await waitFor(() => {
-      expect(screen.getByText('اختر القسم')).toBeDefined();
+      expect(screen.getByText('التقنية')).toBeDefined();
     });
     
     fireEvent.change(screen.getByLabelText(/الاسم الثلاثي/), { target: { value: 'محمد علي حسن' } });
@@ -114,8 +114,8 @@ describe('RecruitmentRequestForm', () => {
     fireEvent.change(screen.getByLabelText(/الراتب المتوقع/), { target: { value: '15000' } });
     fireEvent.change(screen.getByLabelText(/رقم الجوال/), { target: { value: '0512345678' } });
     
-    fireEvent.change(screen.getByLabelText(/الحالة الاجتماعية/), { target: { value: 'أعزب' } });
-    fireEvent.change(screen.getByLabelText(/حالة الخدمة العسكرية/), { target: { value: 'أدى الخدمة' } });
+    fireEvent.change(screen.getByLabelText(/الحالة الاجتماعية/), { target: { value: 'single' } });
+    fireEvent.change(screen.getByLabelText(/حالة الخدمة العسكرية/), { target: { value: 'served' } });
 
     const submitButton = getByFlexibleText('إرسال للموافقة', 'button');
     fireEvent.click(submitButton);

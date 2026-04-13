@@ -46,3 +46,27 @@ const mockAxios = {
 vi.mock('axios', () => ({
   default: mockAxios
 }));
+
+// Initialize i18next for tests
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import arTranslations from '../locales/ar.json';
+
+i18n
+  .use(initReactI18next)
+  .init({
+    lng: 'ar',
+    fallbackLng: 'ar',
+    ns: ['translations'],
+    defaultNS: 'translations',
+    resources: {
+      ar: {
+        translations: arTranslations
+      }
+    },
+    interpolation: {
+      escapeValue: false,
+    }
+  });
+
+export default i18n;

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -19,6 +20,7 @@ import { getRole } from '../services/auth';
 import { queryKeys } from '../services/queryKeys';
 
 const LeaveCalendar = () => {
+  const { t } = useTranslation();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isDownloading, setIsDownloading] = useState(false);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
@@ -76,7 +78,7 @@ const LeaveCalendar = () => {
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch {
-      alert('فشل تحميل تقرير الإجازات.');
+      alert(t('leaveCalendar.downloadFailed'));
     } finally {
       setIsDownloading(false);
     }
@@ -91,7 +93,7 @@ const LeaveCalendar = () => {
     });
   };
 
-  const weekDays = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+  const weekDays = t('leaveCalendar.weekDays', { returnObjects: true }) as string[];
 
   return (
     <div className="w-full">
@@ -99,10 +101,10 @@ const LeaveCalendar = () => {
         <div>
           <h1 className="text-3xl font-black text-white tracking-tight arabic-text flex items-center gap-3">
             <CalendarIcon className="text-purple-500" size={32} />
-            تقويم الإجازات والغياب
+            {t('leaveCalendar.title')}
           </h1>
           <p className="text-slate-400 mt-2">
-            {isHighRole ? 'عرض مرئي لجميع الإجازات المعتمدة والمعلقة للقسم' : 'عرض مرئي لجميع طلبات الإجازة الخاصة بي'}
+            {isHighRole ? t('leaveCalendar.subtitle.highRole') : t('leaveCalendar.subtitle.employee')}
           </p>
         </div>
         <div className="flex gap-4 items-center">
@@ -124,7 +126,7 @@ const LeaveCalendar = () => {
               className="bg-purple-600 hover:bg-purple-700 disabled:bg-purple-900 text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-purple-500/20 transition-all text-sm"
             >
               <FileText size={18} />
-              {isDownloading ? '...' : 'PDF'}
+              {isDownloading ? t('leaveCalendar.export.downloading') : t('leaveCalendar.export.pdf')}
             </button>
             <button 
               onClick={() => handleDownloadReport('excel')}
@@ -132,7 +134,7 @@ const LeaveCalendar = () => {
               className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-900 text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition-all text-sm"
             >
               <FileSpreadsheet size={18} />
-              {isDownloading ? '...' : 'Excel'}
+              {isDownloading ? t('leaveCalendar.export.downloading') : t('leaveCalendar.export.excel')}
             </button>
           </div>
         </div>
@@ -189,7 +191,7 @@ const LeaveCalendar = () => {
                   ))}
                   {dayLeaves.length > 3 && (
                     <div className="text-[10px] text-slate-500 text-center font-bold py-1 bg-white/5 rounded-lg">
-                      + {dayLeaves.length - 3} آخرون
+                      {t('leaveCalendar.moreOthers', { count: dayLeaves.length - 3 })}
                     </div>
                   )}
                 </div>
@@ -202,15 +204,15 @@ const LeaveCalendar = () => {
       <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-emerald-500/5 border border-emerald-500/10 p-4 rounded-2xl flex items-center gap-3">
           <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-          <span className="text-emerald-400 text-sm font-bold">إجازة معتمدة (Approved)</span>
+          <span className="text-emerald-400 text-sm font-bold">{t('leaveCalendar.legend.approved')}</span>
         </div>
         <div className="bg-orange-500/5 border border-orange-500/10 p-4 rounded-2xl flex items-center gap-3">
           <div className="w-3 h-3 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]" />
-          <span className="text-orange-400 text-sm font-bold">طلب معلق (Pending Review)</span>
+          <span className="text-orange-400 text-sm font-bold">{t('leaveCalendar.legend.pending')}</span>
         </div>
         <div className="bg-white/5 border border-white/10 p-4 rounded-2xl flex items-center gap-3">
           <Info className="text-slate-500" size={16} />
-          <span className="text-slate-400 text-sm font-medium">العطلات الرسمية تظهر باللون الداكن</span>
+          <span className="text-slate-400 text-sm font-medium">{t('leaveCalendar.legend.holiday')}</span>
         </div>
       </div>
 
@@ -226,9 +228,12 @@ const LeaveCalendar = () => {
               <div className="p-8 border-b border-white/5 flex justify-between items-center bg-white/5">
                 <div>
                   <h3 className="text-2xl font-black text-white arabic-text">
-                    إجازات يوم {selectedDay} {currentDate.toLocaleDateString('ar-EG', { month: 'long' })}
+                    {t('leaveCalendar.dayModal.title', { 
+                      day: selectedDay, 
+                      month: currentDate.toLocaleDateString('ar-EG', { month: 'long' }) 
+                    })}
                   </h3>
-                  <p className="text-slate-400 text-sm mt-1">قائمة الموظفين غير المتواجدين في هذا اليوم</p>
+                  <p className="text-slate-400 text-sm mt-1">{t('leaveCalendar.dayModal.subtitle')}</p>
                 </div>
                 <button 
                   onClick={() => setSelectedDay(null)}
@@ -242,8 +247,8 @@ const LeaveCalendar = () => {
                 {getLeavesForDay(selectedDay).length === 0 ? (
                   <div className="text-center py-10">
                     <CheckCircle2 className="mx-auto text-emerald-500 mb-4 opacity-20" size={60} />
-                    <p className="text-slate-300 font-bold">لا توجد إجازات مسجلة لهذا اليوم</p>
-                    <p className="text-slate-500 text-sm mt-1">الجميع حاضرون!</p>
+                    <p className="text-slate-300 font-bold">{t('leaveCalendar.dayModal.noLeaves')}</p>
+                    <p className="text-slate-500 text-sm mt-1">{t('leaveCalendar.dayModal.allPresent')}</p>
                   </div>
                 ) : (
                   getLeavesForDay(selectedDay).map((l, idx) => (
@@ -262,7 +267,7 @@ const LeaveCalendar = () => {
                           l.status === 'APPROVED' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-orange-500/10 text-orange-400'
                         }`}>
                           {l.status === 'APPROVED' ? <CheckCircle2 size={12} /> : <Clock size={12} />}
-                          {l.status === 'APPROVED' ? 'معتمد' : 'قيد المراجعة'}
+                          {l.status === 'APPROVED' ? t('leaveCalendar.status.approved') : t('leaveCalendar.status.pending')}
                         </span>
                         {l.reason && (
                           <div className="flex items-center gap-1.5 text-slate-500 text-[10px] bg-white/5 px-2 py-1 rounded-md">
@@ -281,7 +286,7 @@ const LeaveCalendar = () => {
                   onClick={() => setSelectedDay(null)}
                   className="bg-white text-black px-8 py-3 rounded-xl font-bold hover:scale-105 transition-transform"
                 >
-                  إغلاق
+                  {t('leaveCalendar.dayModal.close')}
                 </button>
               </div>
             </motion.div>

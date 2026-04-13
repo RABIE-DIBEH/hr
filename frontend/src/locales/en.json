@@ -24,7 +24,9 @@
     "currency": "SYP",
     "searchPlaceholder": "Search by name or email...",
     "retry": "Retry",
-    "refresh": "Refresh Data"
+    "refresh": "Refresh Data",
+    "unknown": "?",
+    "currentUser": "Current User"
   },
   "dashboard": {
     "leaveBalance": "Leave Balance",
@@ -720,6 +722,9 @@
       "attendanceGrid": "Central Attendance Grid",
       "newRecruitment": "New Recruitment Request"
     },
+    "feedback": {
+      "selectEmployee": "Please select an employee first."
+    },
     "reports": {
       "title": "Monthly Reports Center",
       "subtitle": "Export attendance, payroll, and recruitment data for {{date}}",
@@ -1129,7 +1134,8 @@
         "deptLoading": "Loading departments...",
         "manualEmpId": "Enter Employee ID",
         "salary": "0.00",
-        "optional": "Optional"
+        "optional": "Optional",
+        "startingNumber": "e.g. 5000"
       },
       "validation": {
         "nameMin": "Triple name must be entered (at least three parts)",
@@ -1259,5 +1265,172 @@
     "prev": "Prev",
     "next": "Next",
     "pageInfo": "Page {{current}} of {{total}}"
+  },
+  "adminDashboard": {
+    "title": "Technical Control Panel (Admin)",
+    "subtitle": "Monitor server performance, security, and backups",
+    "apiDocs": "API Docs (Swagger)",
+    "backupNow": "Backup Now",
+    "systemHealth": "Live System Health",
+    "cpuUsage": "CPU Usage",
+    "storage": "Storage",
+    "uptime": "Uptime",
+    "viewRawLogs": "View Raw Logs",
+    "manageDevices": "Manage Devices",
+    "nfcReaders": "NFC Readers",
+    "manageAllDevices": "Manage All Devices ←",
+    "auditLogs": "Security Logs (Audit Logs)",
+    "clearLogs": "Clear Logs",
+    "logDetails": "Log Details",
+    "actionEvent": "Action Event",
+    "originUser": "Origin User",
+    "timestamp": "Timestamp",
+    "details": "Details",
+    "now": "Now",
+    "confirmClearLogs": "Are you sure you want to clear all previous logs?",
+    "logsCleared": "All previous logs cleared.",
+    "backupSuccess": "Backup executed successfully",
+    "deptName": "Payroll Management Department"
+  },
+  "deviceManagement": {
+    "title": "NFC Device Management",
+    "subtitle": "Monitor and manage connected NFC reader devices",
+    "addDevice": "Add Device",
+    "searchPlaceholder": "Search by device name or ID...",
+    "totalDevices": "Total Devices",
+    "online": "Online",
+    "offline": "Offline",
+    "table": {
+      "status": "Status",
+      "deviceName": "Device Name",
+      "deviceId": "Device ID",
+      "load": "Load",
+      "actions": "Actions"
+    },
+    "toggle": {
+      "stop": "Stop",
+      "start": "Start"
+    },
+    "delete": {
+      "confirm": "Are you sure you want to delete device \"{{name}}\"?",
+      "success": "Device deleted successfully"
+    },
+    "add": {
+      "title": "Add New NFC Device",
+      "name": "Device Name",
+      "uid": "Unique ID (UID)",
+      "placeholderName": "Example: Floor 2 Gate C",
+      "placeholderUid": "NFC_XXXX-NEW",
+      "adding": "Adding...",
+      "success": "Device added successfully"
+    },
+    "update": {
+      "success": "Status updated successfully"
+    }
+  },
+  "nfc": {
+    "clock": {
+      "title": "Smart Attendance System",
+      "branch": "Main Headquarters Branch",
+      "connected": "Connected",
+      "defaultMessage": "Tap NFC card near the reader",
+      "verifying": "Verifying identity...",
+      "registeredSuccessfully": "Registration successful",
+      "serverError": "Server connection error",
+      "reading": "Reading...",
+      "simulateButton": "Simulate Card Swipe (TEST-NFC-UID-0001)",
+      "assignCardButton": "Assign NFC Card to Employee",
+      "deviceId": "Device ID: NFC-TERMINAL-01"
+    },
+    "assignModal": {
+      "title": "Assign NFC Card",
+      "searchEmployee": "Search Employee",
+      "searchPlaceholder": "Type name or email...",
+      "cardUidLabel": "Card ID (UID)",
+      "cardUidPlaceholder": "e.g. 04:23:1A:FF",
+      "assignButton": "Assign Card",
+      "assigning": "Assigning...",
+      "assignSuccess": "Card linked to {{name}}",
+      "done": "Done",
+      "retry": "Retry"
+    }
+  },
+  "leaveCalendar": {
+    "title": "Leave and Absence Calendar",
+    "subtitle": {
+      "highRole": "Visual view of all approved and pending leaves for the department",
+      "employee": "Visual view of all my leave requests"
+    },
+    "weekDays": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+    "legend": {
+      "approved": "Approved Leave (Approved)",
+      "pending": "Pending Request (Pending Review)",
+      "holiday": "Official holidays shown in dark color"
+    },
+    "moreOthers": "+ {{count}} others",
+    "dayModal": {
+      "title": "Leaves on {{day}} {{month}}",
+      "subtitle": "List of employees not present on this day",
+      "noLeaves": "No leaves registered for this day",
+      "allPresent": "Everyone is present!",
+      "close": "Close"
+    },
+    "export": {
+      "pdf": "PDF",
+      "excel": "Excel",
+      "downloading": "..."
+    },
+    "status": {
+      "approved": "Approved",
+      "pending": "Under Review"
+    },
+    "downloadFailed": "Failed to download leave report."
+  },
+  "home": {
+    "login": "Login",
+    "hrmsPro": "HRMS PRO",
+    "tagline": "Integrated HR Management System",
+    "heroTitle": "Smart & Advanced",
+    "heroTitleAccent": "HR Management",
+    "heroSubtitle": "A comprehensive platform for managing employees, attendance, leaves, and payroll with modern design and exceptional performance",
+    "startNow": "Start Now",
+    "mobileApp": "Mobile App",
+    "stats": {
+      "accuracy": "Attendance Accuracy",
+      "processing": "Processing Time",
+      "transparency": "Transparency",
+      "availability": "Always Available"
+    },
+    "features": {
+      "title": "Integrated Features",
+      "subtitle": "Everything you need to manage your HR in one place",
+      "nfc": { "title": "NFC Attendance", "desc": "Advanced NFC system for highly accurate attendance tracking" },
+      "employees": { "title": "Employee Management", "desc": "Comprehensive dashboard to manage employee data and teams" },
+      "leaves": { "title": "Leave Tracking", "desc": "Electronic leave request system with instant approval" },
+      "payroll": { "title": "Payroll & Wages", "desc": "Automated payroll calculation based on attendance hours" },
+      "analytics": { "title": "Analytical Reports", "desc": "Statistics and charts to track performance" },
+      "security": { "title": "High Security", "desc": "Advanced encryption and protection for sensitive data" }
+    },
+    "roles": {
+      "title": "Custom Roles",
+      "subtitle": "Tailor-made interfaces for every role in the organization",
+      "employee": { "title": "Employee", "desc": "Track your attendance, request leaves, and view your salary" },
+      "manager": { "title": "Manager", "desc": "Manage your team, approve leaves, and monitor attendance" },
+      "hr": { "title": "HR", "desc": "Comprehensive management of employees, payroll, and policies" },
+      "admin": { "title": "System Admin", "desc": "Full control over the system, permissions, and settings" }
+    },
+    "cta": {
+      "ready": "Ready to Start",
+      "title": "Start Transforming Your HR Management Today",
+      "subtitle": "Join organizations that trust HRMS PRO to manage their teams efficiently",
+      "button": "Login Now"
+    },
+    "footer": {
+      "description": "Human Resources Management System",
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Use",
+      "security": "Security",
+      "rights": "© 2026 HRMS PRO. All rights reserved"
+    }
   }
 }

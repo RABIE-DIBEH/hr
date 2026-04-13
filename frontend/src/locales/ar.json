@@ -23,7 +23,9 @@
     "noData": "لا توجد بيانات",
     "currency": "ل.س",
     "retry": "إعادة المحاولة",
-    "refresh": "تحديث البيانات"
+    "refresh": "تحديث البيانات",
+    "unknown": "؟",
+    "currentUser": "المستخدم الحالي"
   },
   "dashboard": {
     "leaveBalance": "رصيد الإجازات",
@@ -676,6 +678,9 @@
       "attendanceGrid": "الشبكة المركزية للحضور",
       "newRecruitment": "طلب توظيف جديد"
     },
+    "feedback": {
+      "selectEmployee": "اختر موظفاً أولاً."
+    },
     "reports": {
       "title": "مركز التقارير الشهرية",
       "subtitle": "تصدير بيانات الحضور، الرواتب، والتوظيف لـ {{date}}",
@@ -1011,7 +1016,8 @@
         "deptLoading": "جاري تحميل الأقسام...",
         "manualEmpId": "أدخل رقم الموظف",
         "salary": "0.00",
-        "optional": "اختياري"
+        "optional": "اختياري",
+        "startingNumber": "مثال: 5000"
       },
       "validation": {
         "nameMin": "يجب إدخال الاسم الثلاثي (ثلاثة أجزاء على الأقل)",
@@ -1141,5 +1147,181 @@
     "prev": "السابق",
     "next": "التالي",
     "pageInfo": "صفحة {{current}} من {{total}}"
+  },
+  "adminDashboard": {
+    "title": "لوحة التحكم الفنية (Admin)",
+    "subtitle": "مراقبة أداء الخوادم والأمان والنسخ الاحتياطي",
+    "apiDocs": "وثائق API (Swagger)",
+    "backupNow": "النسخ الاحتياطي الآن",
+    "systemHealth": "حالة النظام المباشرة",
+    "cpuUsage": "استخدام المعالج",
+    "storage": "التخزين",
+    "uptime": "مدة التشغيل",
+    "viewRawLogs": "عرض السجلات الخام",
+    "manageDevices": "إدارة الأجهزة",
+    "nfcReaders": "أجهزة القراءة NFC",
+    "manageAllDevices": "إدارة جميع الأجهزة ←",
+    "auditLogs": "سجلات الأمان (Audit Logs)",
+    "clearLogs": "مسح السجلات",
+    "logDetails": "تفاصيل السجل",
+    "actionEvent": "الحدث",
+    "originUser": "المستخدم",
+    "timestamp": "التوقيت",
+    "details": "التفاصيل",
+    "now": "الآن",
+    "confirmClearLogs": "هل أنت متأكد من رغبتك بمسح السجلات السابقة كلياً؟",
+    "logsCleared": "تم مسح جميع السجلات السابقة.",
+    "logsCleared": "تم مسح جميع السجلات السابقة.",
+    "backupSuccess": "تم تنفيذ النسخ الاحتياطي بنجاح",
+    "deptName": "قسم إدارة الرواتب"
+  },
+  "deviceManagement": {
+    "title": "إدارة أجهزة NFC",
+    "subtitle": "مراقبة وإدارة أجهزة القراءة NFC المتصلة",
+    "addDevice": "إضافة جهاز",
+    "searchPlaceholder": "بحث باسم الجهاز أو المعرف...",
+    "totalDevices": "إجمالي الأجهزة",
+    "online": "متصل (Online)",
+    "offline": "غير متصل (Offline)",
+    "table": {
+      "status": "الحالة",
+      "deviceName": "اسم الجهاز",
+      "deviceId": "المعرف (ID)",
+      "load": "الحمل",
+      "actions": "إجراءات"
+    },
+    "toggle": {
+      "stop": "إيقاف",
+      "start": "تشغيل"
+    },
+    "delete": {
+      "confirm": "هل أنت متأكد من حذف الجهاز \"{{name}}\"؟",
+      "success": "تم حذف الجهاز بنجاح"
+    },
+    "add": {
+      "title": "إضافة جهاز NFC جديد",
+      "name": "اسم الجهاز",
+      "uid": "المعرف الفريد (UID)",
+      "placeholderName": "مثال: Floor 2 Gate C",
+      "placeholderUid": "NFC_XXXX-NEW",
+      "adding": "جارِ الإضافة...",
+      "success": "تم إضافة الجهاز بنجاح"
+    },
+    "update": {
+      "success": "تم تحديث الحالة بنجاح"
+    }
+  },
+  "nfc": {
+    "clock": {
+      "title": "نظام الحضور الذكي",
+      "branch": "فرع المركز الرئيسي",
+      "connected": "متصل",
+      "defaultMessage": "اقرب بطاقة NFC من القارئ",
+      "verifying": "جاري التحقق من الهوية...",
+      "registeredSuccessfully": "تم التسجيل بنجاح",
+      "serverError": "خطأ في الاتصال بالخادم",
+      "reading": "جاري القراءة...",
+      "simulateButton": "محاكاة تمرير البطاقة (TEST-NFC-UID-0001)",
+      "assignCardButton": "ربط بطاقة NFC بموظف",
+      "deviceId": "معرّف الجهاز: NFC-TERMINAL-01"
+    },
+    "assignModal": {
+      "title": "ربط بطاقة NFC",
+      "searchEmployee": "البحث عن موظف",
+      "searchPlaceholder": "اكتب الاسم أو البريد...",
+      "cardUidLabel": "معرف البطاقة (UID)",
+      "cardUidPlaceholder": "مثال: 04:23:1A:FF",
+      "assignButton": "ربط البطاقة",
+      "assigning": "جارِ الربط...",
+      "assignSuccess": "تم ربط البطاقة بـ {{name}}",
+      "done": "تم",
+      "retry": "إعادة المحاولة"
+    }
+  },
+  "leaveBalanceReport": {
+    "exportButton": "تصدير تقرير",
+    "allDepartments": "كل الأقسام",
+    "legend": {
+      "normal": "رصيد طبيعي (أكبر من 5 أيام)",
+      "critical": "رصيد حرج (أقل من 5 أيام)"
+    }
+  },
+  "leaveCalendar": {
+    "title": "تقويم الإجازات والغياب",
+    "subtitle": {
+      "highRole": "عرض مرئي لجميع الإجازات المعتمدة والمعلقة للقسم",
+      "employee": "عرض مرئي لجميع طلبات الإجازة الخاصة بي"
+    },
+    "weekDays": ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"],
+    "legend": {
+      "approved": "إجازة معتمدة (Approved)",
+      "pending": "طلب معلق (Pending Review)",
+      "holiday": "العطلات الرسمية تظهر باللون الداكن"
+    },
+    "moreOthers": "+ {{count}} آخرون",
+    "dayModal": {
+      "title": "إجازات يوم {{day}} {{month}}",
+      "subtitle": "قائمة الموظفين غير المتواجدين في هذا اليوم",
+      "noLeaves": "لا توجد إجازات مسجلة لهذا اليوم",
+      "allPresent": "الجميع حاضرون!",
+      "close": "إغلاق"
+    },
+    "export": {
+      "pdf": "PDF",
+      "excel": "Excel",
+      "downloading": "..."
+    },
+    "status": {
+      "approved": "معتمد",
+      "pending": "قيد المراجعة"
+    },
+    "downloadFailed": "فشل تحميل تقرير الإجازات."
+  },
+  "home": {
+    "login": "تسجيل الدخول",
+    "hrmsPro": "HRMS PRO",
+    "tagline": "نظام إدارة الموارد البشرية المتكامل",
+    "heroTitle": "إدارة موارد بشرية",
+    "heroTitleAccent": "ذكية ومتطورة",
+    "heroSubtitle": "منصة شاملة لإدارة الموظفين، الحضور، الإجازات، والرواتب بتصميم عصري وأداء استثنائي",
+    "startNow": "ابدأ الآن",
+    "mobileApp": "تطبيق الجوال",
+    "stats": {
+      "accuracy": "دقة الحضور",
+      "processing": "وقت المعالجة",
+      "transparency": "الشفافية",
+      "availability": "متاح دائماً"
+    },
+    "features": {
+      "title": "مميزات متكاملة",
+      "subtitle": "كل ما تحتاجه لإدارة مواردك البشرية في مكان واحد",
+      "nfc": { "title": "تسجيل الحضور بالبصمة", "desc": "نظام NFC متطور لتسجيل الحضور والانصراف بدقة عالية" },
+      "employees": { "title": "إدارة الموظفين", "desc": "لوحة تحكم شاملة لإدارة بيانات الموظفين والفرق" },
+      "leaves": { "title": "متابعة الإجازات", "desc": "نظام طلبات إجازات إلكتروني مع موافقة فورية" },
+      "payroll": { "title": "الرواتب والأجور", "desc": "حساب آلي للرواتب بناءً على ساعات الحضور" },
+      "analytics": { "title": "تقارير تحليلية", "desc": "إحصائيات ورسوم بيانية لتتبع الأداء" },
+      "security": { "title": "أمان عالي", "desc": "تشفير متقدم وحماية للبيانات الحساسة" }
+    },
+    "roles": {
+      "title": "أدوار مخصصة",
+      "subtitle": "واجهات مصممة خصيصاً لكل دور في المؤسسة",
+      "employee": { "title": "موظف", "desc": "متابعة حضورك، طلب إجازات، وعرض راتبك" },
+      "manager": { "title": "مدير", "desc": "إدارة فريقك، الموافقة على الإجازات، ومتابعة الحضور" },
+      "hr": { "title": "موارد بشرية", "desc": "إدارة شاملة للموظفين، الرواتب، والسياسات" },
+      "admin": { "title": "مدير نظام", "desc": "تحكم كامل في النظام والصلاحيات والإعدادات" }
+    },
+    "cta": {
+      "ready": "جاهز للبدء",
+      "title": "ابدأ تحويل إدارة مواردك البشرية اليوم",
+      "subtitle": "انضم إلى المؤسسات التي تثق في HRMS PRO لإدارة فرقها بكفاءة",
+      "button": "سجل الدخول الآن"
+    },
+    "footer": {
+      "description": "نظام إدارة الموارد البشرية",
+      "privacy": "سياسة الخصوصية",
+      "terms": "شروط الاستخدام",
+      "security": "الأمان",
+      "rights": "© 2026 HRMS PRO. جميع الحقوق محفوظة"
+    }
   }
 }

@@ -49,7 +49,7 @@ import { queryKeys } from '../services/queryKeys';
 import { extractApiError } from '../utils/errorHandler';
 
 const PayrollDashboard = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'advances' | 'recruitment' | 'history' | 'calculate'>('advances');
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -508,7 +508,7 @@ const PayrollDashboard = () => {
         </div>
         <div className="flex items-center gap-3 bg-purple-500/10 px-6 py-3 rounded-2xl border border-purple-500/20">
           <DollarSign size={24} className="text-purple-400" />
-          <span className="text-purple-100 font-black text-lg">Payroll Management Department</span>
+          <span className="text-purple-100 font-black text-lg">{t('adminDashboard.deptName')}</span>
         </div>
       </header>
 
@@ -559,7 +559,7 @@ const PayrollDashboard = () => {
                     <ChevronRight size={20} />
                   </button>
                   <span className="text-white font-bold min-w-[100px] text-center">
-                    {currentDate.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' })}
+                    {currentDate.toLocaleDateString(i18n.language === 'ar' ? 'ar-EG' : 'en-US', { month: 'long', year: 'numeric' })}
                   </span>
                   <button 
                     onClick={handleNextMonth} 
@@ -678,7 +678,7 @@ const PayrollDashboard = () => {
 	                            <div className="flex justify-between items-start">
 	                              <div className="flex gap-4">
 	                                <div className="w-14 h-14 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-400 font-black text-xl">
-	                                  {advance.employeeName?.[0] || '؟'}
+	                                  {advance.employeeName?.[0] || t('common.unknown')}
 	                                </div>
 	                                <div>
 	                                  <h4 className="text-xl font-bold text-white">{advance.employeeName}</h4>
@@ -789,7 +789,7 @@ const PayrollDashboard = () => {
 		                            <div key={adv.advanceId} className="p-8 hover:bg-white/[0.02] transition-all flex flex-col md:flex-row md:items-center justify-between gap-6">
 		                              <div className="flex items-start gap-4">
 		                                <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-300 font-black text-xl">
-		                                  {adv.employeeName?.[0] || '؟'}
+		                                  {adv.employeeName?.[0] || t('common.unknown')}
 		                                </div>
 	                                <div>
 	                                  <p className="text-white font-black text-lg">{adv.employeeName}</p>

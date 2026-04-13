@@ -14,7 +14,7 @@ import { queryKeys } from '../services/queryKeys';
 import { getRole } from '../services/auth';
 
 const LeaveBalanceReport = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const userRole = getRole() || '';
   const isHighRole = ['HR', 'ADMIN', 'SUPER_ADMIN'].includes(userRole);
@@ -49,7 +49,7 @@ const LeaveBalanceReport = () => {
   const departments = Array.from(new Set(employees.map(e => e.departmentName).filter(Boolean)));
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white" dir="rtl">
+    <div className="min-h-screen bg-zinc-950 text-white" dir={i18n.dir()}>
       {/* Header */}
       <div className="bg-gradient-to-l from-indigo-900 via-zinc-900 to-zinc-950 border-b border-white/5">
         <div className="max-w-7xl mx-auto px-6 py-8">
@@ -71,7 +71,7 @@ const LeaveBalanceReport = () => {
             </div>
             <button className="flex items-center gap-2 px-5 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl font-bold transition-colors">
               <Download size={18} />
-              تصدير تقرير
+              {t('leaveBalanceReport.exportButton')}
             </button>
           </div>
         </div>
@@ -97,7 +97,7 @@ const LeaveBalanceReport = () => {
               onChange={(e) => setDeptFilter(e.target.value)}
               className="px-4 py-3 bg-zinc-900 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-purple-500"
             >
-              <option value="ALL">كل الأقسام</option>
+              <option value="ALL">{t('leaveBalanceReport.allDepartments')}</option>
               {departments.map(dept => (
                 <option key={dept} value={dept}>{dept}</option>
               ))}
@@ -164,11 +164,11 @@ const LeaveBalanceReport = () => {
         <div className="mt-8 flex gap-6 text-xs text-slate-500 font-medium bg-white/5 w-fit px-6 py-3 rounded-full border border-white/5">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-400" />
-            رصيد طبيعي (أكبر من 5 أيام)
+            {t('leaveBalanceReport.legend.normal')}
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-red-400" />
-            رصيد حرج (أقل من 5 أيام)
+            {t('leaveBalanceReport.legend.critical')}
           </div>
         </div>
       </div>

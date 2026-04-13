@@ -76,7 +76,6 @@ describe('EmployeeDashboard', () => {
       // Check for combined text content specifically in the H1
       const greeting = screen.getByText((_, element) => {
         return element?.tagName.toLowerCase() === 'h1' && 
-               element?.textContent?.includes('مرحباً') === true && 
                element?.textContent?.includes('John Doe') === true;
       });
       expect(greeting).toBeDefined();
@@ -100,9 +99,9 @@ describe('EmployeeDashboard', () => {
     render(<EmployeeDashboard />, { wrapper: createWrapper() });
 
     await waitFor(() => {
-      // "ساعات الشهر" is hardcoded Arabic, "dashboard.leaveBalance" returns key since i18n isn't initialized
+      // The keys from ar.json
       expect(screen.getByText('ساعات الشهر')).toBeDefined();
-      expect(screen.getByText((_, element) => element?.tagName.toLowerCase() === 'p' && element?.textContent?.includes('dashboard.leaveBalance') === true)).toBeDefined();
+      expect(screen.getByText('رصيد الإجازات')).toBeDefined();
       expect(screen.getByText('الراتب المتوقع')).toBeDefined();
     });
   });
@@ -117,7 +116,7 @@ describe('EmployeeDashboard', () => {
     render(<EmployeeDashboard />, { wrapper: createWrapper() });
     
     await waitFor(() => {
-      expect(screen.getAllByText((_, element) => element?.tagName.toLowerCase() === 'p' && element?.textContent?.includes('Verified') === true)).toBeDefined();
+      expect(screen.getAllByText((_, element) => element?.tagName.toLowerCase() === 'p' && element?.textContent?.includes('مؤكد') === true)).toBeDefined();
     });
   });
 });

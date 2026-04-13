@@ -159,7 +159,7 @@ const HRDashboard = () => {
 
   const handleStatusUpdate = async (status: 'ACTIVE' | 'INACTIVE' | 'BLOCKED') => {
     if (selectedEmployeeId === '') {
-      setCardFeedback('اختر موظفاً أولاً.');
+      setCardFeedback(t('hrDashboard.feedback.selectEmployee'));
       return;
     }
 
@@ -179,7 +179,7 @@ const HRDashboard = () => {
 
   const handleUnassign = async () => {
     if (selectedEmployeeId === '') {
-      setCardFeedback('اختر موظفاً أولاً.');
+      setCardFeedback(t('hrDashboard.feedback.selectEmployee'));
       return;
     }
 

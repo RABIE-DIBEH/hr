@@ -94,9 +94,9 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
 
     // Email validation
     if (!formData.email.trim()) {
-      newErrors.email = 'البريد الإلكتروني مطلوب';
+      newErrors.email = t('forms.recruitment.validation.emailRequired');
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
-      newErrors.email = 'صيغة البريد الإلكتروني غير صحيحة';
+      newErrors.email = t('forms.recruitment.validation.emailInvalid');
     }
 
     // National ID validation
@@ -274,7 +274,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
             onClick={onClose}
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
-            إغلاق
+            {t('common.close')}
           </button>
         </div>
       </motion.div>
@@ -424,10 +424,10 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                   }`}
                 >
                   <option value="">{t('common.select') || 'Select'}</option>
-                  <option value="أعزب">{t('forms.recruitment.options.single')}</option>
-                  <option value="متزوج">{t('forms.recruitment.options.married')}</option>
-                  <option value="مطلق">{t('forms.recruitment.options.divorced')}</option>
-                  <option value="أرمل">{t('forms.recruitment.options.widowed')}</option>
+                  <option value="single">{t('forms.recruitment.options.single')}</option>
+                  <option value="married">{t('forms.recruitment.options.married')}</option>
+                  <option value="divorced">{t('forms.recruitment.options.divorced')}</option>
+                  <option value="widowed">{t('forms.recruitment.options.widowed')}</option>
                 </select>
                 {errors.maritalStatus && (
                   <p className="text-red-500 text-xs mt-1">{errors.maritalStatus}</p>
@@ -471,10 +471,10 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                   }`}
                 >
                   <option value="">{t('common.select') || 'Select'}</option>
-                  <option value="أدى الخدمة">{t('forms.recruitment.options.served')}</option>
-                  <option value="معفي">{t('forms.recruitment.options.exempt')}</option>
-                  <option value="مستثنى">{t('forms.recruitment.options.excluded')}</option>
-                  <option value="لم يؤدها بعد">{t('forms.recruitment.options.notServed')}</option>
+                  <option value="served">{t('forms.recruitment.options.served')}</option>
+                  <option value="exempt">{t('forms.recruitment.options.exempt')}</option>
+                  <option value="excluded">{t('forms.recruitment.options.excluded')}</option>
+                  <option value="notServed">{t('forms.recruitment.options.notServed')}</option>
                 </select>
                 {errors.militaryServiceStatus && (
                   <p className="text-red-500 text-xs mt-1">{errors.militaryServiceStatus}</p>
@@ -643,7 +643,7 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                       type="number"
                       value={manualEmployeeId}
                       onChange={(e) => setManualEmployeeId(e.target.value)}
-                      placeholder="مثال: 5000"
+                      placeholder={t('forms.recruitment.placeholders.startingNumber')}
                       min="1"
                       className={`w-full px-4 py-2 border rounded-lg bg-white text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                         errors.employeeId ? 'border-red-500' : 'border-amber-300'
@@ -754,10 +754,10 @@ const RecruitmentRequestForm = ({ onClose, onSuccess }: RecruitmentRequestFormPr
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
-                  جاري الإرسال...
+                  {t('forms.recruitment.processing')}
                 </span>
               ) : (
-                'إرسال للموافقة'
+                t('forms.recruitment.submit')
               )}
             </button>
           </div>

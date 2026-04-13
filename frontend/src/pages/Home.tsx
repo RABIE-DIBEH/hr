@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   ShieldCheck,
   Users,
@@ -17,77 +18,78 @@ import {
 } from 'lucide-react';
 
 const Home = () => {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
 
   const features = [
     {
       icon: <Fingerprint size={32} />,
-      title: 'تسجيل الحضور بالبصمة',
-      description: 'نظام NFC متطور لتسجيل الحضور والانصراف بدقة عالية'
+      title: t('home.features.nfc.title'),
+      description: t('home.features.nfc.desc')
     },
     {
       icon: <Users size={32} />,
-      title: 'إدارة الموظفين',
-      description: 'لوحة تحكم شاملة لإدارة بيانات الموظفين والفرق'
+      title: t('home.features.employees.title'),
+      description: t('home.features.employees.desc')
     },
     {
       icon: <Clock size={32} />,
-      title: 'متابعة الإجازات',
-      description: 'نظام طلبات إجازات إلكتروني مع موافقة فورية'
+      title: t('home.features.leaves.title'),
+      description: t('home.features.leaves.desc')
     },
     {
       icon: <CreditCard size={32} />,
-      title: 'الرواتب والأجور',
-      description: 'حساب آلي للرواتب بناءً على ساعات الحضور'
+      title: t('home.features.payroll.title'),
+      description: t('home.features.payroll.desc')
     },
     {
       icon: <BarChart3 size={32} />,
-      title: 'تقارير تحليلية',
-      description: 'إحصائيات ورسوم بيانية لتتبع الأداء'
+      title: t('home.features.analytics.title'),
+      description: t('home.features.analytics.desc')
     },
     {
       icon: <Lock size={32} />,
-      title: 'أمان عالي',
-      description: 'تشفير متقدم وحماية للبيانات الحساسة'
+      title: t('home.features.security.title'),
+      description: t('home.features.security.desc')
     }
   ];
 
   const roles = [
     {
-      title: 'موظف',
-      description: 'متابعة حضورك، طلب إجازات، وعرض راتبك',
+      title: t('home.roles.employee.title'),
+      description: t('home.roles.employee.desc'),
       color: 'from-emerald-500/20 to-teal-500/20',
       borderColor: 'border-emerald-500/30'
     },
     {
-      title: 'مدير',
-      description: 'إدارة فريقك، الموافقة على الإجازات، ومتابعة الحضور',
+      title: t('home.roles.manager.title'),
+      description: t('home.roles.manager.desc'),
       color: 'from-blue-500/20 to-indigo-500/20',
       borderColor: 'border-blue-500/30'
     },
     {
-      title: 'موارد بشرية',
-      description: 'إدارة شاملة للموظفين، الرواتب، والسياسات',
+      title: t('home.roles.hr.title'),
+      description: t('home.roles.hr.desc'),
       color: 'from-purple-500/20 to-pink-500/20',
       borderColor: 'border-purple-500/30'
     },
     {
-      title: 'مدير نظام',
-      description: 'تحكم كامل في النظام والصلاحيات والإعدادات',
+      title: t('home.roles.admin.title'),
+      description: t('home.roles.admin.desc'),
       color: 'from-amber-500/20 to-orange-500/20',
       borderColor: 'border-amber-500/30'
     }
   ];
 
   const stats = [
-    { value: '+99%', label: 'دقة الحضور' },
-    { value: '-80%', label: 'وقت المعالجة' },
-    { value: '+100%', label: 'الشفافية' },
-    { value: '24/7', label: 'متاح دائماً' }
+    { value: '+99%', label: t('home.stats.accuracy') },
+    { value: '-80%', label: t('home.stats.processing') },
+    { value: '+100%', label: t('home.stats.transparency') },
+    { value: '24/7', label: t('home.stats.availability') }
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white overflow-hidden" dir={i18n.dir()}>
       {/* Background Effects */}
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-emerald-500/10 rounded-full blur-[150px] -mr-48 -mt-48" />
       <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-[150px] -ml-48 -mb-48" />
@@ -105,7 +107,7 @@ const Home = () => {
               <Building2 size={22} className="text-white" />
             </div>
             <span className="text-xl font-bold bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
-              HRMS PRO
+              {t('home.hrmsPro')}
             </span>
           </motion.div>
 
@@ -115,8 +117,8 @@ const Home = () => {
             onClick={() => navigate('/login')}
             className="flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl transition-all font-medium text-sm"
           >
-            <span>تسجيل الدخول</span>
-            <ArrowLeft size={16} />
+            <span>{t('home.login')}</span>
+            <ArrowLeft className={i18n.language === 'ar' ? '' : 'rotate-180'} size={16} />
           </motion.button>
         </div>
       </nav>
@@ -132,22 +134,22 @@ const Home = () => {
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full mb-6">
             <ShieldCheck size={16} className="text-emerald-400" />
             <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">
-              نظام إدارة الموارد البشرية المتكامل
+              {t('home.tagline')}
             </span>
           </div>
 
           <h1 className="text-5xl lg:text-7xl font-black mb-6 leading-tight">
             <span className="bg-gradient-to-r from-white via-white/90 to-white/60 bg-clip-text text-transparent">
-              إدارة موارد بشرية
+              {t('home.heroTitle')}
             </span>
             <br />
             <span className="bg-gradient-to-r from-emerald-400 via-teal-400 to-blue-400 bg-clip-text text-transparent">
-              ذكية ومتطورة
+              {t('home.heroTitleAccent')}
             </span>
           </h1>
 
           <p className="text-xl text-white/50 max-w-3xl mx-auto mb-10 leading-relaxed">
-            منصة شاملة لإدارة الموظفين، الحضور، الإجازات، والرواتب بتصميم عصري وأداء استثنائي
+            {t('home.heroSubtitle')}
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -155,12 +157,12 @@ const Home = () => {
               onClick={() => navigate('/login')}
               className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white rounded-2xl font-bold shadow-[0_10px_40px_rgba(16,185,129,0.3)] hover:shadow-[0_15px_50px_rgba(16,185,129,0.4)] transition-all active:scale-[0.98] flex items-center justify-center gap-3"
             >
-              <span>ابدأ الآن</span>
-              <ArrowLeft size={20} strokeWidth={3} />
+              <span>{t('home.startNow')}</span>
+              <ArrowLeft className={i18n.language === 'ar' ? '' : 'rotate-180'} size={20} strokeWidth={3} />
             </button>
             <button className="w-full sm:w-auto px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl font-bold transition-all flex items-center justify-center gap-2">
               <Smartphone size={20} />
-              <span>تطبيق الجوال</span>
+              <span>{t('home.mobileApp')}</span>
             </button>
           </div>
         </motion.div>
@@ -197,11 +199,11 @@ const Home = () => {
         >
           <h2 className="text-4xl lg:text-5xl font-black mb-4">
             <span className="bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
-              مميزات متكاملة
+              {t('home.features.title')}
             </span>
           </h2>
           <p className="text-lg text-white/40 max-w-2xl mx-auto">
-            كل ما تحتاجه لإدارة مواردك البشرية في مكان واحد
+            {t('home.features.subtitle')}
           </p>
         </motion.div>
 
@@ -236,11 +238,11 @@ const Home = () => {
         >
           <h2 className="text-4xl lg:text-5xl font-black mb-4">
             <span className="bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
-              أدوار مخصصة
+              {t('home.roles.title')}
             </span>
           </h2>
           <p className="text-lg text-white/40 max-w-2xl mx-auto">
-            واجهات مصممة خصيصاً لكل دور في المؤسسة
+            {t('home.roles.subtitle')}
           </p>
         </motion.div>
 
@@ -277,25 +279,25 @@ const Home = () => {
             <div className="relative z-10 text-center">
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/20 rounded-full mb-6">
                 <CheckCircle2 size={16} className="text-emerald-400" />
-                <span className="text-xs font-bold text-emerald-400">جاهز للبدء</span>
+                <span className="text-xs font-bold text-emerald-400">{t('home.cta.ready')}</span>
               </div>
 
               <h2 className="text-4xl lg:text-5xl font-black mb-6">
                 <span className="bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
-                  ابدأ تحويل إدارة مواردك البشرية اليوم
+                  {t('home.cta.title')}
                 </span>
               </h2>
 
               <p className="text-lg text-white/40 max-w-2xl mx-auto mb-10">
-                انضم إلى المؤسسات التي تثق في HRMS PRO لإدارة فرقها بكفاءة
+                {t('home.cta.subtitle')}
               </p>
 
               <button
                 onClick={() => navigate('/login')}
                 className="px-10 py-5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white rounded-2xl font-bold shadow-[0_10px_40px_rgba(16,185,129,0.3)] hover:shadow-[0_15px_50px_rgba(16,185,129,0.4)] transition-all active:scale-[0.98] inline-flex items-center gap-3"
               >
-                <span>سجل الدخول الآن</span>
-                <ArrowLeft size={20} strokeWidth={3} />
+                <span>{t('home.cta.button')}</span>
+                <ArrowLeft className={i18n.language === 'ar' ? '' : 'rotate-180'} size={20} strokeWidth={3} />
               </button>
             </div>
           </div>
@@ -311,28 +313,28 @@ const Home = () => {
                 <Building2 size={22} className="text-white" />
               </div>
               <div>
-                <div className="font-bold">HRMS PRO</div>
-                <div className="text-xs text-white/40">نظام إدارة الموارد البشرية</div>
+                <div className="font-bold">{t('home.hrmsPro')}</div>
+                <div className="text-xs text-white/40">{t('home.footer.description')}</div>
               </div>
             </div>
 
             <div className="flex items-center gap-8 text-sm text-white/40">
               <div className="flex items-center gap-2">
                 <FileText size={16} />
-                <span>سياسة الخصوصية</span>
+                <span>{t('home.footer.privacy')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <TrendingUp size={16} />
-                <span>شروط الاستخدام</span>
+                <span>{t('home.footer.terms')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Lock size={16} />
-                <span>الأمان</span>
+                <span>{t('home.footer.security')}</span>
               </div>
             </div>
 
             <div className="text-sm text-white/30 font-medium">
-              © 2026 HRMS PRO. جميع الحقوق محفوظة
+              {t('home.footer.rights')}
             </div>
           </div>
         </div>

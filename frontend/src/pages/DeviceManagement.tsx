@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -23,6 +24,7 @@ import PaginationControls from '../components/PaginationControls';
 import { extractApiError } from '../utils/errorHandler';
 
 const DeviceManagement = () => {
+  const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
@@ -54,7 +56,7 @@ const DeviceManagement = () => {
         systemLoad: '0%',
       }),
     onSuccess: () => {
-      setSuccessMessage('تم إضافة الجهاز بنجاح');
+      setSuccessMessage(t('deviceManagement.add.success'));
       setShowAddModal(false);
       setAddForm({ name: '', deviceId: '' });
       queryClient.invalidateQueries({ queryKey: queryKeys.admin.devicesRoot });
@@ -65,7 +67,7 @@ const DeviceManagement = () => {
     mutationFn: ({ deviceId: _deviceId, status }: { deviceId: string; status: string }) =>
       updateNfcDeviceStatus(_deviceId, status),
     onSuccess: () => {
-      setSuccessMessage('تم تحديث الحالة بنجاح');
+      setSuccessMessage(t('deviceManagement.update.success'));
       queryClient.invalidateQueries({ queryKey: queryKeys.admin.devicesRoot });
     },
   });
@@ -73,7 +75,7 @@ const DeviceManagement = () => {
   const deleteMutation = useMutation({
     mutationFn: (deviceId: string) => deleteNfcDevice(deviceId),
     onSuccess: () => {
-      setSuccessMessage('تم حذف الجهاز بنجاح');
+      setSuccessMessage(t('deviceManagement.delete.success'));
       queryClient.invalidateQueries({ queryKey: queryKeys.admin.devicesRoot });
     },
   });
@@ -105,7 +107,7 @@ const DeviceManagement = () => {
   };
 
   const handleDeleteDevice = async (device: NfcDevice) => {
-    if (!window.confirm(`هل أنت متأكد من حذف الجهاز "${device.name}"؟`)) return;
+    if (!window.confirm(t('deviceManagement.delete.confirm', { name: device.name }))) return;
     deleteMutation.mutate(device.deviceId);
   };
 
@@ -117,7 +119,7 @@ const DeviceManagement = () => {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white" dir="rtl">
+    <div className="min-h-screen bg-zinc-950 text-white" dir={i18n.dir()}>
       {/* Success/Error Toasts */}
       <AnimatePresence>
         {successMessage && (
@@ -129,7 +131,7 @@ const DeviceManagement = () => {
           >
             <p className="font-bold">{successMessage}</p>
             <button onClick={clearMessages} className="text-green-200 text-sm mt-1 hover:text-white">
-              إغلاق
+              {t('common.close')}
             </button>
           </motion.div>
         )}
@@ -142,7 +144,7 @@ const DeviceManagement = () => {
           >
             <p className="font-bold">{displayError}</p>
             <button onClick={clearMessages} className="text-red-200 text-sm mt-1 hover:text-white">
-              إغلاق
+              {t('common.close')}
             </button>
           </motion.div>
         )}
@@ -157,8 +159,8 @@ const DeviceManagement = () => {
                 <Server size={28} className="text-blue-400" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold">إدارة أجهزة NFC</h1>
-                <p className="text-slate-400 mt-1">مراقبة وإدارة أجهزة القراءة NFC المتصلة</p>
+                <h1 className="text-3xl font-bold">{t('deviceManagement.title')}</h1>
+                <p className="text-slate-400 mt-1">{t('deviceManagement.subtitle')}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -167,7 +169,7 @@ const DeviceManagement = () => {
                 className="bg-white/5 hover:bg-white/10 px-4 py-3 rounded-xl font-bold flex items-center gap-2 border border-white/10 transition-all"
               >
                 <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
-                <span>تحديث</span>
+                <span>{t('common.refresh')}</span>
               </button>
               <button
                 onClick={() => {
@@ -177,7 +179,7 @@ const DeviceManagement = () => {
                 className="bg-blue-600 hover:bg-blue-700 px-5 py-3 rounded-xl font-bold flex items-center gap-2 transition-all"
               >
                 <Plus size={18} />
-                <span>إضافة جهاز</span>
+                <span>{t('deviceManagement.addDevice')}</span>
               </button>
             </div>
           </div>
@@ -192,7 +194,7 @@ const DeviceManagement = () => {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="بحث باسم الجهاز أو المعرف..."
+            placeholder={t('deviceManagement.searchPlaceholder')}
             className="w-full pr-10 pl-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder:text-slate-600"
           />
         </div>
@@ -200,17 +202,17 @@ const DeviceManagement = () => {
         {/* Stats Cards */}
         <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="bg-zinc-900 border border-white/5 rounded-2xl p-4">
-            <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">إجمالي الأجهزة</p>
+            <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">{t('deviceManagement.totalDevices')}</p>
             <p className="text-3xl font-black text-white">{totalCount}</p>
           </div>
           <div className="bg-zinc-900 border border-green-500/20 rounded-2xl p-4">
-            <p className="text-green-500 text-xs font-bold uppercase tracking-wider mb-1">متصل (Online)</p>
+            <p className="text-green-500 text-xs font-bold uppercase tracking-wider mb-1">{t('deviceManagement.online')}</p>
             <p className="text-3xl font-black text-green-400">
               {devices.filter((d) => d.status === 'Online').length}
             </p>
           </div>
           <div className="bg-zinc-900 border border-red-500/20 rounded-2xl p-4">
-            <p className="text-red-500 text-xs font-bold uppercase tracking-wider mb-1">غير متصل (Offline)</p>
+            <p className="text-red-500 text-xs font-bold uppercase tracking-wider mb-1">{t('deviceManagement.offline')}</p>
             <p className="text-3xl font-black text-red-400">
               {devices.filter((d) => d.status !== 'Online').length}
             </p>
@@ -219,20 +221,20 @@ const DeviceManagement = () => {
 
         {/* Device List */}
         {loading ? (
-          <div className="text-center py-12 text-slate-500">جارِ التحميل...</div>
+          <div className="text-center py-12 text-slate-500">{t('common.loading')}</div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-12 text-slate-500">لا توجد أجهزة</div>
+          <div className="text-center py-12 text-slate-500">{t('common.noData')}</div>
         ) : (
           <div className="bg-zinc-900 border border-white/5 rounded-2xl overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-white/5 text-slate-400">
                   <tr>
-                    <th className="px-6 py-4 text-right font-bold">الحالة</th>
-                    <th className="px-6 py-4 text-right font-bold">اسم الجهاز</th>
-                    <th className="px-6 py-4 text-right font-bold">المعرف (ID)</th>
-                    <th className="px-6 py-4 text-right font-bold">الحمل</th>
-                    <th className="px-6 py-4 text-right font-bold">إجراءات</th>
+                    <th className="px-6 py-4 text-right font-bold">{t('deviceManagement.table.status')}</th>
+                    <th className="px-6 py-4 text-right font-bold">{t('deviceManagement.table.deviceName')}</th>
+                    <th className="px-6 py-4 text-right font-bold">{t('deviceManagement.table.deviceId')}</th>
+                    <th className="px-6 py-4 text-right font-bold">{t('deviceManagement.table.load')}</th>
+                    <th className="px-6 py-4 text-right font-bold">{t('deviceManagement.table.actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -253,7 +255,7 @@ const DeviceManagement = () => {
                               device.status === 'Online' ? 'text-green-400' : 'text-red-400'
                             }`}
                           >
-                            {device.status === 'Online' ? 'متصل' : 'غير متصل'}
+                            {device.status === 'Online' ? t('deviceManagement.online') : t('deviceManagement.offline')}
                           </span>
                         </div>
                       </td>
@@ -266,7 +268,7 @@ const DeviceManagement = () => {
                             onClick={() => handleToggleStatus(device)}
                             disabled={updateStatusMutation.isPending}
                             className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors disabled:opacity-50"
-                            title={device.status === 'Online' ? 'إيقاف' : 'تشغيل'}
+                            title={device.status === 'Online' ? t('deviceManagement.toggle.stop') : t('deviceManagement.toggle.start')}
                           >
                             <Power size={16} />
                           </button>
@@ -274,7 +276,7 @@ const DeviceManagement = () => {
                             onClick={() => handleDeleteDevice(device)}
                             disabled={deleteMutation.isPending}
                             className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-colors disabled:opacity-50"
-                            title="حذف"
+                            title={t('common.delete')}
                           >
                             <Trash2 size={16} />
                           </button>
@@ -313,25 +315,25 @@ const DeviceManagement = () => {
               className="bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl max-w-md w-full p-6"
               onClick={(e) => e.stopPropagation()}
             >
-              <h2 className="text-xl font-bold text-white mb-6">إضافة جهاز NFC جديد</h2>
+              <h2 className="text-xl font-bold text-white mb-6">{t('deviceManagement.add.title')}</h2>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-bold text-slate-300 mb-2">اسم الجهاز</label>
+                  <label className="block text-sm font-bold text-slate-300 mb-2">{t('deviceManagement.add.name')}</label>
                   <input
                     type="text"
                     value={addForm.name}
                     onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
-                    placeholder="مثال: Floor 2 Gate C"
+                    placeholder={t('deviceManagement.add.placeholderName')}
                     className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500 placeholder:text-slate-600"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-300 mb-2">المعرف الفريد (UID)</label>
+                  <label className="block text-sm font-bold text-slate-300 mb-2">{t('deviceManagement.add.uid')}</label>
                   <input
                     type="text"
                     value={addForm.deviceId}
                     onChange={(e) => setAddForm({ ...addForm, deviceId: e.target.value })}
-                    placeholder="NFC_XXXX-NEW"
+                    placeholder={t('deviceManagement.add.placeholderUid')}
                     className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white font-mono focus:ring-2 focus:ring-blue-500 placeholder:text-slate-600"
                   />
                 </div>
@@ -341,14 +343,14 @@ const DeviceManagement = () => {
                   onClick={() => setShowAddModal(false)}
                   className="flex-1 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-slate-300 transition-colors"
                 >
-                  إلغاء
+                  {t('common.cancel')}
                 </button>
                 <button
                   onClick={handleAddDevice}
                   disabled={addMutation.isPending}
                   className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold text-white transition-colors disabled:opacity-50"
                 >
-                  {addMutation.isPending ? 'جارِ الإضافة...' : 'إضافة الجهاز'}
+                  {addMutation.isPending ? t('deviceManagement.add.adding') : t('deviceManagement.addDevice')}
                 </button>
               </div>
             </motion.div>

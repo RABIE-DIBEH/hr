@@ -337,7 +337,7 @@ const CEODashboard = () => {
   ];
 
   return (
-    <div className="space-y-8" dir="rtl">
+    <div className="space-y-8" dir={i18n.dir()}>
       <header className="relative overflow-hidden rounded-[2.75rem] border border-white/7 bg-[linear-gradient(135deg,rgba(18,18,18,0.98),rgba(18,18,18,0.82)),radial-gradient(circle_at_top_right,rgba(212,175,55,0.18),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(8,145,178,0.16),transparent_30%)] p-8 lg:p-10 shadow-[0_30px_80px_rgba(0,0,0,0.35)]">
         <div className="absolute -top-12 left-10 h-40 w-40 rounded-full bg-amber-400/10 blur-3xl" />
         <div className="absolute bottom-0 right-0 h-48 w-48 rounded-full bg-cyan-400/10 blur-3xl" />
@@ -356,7 +356,7 @@ const CEODashboard = () => {
             </p>
             <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               <div className="rounded-2xl border border-white/8 bg-white/[0.04] px-5 py-4">
-                <p className="text-xs text-slate-500">المستخدم الحالي</p>
+                <p className="text-xs text-slate-500">{t('common.currentUser')}</p>
                 <p className="mt-1 text-sm font-bold text-white">{meQuery.data?.fullName ?? '—'}</p>
               </div>
               <div className="rounded-2xl border border-white/8 bg-white/[0.04] px-5 py-4">
