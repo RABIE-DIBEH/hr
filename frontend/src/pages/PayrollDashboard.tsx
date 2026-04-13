@@ -491,7 +491,7 @@ const PayrollDashboard = () => {
 
   const stats = [
     { label: t('payroll.stats.pendingAdvances'), value: String(pendingTotalCount), icon: Clock, color: 'text-orange-400', bg: 'bg-orange-500/10' },
-    { label: t('payroll.stats.totalAdvances'), value: (Number(derivedApprovedTotalAmount) || totalApprovedAmount).toLocaleString() + ' ' + t('advanceRequest.currencySymbol'), icon: HandCoins, color: 'text-purple-400', bg: 'bg-purple-500/10' },
+    { label: t('payroll.stats.totalAdvances'), value: (Number(derivedApprovedTotalAmount) || totalApprovedAmount).toLocaleString() + ' ' + t('common.currency'), icon: HandCoins, color: 'text-purple-400', bg: 'bg-purple-500/10' },
     { label: t('payroll.stats.payrollRecords'), value: String(historyTotalCount), icon: History, color: 'text-green-400', bg: 'bg-green-500/10' },
   ];
 
@@ -688,7 +688,7 @@ const PayrollDashboard = () => {
 	                                  <div className="mt-4 flex gap-8">
 	                                    <div>
 	                                      <p className="text-slate-500 text-xs font-bold uppercase mb-1">{t('payroll.advances.amount')}</p>
-	                                      <p className="text-purple-300 font-black text-lg">{advance.amount} {t('advanceRequest.currencySymbol')}</p>
+	                                      <p className="text-purple-300 font-black text-lg">{advance.amount} {t('common.currency')}</p>
 	                                    </div>
 	                                    <div>
 	                                      <p className="text-slate-500 text-xs font-bold uppercase mb-1">{t('payroll.advances.reason')}</p>
@@ -802,7 +802,7 @@ const PayrollDashboard = () => {
 	                              <div className="flex items-center justify-between md:justify-end gap-4">
 	                                <div className="text-right">
 	                                  <p className="text-slate-500 text-xs font-bold uppercase mb-1">{t('payroll.advances.amount')}</p>
-	                                  <p className="text-emerald-200 font-black text-xl">{adv.amount} {t('advanceRequest.currencySymbol')}</p>
+	                                  <p className="text-emerald-200 font-black text-xl">{adv.amount} {t('common.currency')}</p>
 	                                </div>
 	                                <button
 	                                  onClick={() => handleDeliverAdvance(adv.advanceId!)}
@@ -843,7 +843,7 @@ const PayrollDashboard = () => {
                               {deliveredAdvances.map((adv) => (
                                 <tr key={adv.advanceId} className="hover:bg-white/[0.02]">
                                   <td className="p-6 font-bold text-slate-100">{adv.employeeName}</td>
-                                  <td className="p-6 text-blue-300 font-bold">{adv.amount} {t('advanceRequest.currencySymbol')}</td>
+                                  <td className="p-6 text-blue-300 font-bold">{adv.amount} {t('common.currency')}</td>
                                   <td className="p-6 text-slate-500">{adv.paidAt ? new Date(adv.paidAt).toLocaleString('ar-SA') : '—'}</td>
                                   <td className="p-6 text-slate-400">{adv.hrNote || '—'}</td>
                                 </tr>
@@ -878,7 +878,7 @@ const PayrollDashboard = () => {
 	                            return (
 	                              <tr key={adv.advanceId} className="hover:bg-white/[0.02]">
 	                                <td className="p-6 font-bold text-slate-100">{adv.employeeName}</td>
-	                                <td className="p-6 text-purple-300 font-bold">{adv.amount} {t('advanceRequest.currencySymbol')}</td>
+	                                <td className="p-6 text-purple-300 font-bold">{adv.amount} {t('common.currency')}</td>
 	                                <td className="p-6">
 	                                  <span className={`px-3 py-1 rounded-lg font-bold text-xs ${statusClass}`}>
 	                                    {statusLabel}
@@ -940,7 +940,7 @@ const PayrollDashboard = () => {
                               <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
                                 <p className="text-slate-500 text-xs font-bold uppercase mb-1">{t('payroll.recruitment.expectedSalary')}</p>
                                 <p className="text-purple-200 font-black text-lg">
-                                  {typeof req.expectedSalary === 'number' ? req.expectedSalary.toLocaleString() : req.expectedSalary} {t('advanceRequest.currencySymbol')}
+                                  {typeof req.expectedSalary === 'number' ? req.expectedSalary.toLocaleString() : req.expectedSalary} {t('common.currency')}
                                 </p>
                               </div>
                             </div>
@@ -1061,14 +1061,14 @@ const PayrollDashboard = () => {
                   <div className="bg-luxury-surface rounded-3xl border border-white/5 p-6">
                     <p className="text-slate-400 text-xs font-black uppercase">{t('payroll.calculate.totalBaseSalary')}</p>
                     <p className="text-white font-black text-2xl mt-2">
-                      {employees.reduce((sum, e) => sum + Number(e.baseSalary ?? 0), 0).toLocaleString()} {t('advanceRequest.currencySymbol')}
+                      {employees.reduce((sum, e) => sum + Number(e.baseSalary ?? 0), 0).toLocaleString()} {t('common.currency')}
                     </p>
                     <p className="text-slate-500 text-xs mt-2">{t('payroll.calculate.totalBaseSalarySub')}</p>
                   </div>
                   <div className="bg-luxury-surface rounded-3xl border border-white/5 p-6">
                     <p className="text-slate-400 text-xs font-black uppercase">{t('payroll.calculate.totalNetSalary')}</p>
                     <p className="text-emerald-200 font-black text-2xl mt-2">
-                      {(monthlySummary?.totalNetSalary ?? 0).toLocaleString()} {t('advanceRequest.currencySymbol')}
+                      {(monthlySummary?.totalNetSalary ?? 0).toLocaleString()} {t('common.currency')}
                     </p>
                     <p className="text-slate-500 text-xs mt-2">{t('payroll.calculate.totalNetSalarySub')}</p>
                   </div>
@@ -1126,7 +1126,7 @@ const PayrollDashboard = () => {
                           .map(emp => (
                           <tr key={emp.employeeId} className="hover:bg-white/[0.02]">
                             <td className="p-6 font-bold text-slate-100">{emp.fullName}</td>
-                            <td className="p-6 text-slate-300 font-bold">{emp.baseSalary} {t('advanceRequest.currencySymbol')}</td>
+                            <td className="p-6 text-slate-300 font-bold">{emp.baseSalary} {t('common.currency')}</td>
                             <td className="p-6">
                               <span className="bg-green-500/10 text-green-400 px-2 py-1 rounded-md text-[10px] font-bold">{t('status.Active')}</span>
                             </td>
@@ -1212,8 +1212,8 @@ const PayrollDashboard = () => {
                             </td>
                             <td className="p-6 text-slate-300 font-bold">{slip.totalWorkHours} {t('attendanceGrid.hours')}</td>
                             <td className="p-6 text-blue-400 font-bold">{slip.overtimeHours} {t('attendanceGrid.hours')}</td>
-                            <td className="p-6 text-red-400 font-bold">{slip.deductions} {t('advanceRequest.currencySymbol')}</td>
-                            <td className="p-6 text-green-400 font-black text-lg">{slip.netSalary?.toLocaleString()} {t('advanceRequest.currencySymbol')}</td>
+                            <td className="p-6 text-red-400 font-bold">{slip.deductions} {t('common.currency')}</td>
+                            <td className="p-6 text-green-400 font-black text-lg">{slip.netSalary?.toLocaleString()} {t('common.currency')}</td>
                             <td className="p-6">
                               <button 
                                 onClick={() => setSelectedSlip(slip)}
@@ -1282,11 +1282,11 @@ const PayrollDashboard = () => {
                         <div className="space-y-3">
                           <div className="flex justify-between items-center">
                             <span className="text-slate-400 text-sm">{t('payroll.slip.advanceDeductions')}</span>
-                            <span className="text-red-400 font-bold">{selectedSlip.deductions?.toLocaleString()} {t('advanceRequest.currencySymbol')}</span>
+                            <span className="text-red-400 font-bold">{selectedSlip.deductions?.toLocaleString()} {t('common.currency')}</span>
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="text-slate-400 text-sm">{t('payroll.slip.insurance')}</span>
-                            <span className="text-slate-500 font-bold">0 {t('advanceRequest.currencySymbol')}</span>
+                            <span className="text-slate-500 font-bold">0 {t('common.currency')}</span>
                           </div>
                         </div>
                       </div>
@@ -1295,7 +1295,7 @@ const PayrollDashboard = () => {
                     <div className="bg-purple-600/10 p-8 rounded-[2rem] border border-purple-500/20 text-center relative overflow-hidden">
                        <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl" />
                        <p className="text-purple-400 text-xs font-black uppercase tracking-[0.2em] mb-2">{t('payroll.slip.netAmount')}</p>
-                       <p className="text-5xl font-black text-white tracking-tight">{selectedSlip.netSalary?.toLocaleString()} <span className="text-lg font-bold text-purple-400">{t('advanceRequest.currencySymbol')}</span></p>
+                       <p className="text-5xl font-black text-white tracking-tight">{selectedSlip.netSalary?.toLocaleString()} <span className="text-lg font-bold text-purple-400">{t('common.currency')}</span></p>
                     </div>
 
                     <div className="flex items-center gap-2 text-slate-500 text-[10px] font-bold uppercase tracking-widest">

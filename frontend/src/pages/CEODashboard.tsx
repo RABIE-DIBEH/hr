@@ -67,7 +67,9 @@ const chartColors = ['#d4af37', '#0891b2', '#10b981', '#f97316', '#8b5cf6', '#ef
 
 const toNumber = (value: number | string | null | undefined | readonly (string | number)[]) => {
   if (Array.isArray(value)) return toNumber(value[0]);
-  return typeof value === 'number' ? value : Number(value ?? 0) || 0;
+  if (value === null || value === undefined) return 0;
+  const num = Number(value);
+  return Number.isFinite(num) ? num : 0;
 };
 
 const formatMoney = (value: number, language: string) =>
@@ -267,18 +269,18 @@ const CEODashboard = () => {
       activeEmployees,
       headRows,
       headTotals,
-      salaryTotal,
-      advanceTotal,
+      salaryTotal: Number.isFinite(salaryTotal) ? salaryTotal : 0,
+      advanceTotal: Number.isFinite(advanceTotal) ? advanceTotal : 0,
       departments,
       salaryDistribution: departments.map((item) => ({
         name: item.department,
-        value: item.monthlySalary,
+        value: Number.isFinite(item.monthlySalary) ? item.monthlySalary : 0,
       })),
       trend: [...trendSeed.entries()].map(([key, amount]) => {
         const [year, month] = key.split('-').map(Number);
         return {
           month: new Date(year, month - 1, 1).toLocaleDateString(i18n.language === 'ar' ? 'ar-EG' : 'en-US', { month: 'short' }),
-          amount,
+          amount: Number.isFinite(amount) ? amount : 0,
         };
       }),
       paymentHistory,
@@ -518,7 +520,7 @@ const CEODashboard = () => {
                 <CartesianGrid stroke="#ffffff10" strokeDasharray="4 4" vertical={false} />
                 <XAxis dataKey="department" stroke="#94a3b8" axisLine={false} tickLine={false} />
                 <YAxis stroke="#94a3b8" axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ backgroundColor: '#0f1115', border: '1px solid #ffffff10', borderRadius: '14px' }} formatter={(value, name) => [`${formatMoney(toNumber(value), i18n.language)}${t('ceoDashboard.fallback.currency')}`, String(name)]} />
+                <Tooltip contentStyle={{ backgroundColor: '#0f1115', border: '1px solid #ffffff10', borderRadius: '14px' }} formatter={(value, name) => [`${formatMoney(toNumber(value), i18n.language)}${t('common.currency')}`, String(name)]} />
                 <Legend />
                 <Bar dataKey="monthlySalary" name={t('ceoDashboard.departments.table.budget')} fill="#0891b2" radius={[8, 8, 0, 0]} />
                 <Bar dataKey="payrollIssued" name={t('ceoDashboard.departments.table.actual')} fill="#10b981" radius={[8, 8, 0, 0]} />
@@ -535,9 +537,9 @@ const CEODashboard = () => {
                   <tr key={item.department} className="transition hover:bg-white/[0.03]">
                     <td className="py-4 text-sm font-bold text-white">{item.department}</td>
                     <td className="py-4 text-sm text-slate-300">{item.employees}</td>
-                    <td className="py-4 text-sm text-slate-300">{formatMoney(item.monthlySalary, i18n.language)}{t('ceoDashboard.fallback.currency')}</td>
-                    <td className="py-4 text-sm text-slate-300">{formatMoney(item.payrollIssued, i18n.language)}{t('ceoDashboard.fallback.currency')}</td>
-                    <td className="py-4 text-sm text-slate-300">{formatMoney(item.advances, i18n.language)}{t('ceoDashboard.fallback.currency')}</td>
+                    <td className="py-4 text-sm text-slate-300">{formatMoney(toNumber(item.monthlySalary), i18n.language)}{t('common.currency')}</td>
+                    <td className="py-4 text-sm text-slate-300">{formatMoney(toNumber(item.payrollIssued), i18n.language)}{t('common.currency')}</td>
+                    <td className="py-4 text-sm text-slate-300">{formatMoney(toNumber(item.advances), i18n.language)}{t('common.currency')}</td>
                   </tr>
                 ))}
               </tbody>
@@ -564,7 +566,7 @@ const CEODashboard = () => {
                       <p className="mt-2 text-sm text-slate-400">{item.reason || t('ceoDashboard.history.reasonFallback')}</p>
                     </div>
                     <div className="text-left">
-                      <p className="font-black text-amber-300">{formatMoney(toNumber(item.amount), i18n.language)}{t('ceoDashboard.fallback.currency')}</p>
+                      <p className="font-black text-amber-300">{formatMoney(toNumber(item.amount), i18n.language)}{t('common.currency')}</p>
                       <p className="mt-2 text-xs text-slate-500">{formatDateOnly(item.paidAt ?? item.processedAt ?? item.requestedAt, i18n.language, t('ceoDashboard.fallback.unspecified'))}</p>
                     </div>
                   </div>

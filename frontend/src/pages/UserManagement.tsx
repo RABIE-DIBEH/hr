@@ -464,7 +464,7 @@ const UserManagement = () => {
                 </div>
                 <div className="bg-white/5 p-4 rounded-xl">
                   <p className="text-slate-500 mb-1">{t('userManagement.basicSalaryLabel')}</p>
-                  <p className="text-white font-bold">{selectedEmployee.baseSalary ? `${Number(selectedEmployee.baseSalary).toLocaleString()} ${t('userManagement.currencySymbol')}` : '—'}</p>
+                  <p className="text-white font-bold">{selectedEmployee.baseSalary ? `${Number(selectedEmployee.baseSalary).toLocaleString()} ${t('common.currency')}` : '—'}</p>
                 </div>
                 <div className="bg-white/5 p-4 rounded-xl">
                   <p className="text-slate-500 mb-1">{t('userManagement.statusLabel')}</p>

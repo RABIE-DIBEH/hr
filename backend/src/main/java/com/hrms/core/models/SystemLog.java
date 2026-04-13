@@ -20,7 +20,7 @@ public class SystemLog {
     @Column(name = "target_id")
     private Long targetId;
 
-    @Column(name = "action_type", nullable = false)
+    @Column(name = "action", nullable = false)
     private String actionType;
 
     @Column(name = "old_value", length = 2000)

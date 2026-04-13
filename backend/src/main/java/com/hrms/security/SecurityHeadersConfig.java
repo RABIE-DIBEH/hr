@@ -25,16 +25,18 @@ public class SecurityHeadersConfig extends OncePerRequestFilter {
             "default-src 'self'; " +
             "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
             "style-src 'self' 'unsafe-inline'; " +
-            "img-src 'self' data:; " +
-            "font-src 'self'; " +
-            "connect-src 'self'; " +
-            "frame-ancestors 'none';"
+            "img-src 'self' data: blob:; " +
+            "font-src 'self' data:; " +
+            "connect-src 'self' http://localhost:* https://localhost:*; " +
+            "frame-ancestors 'none'; " +
+            "base-uri 'self';"
         );
         
         // Prevent MIME type sniffing
         response.setHeader("X-Content-Type-Options", "nosniff");
         
-        // Prevent clickjacking
+        // Prevent clickjacking - allow SAMEORIGIN to help with some documentation tools if needed, 
+        // but DENY is safer if not using frames.
         response.setHeader("X-Frame-Options", "DENY");
         
         // Enable XSS protection in browsers
@@ -43,26 +45,22 @@ public class SecurityHeadersConfig extends OncePerRequestFilter {
         // Referrer policy
         response.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
         
-        // Permissions policy (formerly Feature-Policy)
-        response.setHeader("Permissions-Policy", 
-            "geolocation=(), " +
-            "microphone=(), " +
-            "camera=(), " +
-            "payment=()"
-        );
-        
-        // HSTS would be added here for HTTPS (not needed for localhost)
-        // response.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
-        
         filterChain.doFilter(request, response);
     }
     
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        // Don't apply security headers to Swagger UI (allows inline scripts/styles)
-        String path = request.getServletPath();
+        String path = request.getRequestURI();
+        String contextPath = request.getContextPath();
+        
+        // Normalize path by removing context path if present
+        if (contextPath != null && !contextPath.isEmpty() && path.startsWith(contextPath)) {
+            path = path.substring(contextPath.length());
+        }
+
         return path.startsWith("/swagger-ui") || 
                path.startsWith("/v3/api-docs") ||
+               path.startsWith("/swagger-resources") ||
                path.startsWith("/h2-console") ||
                path.startsWith("/webjars");
     }

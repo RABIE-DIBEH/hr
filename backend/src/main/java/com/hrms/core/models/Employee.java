@@ -45,13 +45,13 @@ public class Employee {
     @Column(name = "mobile_number")
     private String mobileNumber;
 
-    @Column(name = "address")
+    @Column(name = "address", length = 2000)
     private String address;
 
     @Column(name = "national_id")
     private String nationalId;
 
-    @Column(name = "avatar_url")
+    @Column(name = "avatar_url", length = 2000)
     private String avatarUrl;
 
     @Column(nullable = false)

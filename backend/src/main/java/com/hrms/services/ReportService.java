@@ -15,6 +15,8 @@ import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.security.core.Authentication;
+import com.hrms.security.EmployeeUserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -229,8 +231,20 @@ public class ReportService {
     // ==================== LEAVE REPORTS ====================
 
     @Transactional(readOnly = true)
-    public byte[] generateLeavePdfReport(int month, int year) {
+    public byte[] generateLeavePdfReport(int month, int year, Authentication authentication) {
         List<LeaveRequest> records = leaveRequestRepository.findAllByMonthAndYear(month, year);
+        
+        // Filter for regular employees
+        boolean isHighRole = authentication.getAuthorities().stream()
+                .anyMatch(a -> List.of("ROLE_HR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN", "ROLE_MANAGER", "ROLE_CEO").contains(a.getAuthority()));
+        
+        if (!isHighRole && authentication.getPrincipal() instanceof EmployeeUserDetails) {
+            Long myId = ((EmployeeUserDetails) authentication.getPrincipal()).getEmployeeId();
+            records = records.stream()
+                    .filter(r -> r.getEmployee() != null && r.getEmployee().getEmployeeId().equals(myId))
+                    .collect(Collectors.toList());
+        }
+
         List<Object[]> typeCounts = leaveRequestRepository.countByLeaveTypeAndMonthYear(month, year);
 
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
@@ -289,8 +303,19 @@ public class ReportService {
     }
 
     @Transactional(readOnly = true)
-    public byte[] generateLeaveExcelReport(int month, int year) {
+    public byte[] generateLeaveExcelReport(int month, int year, Authentication authentication) {
         List<LeaveRequest> records = leaveRequestRepository.findAllByMonthAndYear(month, year);
+
+        // Filter for regular employees
+        boolean isHighRole = authentication.getAuthorities().stream()
+                .anyMatch(a -> List.of("ROLE_HR", "ROLE_ADMIN", "ROLE_SUPER_ADMIN", "ROLE_MANAGER", "ROLE_CEO").contains(a.getAuthority()));
+
+        if (!isHighRole && authentication.getPrincipal() instanceof EmployeeUserDetails) {
+            Long myId = ((EmployeeUserDetails) authentication.getPrincipal()).getEmployeeId();
+            records = records.stream()
+                    .filter(r -> r.getEmployee() != null && r.getEmployee().getEmployeeId().equals(myId))
+                    .collect(Collectors.toList());
+        }
 
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             Sheet sheet = workbook.createSheet("Leave_Report_" + month + "_" + year);

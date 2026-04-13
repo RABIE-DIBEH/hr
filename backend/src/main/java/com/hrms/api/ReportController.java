@@ -18,7 +18,7 @@ public class ReportController {
     }
 
     @GetMapping("/attendance/pdf")
-    @PreAuthorize("hasAnyRole('HR', 'ADMIN', 'SUPER_ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('HR', 'ADMIN', 'SUPER_ADMIN', 'MANAGER', 'CEO')")
     public ResponseEntity<byte[]> downloadAttendancePdf(
             @RequestParam int month,
             @RequestParam int year) {
@@ -30,7 +30,7 @@ public class ReportController {
     }
 
     @GetMapping("/attendance/excel")
-    @PreAuthorize("hasAnyRole('HR', 'ADMIN', 'SUPER_ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('HR', 'ADMIN', 'SUPER_ADMIN', 'MANAGER', 'CEO')")
     public ResponseEntity<byte[]> downloadAttendanceExcel(
             @RequestParam int month,
             @RequestParam int year) {
@@ -42,7 +42,7 @@ public class ReportController {
     }
 
     @GetMapping("/payroll/pdf")
-    @PreAuthorize("hasAnyRole('PAYROLL', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('PAYROLL', 'SUPER_ADMIN', 'CEO')")
     public ResponseEntity<byte[]> downloadPayrollPdf(
             @RequestParam int month,
             @RequestParam int year) {
@@ -54,7 +54,7 @@ public class ReportController {
     }
 
     @GetMapping("/payroll/excel")
-    @PreAuthorize("hasAnyRole('PAYROLL', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('PAYROLL', 'SUPER_ADMIN', 'CEO')")
     public ResponseEntity<byte[]> downloadPayrollExcel(
             @RequestParam int month,
             @RequestParam int year) {
@@ -66,11 +66,12 @@ public class ReportController {
     }
 
     @GetMapping("/leave/pdf")
-    @PreAuthorize("hasAnyRole('HR', 'ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('HR', 'ADMIN', 'SUPER_ADMIN', 'MANAGER', 'CEO', 'EMPLOYEE')")
     public ResponseEntity<byte[]> downloadLeavePdf(
             @RequestParam int month,
-            @RequestParam int year) {
-        byte[] pdf = reportService.generateLeavePdfReport(month, year);
+            @RequestParam int year,
+            org.springframework.security.core.Authentication authentication) {
+        byte[] pdf = reportService.generateLeavePdfReport(month, year, authentication);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=leave_report_" + month + "_" + year + ".pdf")
                 .contentType(MediaType.APPLICATION_PDF)
@@ -78,11 +79,12 @@ public class ReportController {
     }
 
     @GetMapping("/leave/excel")
-    @PreAuthorize("hasAnyRole('HR', 'ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('HR', 'ADMIN', 'SUPER_ADMIN', 'MANAGER', 'CEO', 'EMPLOYEE')")
     public ResponseEntity<byte[]> downloadLeaveExcel(
             @RequestParam int month,
-            @RequestParam int year) {
-        byte[] excel = reportService.generateLeaveExcelReport(month, year);
+            @RequestParam int year,
+            org.springframework.security.core.Authentication authentication) {
+        byte[] excel = reportService.generateLeaveExcelReport(month, year, authentication);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=leave_report_" + month + "_" + year + ".xlsx")
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
@@ -90,7 +92,7 @@ public class ReportController {
     }
 
     @GetMapping("/recruitment/pdf")
-    @PreAuthorize("hasAnyRole('HR', 'ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('HR', 'ADMIN', 'SUPER_ADMIN', 'MANAGER', 'CEO')")
     public ResponseEntity<byte[]> downloadRecruitmentPdf(
             @RequestParam int month,
             @RequestParam int year) {
@@ -102,7 +104,7 @@ public class ReportController {
     }
 
     @GetMapping("/recruitment/excel")
-    @PreAuthorize("hasAnyRole('HR', 'ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('HR', 'ADMIN', 'SUPER_ADMIN', 'MANAGER', 'CEO')")
     public ResponseEntity<byte[]> downloadRecruitmentExcel(
             @RequestParam int month,
             @RequestParam int year) {

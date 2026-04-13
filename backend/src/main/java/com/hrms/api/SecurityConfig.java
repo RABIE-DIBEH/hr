@@ -25,7 +25,6 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-@Profile("!dev")
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -83,8 +82,7 @@ public class SecurityConfig {
                         // Attendance endpoints
                         .requestMatchers(HttpMethod.POST, "/api/attendance/nfc-clock").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/attendance/clock").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/attendance/my").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/attendance/my-records").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/attendance/my/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/attendance/manager/today").hasAnyRole("MANAGER", "HR", "ADMIN", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/attendance/**").hasAnyRole("HR", "ADMIN", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/attendance/logs").authenticated()
@@ -154,6 +152,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/inbox/*/read").authenticated()
 
                         // Reports (controller methods enforce role checks via @PreAuthorize)
+                        // Leave reports: CEO/HR/Admin/Manager can access
+                        .requestMatchers(HttpMethod.GET, "/api/reports/leave/**").hasAnyRole("CEO", "HR", "ADMIN", "SUPER_ADMIN", "PAYROLL", "MANAGER")
                         .requestMatchers(HttpMethod.GET, "/api/reports/**").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/inbox/read-all").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/inbox/*/archive").authenticated()
